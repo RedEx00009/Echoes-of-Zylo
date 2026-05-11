@@ -1,0 +1,1539 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dragon Creator Z</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg-deep: #08090f;
+        --bg-panel: #0d1020;
+        --bg-card: #12172e;
+        --bg-hover: #1a2040;
+        --border: #2a3560;
+        --glow: #4a6aff;
+        --accent: #f5c400;
+        --accent2: #ff6a00;
+        --cyan: #00e5ff;
+        --green: #00ff9d;
+        --red: #ff1744;
+        --orange: #ff6a00;
+        --magenta: #e040fb;
+        --tp: #e8eaf6;
+        --td: #8892b0;
+        --tm: #3d4a6b;
+        --fh: "Orbitron", monospace;
+        --fb: "Rajdhani", sans-serif;
+        --r: 6px;
+        --tr: 0.15s ease;
+      }
+      *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body { height: 100%; overflow: hidden; }
+      @media (max-width: 768px) { html, body { height: auto; overflow: auto; -webkit-overflow-scrolling: touch; } }
+      body { background: var(--bg-deep); color: var(--tp); font-family: var(--fb); font-size: 14px; }
+
+      /* ── HEADER ── */
+      .app-header {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 10px 20px; height: 52px;
+        background: linear-gradient(90deg, #0d1020, #111830, #0d1020);
+        border-bottom: 2px solid var(--border);
+        box-shadow: 0 2px 20px rgba(74,106,255,.25);
+        position: relative; z-index: 10;
+      }
+      .app-header::after {
+        content: ""; position: absolute; bottom: -4px; left: 0; right: 0; height: 2px;
+        background: linear-gradient(90deg, transparent, var(--accent), var(--glow), var(--accent), transparent);
+        opacity: .6;
+      }
+      .header-logo { font-size: 24px; filter: drop-shadow(0 0 8px var(--accent)); animation: pulseLogo 2s ease-in-out infinite; }
+      @keyframes pulseLogo {
+        0%,100% { filter: drop-shadow(0 0 8px var(--accent)); }
+        50%      { filter: drop-shadow(0 0 20px var(--accent)) drop-shadow(0 0 36px var(--accent2)); }
+      }
+      .header-title { font-family: var(--fh); font-size: 20px; font-weight: 900; letter-spacing: 3px; margin-left: 10px; }
+      .header-title .acc { color: var(--accent); text-shadow: 0 0 12px var(--accent); }
+      .header-sub { font-family: var(--fh); font-size: 9px; letter-spacing: 2px; color: var(--tm); }
+
+      /* ── LAYOUT ── */
+      .creator-layout { display: grid; grid-template-columns: 200px 1fr 300px; height: calc(100vh - 52px); overflow: hidden; }
+
+      /* ── COL IZQUIERDA ── */
+      .left-col { display: flex; flex-direction: row; border-right: 1px solid var(--border); overflow: hidden; height: 100%; }
+      .cat-nav {
+        width: 68px; flex-shrink: 0; background: var(--bg-panel);
+        border-right: 1px solid var(--border);
+        display: flex; flex-direction: column; align-items: center; gap: 4px;
+        padding: 10px 4px; overflow-y: auto; scrollbar-width: none; height: 100%;
+      }
+      .cat-nav::-webkit-scrollbar { display: none; }
+      .cat-btn {
+        width: 56px; height: 52px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+        background: transparent; border: 1px solid transparent; border-radius: var(--r);
+        color: var(--td); cursor: pointer; transition: all var(--tr);
+        font-family: var(--fb); font-size: 9px; font-weight: 600; letter-spacing: 1px;
+        text-align: center; line-height: 1.1;
+        touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+      }
+      .cat-btn:hover { background: var(--bg-hover); border-color: var(--border); color: var(--tp); }
+      .cat-btn.active {
+        background: linear-gradient(135deg, rgba(245,196,0,.15), rgba(74,106,255,.1));
+        border-color: var(--accent); color: var(--accent);
+        box-shadow: 0 0 10px rgba(245,196,0,.2), inset 0 0 8px rgba(245,196,0,.05);
+      }
+      .cat-icon  { font-size: 18px; line-height: 1; }
+      .cat-label { font-size: 8px; letter-spacing: 1px; margin-top: 1px; }
+
+      .items-panel { flex: 1; background: var(--bg-panel); display: flex; flex-direction: column; overflow: hidden; min-width: 0; height: 100%; }
+      .items-section-title {
+        font-family: var(--fh); font-size: 9px; letter-spacing: 2px; color: var(--td);
+        padding: 10px 10px 6px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+      }
+      .items-scroll {
+        flex: 1; overflow-y: auto; padding: 8px;
+        scrollbar-width: thin; scrollbar-color: var(--border) transparent; min-height: 0;
+      }
+      .items-scroll::-webkit-scrollbar { width: 3px; }
+      .items-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+      .items-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 8px; }
+
+      .item-thumb {
+        aspect-ratio: 1; background: var(--bg-card); border: 2px solid var(--border);
+        border-radius: var(--r); cursor: pointer; overflow: hidden; transition: all var(--tr);
+        display: flex; align-items: center; justify-content: center; position: relative;
+        touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+      }
+      .item-thumb:hover { border-color: var(--td); transform: scale(1.04); background: var(--bg-hover); }
+      .item-thumb.selected { border-color: var(--accent); box-shadow: 0 0 12px rgba(245,196,0,.4); background: rgba(245,196,0,.08); }
+      .item-thumb canvas { width: 100%; height: 100%; image-rendering: pixelated; }
+      .item-thumb .item-label {
+        position: absolute; bottom: 0; left: 0; right: 0;
+        background: rgba(8,9,15,.85); font-family: var(--fh); font-size: 6px;
+        letter-spacing: .5px; color: var(--td); text-align: center; padding: 2px 1px; line-height: 1.2;
+      }
+      .item-thumb.selected .item-label { color: var(--accent); }
+
+      .acc-delete-btn {
+        position: absolute; top: 2px; right: 2px; width: 14px; height: 14px;
+        background: rgba(255,23,68,.8); border: none; border-radius: 2px;
+        color: white; font-size: 9px; cursor: pointer; display: flex;
+        align-items: center; justify-content: center; line-height: 1;
+        opacity: 0; transition: opacity .15s;
+        touch-action: manipulation;
+      }
+      .item-thumb:hover .acc-delete-btn { opacity: 1; }
+      .item-thumb.selected .acc-delete-btn { opacity: .7; }
+      .item-thumb.selected .acc-delete-btn:hover { opacity: 1; }
+
+      .acc-type-badge {
+        display: inline-block; padding: 1px 4px; border-radius: 2px;
+        font-family: var(--fh); font-size: 6px; letter-spacing: .5px;
+        background: rgba(0,229,255,.12); border: 1px solid var(--cyan);
+        color: var(--cyan); position: absolute; top: 2px; left: 2px; line-height: 1.4;
+        pointer-events: none;
+      }
+
+      /* ── PANEL DE IMPORTAR ACCESORIO ── */
+      .import-panel {
+        flex-shrink: 0; padding: 8px; border-top: 1px solid var(--border);
+        background: rgba(0,229,255,.03);
+      }
+      .import-title { font-family: var(--fh); font-size: 8px; letter-spacing: 2px; color: var(--cyan); margin-bottom: 6px; }
+      .import-row { display: flex; gap: 4px; margin-bottom: 5px; flex-wrap: wrap; }
+      .import-input-text {
+        flex: 1; min-width: 0; background: var(--bg-card); border: 1px solid var(--border);
+        border-radius: 4px; padding: 4px 7px; color: var(--tp); font-family: var(--fb);
+        font-size: 11px; outline: none; transition: border-color var(--tr);
+      }
+      .import-input-text:focus { border-color: var(--cyan); }
+      .import-input-text::placeholder { color: var(--tm); }
+      .import-select {
+        background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px;
+        padding: 4px 5px; color: var(--tp); font-family: var(--fb); font-size: 11px;
+        outline: none; cursor: pointer; transition: border-color var(--tr);
+        -webkit-appearance: none; appearance: none; min-width: 70px;
+      }
+      .import-select:focus { border-color: var(--cyan); }
+      .import-file-label {
+        display: flex; align-items: center; gap: 4px; cursor: pointer;
+        background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px;
+        padding: 4px 8px; color: var(--td); font-family: var(--fh); font-size: 8px;
+        letter-spacing: 1px; transition: all var(--tr); flex-shrink: 0;
+      }
+      .import-file-label:hover { border-color: var(--cyan); color: var(--cyan); }
+      .import-file-label input { display: none; }
+      .import-add-btn {
+        background: linear-gradient(135deg, rgba(0,229,255,.15), rgba(74,106,255,.15));
+        border: 1px solid var(--cyan); border-radius: 4px;
+        padding: 4px 10px; color: var(--cyan); font-family: var(--fh); font-size: 8px;
+        letter-spacing: 1px; cursor: pointer; transition: all var(--tr); flex-shrink: 0;
+        display: flex; align-items: center; gap: 4px;
+      }
+      .import-add-btn:hover { background: rgba(0,229,255,.25); box-shadow: 0 0 8px rgba(0,229,255,.3); }
+      .import-add-btn:disabled { opacity: .4; cursor: not-allowed; }
+      .import-preview {
+        width: 100%; height: 40px; object-fit: contain; border-radius: 4px;
+        border: 1px dashed var(--border); background: var(--bg-card);
+        display: none; image-rendering: pixelated; margin-bottom: 4px;
+      }
+      .import-preview.visible { display: block; }
+
+      /* ── PANEL CARA ── */
+      .face-color-row { display: flex; gap: 4px; padding: 6px 8px 4px; flex-shrink: 0; flex-wrap: wrap; }
+      .face-color-chip {
+        width: 18px; height: 18px; border-radius: 3px; border: 2px solid transparent;
+        cursor: pointer; transition: transform .1s, border-color .1s; flex-shrink: 0;
+      }
+      .face-color-chip:hover { transform: scale(1.15); }
+      .face-color-chip.active { border-color: white; }
+      .face-color-picker { width: 18px; height: 18px; padding: 0; border: 1px solid var(--border); border-radius: 3px; background: transparent; cursor: pointer; }
+      .face-color-picker::-webkit-color-swatch-wrapper { padding: 2px; }
+      .face-color-picker::-webkit-color-swatch { border: none; border-radius: 2px; }
+      .face-color-label { font-size: 9px; color: var(--td); letter-spacing: .5px; width: 100%; margin-top: 2px; }
+
+      .pagination {
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+        padding: 6px 8px; border-top: 1px solid var(--border); flex-shrink: 0;
+      }
+      .page-btn {
+        width: 24px; height: 24px; background: var(--bg-card); border: 1px solid var(--border);
+        color: var(--td); border-radius: 4px; cursor: pointer; font-size: 11px;
+        transition: all var(--tr); display: flex; align-items: center; justify-content: center;
+      }
+      .page-btn:hover { border-color: var(--accent); color: var(--accent); }
+      .page-btn:disabled { opacity: .3; cursor: default; }
+      .page-info { font-family: var(--fh); font-size: 9px; color: var(--td); letter-spacing: 1px; }
+
+      .gender-row { display: flex; gap: 6px; padding: 8px 8px 4px; flex-shrink: 0; }
+      .gender-btn {
+        flex: 1; padding: 5px 0; background: var(--bg-card); border: 2px solid var(--border);
+        border-radius: var(--r); color: var(--td); font-family: var(--fh); font-size: 9px;
+        letter-spacing: 1px; cursor: pointer; transition: all var(--tr);
+        display: flex; align-items: center; justify-content: center; gap: 4px;
+      }
+      .gender-btn:hover { background: var(--bg-hover); border-color: var(--td); }
+      .gender-btn.active { border-color: var(--cyan); color: var(--cyan); background: rgba(0,229,255,.08); }
+      .gender-btn:disabled { opacity: .3; cursor: not-allowed; }
+
+      .color-section { padding: 6px 8px 8px; flex-shrink: 0; border-top: 1px solid var(--border); }
+      .color-section-title { font-family: var(--fh); font-size: 8px; letter-spacing: 2px; color: var(--cyan); margin-bottom: 6px; }
+      .color-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+      .color-row-label { font-size: 10px; font-weight: 600; color: var(--td); width: 44px; flex-shrink: 0; letter-spacing: .5px; }
+      .color-gradient-wrap { flex: 1; display: flex; align-items: center; gap: 4px; }
+      .color-result { width: 20px; height: 20px; border-radius: 3px; border: 1px solid var(--border); flex-shrink: 0; cursor: pointer; transition: transform var(--tr); }
+      .color-result:hover { transform: scale(1.1); }
+      input[type="color"] { width: 20px; height: 20px; padding: 0; border: 1px solid var(--border); border-radius: 3px; background: transparent; cursor: pointer; }
+      input[type="color"]::-webkit-color-swatch-wrapper { padding: 2px; }
+      input[type="color"]::-webkit-color-swatch { border: none; border-radius: 2px; }
+
+      .race-badge {
+        display: inline-block; padding: 2px 6px; border-radius: 3px;
+        font-family: var(--fh); font-size: 7px; letter-spacing: 1px;
+        background: rgba(74,106,255,.15); border: 1px solid var(--glow); color: var(--cyan);
+        margin-left: 6px; vertical-align: middle;
+      }
+
+      /* ── COL CENTRAL ── */
+      .center-col { display: flex; flex-direction: column; background: #0a0d1a; border-right: 1px solid var(--border); overflow: hidden; height: 100%; }
+      .preview-header { padding: 8px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0; background: linear-gradient(90deg, rgba(74,106,255,.08), transparent); }
+      .preview-title { font-family: var(--fh); font-size: 10px; letter-spacing: 3px; color: var(--cyan); text-shadow: 0 0 6px var(--cyan); }
+
+      .view-anim-bar { display: flex; flex-direction: column; gap: 4px; padding: 8px 12px 6px; border-bottom: 1px solid var(--border); flex-shrink: 0; background: rgba(74,106,255,.03); }
+      .view-anim-row { display: flex; align-items: center; gap: 4px; }
+      .view-anim-label { font-family: var(--fh); font-size: 7px; letter-spacing: 2px; color: var(--tm); min-width: 42px; }
+      .view-btns { display: flex; gap: 3px; flex-wrap: wrap; flex: 1; }
+      .view-btn {
+        padding: 3px 7px; background: var(--bg-card); border: 1px solid var(--border);
+        border-radius: 4px; color: var(--td); font-family: var(--fh); font-size: 7px;
+        letter-spacing: 1px; cursor: pointer; transition: all var(--tr); white-space: nowrap;
+      }
+      .view-btn:hover { border-color: var(--td); color: var(--tp); }
+      .view-btn.active-view  { border-color: var(--orange); color: var(--orange); background: rgba(255,106,0,.1); box-shadow: 0 0 6px rgba(255,106,0,.25); }
+      .view-btn.active-anim  { border-color: var(--accent); color: var(--accent); background: rgba(245,196,0,.1); box-shadow: 0 0 6px rgba(245,196,0,.25); }
+
+      .preview-canvas-wrap {
+        flex: 1; display: flex; align-items: center; justify-content: center;
+        position: relative; overflow: hidden;
+      }
+      .preview-canvas-wrap::before {
+        content: ""; position: absolute; inset: 0;
+        background:
+          radial-gradient(ellipse 60% 50% at 50% 90%, rgba(74,106,255,.1) 0%, transparent 70%),
+          repeating-linear-gradient(0deg,   transparent, transparent 31px, rgba(42,53,96,.12) 32px),
+          repeating-linear-gradient(90deg,  transparent, transparent 31px, rgba(42,53,96,.12) 32px);
+        pointer-events: none;
+      }
+      .preview-shadow {
+        position: absolute; width: 90px; height: 16px; bottom: 18px; left: 50%;
+        transform: translateX(-50%);
+        background: radial-gradient(ellipse, rgba(74,106,255,.3) 0%, transparent 70%);
+        border-radius: 50%; pointer-events: none;
+      }
+      #previewCanvas { image-rendering: pixelated; image-rendering: crisp-edges; position: relative; z-index: 1; width: 180px; height: 260px; }
+
+      .name-section { padding: 10px 16px 8px; flex-shrink: 0; border-top: 1px solid var(--border); }
+      .name-label { display: block; font-family: var(--fh); font-size: 8px; letter-spacing: 2px; color: var(--td); margin-bottom: 5px; text-align: center; }
+      .name-input-wrap { position: relative; display: flex; align-items: center; }
+      .name-input {
+        width: 100%; background: var(--bg-card); border: 1px solid var(--border);
+        border-radius: var(--r); padding: 7px 32px 7px 12px; color: var(--tp);
+        font-family: var(--fh); font-size: 13px; letter-spacing: 1px; outline: none;
+        transition: border-color var(--tr); text-align: center;
+      }
+      .name-input:focus { border-color: var(--cyan); box-shadow: 0 0 8px rgba(0,229,255,.15); }
+      .name-edit-icon { position: absolute; right: 10px; font-size: 13px; pointer-events: none; color: var(--td); }
+
+      .stats-section { padding: 0 16px 10px; flex-shrink: 0; }
+      .stats-title { font-family: var(--fh); font-size: 8px; letter-spacing: 3px; color: var(--td); margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
+      .stat-row { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
+      .stat-icon { font-size: 12px; width: 16px; text-align: center; }
+      .stat-name { width: 72px; font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--td); }
+      .stat-bar-wrap { flex: 1; height: 7px; background: rgba(255,255,255,.06); border-radius: 3px; overflow: hidden; border: 1px solid rgba(255,255,255,.06); }
+      .stat-bar { height: 100%; border-radius: 2px; transition: width .4s ease; position: relative; }
+      .stat-bar::after { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 50%; background: rgba(255,255,255,.2); border-radius: 2px; }
+      .health-bar { background: linear-gradient(90deg,#00c853,var(--green)); box-shadow: 0 0 5px rgba(0,230,118,.5); }
+      .ki-bar     { background: linear-gradient(90deg,#1565c0,#2979ff); box-shadow: 0 0 5px rgba(41,121,255,.5); }
+      .str-bar    { background: linear-gradient(90deg,#c62828,var(--red)); box-shadow: 0 0 5px rgba(255,23,68,.5); }
+      .def-bar    { background: linear-gradient(90deg,#e65100,#ff9800); box-shadow: 0 0 5px rgba(255,152,0,.5); }
+      .spd-bar    { background: linear-gradient(90deg,#6a1b9a,#aa00ff); box-shadow: 0 0 5px rgba(170,0,255,.5); }
+      .stat-val { font-family: var(--fh); font-size: 9px; color: var(--td); min-width: 24px; text-align: right; }
+
+      /* ── COL DERECHA ── */
+      .right-col { display: flex; flex-direction: column; background: var(--bg-panel); overflow: hidden; height: 100%; }
+      .right-header { padding: 8px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0; background: linear-gradient(90deg, rgba(74,106,255,.08), transparent); }
+      .right-title { font-family: var(--fh); font-size: 10px; letter-spacing: 3px; color: var(--cyan); text-shadow: 0 0 6px var(--cyan); }
+      .final-canvas-wrap {
+        flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+        padding: 12px; position: relative; overflow: hidden;
+        background: linear-gradient(180deg,#0a0d1a 0%,var(--bg-panel) 100%);
+      }
+      .final-canvas-wrap::before {
+        content: ""; position: absolute; inset: 0;
+        background: radial-gradient(ellipse 70% 60% at 50% 80%, rgba(74,106,255,.1) 0%, transparent 70%);
+        pointer-events: none;
+      }
+      #finalCanvas { image-rendering: pixelated; image-rendering: crisp-edges; border-radius: 8px; width: 200px; height: 240px; position: relative; z-index: 1; }
+
+      .final-controls { display: flex; gap: 8px; justify-content: center; padding: 0 14px 10px; flex-shrink: 0; }
+      .ctrl-btn {
+        background: var(--bg-card); border: 1px solid var(--border); color: var(--td);
+        width: 40px; height: 40px; border-radius: var(--r); cursor: pointer; font-size: 16px;
+        transition: all var(--tr); display: flex; align-items: center; justify-content: center;
+        touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+      }
+      .ctrl-btn:hover { border-color: var(--cyan); color: var(--cyan); box-shadow: 0 0 8px rgba(0,229,255,.2); transform: scale(1.05); }
+      .ctrl-btn:active { transform: scale(.95); }
+
+      .save-section { flex: 1; overflow-y: auto; padding: 0 12px 10px; scrollbar-width: none; }
+      .save-section::-webkit-scrollbar { display: none; }
+      .save-title { font-family: var(--fh); font-size: 8px; letter-spacing: 3px; color: var(--td); margin-bottom: 8px; padding: 0 0 5px; border-bottom: 1px solid var(--border); }
+      .slots-list { display: flex; flex-direction: column; gap: 6px; }
+
+      .slot-card {
+        display: flex; align-items: center; gap: 8px;
+        background: var(--bg-card); border: 1px solid var(--border);
+        border-radius: var(--r); padding: 7px 8px; cursor: pointer;
+        transition: all var(--tr); position: relative;
+      }
+      .slot-card:hover { border-color: var(--accent); background: var(--bg-hover); }
+      .slot-card.active-slot { border-color: var(--accent); box-shadow: 0 0 10px rgba(245,196,0,.2); }
+      .slot-card.empty { opacity: .5; }
+      .slot-card.empty:hover { border-color: var(--border); background: var(--bg-card); }
+      .slot-num { font-family: var(--fh); font-size: 16px; font-weight: 900; color: var(--tm); width: 22px; text-align: center; flex-shrink: 0; }
+      .slot-card.active-slot .slot-num { color: var(--accent); }
+      .slot-mini { width: 34px; height: 44px; flex-shrink: 0; position: relative; }
+      .slot-mini canvas { image-rendering: pixelated; border-radius: 3px; width: 100%; height: 100%; }
+      .slot-info { flex: 1; min-width: 0; }
+      .slot-name { font-family: var(--fh); font-size: 10px; letter-spacing: 1px; color: var(--tp); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .slot-level { font-size: 10px; color: var(--td); letter-spacing: 1px; }
+      .slot-save-btn {
+        background: transparent; border: 1px solid var(--border); color: var(--td);
+        padding: 3px 7px; border-radius: 4px; font-size: 9px; font-family: var(--fh);
+        cursor: pointer; letter-spacing: 1px; transition: all var(--tr); flex-shrink: 0;
+      }
+      .slot-save-btn:hover { border-color: var(--accent); color: var(--accent); }
+      .slot-delete-btn {
+        background: transparent; border: none; color: var(--tm); font-size: 13px;
+        cursor: pointer; padding: 2px; transition: color var(--tr); flex-shrink: 0; line-height: 1;
+      }
+      .slot-delete-btn:hover { color: var(--red); }
+
+      .start-btn {
+        flex-shrink: 0; margin: 0 12px 12px; padding: 12px;
+        background: linear-gradient(135deg,#1b5e20,#2e7d32,#388e3c);
+        border: 2px solid #4caf50; border-radius: var(--r); color: white;
+        font-family: var(--fh); font-size: 13px; font-weight: 700; letter-spacing: 3px;
+        cursor: pointer; transition: all var(--tr);
+        text-shadow: 0 1px 3px rgba(0,0,0,.5); position: relative; overflow: hidden;
+        touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+      }
+      .start-btn::before {
+        content: ""; position: absolute; top: 0; left: -100%; right: 0; bottom: 0;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,.15), transparent);
+        transition: left .4s ease;
+      }
+      .start-btn:hover { background: linear-gradient(135deg,#2e7d32,#388e3c,#4caf50); box-shadow: 0 0 18px rgba(76,175,80,.5); transform: translateY(-2px); }
+      .start-btn:hover::before { left: 100%; }
+      .start-btn:active { transform: translateY(0); }
+
+      #toastContainer {
+        position: fixed; bottom: 20px; right: 20px;
+        display: flex; flex-direction: column; gap: 6px; z-index: 1000; pointer-events: none;
+      }
+      .toast {
+        background: var(--bg-card); border: 1px solid var(--glow); border-radius: var(--r);
+        padding: 8px 14px; font-family: var(--fh); font-size: 10px; letter-spacing: 1px;
+        color: var(--tp); max-width: 250px;
+        animation: toastIn .25s ease, toastOut .3s ease 2.3s forwards;
+      }
+      .toast.success { border-color: var(--green); color: var(--green); }
+      .toast.warning { border-color: var(--accent); color: var(--accent); }
+      .toast.error   { border-color: var(--red);   color: var(--red); }
+      @keyframes toastIn  { from { opacity:0; transform: translateX(20px); } to { opacity:1; transform: none; } }
+      @keyframes toastOut { from { opacity:1; } to { opacity:0; transform: translateX(20px); } }
+
+      /* ── RESPONSIVE ── */
+      @media (max-width: 768px) {
+        .app-header { padding: 8px 12px; height: 48px; }
+        .header-title { font-size: 15px; letter-spacing: 1px; }
+        .header-sub { display: none; }
+        .creator-layout { display: flex; flex-direction: column; height: auto; overflow: visible; }
+        .left-col { flex-direction: column; border-right: none; border-bottom: 1px solid var(--border); height: auto; }
+        .cat-nav { width:100%; height:auto; flex-direction:row; flex-shrink:0; border-right:none; border-bottom:1px solid var(--border); padding:6px 8px; overflow-x:auto; overflow-y:hidden; gap:6px; }
+        .cat-btn { width:52px; height:48px; flex-shrink:0; }
+        .items-panel { height: auto; }
+        .items-scroll { max-height: 240px; }
+        .items-grid { grid-template-columns: repeat(4,1fr); }
+        .center-col { height:auto; border-right:none; border-bottom:1px solid var(--border); }
+        .preview-canvas-wrap { min-height:220px; padding:12px 0; }
+        #previewCanvas { width:140px; height:200px; }
+        .right-col { height: auto; }
+        .final-canvas-wrap { padding: 8px; }
+        #finalCanvas { width:160px; height:200px; }
+        .save-section { overflow-y: visible; }
+        .start-btn { margin:0 12px 16px; font-size:12px; padding:14px 12px; letter-spacing:2px; }
+        #toastContainer { bottom:12px; right:50%; transform:translateX(50%); align-items:center; }
+        .toast { text-align:center; max-width:90vw; }
+      }
+      @media (min-width:769px) and (max-width:1024px) {
+        .creator-layout { grid-template-columns: 220px 1fr; grid-template-rows: 1fr auto; height: calc(100vh - 52px); }
+        .left-col { grid-row: 1 / 3; }
+        .center-col { border-right:none; border-bottom:1px solid var(--border); }
+        .right-col { grid-column: 2; }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="app-header">
+      <div style="display:flex;align-items:center">
+        <span class="header-logo">⚡</span>
+        <div style="margin-left:10px">
+          <h1 class="header-title">DRAGON CREATOR <span class="acc">Z</span></h1>
+        </div>
+      </div>
+      <span class="header-sub">CHARACTER BUILDER v4.3</span>
+    </header>
+
+    <main class="creator-layout">
+      <!-- COL IZQUIERDA -->
+      <div class="left-col">
+        <nav class="cat-nav" id="categoryNav">
+          <button class="cat-btn active" data-cat="race">    <span class="cat-icon">👾</span><span class="cat-label">RAZA</span></button>
+          <button class="cat-btn" data-cat="face">           <span class="cat-icon">😶</span><span class="cat-label">CARA</span></button>
+          <button class="cat-btn" data-cat="hair">           <span class="cat-icon">💇</span><span class="cat-label">CABELLO</span></button>
+          <button class="cat-btn" data-cat="shirt">          <span class="cat-icon">👕</span><span class="cat-label">ROPA SUP.</span></button>
+          <button class="cat-btn" data-cat="pants">          <span class="cat-icon">👖</span><span class="cat-label">ROPA INF.</span></button>
+          <button class="cat-btn" data-cat="gloves">         <span class="cat-icon">🥊</span><span class="cat-label">GUANTES</span></button>
+          <button class="cat-btn" data-cat="shoes">          <span class="cat-icon">👟</span><span class="cat-label">CALZADO</span></button>
+          <button class="cat-btn" data-cat="accessory">      <span class="cat-icon">🎽</span><span class="cat-label">ACCESOR.</span></button>
+          <button class="cat-btn" data-cat="aura">           <span class="cat-icon">✨</span><span class="cat-label">AURA</span></button>
+          <button class="cat-btn" data-cat="color">          <span class="cat-icon">🎨</span><span class="cat-label">COLOR</span></button>
+        </nav>
+        <div class="items-panel" id="itemsPanel"></div>
+      </div>
+
+      <!-- COL CENTRAL -->
+      <div class="center-col">
+        <div class="preview-header"><span class="preview-title">VISTA PREVIA</span></div>
+        <div class="view-anim-bar">
+          <div class="view-anim-row">
+            <span class="view-anim-label">VISTA</span>
+            <div class="view-btns" id="viewBtns">
+              <button class="view-btn" data-view="base_view">BASE</button>
+              <button class="view-btn" data-view="trans1_view">TRANS 1</button>
+              <button class="view-btn" data-view="trans2_view">TRANS 2</button>
+            </div>
+          </div>
+          <div class="view-anim-row">
+            <span class="view-anim-label">ANIM</span>
+            <div class="view-btns" id="animBtns">
+              <button class="view-btn active-anim" data-anim="idle">IDLE</button>
+              <button class="view-btn" data-anim="walk">WALK</button>
+              <button class="view-btn" data-anim="run">RUN</button>
+              <button class="view-btn" data-anim="attack_1">ATK1</button>
+              <button class="view-btn" data-anim="attack_2">ATK2</button>
+              <button class="view-btn" data-anim="jump">JUMP</button>
+              <button class="view-btn" data-anim="hurt">HURT</button>
+              <button class="view-btn" data-anim="death">DEATH</button>
+              <button class="view-btn" data-anim="ki_charge">KI</button>
+              <button class="view-btn" data-anim="fly">FLY</button>
+              <button class="view-btn" data-anim="fly_map">MAP</button>
+            </div>
+          </div>
+        </div>
+        <div class="preview-canvas-wrap">
+          <div class="preview-shadow"></div>
+          <canvas id="previewCanvas" width="180" height="260"></canvas>
+        </div>
+        <div class="name-section">
+          <label class="name-label">NOMBRE DEL PERSONAJE</label>
+          <div class="name-input-wrap">
+            <input class="name-input" type="text" id="charName" value="Guerrero Z" maxlength="24" autocomplete="off" />
+            <span class="name-edit-icon">✏️</span>
+          </div>
+        </div>
+        <div class="stats-section">
+          <div class="stats-title">ESTADÍSTICAS</div>
+          <div class="stat-row"><span class="stat-icon">❤️</span><span class="stat-name">SALUD</span>    <div class="stat-bar-wrap"><div class="stat-bar health-bar" id="barHealth" style="width:75%"></div></div><span class="stat-val" id="valHealth">75</span></div>
+          <div class="stat-row"><span class="stat-icon">💙</span><span class="stat-name">KI</span>       <div class="stat-bar-wrap"><div class="stat-bar ki-bar"     id="barKi"     style="width:85%"></div></div><span class="stat-val" id="valKi">85</span></div>
+          <div class="stat-row"><span class="stat-icon">💥</span><span class="stat-name">FUERZA</span>   <div class="stat-bar-wrap"><div class="stat-bar str-bar"    id="barStr"    style="width:80%"></div></div><span class="stat-val" id="valStr">80</span></div>
+          <div class="stat-row"><span class="stat-icon">🛡️</span><span class="stat-name">DEFENSA</span>  <div class="stat-bar-wrap"><div class="stat-bar def-bar"    id="barDef"    style="width:70%"></div></div><span class="stat-val" id="valDef">70</span></div>
+          <div class="stat-row"><span class="stat-icon">⚡</span><span class="stat-name">VELOCIDAD</span><div class="stat-bar-wrap"><div class="stat-bar spd-bar"    id="barSpd"    style="width:90%"></div></div><span class="stat-val" id="valSpd">90</span></div>
+        </div>
+      </div>
+
+      <!-- COL DERECHA -->
+      <div class="right-col">
+        <div class="right-header"><span class="right-title">VISTA FINAL</span></div>
+        <div class="final-canvas-wrap">
+          <canvas id="finalCanvas" width="220" height="260"></canvas>
+        </div>
+        <div class="final-controls">
+          <button class="ctrl-btn" id="btnRotate" title="Rotar">🔄</button>
+          <button class="ctrl-btn" id="btnZoom"   title="Zoom">🔍</button>
+          <button class="ctrl-btn" id="btnFlip"   title="Espejo">↔️</button>
+        </div>
+        <div class="save-section">
+          <div class="save-title">GUARDAR PERSONAJE</div>
+          <div class="slots-list" id="slotsList"></div>
+        </div>
+        <button class="start-btn" id="btnStart">⚔️ COMENZAR A JUGAR</button>
+      </div>
+    </main>
+
+    <div id="toastContainer"></div>
+
+    <script src="character-system.js"></script>
+    <script>
+      "use strict";
+
+      if (!window.CharacterSystem) {
+        document.body.innerHTML = '<p style="color:#f44;padding:40px;font-family:monospace">ERROR: character-system.js no encontrado.</p>';
+        throw new Error("CharacterSystem no cargado");
+      }
+
+      const {
+        player, RACE_CATALOG, AURAS_CATALOG,
+        ACCESSORIES_CATALOG, ACCESSORY_TYPES,
+        addUserAccessory, removeUserAccessory, restoreUserAccessories,
+        VIEW_META, ACTIONS_META,
+        SpriteAnimator, initPlayer, preloadAssets, drawPlayer,
+        tintHair, tintLayer, invalidateHairCache, getById, cycleId,
+        getCatalogFor, getDefaultIds, GENDERLESS_RACES,
+        isCompatibleSheet, getIdleFrameCoords,
+      } = window.CharacterSystem;
+
+      /* ══ Paletas ══ */
+      const SKIN_PALETTE  = ["#f5d5a8","#e8c898","#d4a574","#c07840","#8d5524","#4caf50","#9c88ff","#c0c0c0","#f0e0f0"];
+      const EYE_PALETTE   = ["#1a1a1a","#f5f5f5","#00e676","#2979ff","#b71c1c","#aa00ff","#ffd600","#ff6a00","#00e5ff","#ff69b4"];
+      const HAIR_PALETTE  = ["#1a1a1a","#8B4513","#c0840a","#ffd700","#ff4400","#00e5ff","#aa00ff","#e8eaf6","#ff69b4","#00e676"];
+      const FACE_PALETTE  = ["#b71c1c","#1565c0","#2e7d32","#6a1b9a","#ffd700","#00e5ff","#ff69b4","#1a1a1a","#e040fb","#00e676"];
+      const CLOTH_PALETTE = ["#ff6a00","#1565c0","#b71c1c","#2e7d32","#6a1b9a","#ffd700","#1a1a1a","#e0e0e0"];
+      const AURA_PALETTE  = ["#fdd835","#00b0ff","#ff1744","#aa00ff","#00e676","#e8eaf6","#90a4ae","#ff6a00"];
+
+      /* ══ Estado global ══ */
+      const LS_KEY      = "dragonCreatorZ_slots";
+      const LS_SLOT     = "dragonCreatorZ_activeSlot";
+      const LS_ACC_KEY  = "dragonCreatorZ_accessories";
+      const PAGE_SIZE   = 8;
+
+      let imageMap    = {};
+      let animator    = null, finalAnim = null;
+      let activeCategory = "race";
+      let pageState   = {};
+      let savedSlots  = [null, null, null];
+      let activeSlotIndex = 0;
+      let uiFlipped   = false, uiZoom = 1;
+      let _auraPhase  = 0;
+
+      let activeViewKey  = null;
+      let activeAnimKey  = "idle";
+
+      let _importPendingImg    = null;
+      let _importPendingDataURL = null;
+
+      const charState = {
+        name:        "Guerrero Z",
+        level:       1,
+        glovesId:    "gm0",
+        auraId:      "a1",
+        auraColor:   "#fdd835",
+        clothColor:  "#ff6a00",
+        accessoryId: "ac_none",
+        get viewKey()   { return activeViewKey; },
+        get auraPhase() { return _auraPhase; },
+      };
+
+      /* ══ Canvas ══ */
+      const previewCanvas = document.getElementById("previewCanvas");
+      const previewCtx    = previewCanvas.getContext("2d");
+      const finalCanvas   = document.getElementById("finalCanvas");
+      const finalCtx      = finalCanvas.getContext("2d");
+
+      /* ══ Helper ══ */
+      function currentCatalog(cat) {
+        return getCatalogFor(cat, player.appearance.raceId, player.appearance.gender);
+      }
+
+      /* ══ Persistencia de accesorios importados ══ */
+      function _saveAccessoriesToLS() {
+        const toStore = ACCESSORIES_CATALOG
+          .filter(a => a.id !== "ac_none" && a.dataURL)
+          .map(a => ({ id: a.id, name: a.name, type: a.type, color: a.color, dataURL: a.dataURL }));
+        try { localStorage.setItem(LS_ACC_KEY, JSON.stringify(toStore)); } catch(e) {}
+      }
+
+      async function _restoreAccessoriesFromLS() {
+        try {
+          const raw = localStorage.getItem(LS_ACC_KEY);
+          if (!raw) return;
+          const list = JSON.parse(raw);
+          await restoreUserAccessories(list);
+        } catch(e) {}
+      }
+
+      /* ══════════════════════════════════════════════════════════════
+       *  drawThumbCanvas — CORREGIDO v4.3.1
+       *  Usa tintLayer directamente sobre el frame idle recortado,
+       *  igual que lo hace drawPlayer. Ya no hay desajuste entre
+       *  la miniatura y el personaje en pantalla.
+       * ══════════════════════════════════════════════════════════════ */
+      function drawThumbCanvas(canvas, cat, item) {
+        const ctx = canvas.getContext("2d");
+        const w = canvas.width, h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = "#12172e";
+        ctx.fillRect(0, 0, w, h);
+
+        const img = cat === "accessory"
+          ? (item.userImage || null)
+          : (item.spriteKey ? imageMap[item.spriteKey] : null);
+
+        if (img && img.complete && img.naturalWidth) {
+          const sheet = isCompatibleSheet(img);
+          let srcX, srcY, srcW, srcH;
+          if (sheet) {
+            const coords = getIdleFrameCoords(img);
+            srcX = coords.srcX; srcY = coords.srcY;
+            srcW = coords.fw;   srcH = coords.fh;
+            if (srcX + srcW > img.naturalWidth || srcY + srcH > img.naturalHeight) {
+              srcX = 0; srcY = 0; srcW = img.naturalWidth; srcH = img.naturalHeight;
+            }
+          } else {
+            srcX = 0; srcY = 0; srcW = img.naturalWidth; srcH = img.naturalHeight;
+          }
+
+          const scale = Math.min(w / srcW, h / srcH) * 0.88;
+          const dw = Math.round(srcW * scale), dh = Math.round(srcH * scale);
+          const dx = Math.round((w - dw) / 2),  dy = Math.round((h - dh) / 2);
+          ctx.imageSmoothingEnabled = false;
+
+          // ── CABELLO: usa tintLayer v4.3.1 ──
+          if (cat === "hair" && item.tintable && player.appearance.hairColor) {
+            const frameCoords = sheet ? { srcX, srcY, fw: srcW, fh: srcH } : null;
+            const cacheKey = (item.id || "hair") + "|" + (img.src || "");
+            const tinted = tintLayer(img, player.appearance.hairColor, cacheKey, dw, dh, frameCoords);
+            if (tinted) ctx.drawImage(tinted, dx, dy, dw, dh);
+            else ctx.drawImage(img, srcX, srcY, srcW, srcH, dx, dy, dw, dh);
+
+          // ── CARA: usa tintLayer v4.3.1 ──
+          } else if (cat === "face" && item.tintable) {
+            const faceColor = item.eyeColor
+              ? (player.appearance.eyeColor || null)
+              : (player.appearance.faceColor || null);
+            if (faceColor) {
+              const frameCoords = sheet ? { srcX, srcY, fw: srcW, fh: srcH } : null;
+              const cacheKey = (item.id || "face") + "|" + (img.src || "");
+              const tinted = tintLayer(img, faceColor, cacheKey, dw, dh, frameCoords);
+              if (tinted) ctx.drawImage(tinted, dx, dy, dw, dh);
+              else ctx.drawImage(img, srcX, srcY, srcW, srcH, dx, dy, dw, dh);
+            } else {
+              ctx.drawImage(img, srcX, srcY, srcW, srcH, dx, dy, dw, dh);
+            }
+
+          // ── AURA: multiply color ──
+          } else if (cat === "aura" && item.color) {
+            ctx.drawImage(img, srcX, srcY, srcW, srcH, dx, dy, dw, dh);
+            const aColor = charState.auraColor || item.color;
+            ctx.globalCompositeOperation = "multiply";
+            ctx.fillStyle = aColor;
+            ctx.fillRect(dx, dy, dw, dh);
+            ctx.globalCompositeOperation = "destination-in";
+            ctx.drawImage(img, srcX, srcY, srcW, srcH, dx, dy, dw, dh);
+            ctx.globalCompositeOperation = "source-over";
+
+          // ── RESTO: dibujo directo ──
+          } else {
+            ctx.drawImage(img, srcX, srcY, srcW, srcH, dx, dy, dw, dh);
+          }
+
+        } else {
+          // Sin imagen — color sólido + icono
+          const color = item.color || item.color1 || item.skinColor || "#2a3560";
+          if (color) {
+            ctx.fillStyle = color + "88";
+            ctx.beginPath();
+            if (ctx.roundRect) ctx.roundRect(4, 4, w - 8, h - 8, 4);
+            else ctx.rect(4, 4, w - 8, h - 8);
+            ctx.fill();
+          }
+          const ACC_TYPE_ICONS = {
+            belt:"🥋", cape:"🧣", bag:"🎒", collar:"📿",
+            brace:"⌚", mask:"🥽", scouter:"🔭", tail:"🐾", wings:"🦋", none:"➕", other:"✨",
+          };
+          const BASE_ICONS = { race:"👾", face:"😶", hair:"💇", shirt:"👕", pants:"👖", gloves:"🥊", shoes:"👟", aura:"✨" };
+          const icon = cat === "accessory"
+            ? (ACC_TYPE_ICONS[item.type] || "🎽")
+            : (BASE_ICONS[cat] || "?");
+          ctx.font = `${Math.round(h * 0.38)}px sans-serif`;
+          ctx.textAlign = "center"; ctx.textBaseline = "middle";
+          ctx.fillText(icon, w / 2, h / 2);
+          ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+        }
+      }
+
+      /* ══ Selector vista / animación ══ */
+      function initViewAnimBar() {
+        document.querySelectorAll("#viewBtns .view-btn").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const vk = btn.dataset.view;
+            if (activeViewKey === vk) {
+              activeViewKey = null;
+              btn.classList.remove("active-view");
+              _setAnim(activeAnimKey);
+            } else {
+              activeViewKey = vk;
+              document.querySelectorAll("#viewBtns .view-btn").forEach(b => b.classList.remove("active-view"));
+              document.querySelectorAll("#animBtns .view-btn").forEach(b => b.classList.remove("active-anim"));
+              btn.classList.add("active-view");
+              animator.setView(vk);
+              finalAnim.setView(vk);
+            }
+          });
+        });
+        document.querySelectorAll("#animBtns .view-btn").forEach((btn) => {
+          btn.addEventListener("click", () => _setAnim(btn.dataset.anim));
+        });
+      }
+
+      function _setAnim(animKey) {
+        activeViewKey = null; activeAnimKey = animKey;
+        document.querySelectorAll("#viewBtns .view-btn").forEach(b => b.classList.remove("active-view"));
+        document.querySelectorAll("#animBtns .view-btn").forEach(b => b.classList.remove("active-anim"));
+        const t = document.querySelector(`#animBtns .view-btn[data-anim="${animKey}"]`);
+        if (t) t.classList.add("active-anim");
+        animator.clearView(); animator.play(animKey);
+        finalAnim.clearView(); finalAnim.play(animKey);
+      }
+
+      /* ══ Config de categorías ══ */
+      const CAT_CONFIG = {
+        race:      { label:"SELECCIONA LA RAZA",          catalog: RACE_CATALOG,     prop:"raceId",       needsGender:true },
+        face:      { label:"SELECCIONA LA CARA",                                       prop:"faceId",       needsFaceColor:true },
+        hair:      { label:"SELECCIONA EL CABELLO",                                    prop:"hairId",       needsColor:true, colorProp:"hairColor",  colorLabel:"COLOR CABELLO", palette:HAIR_PALETTE },
+        shirt:     { label:"SELECCIONA LA ROPA SUPERIOR",                              prop:"topId"   },
+        pants:     { label:"SELECCIONA LA ROPA INFERIOR",                              prop:"bottomId"},
+        gloves:    { label:"SELECCIONA LOS GUANTES",                                   prop:"glovesId",     isExtra:true },
+        shoes:     { label:"SELECCIONA EL CALZADO",                                    prop:"shoesId" },
+        accessory: { label:"ACCESORIOS IMPORTADOS",       catalog: ACCESSORIES_CATALOG, prop:"accessoryId", isExtra:true, isAccImport:true },
+        aura:      { label:"SELECCIONA EL AURA",          catalog: AURAS_CATALOG,      prop:"auraId",       isExtra:true, needsColor:true, colorProp:"auraColor", colorLabel:"COLOR AURA", palette:AURA_PALETTE },
+        color:     { label:"COLORES", special:"color" },
+      };
+
+      /* ══ renderItemsPanel ══ */
+      function renderItemsPanel(cat) {
+        const panel = document.getElementById("itemsPanel");
+        panel.innerHTML = "";
+        const cfg = CAT_CONFIG[cat];
+        if (!cfg) return;
+
+        const titleEl = document.createElement("div");
+        titleEl.className = "items-section-title";
+        const raceId  = player.appearance.raceId;
+        const gender  = player.appearance.gender;
+        const raceDef = RACE_CATALOG.find(r => r.id === raceId);
+        const showBadge = !["race","color","aura","accessory"].includes(cat);
+        if (showBadge && raceDef) {
+          titleEl.innerHTML = cfg.label + `<span class="race-badge">${raceDef.name}${GENDERLESS_RACES.includes(raceId) ? "" : gender === "female" ? " ♀" : " ♂"}</span>`;
+        } else {
+          titleEl.textContent = cfg.label;
+        }
+        panel.appendChild(titleEl);
+
+        if (cfg.special === "color") { renderColorPanel(panel); return; }
+
+        const catalog = cfg.catalog || currentCatalog(cat);
+
+        if (cfg.needsGender) {
+          const gRow = document.createElement("div");
+          gRow.className = "gender-row";
+          const genderless = GENDERLESS_RACES.includes(player.appearance.raceId);
+          ["male","female"].forEach(g => {
+            const btn = document.createElement("button");
+            btn.className = "gender-btn" + (player.appearance.gender === g ? " active" : "");
+            btn.textContent = g === "male" ? "♂ MASC" : "♀ FEM";
+            if (genderless) btn.disabled = true;
+            btn.addEventListener("click", () => {
+              if (player.appearance.gender === g) return;
+              player.appearance.gender = g;
+              _resetEquipmentForCurrentRaceGender();
+              document.querySelectorAll(".gender-btn").forEach(b => b.classList.remove("active"));
+              btn.classList.add("active");
+              updateStats();
+              if (activeCategory !== "race") renderItemsPanel(activeCategory);
+            });
+            gRow.appendChild(btn);
+          });
+          panel.appendChild(gRow);
+        }
+
+        const scroll = document.createElement("div");
+        scroll.className = "items-scroll";
+        panel.appendChild(scroll);
+
+        const page = pageState[cat] || 0;
+        const totalPages = Math.ceil(catalog.length / PAGE_SIZE);
+        const items = catalog.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
+
+        const grid = document.createElement("div");
+        grid.className = "items-grid";
+
+        items.forEach(item => {
+          const thumb = document.createElement("div");
+          thumb.className = "item-thumb";
+          const currentId = cfg.isExtra
+            ? (charState[cfg.prop] || player.appearance[cfg.prop])
+            : player.appearance[cfg.prop];
+          if (item.id === currentId) thumb.classList.add("selected");
+
+          const cv = document.createElement("canvas");
+          cv.width = 52; cv.height = 52;
+          drawThumbCanvas(cv, cat, item);
+          thumb.appendChild(cv);
+
+          const lbl = document.createElement("div");
+          lbl.className = "item-label";
+          lbl.textContent = item.name || item.id;
+          thumb.appendChild(lbl);
+
+          if (cat === "accessory" && item.type && item.type !== "none") {
+            const td = ACCESSORY_TYPES.find(t => t.id === item.type);
+            const badge = document.createElement("div");
+            badge.className = "acc-type-badge";
+            badge.textContent = (td ? td.icon : "✨");
+            thumb.appendChild(badge);
+
+            const delBtn = document.createElement("button");
+            delBtn.className = "acc-delete-btn";
+            delBtn.textContent = "✕";
+            delBtn.title = "Eliminar accesorio";
+            delBtn.addEventListener("click", e => {
+              e.stopPropagation();
+              if (charState.accessoryId === item.id || player.appearance.accessoryId === item.id) {
+                charState.accessoryId = "ac_none";
+                player.appearance.accessoryId = "ac_none";
+              }
+              removeUserAccessory(item.id);
+              _saveAccessoriesToLS();
+              renderItemsPanel(cat);
+              showToast("Accesorio eliminado", "warning");
+            });
+            thumb.appendChild(delBtn);
+          }
+
+          thumb.addEventListener("click", () => {
+            grid.querySelectorAll(".item-thumb").forEach(t => t.classList.remove("selected"));
+            thumb.classList.add("selected");
+
+            if (cfg.isExtra) {
+              charState[cfg.prop] = item.id;
+              player.appearance[cfg.prop] = item.id;
+              if (cat === "aura" && item.color) {
+                charState.auraColor = item.color;
+                player.appearance.auraColor = item.color;
+                grid.querySelectorAll("canvas").forEach((c, i) => { if (items[i]) drawThumbCanvas(c, cat, items[i]); });
+              }
+            } else {
+              player.appearance[cfg.prop] = item.id;
+              if (cat === "race") {
+                const race = RACE_CATALOG.find(r => r.id === item.id);
+                if (race) {
+                  player.appearance.skinColor = race.skinColor;
+                  player.appearance.eyeColor  = race.eyeColor;
+                }
+                if (GENDERLESS_RACES.includes(item.id)) player.appearance.gender = "male";
+                _resetEquipmentForCurrentRaceGender();
+              }
+              if (cat === "hair") invalidateHairCache();
+              if (cat === "face") invalidateHairCache();
+            }
+            updateStats();
+          });
+          grid.appendChild(thumb);
+        });
+        scroll.appendChild(grid);
+
+        if (cfg.needsFaceColor) {
+          renderFaceColorSection(panel, grid, items, cat);
+        }
+
+        if (cfg.needsColor && cfg.palette) {
+          renderColorSwatchSection(panel, grid, items, cat, cfg);
+        }
+
+        if (cfg.isAccImport) {
+          renderImportPanel(panel);
+        }
+
+        if (totalPages > 1) {
+          const pag = document.createElement("div");
+          pag.className = "pagination";
+          const prev = document.createElement("button"); prev.className="page-btn"; prev.textContent="‹"; prev.disabled = page===0;
+          prev.addEventListener("click", () => { pageState[cat]=page-1; renderItemsPanel(cat); });
+          const info = document.createElement("span"); info.className="page-info"; info.textContent=`${page+1} / ${totalPages}`;
+          const next = document.createElement("button"); next.className="page-btn"; next.textContent="›"; next.disabled = page>=totalPages-1;
+          next.addEventListener("click", () => { pageState[cat]=page+1; renderItemsPanel(cat); });
+          pag.appendChild(prev); pag.appendChild(info); pag.appendChild(next);
+          panel.appendChild(pag);
+        }
+      }
+
+      /* ── Sección color de ojos / cara ── */
+      function renderFaceColorSection(panel, grid, items, cat) {
+        const wrap = document.createElement("div");
+        wrap.className = "color-section";
+
+        const t = document.createElement("div");
+        t.className = "color-section-title";
+        t.textContent = "COLOR OJOS / MARCAS";
+        wrap.appendChild(t);
+
+        const eyeRow = document.createElement("div");
+        eyeRow.className = "face-color-row";
+        const eyeLbl = document.createElement("span");
+        eyeLbl.className = "face-color-label";
+        eyeLbl.textContent = "OJOS";
+        eyeRow.appendChild(eyeLbl);
+
+        const eyePicker = document.createElement("input");
+        eyePicker.type = "color";
+        eyePicker.value = player.appearance.eyeColor || "#3a2a1a";
+        eyePicker.className = "face-color-picker";
+
+        EYE_PALETTE.forEach(hex => {
+          const sw = document.createElement("div");
+          sw.className = "face-color-chip" + (player.appearance.eyeColor === hex ? " active" : "");
+          sw.style.background = hex;
+          sw.addEventListener("click", () => {
+            player.appearance.eyeColor = hex;
+            eyePicker.value = hex;
+            eyeRow.querySelectorAll(".face-color-chip").forEach(c => c.classList.remove("active"));
+            sw.classList.add("active");
+            invalidateHairCache();
+            grid.querySelectorAll("canvas").forEach((c, i) => { if (items[i]) drawThumbCanvas(c, cat, items[i]); });
+          });
+          eyeRow.appendChild(sw);
+        });
+        eyePicker.addEventListener("input", e => {
+          player.appearance.eyeColor = e.target.value;
+          eyeRow.querySelectorAll(".face-color-chip").forEach(c => c.classList.remove("active"));
+          invalidateHairCache();
+          grid.querySelectorAll("canvas").forEach((c, i) => { if (items[i]) drawThumbCanvas(c, cat, items[i]); });
+        });
+        eyeRow.appendChild(eyePicker);
+        wrap.appendChild(eyeRow);
+
+        const markRow = document.createElement("div");
+        markRow.className = "face-color-row";
+        const markLbl = document.createElement("span");
+        markLbl.className = "face-color-label";
+        markLbl.textContent = "MARCAS";
+        markRow.appendChild(markLbl);
+
+        const markPicker = document.createElement("input");
+        markPicker.type = "color";
+        markPicker.value = player.appearance.faceColor || "#b71c1c";
+        markPicker.className = "face-color-picker";
+
+        FACE_PALETTE.forEach(hex => {
+          const sw = document.createElement("div");
+          sw.className = "face-color-chip" + (player.appearance.faceColor === hex ? " active" : "");
+          sw.style.background = hex;
+          sw.addEventListener("click", () => {
+            player.appearance.faceColor = hex;
+            markPicker.value = hex;
+            markRow.querySelectorAll(".face-color-chip").forEach(c => c.classList.remove("active"));
+            sw.classList.add("active");
+            invalidateHairCache();
+            grid.querySelectorAll("canvas").forEach((c, i) => { if (items[i]) drawThumbCanvas(c, cat, items[i]); });
+          });
+          markRow.appendChild(sw);
+        });
+        markPicker.addEventListener("input", e => {
+          player.appearance.faceColor = e.target.value;
+          markRow.querySelectorAll(".face-color-chip").forEach(c => c.classList.remove("active"));
+          invalidateHairCache();
+          grid.querySelectorAll("canvas").forEach((c, i) => { if (items[i]) drawThumbCanvas(c, cat, items[i]); });
+        });
+        markRow.appendChild(markPicker);
+        wrap.appendChild(markRow);
+        panel.appendChild(wrap);
+      }
+
+      /* ── Sección swatches de color genérica ── */
+      function renderColorSwatchSection(panel, grid, items, cat, cfg) {
+        const cs = document.createElement("div");
+        cs.className = "color-section";
+        const cst = document.createElement("div");
+        cst.className = "color-section-title";
+        cst.textContent = cfg.colorLabel || "COLOR";
+        cs.appendChild(cst);
+
+        const swWrap = document.createElement("div");
+        swWrap.style.cssText = "display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px";
+
+        const picker = document.createElement("input");
+        picker.type  = "color";
+        picker.value = (cfg.isExtra ? charState[cfg.colorProp] : player.appearance[cfg.colorProp]) || "#ffd700";
+
+        cfg.palette.forEach(hex => {
+          const sw = document.createElement("div");
+          const cur = cfg.isExtra ? charState[cfg.colorProp] : player.appearance[cfg.colorProp];
+          sw.style.cssText = `width:20px;height:20px;border-radius:3px;background:${hex};border:2px solid ${cur === hex ? "white" : "transparent"};cursor:pointer;flex-shrink:0;transition:.12s`;
+          sw.addEventListener("click", () => {
+            swWrap.querySelectorAll("div").forEach(s => s.style.borderColor = "transparent");
+            sw.style.borderColor = "white";
+            if (cfg.isExtra) { charState[cfg.colorProp] = hex; player.appearance[cfg.colorProp] = hex; }
+            else { player.appearance[cfg.colorProp] = hex; if (cfg.colorProp === "hairColor") invalidateHairCache(); }
+            picker.value = hex;
+            if (cat === "hair" || cat === "aura") {
+              grid.querySelectorAll("canvas").forEach((c, i) => { if (items[i]) drawThumbCanvas(c, cat, items[i]); });
+            }
+          });
+          swWrap.appendChild(sw);
+        });
+        cs.appendChild(swWrap);
+
+        const pickerRow = document.createElement("div");
+        pickerRow.style.cssText = "display:flex;align-items:center;gap:6px";
+        const pickerLabel = document.createElement("span");
+        pickerLabel.style.cssText = "font-size:10px;color:var(--td);letter-spacing:1px;flex:1";
+        pickerLabel.textContent = "PERSONALIZAR";
+        picker.addEventListener("input", e => {
+          if (cfg.isExtra) { charState[cfg.colorProp] = e.target.value; player.appearance[cfg.colorProp] = e.target.value; }
+          else { player.appearance[cfg.colorProp] = e.target.value; if (cfg.colorProp === "hairColor") invalidateHairCache(); }
+          swWrap.querySelectorAll("div").forEach(s => s.style.borderColor = "transparent");
+          if (cat === "hair" || cat === "aura") {
+            grid.querySelectorAll("canvas").forEach((c, i) => { if (items[i]) drawThumbCanvas(c, cat, items[i]); });
+          }
+        });
+        pickerRow.appendChild(pickerLabel);
+        pickerRow.appendChild(picker);
+        cs.appendChild(pickerRow);
+        panel.appendChild(cs);
+      }
+
+      /* ── Panel de importación de accesorios ── */
+      function renderImportPanel(panel) {
+        const ip = document.createElement("div");
+        ip.className = "import-panel";
+
+        const t = document.createElement("div");
+        t.className = "import-title";
+        t.textContent = "➕ IMPORTAR SPRITESHEET";
+        ip.appendChild(t);
+
+        const preview = document.createElement("img");
+        preview.className = "import-preview";
+        preview.alt = "preview";
+        if (_importPendingImg && _importPendingDataURL) {
+          preview.src = _importPendingDataURL;
+          preview.classList.add("visible");
+        }
+        ip.appendChild(preview);
+
+        const row1 = document.createElement("div");
+        row1.className = "import-row";
+
+        const nameInput = document.createElement("input");
+        nameInput.type = "text";
+        nameInput.className = "import-input-text";
+        nameInput.placeholder = "Nombre del accesorio";
+        nameInput.maxLength = 20;
+        row1.appendChild(nameInput);
+
+        const typeSelect = document.createElement("select");
+        typeSelect.className = "import-select";
+        ACCESSORY_TYPES.forEach(tp => {
+          const opt = document.createElement("option");
+          opt.value = tp.id;
+          opt.textContent = `${tp.icon} ${tp.label}`;
+          typeSelect.appendChild(opt);
+        });
+        row1.appendChild(typeSelect);
+        ip.appendChild(row1);
+
+        const row2 = document.createElement("div");
+        row2.className = "import-row";
+
+        const fileLabel = document.createElement("label");
+        fileLabel.className = "import-file-label";
+        const fileInput = document.createElement("input");
+        fileInput.type = "file";
+        fileInput.accept = "image/*";
+        fileInput.addEventListener("change", e => {
+          const file = e.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = ev => {
+            _importPendingDataURL = ev.target.result;
+            const img = new Image();
+            img.onload = () => {
+              _importPendingImg = img;
+              preview.src = _importPendingDataURL;
+              preview.classList.add("visible");
+              addBtn.disabled = false;
+            };
+            img.onerror = () => { showToast("No se pudo cargar la imagen", "error"); };
+            img.src = _importPendingDataURL;
+          };
+          reader.readAsDataURL(file);
+        });
+        fileLabel.appendChild(fileInput);
+        fileLabel.appendChild(document.createTextNode("📁 ARCHIVO PNG"));
+        row2.appendChild(fileLabel);
+
+        const addBtn = document.createElement("button");
+        addBtn.className = "import-add-btn";
+        addBtn.disabled = !_importPendingImg;
+        addBtn.innerHTML = "✚ AÑADIR";
+        addBtn.addEventListener("click", () => {
+          if (!_importPendingImg || !_importPendingDataURL) {
+            showToast("Primero selecciona un archivo PNG", "warning");
+            return;
+          }
+          const name = nameInput.value.trim() || "Accesorio";
+          const type = typeSelect.value;
+          addUserAccessory({
+            name,
+            type,
+            color: null,
+            userImage: _importPendingImg,
+            dataURL: _importPendingDataURL,
+          });
+          _saveAccessoriesToLS();
+          _importPendingImg = null;
+          _importPendingDataURL = null;
+          showToast(`"${name}" añadido`, "success");
+          renderItemsPanel("accessory");
+        });
+        row2.appendChild(addBtn);
+        ip.appendChild(row2);
+
+        panel.appendChild(ip);
+      }
+
+      /* ══ Reset equipo al cambiar raza/género ══ */
+      function _resetEquipmentForCurrentRaceGender() {
+        const raceId  = player.appearance.raceId;
+        const gender  = player.appearance.gender;
+        const defaults = getDefaultIds(raceId, gender);
+        player.appearance.faceId      = defaults.faceId;
+        player.appearance.hairId      = defaults.hairId;
+        player.appearance.topId       = defaults.topId;
+        player.appearance.bottomId    = defaults.bottomId;
+        player.appearance.shoesId     = defaults.shoesId;
+        charState.glovesId            = defaults.glovesId;
+        player.appearance.glovesId    = defaults.glovesId;
+        invalidateHairCache();
+        ["face","hair","shirt","pants","shoes","gloves"].forEach(c => { pageState[c] = 0; });
+      }
+
+      /* ══ Panel especial de colores ══ */
+      function renderColorPanel(panel) {
+        const scroll = document.createElement("div");
+        scroll.className = "items-scroll";
+        panel.appendChild(scroll);
+        const cs = document.createElement("div");
+        cs.className = "color-section";
+        cs.style.cssText = "border-top:none;padding:8px 0";
+        scroll.appendChild(cs);
+
+        function addColorRow(label, palette, prop, isExtra) {
+          const row = document.createElement("div"); row.className="color-row";
+          const lbl = document.createElement("span"); lbl.className="color-row-label"; lbl.textContent=label;
+          row.appendChild(lbl);
+          const gwrap = document.createElement("div"); gwrap.className="color-gradient-wrap";
+          const swWrap = document.createElement("div"); swWrap.style.cssText="display:flex;gap:3px;flex-wrap:wrap;flex:1";
+          const picker = document.createElement("input"); picker.type="color";
+          const curVal = isExtra ? charState[prop] : player.appearance[prop];
+          picker.value = curVal || "#ffffff";
+          picker.style.cssText = "margin-left:4px;flex-shrink:0";
+          const result = document.createElement("div"); result.className="color-result"; result.style.background=curVal||"#fff";
+          function updateResult() { result.style.background=(isExtra?charState[prop]:player.appearance[prop])||"#fff"; }
+          palette.forEach(hex => {
+            const sw = document.createElement("div");
+            const cur = isExtra?charState[prop]:player.appearance[prop];
+            sw.style.cssText=`width:16px;height:16px;border-radius:3px;background:${hex};border:2px solid ${cur===hex?"white":"transparent"};cursor:pointer;flex-shrink:0;transition:.12s`;
+            sw.addEventListener("click", () => {
+              swWrap.querySelectorAll("div").forEach(s=>s.style.borderColor="transparent");
+              sw.style.borderColor="white";
+              if(isExtra){charState[prop]=hex;player.appearance[prop]=hex;}
+              else{
+                player.appearance[prop]=hex;
+                if(prop==="hairColor"||prop==="eyeColor"||prop==="faceColor") invalidateHairCache();
+              }
+              picker.value=hex; updateResult();
+            });
+            swWrap.appendChild(sw);
+          });
+          picker.addEventListener("input", e=>{
+            if(isExtra){charState[prop]=e.target.value;player.appearance[prop]=e.target.value;}
+            else{
+              player.appearance[prop]=e.target.value;
+              if(prop==="hairColor"||prop==="eyeColor"||prop==="faceColor") invalidateHairCache();
+            }
+            swWrap.querySelectorAll("div").forEach(s=>s.style.borderColor="transparent");
+            updateResult();
+          });
+          gwrap.appendChild(swWrap); gwrap.appendChild(picker); gwrap.appendChild(result);
+          row.appendChild(gwrap); cs.appendChild(row);
+        }
+
+        addColorRow("PIEL",    SKIN_PALETTE,  "skinColor",  false);
+        addColorRow("OJOS",    EYE_PALETTE,   "eyeColor",   false);
+        addColorRow("MARCAS",  FACE_PALETTE,  "faceColor",  false);
+        addColorRow("CABELLO", HAIR_PALETTE,  "hairColor",  false);
+        addColorRow("ROPA",    CLOTH_PALETTE, "clothColor", true);
+        addColorRow("AURA",    AURA_PALETTE,  "auraColor",  true);
+      }
+
+      /* ══ Stats ══ */
+      const RACE_STATS = {
+        human:    { health:85, ki:75,  strength:80, defense:80, speed:80 },
+        saiyan:   { health:80, ki:90,  strength:95, defense:70, speed:85 },
+        namekian: { health:90, ki:85,  strength:85, defense:90, speed:70 },
+        android:  { health:95, ki:100, strength:90, defense:95, speed:75 },
+        kaioshin: { health:70, ki:100, strength:75, defense:80, speed:90 },
+        frieza:   { health:85, ki:95,  strength:88, defense:85, speed:95 },
+      };
+      function updateStats() {
+        const stats = RACE_STATS[player.appearance.raceId] || RACE_STATS.human;
+        [
+          ["health","barHealth","valHealth"],
+          ["ki","barKi","valKi"],
+          ["strength","barStr","valStr"],
+          ["defense","barDef","valDef"],
+          ["speed","barSpd","valSpd"],
+        ].forEach(([key,barId,valId]) => {
+          const v = stats[key] || 75;
+          document.getElementById(barId).style.width = v + "%";
+          document.getElementById(valId).textContent = v;
+        });
+      }
+
+      /* ══ buildCharState ══ */
+      function buildCharState() {
+        return {
+          glovesId:    charState.glovesId    || player.appearance.glovesId    || "gm0",
+          auraId:      charState.auraId      || player.appearance.auraId      || "a0",
+          auraColor:   charState.auraColor   || player.appearance.auraColor   || "#fdd835",
+          accessoryId: charState.accessoryId || player.appearance.accessoryId || "ac_none",
+          auraPhase:   _auraPhase,
+          viewKey:     activeViewKey,
+        };
+      }
+
+      /* ══ Game Loop ══ */
+      function loop(now) {
+        requestAnimationFrame(loop);
+        _auraPhase++;
+        animator.update(now);
+        finalAnim.update(now);
+        const ps = buildCharState();
+
+        previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+        drawPlayer(previewCtx, previewCanvas.width / 2, previewCanvas.height - 16, player, imageMap, animator, ps);
+
+        finalCtx.clearRect(0, 0, finalCanvas.width, finalCanvas.height);
+        finalCtx.save();
+        const fw = finalCanvas.width, fh = finalCanvas.height;
+        finalCtx.translate(fw / 2, fh / 2);
+        if (uiFlipped) finalCtx.scale(-uiZoom, uiZoom);
+        else           finalCtx.scale(uiZoom, uiZoom);
+        finalCtx.translate(-fw / 2, -fh / 2);
+        const fp = Object.assign({}, player, { direction: 1, appearance: Object.assign({}, player.appearance) });
+        drawPlayer(finalCtx, fw / 2, fh - 16, fp, imageMap, finalAnim, ps);
+        finalCtx.restore();
+      }
+
+      /* ══ Slots ══ */
+      function loadSlots() {
+        try {
+          const raw = localStorage.getItem(LS_KEY);
+          const parsed = raw ? JSON.parse(raw) : null;
+          savedSlots = Array.isArray(parsed)
+            ? [parsed[0] ?? null, parsed[1] ?? null, parsed[2] ?? null]
+            : [null, null, null];
+        } catch { savedSlots = [null, null, null]; }
+        const si = parseInt(localStorage.getItem(LS_SLOT) || "0", 10);
+        activeSlotIndex = Number.isFinite(si) ? Math.max(0, Math.min(2, si)) : 0;
+      }
+
+      function saveSlots() { localStorage.setItem(LS_KEY, JSON.stringify(savedSlots)); }
+
+      function saveToSlot(i) {
+        const d = {
+          name:       document.getElementById("charName").value || "Guerrero Z",
+          level:      1,
+          race:       player.appearance.raceId,
+          gender:     player.appearance.gender,
+          faceId:     player.appearance.faceId,
+          faceColor:  player.appearance.faceColor,
+          hair:       player.appearance.hairId,
+          hairColor:  player.appearance.hairColor,
+          shirt:      player.appearance.topId,
+          pants:      player.appearance.bottomId,
+          shoes:      player.appearance.shoesId,
+          skinColor:  player.appearance.skinColor,
+          eyeColor:   player.appearance.eyeColor,
+          gloves:     charState.glovesId    || player.appearance.glovesId    || "gm0",
+          aura:       charState.auraId      || player.appearance.auraId      || "a0",
+          auraColor:  charState.auraColor   || player.appearance.auraColor   || "#fdd835",
+          clothColor: charState.clothColor  || "#ff6a00",
+          accessory:  charState.accessoryId || player.appearance.accessoryId || "ac_none",
+        };
+        savedSlots[i] = d;
+        activeSlotIndex = i;
+        localStorage.setItem(LS_SLOT, String(i));
+        saveSlots();
+        renderSlots();
+        showToast(`"${d.name}" guardado en slot ${i + 1}`, "success");
+      }
+
+      function loadFromSlot(i) {
+        const d = savedSlots[i];
+        if (!d) return;
+        player.appearance.raceId      = d.race       || "human";
+        player.appearance.gender      = d.gender     || "male";
+        player.appearance.faceId      = d.faceId     || "fm0";
+        player.appearance.faceColor   = d.faceColor  || null;
+        player.appearance.hairId      = d.hair       || "hm1";
+        player.appearance.hairColor   = d.hairColor  || "#1a1a1a";
+        player.appearance.topId       = d.shirt      || "sm1";
+        player.appearance.bottomId    = d.pants      || "pm1";
+        player.appearance.shoesId     = d.shoes      || "shm1";
+        player.appearance.skinColor   = d.skinColor  || "#e8c898";
+        player.appearance.eyeColor    = d.eyeColor   || "#3a2a1a";
+        charState.glovesId            = d.gloves     || "gm0";
+        charState.auraId              = d.aura       || "a0";
+        charState.auraColor           = d.auraColor  || "#fdd835";
+        charState.clothColor          = d.clothColor || "#ff6a00";
+        charState.accessoryId         = d.accessory  || "ac_none";
+        player.appearance.glovesId    = charState.glovesId;
+        player.appearance.auraId      = charState.auraId;
+        player.appearance.auraColor   = charState.auraColor;
+        player.appearance.accessoryId = charState.accessoryId;
+        document.getElementById("charName").value = d.name || "Guerrero Z";
+        invalidateHairCache();
+        activeSlotIndex = i;
+        localStorage.setItem(LS_SLOT, String(i));
+        renderSlots();
+        renderItemsPanel(activeCategory);
+        updateStats();
+        showToast(`"${d.name}" cargado`, "success");
+      }
+
+      function deleteSlot(i) {
+        savedSlots[i] = null;
+        saveSlots();
+        renderSlots();
+        showToast(`Slot ${i + 1} eliminado`, "warning");
+      }
+
+      function renderSlots() {
+        const list = document.getElementById("slotsList");
+        list.innerHTML = "";
+        for (let i = 0; i < 3; i++) {
+          const d = savedSlots[i];
+          const card = document.createElement("div");
+          card.className = "slot-card" + (d ? "" : " empty") + (i === activeSlotIndex && d ? " active-slot" : "");
+
+          const num = document.createElement("div"); num.className = "slot-num"; num.textContent = i + 1;
+
+          const miniWrap = document.createElement("div"); miniWrap.className = "slot-mini";
+          const mcv = document.createElement("canvas"); mcv.width = 34; mcv.height = 44;
+          const mctx = mcv.getContext("2d");
+          mctx.fillStyle = "#0d1020"; mctx.fillRect(0, 0, 34, 44);
+
+          if (d) {
+            const slotRace   = d.race   || "human";
+            const slotGender = d.gender || "male";
+            const slotGloves = d.gloves  || getDefaultIds(slotRace, slotGender).glovesId;
+            const slotAcc    = d.accessory || "ac_none";
+            const mp = {
+              direction: 1,
+              appearance: {
+                raceId:      slotRace,
+                gender:      slotGender,
+                faceId:      d.faceId  || getDefaultIds(slotRace, slotGender).faceId,
+                faceColor:   d.faceColor || null,
+                hairId:      d.hair    || getDefaultIds(slotRace, slotGender).hairId,
+                hairColor:   d.hairColor || "#1a1a1a",
+                topId:       d.shirt   || getDefaultIds(slotRace, slotGender).topId,
+                bottomId:    d.pants   || getDefaultIds(slotRace, slotGender).bottomId,
+                shoesId:     d.shoes   || getDefaultIds(slotRace, slotGender).shoesId,
+                skinColor:   d.skinColor || "#e8c898",
+                eyeColor:    d.eyeColor  || "#3a2a1a",
+                glovesId:    slotGloves,
+                auraId:      "a0",
+                auraColor:   "#fdd835",
+                accessoryId: slotAcc,
+              },
+            };
+            drawPlayer(mctx, 17, 42, mp, imageMap, null, {
+              glovesId: slotGloves, auraId: "a0", auraColor: "#fdd835",
+              accessoryId: slotAcc, auraPhase: 0, viewKey: null,
+            });
+          } else {
+            mctx.fillStyle = "#2a3560";
+            mctx.font = "22px sans-serif"; mctx.textAlign = "center";
+            mctx.fillText("+", 17, 32);
+          }
+          miniWrap.appendChild(mcv);
+
+          const info = document.createElement("div"); info.className = "slot-info";
+          const nm = document.createElement("div"); nm.className = "slot-name"; nm.textContent = d ? d.name : "VACÍO";
+          const lv = document.createElement("div"); lv.className = "slot-level"; lv.textContent = d ? `NIVEL ${d.level || 1}` : "—";
+          info.appendChild(nm); info.appendChild(lv);
+
+          card.appendChild(num); card.appendChild(miniWrap); card.appendChild(info);
+
+          if (d) {
+            const lb = document.createElement("button"); lb.className = "slot-save-btn"; lb.textContent = "CARGAR";
+            lb.addEventListener("click", e => { e.stopPropagation(); loadFromSlot(i); });
+            const db = document.createElement("button"); db.className = "slot-delete-btn"; db.innerHTML = "✕";
+            db.addEventListener("click", e => { e.stopPropagation(); deleteSlot(i); });
+            card.appendChild(lb); card.appendChild(db);
+            card.addEventListener("click", () => saveToSlot(i));
+            card.title = "Click para sobreescribir";
+          } else {
+            const sb = document.createElement("button"); sb.className = "slot-save-btn"; sb.textContent = "GUARDAR";
+            sb.addEventListener("click", e => { e.stopPropagation(); saveToSlot(i); });
+            card.appendChild(sb);
+          }
+          list.appendChild(card);
+        }
+      }
+
+      /* ══ Eventos ══ */
+      function initEvents() {
+        document.querySelectorAll(".cat-btn").forEach(btn => {
+          btn.addEventListener("click", () => {
+            document.querySelectorAll(".cat-btn").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            activeCategory = btn.dataset.cat;
+            pageState[activeCategory] = 0;
+            renderItemsPanel(activeCategory);
+          });
+        });
+
+        document.getElementById("btnFlip").addEventListener("click", () => {
+          uiFlipped = !uiFlipped;
+          showToast(uiFlipped ? "Vista espejo" : "Vista normal", "success");
+        });
+        document.getElementById("btnZoom").addEventListener("click", () => {
+          uiZoom = uiZoom === 1 ? 1.25 : uiZoom === 1.25 ? 0.8 : 1;
+          showToast(`Zoom: ${Math.round(uiZoom * 100)}%`, "success");
+        });
+        document.getElementById("btnRotate").addEventListener("click", () =>
+          showToast("Rotación no disponible en esta versión", "warning")
+        );
+        document.getElementById("charName").addEventListener("input", e => {
+          charState.name = e.target.value || "Guerrero Z";
+        });
+        document.getElementById("btnStart").addEventListener("click", () => {
+          saveToSlot(activeSlotIndex);
+          showToast(`Iniciando con slot ${activeSlotIndex + 1}...`, "success");
+          setTimeout(() => { window.location.href = `game.html?slot=${activeSlotIndex}`; }, 600);
+        });
+      }
+
+      /* ══ Toast ══ */
+      function showToast(msg, type = "success") {
+        const c = document.getElementById("toastContainer");
+        const t = document.createElement("div");
+        t.className = `toast ${type}`;
+        t.textContent = msg;
+        c.appendChild(t);
+        setTimeout(() => t.remove(), 3000);
+      }
+
+      /* ══ Init ══ */
+      async function init() {
+        loadSlots();
+        try {
+          initPlayer();
+          animator  = new SpriteAnimator("idle");
+          finalAnim = new SpriteAnimator("idle");
+          initViewAnimBar();
+          showToast("Cargando sprites...", "warning");
+
+          await _restoreAccessoriesFromLS();
+
+          imageMap = await preloadAssets("");
+          const loaded = Object.values(imageMap).filter(Boolean).length;
+          showToast(
+            loaded > 0 ? `${loaded} sprites cargados` : "Modo procedimental activo",
+            loaded > 0 ? "success" : "warning"
+          );
+
+          if (savedSlots[activeSlotIndex]) {
+            try { loadFromSlot(activeSlotIndex); }
+            catch (err) { console.warn("Slot corrupto:", err); showToast("Datos de slot inválidos", "warning"); }
+          }
+          renderItemsPanel("race");
+          renderSlots();
+          updateStats();
+        } catch (err) {
+          console.error(err);
+          imageMap = imageMap || {};
+          showToast("Falló parte de la carga — modo procedural activo.", "error");
+          try { initViewAnimBar(); renderItemsPanel("race"); renderSlots(); updateStats(); }
+          catch (e2) { console.error(e2); }
+        } finally {
+          initEvents();
+          requestAnimationFrame(loop);
+        }
+        setTimeout(() => showToast("¡Bienvenido a Dragon Creator Z!", "success"), 500);
+      }
+
+      document.addEventListener("DOMContentLoaded", init);
+    </script>
+  </body>
+</html>
