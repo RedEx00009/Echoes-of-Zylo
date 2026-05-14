@@ -471,18 +471,294 @@
       </div>
     </div>
 
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="character-system.js"></script>
     <script>
       "use strict";
+
 
       const canvas = document.getElementById("gameCanvas");
       const ctx = canvas.getContext("2d");
       const minimapCanvas = document.getElementById("minimapCanvas");
       const mmCtx = minimapCanvas.getContext("2d");
 
-      function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-      resizeCanvas();
-      window.addEventListener("resize", resizeCanvas);
+      // ═══════════════════════════════════════════════════════════════
+      //  MULTIPLAYER STATE
+      // ═══════════════════════════════════════════════════════════════
+      const MULTIPLAYER_SERVER = "TU_URL_DE_RAILWAY_AQUI"; // Cambia esto por tu URL de Railway
+      const otherPlayers = {};
+      let mySocketId = null;
+      let mpSocket = null;
+      let mpConnected = false;
+      let mpLastSend = 0;
+      const MP_SEND_RATE = 50;
+      const chatMessages = [];
+      const MAX_CHAT_MSGS = 8;
+      const otherAnimators = {};
+
+      function getOrCreateAnimator(id, action) {
+        if (!otherAnimators[id]) {
+          const CS = window.CharacterSystem;
+          otherAnimators[id] = CS ? new CS.SpriteAnimator(action || "idle") : null;
+        }
+        const anim = otherAnimators[id];
+        if (anim && anim.action !== (action || "idle")) {
+          try { anim.play(action || "idle"); } catch(e) {}
+        }
+        return anim;
+      }
+
+      function initMultiplayer() {
+        if (!MULTIPLAYER_SERVER || MULTIPLAYER_SERVER === "TU_URL_DE_RAILWAY_AQUI") {
+          console.warn("[MP] Servidor no configurado — modo offline");
+          return;
+        }
+
+        mpSocket = io(MULTIPLAYER_SERVER, { transports: ["websocket"] });
+
+        mpSocket.on("connect", () => {
+          mpConnected = true;
+          mySocketId = mpSocket.id;
+          console.log("[MP] Conectado al servidor:", mySocketId);
+          mpSocket.emit("player_join", {
+            name: player.name || savedChar?.name || "Guerrero Z",
+            x: player.x,
+            y: player.y,
+            facing: player.facing,
+            animAction: "idle",
+            race: player.race || raceId,
+            auraColor: player.auraColor || auraColor,
+            charColor: player.charColor || charColor,
+            level: player.level,
+            hp: player.hp,
+            maxHp: player.maxHp,
+          });
+          showHudToast("🌐 Conectado al servidor", "xp");
+          updateMpHud();
+        });
+
+        mpSocket.on("disconnect", () => {
+          mpConnected = false;
+          for (const k in otherPlayers) delete otherPlayers[k];
+          showHudToast("⚠️ Desconectado del servidor", "dmg");
+          updateMpHud();
+        });
+
+        mpSocket.on("server_full", () => {
+          showHudToast("Servidor lleno (50/50)", "dmg");
+        });
+
+        mpSocket.on("world_state", (serverPlayers) => {
+          for (const [id, data] of Object.entries(serverPlayers)) {
+            if (id === mySocketId) continue;
+            otherPlayers[id] = data;
+          }
+        });
+
+        mpSocket.on("player_joined", (data) => {
+          if (data.id === mySocketId) return;
+          otherPlayers[data.id] = data;
+          showHudToast(`⚡ ${data.name} entró al mundo`, "xp");
+          updateMpHud();
+        });
+
+        mpSocket.on("player_left", (id) => {
+          if (otherPlayers[id]) {
+            showHudToast(`💨 ${otherPlayers[id].name} salió`, "dmg");
+            delete otherPlayers[id];
+          }
+          updateMpHud();
+        });
+
+        mpSocket.on("chat_msg", (data) => {
+          if (data.id === mySocketId) return;
+          addChatMessage(data.name, data.text, "#00e5ff");
+        });
+      }
+
+      function sendPlayerUpdate() {
+        if (!mpConnected || !mpSocket) return;
+        const now = performance.now();
+        if (now - mpLastSend < MP_SEND_RATE) return;
+        mpLastSend = now;
+
+        let animAction = "idle";
+        if (player.attacking) animAction = "attack_1";
+        else if (player.dashing) animAction = "run";
+        else if (player.moving) animAction = "walk";
+        else if (player.charging) animAction = "ki_charge";
+
+        mpSocket.emit("player_update", {
+          x: player.x,
+          y: player.y,
+          facing: player.facing,
+          animAction,
+          hp: player.hp,
+        });
+      }
+
+      function drawOtherPlayers() {
+        const CS = window.CharacterSystem;
+        const now = performance.now();
+
+        for (const [id, p] of Object.entries(otherPlayers)) {
+          const sx = p.x - cam.x;
+          const sy = p.y - cam.y;
+          if (sx < -80 || sx > canvas.width + 80 || sy < -100 || sy > canvas.height + 100) continue;
+          const anim = getOrCreateAnimator(id, p.animAction);
+          if (anim) anim.update(now);
+
+          ctx.fillStyle = "rgba(0,0,0,0.3)";
+          ctx.beginPath();
+          ctx.ellipse(sx, sy + 3, 16, 5, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          let drew = false;
+          if (CS && csImageMap && anim) {
+            try {
+              const tmpPlayer = {
+                direction: p.facing || 1,
+                appearance: {
+                  raceId: p.race || "human",
+                  gender: "male",
+                  faceId: "fm0",
+                  hairId: "hm1",
+                  topId: "sm1",
+                  bottomId: "pm1",
+                  shoesId: "shm1",
+                  glovesId: "gm0",
+                  auraId: "a0",
+                  auraColor: p.auraColor || "#fdd835",
+                  skinColor: "#e8c898",
+                  eyeColor: "#3a2a1a",
+                  accessoryId: "ac_none",
+                },
+              };
+              const csState = {
+                glovesId: "gm0",
+                auraId: "a0",
+                auraColor: p.auraColor || "#fdd835",
+                accessoryId: "ac_none",
+                auraPhase: (now * 0.003) | 0,
+                viewKey: null,
+              };
+              const SPRITE_DRAW_W = 48, SPRITE_DRAW_H = 70;
+              const scaleX = SPRITE_DRAW_W / CS.FRAME_W;
+              const scaleY = SPRITE_DRAW_H / CS.FRAME_H;
+              ctx.save();
+              ctx.translate(sx, sy);
+              ctx.scale(scaleX, scaleY);
+              ctx.translate(-sx, -sy);
+              ctx.imageSmoothingEnabled = true;
+              CS.drawPlayer(ctx, sx, sy, tmpPlayer, csImageMap, anim, csState);
+              ctx.restore();
+              drew = true;
+            } catch(e) {}
+          }
+
+          if (!drew) {
+            const color = p.charColor || "#00e5ff";
+            ctx.save();
+            if ((p.facing || 1) === -1) { ctx.translate(sx * 2, 0); ctx.scale(-1, 1); }
+            ctx.fillStyle = "#1a1a1a"; ctx.fillRect(sx - 8, sy + 2, 8, 6); ctx.fillRect(sx + 1, sy + 2, 8, 6);
+            ctx.fillStyle = color;     ctx.fillRect(sx - 10, sy - 36, 20, 22);
+            ctx.fillStyle = "#e8c898"; ctx.fillRect(sx - 16, sy - 36, 7, 16); ctx.fillRect(sx + 9, sy - 36, 7, 16);
+            ctx.beginPath(); ctx.arc(sx, sy - 44, 10, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = "#1a1a1a"; ctx.beginPath(); ctx.arc(sx, sy - 50, 9, Math.PI, Math.PI * 2); ctx.fill();
+            ctx.restore();
+          }
+
+          ctx.save();
+          ctx.font = "bold 9px Orbitron, monospace";
+          ctx.textAlign = "center";
+          const nameWidth = ctx.measureText(p.name || "?").width + 10;
+          ctx.fillStyle = "rgba(8,9,15,0.75)";
+          ctx.fillRect(sx - nameWidth / 2, sy - 80, nameWidth, 16);
+          ctx.fillStyle = p.charColor || "#00e5ff";
+          ctx.fillText(p.name || "?", sx, sy - 68);
+
+          const barW = 40;
+          const hpPct = Math.max(0, Math.min(1, (p.hp || 1) / (p.maxHp || 1)));
+          ctx.fillStyle = "#1a1a1a";
+          ctx.fillRect(sx - barW / 2, sy - 63, barW, 5);
+          ctx.fillStyle = hpPct > 0.5 ? "#00e676" : "#ff1744";
+          ctx.fillRect(sx - barW / 2, sy - 63, barW * hpPct, 5);
+          ctx.restore();
+        }
+      }
+
+      function addChatMessage(name, text, color) {
+        chatMessages.push({ name, text, color: color || "#e8eaf6", time: performance.now() });
+        if (chatMessages.length > MAX_CHAT_MSGS) chatMessages.shift();
+        renderChatMessages();
+      }
+
+      function renderChatMessages() {
+        let box = document.getElementById("mpChatBox");
+        if (!box) return;
+        box.innerHTML = chatMessages
+          .map(m => `<div><span style="color:${m.color};font-weight:700">${m.name}:</span> ${m.text}</div>`)
+          .join("");
+        box.scrollTop = box.scrollHeight;
+      }
+
+      function sendChatMsg() {
+        const inp = document.getElementById("mpChatInput");
+        if (!inp) return;
+        const text = inp.value.trim();
+        if (!text) return;
+        inp.value = "";
+        if (!mpConnected) { showHudToast("Sin conexión al servidor", "dmg"); return; }
+        addChatMessage("Tú", text, "#f5c400");
+        mpSocket.emit("chat_msg", text);
+      }
+
+      function buildMpHud() {
+        const hud = document.getElementById("hud");
+        if (!hud || document.getElementById("mpHudPanel")) return;
+
+        const panel = document.createElement("div");
+        panel.id = "mpHudPanel";
+        panel.style.cssText = `
+          position:absolute; top:110px; left:12px; width:200px;
+          background:rgba(8,9,15,0.88); border:1px solid #2a3560; border-radius:8px;
+          padding:10px 12px; backdrop-filter:blur(8px); z-index:9;
+        `;
+        panel.innerHTML = `
+          <div style="font-family:'Orbitron',monospace;font-size:9px;letter-spacing:2px;color:#00e5ff;margin-bottom:8px;">
+            🌐 JUGADORES EN LÍNEA
+          </div>
+          <div id="mpPlayerCount" style="font-family:'Orbitron',monospace;font-size:13px;color:#f5c400;margin-bottom:8px;">
+            Conectando...
+          </div>
+          <div id="mpChatBox" style="
+            height:70px; overflow-y:auto; font-size:11px; color:#c8cfe8;
+            line-height:1.5; margin-bottom:6px; scrollbar-width:none;
+          "></div>
+          <div style="display:flex;gap:4px;">
+            <input id="mpChatInput" type="text" maxlength="60" placeholder="Mensaje..."
+              style="flex:1;background:#12172e;border:1px solid #2a3560;border-radius:4px;
+                     padding:4px 7px;color:#e8eaf6;font-size:11px;outline:none;font-family:'Rajdhani',sans-serif;"
+              onkeydown="if(event.key==='Enter')sendChatMsg()"
+            />
+            <button onclick="sendChatMsg()" style="
+              background:rgba(0,229,255,.15);border:1px solid #00e5ff;border-radius:4px;
+              color:#00e5ff;font-size:10px;padding:4px 8px;cursor:pointer;font-family:'Orbitron',monospace;
+            ">➤</button>
+          </div>
+        `;
+        hud.appendChild(panel);
+      }
+
+      function updateMpHud() {
+        const el = document.getElementById("mpPlayerCount");
+        if (!el) return;
+        const count = Object.keys(otherPlayers).length + 1;
+        el.textContent = mpConnected
+          ? `${count} jugador${count !== 1 ? "es" : ""} online`
+          : "⚠️ Offline";
+        el.style.color = mpConnected ? "#f5c400" : "#ff1744";
+      }
 
       const TILE = 48, WORLD_W = 120, WORLD_H = 80, CAM_LERP = 0.12;
 
@@ -1400,6 +1676,8 @@
         document.getElementById("screenLoading").style.display="none";
         gameState="playing";
         updatePlayerHud();
+        buildMpHud();
+        initMultiplayer();
       }
 
       /* ══════════════════════════════════════════════════
@@ -1429,6 +1707,8 @@
         drawWorld();
         drawDragonBalls();
         drawNpcs();
+        sendPlayerUpdate();
+        drawOtherPlayers();
         drawEnemies();
         drawProjectiles();
         drawPlayerChar();   /* ← función renombrada y mejorada */
