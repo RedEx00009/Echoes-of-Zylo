@@ -723,6 +723,7 @@
           position:absolute; top:110px; left:12px; width:200px;
           background:rgba(8,9,15,0.88); border:1px solid #2a3560; border-radius:8px;
           padding:10px 12px; backdrop-filter:blur(8px); z-index:9;
+          pointer-events:auto;
         `;
         panel.innerHTML = `
           <div style="font-family:'Orbitron',monospace;font-size:9px;letter-spacing:2px;color:#00e5ff;margin-bottom:8px;">
@@ -738,12 +739,12 @@
           <div style="display:flex;gap:4px;">
             <input id="mpChatInput" type="text" maxlength="60" placeholder="Mensaje..."
               style="flex:1;background:#12172e;border:1px solid #2a3560;border-radius:4px;
-                     padding:4px 7px;color:#e8eaf6;font-size:11px;outline:none;font-family:'Rajdhani',sans-serif;"
+                     padding:4px 7px;color:#e8eaf6;font-size:11px;outline:none;font-family:'Rajdhani',sans-serif;pointer-events:auto;"
               onkeydown="if(event.key==='Enter')sendChatMsg()"
             />
             <button onclick="sendChatMsg()" style="
               background:rgba(0,229,255,.15);border:1px solid #00e5ff;border-radius:4px;
-              color:#00e5ff;font-size:10px;padding:4px 8px;cursor:pointer;font-family:'Orbitron',monospace;
+              color:#00e5ff;font-size:10px;padding:4px 8px;cursor:pointer;font-family:'Orbitron',monospace;pointer-events:auto;
             ">➤</button>
           </div>
         `;
