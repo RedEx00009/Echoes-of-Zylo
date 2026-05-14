@@ -1002,6 +1002,77 @@
         });
         markRow.appendChild(markPicker);
         wrap.appendChild(markRow);
+
+        const browRow = document.createElement("div");
+        browRow.className = "face-color-row";
+        const browLbl = document.createElement("span");
+        browLbl.className = "face-color-label";
+        browLbl.textContent = "CEJAS";
+        browRow.appendChild(browLbl);
+
+        const browPicker = document.createElement("input");
+        browPicker.type = "color";
+        browPicker.value = player.appearance.browColor || "#1a1a1a";
+        browPicker.className = "face-color-picker";
+
+        FACE_PALETTE.forEach(hex => {
+          const sw = document.createElement("div");
+          sw.className = "face-color-chip" + (player.appearance.browColor === hex ? " active" : "");
+          sw.style.background = hex;
+          sw.addEventListener("click", () => {
+            player.appearance.browColor = hex;
+            browPicker.value = hex;
+            browRow.querySelectorAll(".face-color-chip").forEach(c => c.classList.remove("active"));
+            sw.classList.add("active");
+            invalidateHairCache();
+            grid.querySelectorAll("canvas").forEach((c, i) => { if (items[i]) drawThumbCanvas(c, cat, items[i]); });
+          });
+          browRow.appendChild(sw);
+        });
+        browPicker.addEventListener("input", e => {
+          player.appearance.browColor = e.target.value;
+          browRow.querySelectorAll(".face-color-chip").forEach(c => c.classList.remove("active"));
+          invalidateHairCache();
+          grid.querySelectorAll("canvas").forEach((c, i) => { if (items[i]) drawThumbCanvas(c, cat, items[i]); });
+        });
+        browRow.appendChild(browPicker);
+        wrap.appendChild(browRow);
+
+        const pupilRow = document.createElement("div");
+        pupilRow.className = "face-color-row";
+        const pupilLbl = document.createElement("span");
+        pupilLbl.className = "face-color-label";
+        pupilLbl.textContent = "PUPILAS";
+        pupilRow.appendChild(pupilLbl);
+
+        const pupilPicker = document.createElement("input");
+        pupilPicker.type = "color";
+        pupilPicker.value = player.appearance.pupilColor || "#1a1a1a";
+        pupilPicker.className = "face-color-picker";
+
+        EYE_PALETTE.forEach(hex => {
+          const sw = document.createElement("div");
+          sw.className = "face-color-chip" + (player.appearance.pupilColor === hex ? " active" : "");
+          sw.style.background = hex;
+          sw.addEventListener("click", () => {
+            player.appearance.pupilColor = hex;
+            pupilPicker.value = hex;
+            pupilRow.querySelectorAll(".face-color-chip").forEach(c => c.classList.remove("active"));
+            sw.classList.add("active");
+            invalidateHairCache();
+            grid.querySelectorAll("canvas").forEach((c, i) => { if (items[i]) drawThumbCanvas(c, cat, items[i]); });
+          });
+          pupilRow.appendChild(sw);
+        });
+        pupilPicker.addEventListener("input", e => {
+          player.appearance.pupilColor = e.target.value;
+          pupilRow.querySelectorAll(".face-color-chip").forEach(c => c.classList.remove("active"));
+          invalidateHairCache();
+          grid.querySelectorAll("canvas").forEach((c, i) => { if (items[i]) drawThumbCanvas(c, cat, items[i]); });
+        });
+        pupilRow.appendChild(pupilPicker);
+        wrap.appendChild(pupilRow);
+
         panel.appendChild(wrap);
       }
 
