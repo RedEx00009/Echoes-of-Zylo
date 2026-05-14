@@ -144,6 +144,7 @@
     { id: "android",  name: "ANDROIDE",  spriteKey: "android_male",  skinColor: "#c0c0c0", eyeColor: "#00e5ff" },
     { id: "kaioshin", name: "KAIOSHIN",  spriteKey: "kaioshin_male", skinColor: "#9c88ff", eyeColor: "#ffd700" },
     { id: "frieza",   name: "FRIEZA",    spriteKey: "frieza_male",   skinColor: "#f0e0f0", eyeColor: "#ff0000", genderless: true },
+    { id: "Custom",   name: "CUSTOM",    spriteKey: "null",   skinColor: "#f0e0f0", eyeColor: "#ffffff", genderless: true },
   ];
 
   // ═══════════════════════════════════════════════════════════════
@@ -1241,78 +1242,110 @@
    * @param {number}      w, h         - tamaño de salida
    * @param {object|null} frameCoords  - { srcX, srcY, fw, fh }
    */
-  function tintFaceDetailed(faceImg, browColor, pupilColor, faceDef, w, h, frameCoords) {
-    if (!faceImg || !faceImg.complete || !faceImg.naturalWidth) return null;
+function tintFaceDetailed(faceImg, browColor, pupilColor, faceDef, w, h, frameCoords) {
+  if (!faceImg || !faceImg.complete || !faceImg.naturalWidth) return null;
 
-    const fc  = frameCoords
-      ? `${frameCoords.srcX}_${frameCoords.srcY}_${frameCoords.fw}_${frameCoords.fh}`
-      : "full";
-    const key = `faceDetail|${faceDef ? faceDef.id : "face"}|${faceImg.src || ""}|${w}|${h}|${browColor}|${pupilColor}|${fc}`;
+  const fc  = frameCoords
+    ? `${frameCoords.srcX}_${frameCoords.srcY}_${frameCoords.fw}_${frameCoords.fh}`
+    : "full";
+  const key = `faceDetail|${faceDef ? faceDef.id : "face"}|${faceImg.src || ""}|${w}|${h}|${browColor}|${pupilColor}|${fc}`;
 
-    if (_tintCache.has(key)) return _tintCache.get(key);
-    if (_tintCache.size > 512) { const k = _tintCache.keys().next().value; _tintCache.delete(k); }
+  if (_tintCache.has(key)) return _tintCache.get(key);
+  if (_tintCache.size > 512) { const k = _tintCache.keys().next().value; _tintCache.delete(k); }
 
-    const off = document.createElement("canvas");
-    off.width = w; off.height = h;
-    const ctx = off.getContext("2d");
-    ctx.imageSmoothingEnabled = false;
+  const off = document.createElement("canvas");
+  off.width = w; off.height = h;
+  const ctx = off.getContext("2d");
+  ctx.imageSmoothingEnabled = false;
 
-    // Dibujar frame fuente
-    if (frameCoords) {
-      ctx.drawImage(
-        faceImg,
-        frameCoords.srcX, frameCoords.srcY, frameCoords.fw, frameCoords.fh,
-        0, 0, w, h
-      );
-    } else {
-      ctx.drawImage(faceImg, 0, 0, faceImg.naturalWidth, faceImg.naturalHeight, 0, 0, w, h);
-    }
-
-    // Pre-calcular HSL de los colores destino
-    const browRgb  = _hexToRgb(browColor);
-    const pupilRgb = _hexToRgb(pupilColor);
-    const { h: browH,  s: browS  } = _rgbToHsl(browRgb.r,  browRgb.g,  browRgb.b);
-    const { h: pupilH, s: pupilS } = _rgbToHsl(pupilRgb.r, pupilRgb.g, pupilRgb.b);
-
-    try {
-      const imageData = ctx.getImageData(0, 0, w, h);
-      const data = imageData.data;
-
-      for (let i = 0; i < data.length; i += 4) {
-        const alpha = data[i + 3];
-        if (alpha < 16) continue;
-
-        const r = data[i], g = data[i + 1], b = data[i + 2];
-        const { h: hue, s, l } = _rgbToHsl(r, g, b);
-
-        // Preservar: contornos negros, esclerótica blanca, grises neutros de piel
-        if (l < 0.12 || l > 0.88 || s < 0.25) continue;
-
-        // Detectar zona por hue del píxel en el spritesheet:
-        //   Rojo  → hue < 0.08 o hue > 0.92  → ceja
-        //   Azul  → hue entre 0.55 y 0.72     → pupila/iris
-        const isBrow  = (hue < 0.08 || hue > 0.92);
-        const isPupil = (hue >= 0.55 && hue <= 0.72);
-
-        if (isBrow) {
-          // Hue-replace conservando luminosidad original del píxel
-          const { r: nr, g: ng, b: nb } = _hslToRgb(browH, browS, l);
-          data[i] = nr; data[i + 1] = ng; data[i + 2] = nb;
-        } else if (isPupil) {
-          const { r: nr, g: ng, b: nb } = _hslToRgb(pupilH, pupilS, l);
-          data[i] = nr; data[i + 1] = ng; data[i + 2] = nb;
-        }
-        // Cualquier otro color saturado (verde, amarillo, etc.) → se deja intacto
-      }
-
-      ctx.putImageData(imageData, 0, 0);
-    } catch (e) {
-      console.warn("[tintFaceDetailed] error:", e.message);
-    }
-
-    _tintCache.set(key, off);
-    return off;
+  if (frameCoords) {
+    ctx.drawImage(faceImg, frameCoords.srcX, frameCoords.srcY, frameCoords.fw, frameCoords.fh, 0, 0, w, h);
+  } else {
+    ctx.drawImage(faceImg, 0, 0, faceImg.naturalWidth, faceImg.naturalHeight, 0, 0, w, h);
   }
+
+  let imageData;
+  try { imageData = ctx.getImageData(0, 0, w, h); }
+  catch(e) { _tintCache.set(key, off); return off; }
+
+  const data = imageData.data;
+
+  // Pre-calcular HSL de los colores destino
+  const browRgb  = _hexToRgb(browColor);
+  const pupilRgb = _hexToRgb(pupilColor);
+  const { h: browH,  s: browS,  l: browL  } = _rgbToHsl(browRgb.r,  browRgb.g,  browRgb.b);
+  const { h: pupilH, s: pupilS, l: pupilL } = _rgbToHsl(pupilRgb.r, pupilRgb.g, pupilRgb.b);
+
+  for (let i = 0; i < data.length; i += 4) {
+    const a = data[i + 3];
+    if (a < 16) continue;
+
+    const r = data[i], g = data[i+1], b = data[i+2];
+
+    // Rojo puro del sprite = ceja (R dominante, G y B casi 0)
+    const isBrow = r > 10 && g < 20 && b < 20 && r > g * 3 && r > b * 3;
+
+    // Azul puro del sprite = iris (B dominante, R y G casi 0)
+    const isIris = b > 10 && r < 30 && g < 30 && b > r * 2 && b > g * 2;
+
+    if (!isBrow && !isIris) continue;
+
+    // Luminosidad del pixel original del sprite
+    // Para rojos: L = R/255/2 (ya que G=B=0, L=(R/255+0)/2)
+    // Para azules: L = B/255/2
+    const srcL = isBrow ? (r / 255 * 0.5) : (b / 255 * 0.5);
+
+    let finalH, finalS, finalL;
+
+    if (isBrow) {
+      finalH = browH;
+      finalS = browS;
+      // Escalar luminosidad del pixel al rango del color destino
+      // srcL va de 0 (borde oscuro) a ~0.43 (highlight)
+      // Lo mapeamos a [browL*0.3 ... browL*1.0 + (1-browL)*0.4]
+      if (browS < 0.05) {
+        // Destino acromático (negro, blanco, gris)
+        finalS = 0;
+        finalL = browL < 0.5
+          ? srcL * (browL * 2 + 0.1)           // negro/gris oscuro: escalar hacia abajo
+          : 0.5 + srcL * (browL - 0.5) * 2;    // blanco/gris claro: escalar hacia arriba
+      } else {
+        // Destino con color: conservar L del pixel, cambiar H+S
+        finalL = Math.max(srcL * 0.8, 0.03);
+      }
+} else {
+      // IRIS: píxel azul puro (0,0,B)
+      // srcL calculada de B da valores muy bajos — usar rango más amplio
+      // B va de ~10 (oscuro) a ~255 (claro), normalizar a 0–1
+      const srcLNorm = b / 255;  // 0=oscuro, 1=claro
+
+      finalH = pupilH;
+      finalS = pupilS;
+
+      if (pupilS < 0.05) {
+        // Destino acromático (negro, blanco, gris)
+        finalS = 0;
+        finalL = pupilL < 0.5
+          ? srcLNorm * pupilL * 1.5
+          : pupilL * 0.5 + srcLNorm * (1 - pupilL) * 0.5;
+      } else {
+        // Destino con color: mapear brillo del azul al rango del color destino
+        // oscuro (B bajo) → versión oscura del destino
+        // claro  (B alto) → versión clara del destino
+        const darkL  = Math.max(pupilL * 0.3, 0.04);
+        const lightL = Math.min(pupilL * 1.6, 0.85);
+        finalL = darkL + srcLNorm * (lightL - darkL);
+      }
+    }
+
+    const { r: nr, g: ng, b: nb } = _hslToRgb(finalH, finalS, finalL);
+    data[i] = nr; data[i+1] = ng; data[i+2] = nb;
+  }
+
+  ctx.putImageData(imageData, 0, 0);
+  _tintCache.set(key, off);
+  return off;
+}
 
   // ═══════════════════════════════════════════════════════════════
   //  drawPlayer — orden de capas v1.0.2
