@@ -649,28 +649,30 @@
     function renderAppearancePreview(CS) {
       if (!CS || !csImageMap || !csAnimator) return null;
       try {
-        const pw = 88, ph = Math.round(SPRITE_DRAW_H * (88 / SPRITE_DRAW_W));
-        const c = document.createElement("canvas");
-        c.width = pw;
-        c.height = ph;
-        const cctx = c.getContext("2d");
-        cctx.clearRect(0, 0, pw, ph);
-        const sx = pw / 2, sy = ph - 4;
-        const scaleX = pw / CS.FRAME_W, scaleY = ph / CS.FRAME_H;
-        cctx.save();
-        cctx.translate(sx, sy);
-        cctx.scale(scaleX, scaleY);
-        cctx.translate(-sx, -sy);
-        CS.drawPlayer(cctx, sx, sy, CS.player, csImageMap, csAnimator, {
+        const dw = CS.DISPLAY_W, dh = CS.DISPLAY_H;
+        const full = document.createElement("canvas");
+        full.width = dw;
+        full.height = dh;
+        const fctx = full.getContext("2d");
+        fctx.clearRect(0, 0, dw, dh);
+        const sx = dw / 2, sy = dh - 6;
+        CS.drawPlayer(fctx, sx, sy, CS.player, csImageMap, csAnimator, {
           glovesId: CS.player.appearance.glovesId || "gm0",
-          auraId: "a0",
+          auraId: CS.player.appearance.auraId || "a0",
           auraColor: CS.player.appearance.auraColor || "#fdd835",
           accessoryId: CS.player.appearance.accessoryId || "ac_none",
-          auraPhase: 0,
+          auraPhase: player.auraPhase || 0,
           viewKey: null,
         });
-        cctx.restore();
-        return c.toDataURL("image/jpeg", 0.72);
+        const outW = 96, outH = Math.round(dh * (outW / dw));
+        const out = document.createElement("canvas");
+        out.width = outW;
+        out.height = outH;
+        const octx = out.getContext("2d");
+        octx.fillStyle = "#08090f";
+        octx.fillRect(0, 0, outW, outH);
+        octx.drawImage(full, 0, 0, dw, dh, 0, 0, outW, outH);
+        return { dataURL: out.toDataURL("image/jpeg", 0.82), w: outW, h: outH };
       } catch (e) {
         return null;
       }
@@ -712,7 +714,15 @@
         accessoryDataURL,
         clothColor: sc.clothColor || "#ff6a00",
       };
-      if (includePreview) payload.previewDataURL = renderAppearancePreview(CS);
+      if (includePreview) {
+        const snap = renderAppearancePreview(CS);
+        if (snap) {
+          payload.previewDataURL = snap.dataURL;
+          payload.previewW = snap.w;
+          payload.previewH = snap.h;
+          payload.previewVersion = 2;
+        }
+      }
       return payload;
     }
 
@@ -739,6 +749,7 @@
         accessoryId: app?.accessoryId || "ac_none",
         accessoryDataURL: app?.accessoryDataURL || null,
         previewDataURL: app?.previewDataURL || null,
+        previewVersion: app?.previewVersion || 0,
         clothColor: app?.clothColor || "#ff6a00",
       };
     }
@@ -835,19 +846,87 @@
       }
     }
 
-    function _drawRemotePreviewSprite(sx, sy, img, facing, p) {
+    function _isPreviewLikelyValid(img) {
+      if (!img || !img.complete || img.naturalWidth < 20 || img.naturalHeight < 20) return false;
+      const ar = img.naturalWidth / img.naturalHeight;
+      return ar >= 0.45 && ar <= 1.15;
+    }
+
+    function _drawRemotePreviewSprite(sx, sy, img, facing, p, app) {
       ctx.fillStyle = "rgba(0,0,0,0.3)";
       ctx.beginPath();
       ctx.ellipse(sx, sy + 3, 16, 5, 0, 0, Math.PI * 2);
       ctx.fill();
-      const dw = SPRITE_DRAW_W, dh = SPRITE_DRAW_H;
-      const dx = sx - dw / 2, dy = sy - dh;
+      const targetW = SPRITE_DRAW_W * 1.2, targetH = SPRITE_DRAW_H * 1.15;
+      const iw = img.naturalWidth, ih = img.naturalHeight;
+      if (!iw || !ih) return;
+      const scale = Math.min(targetW / iw, targetH / ih);
+      const drawW = iw * scale, drawH = ih * scale;
+      const dx = sx - drawW / 2, dy = sy - drawH;
       ctx.save();
       if ((facing || 1) === -1) { ctx.translate(sx, 0); ctx.scale(-1, 1); ctx.translate(-sx, 0); }
       ctx.imageSmoothingEnabled = true;
-      ctx.drawImage(img, dx, dy, dw, dh);
+      ctx.drawImage(img, dx, dy, drawW, drawH);
       ctx.restore();
       _drawRemotePlayerLabel(p, sx, sy);
+    }
+
+    function _prepareRemoteAccessory(CS, id, app) {
+      const remoteAccId = app.accessoryId || "ac_none";
+      if (remoteAccId === "ac_none" || !app.accessoryDataURL) return null;
+      const remoteAccImg = otherPlayerAccessoryImages[id] || null;
+      if (remoteAccId !== "ac_none" && !remoteAccImg && !otherPlayerAccessoryLoading.has(id)) {
+        otherPlayerAccessoryLoading.add(id);
+        const img = new Image();
+        img.onload = () => { otherPlayerAccessoryImages[id] = img; otherPlayerAccessoryLoading.delete(id); };
+        img.onerror = () => { otherPlayerAccessoryLoading.delete(id); };
+        img.src = app.accessoryDataURL;
+      }
+      if (!remoteAccImg) return null;
+      const ex = CS.ACCESSORIES_CATALOG.find((a) => a.id === remoteAccId);
+      if (!ex) {
+        const injected = {
+          id: remoteAccId, name: "Remoto", type: "other", slot: "over_shirt", color: null,
+          userImage: remoteAccImg, dataURL: app.accessoryDataURL || null,
+          isFreeCustomization: remoteAccId.startsWith("fc_"),
+        };
+        CS.ACCESSORIES_CATALOG.push(injected);
+        return injected;
+      }
+      if (!ex.userImage) ex.userImage = remoteAccImg;
+      return null;
+    }
+
+    function _drawRemoteWithCharacterSystem(CS, id, p, sx, sy, app, now) {
+      const anim = otherPlayerAnimators[id];
+      if (!anim) return false;
+      anim.update(now);
+      if (p.animAction) anim.play(p.animAction);
+      const injectedAcc = _prepareRemoteAccessory(CS, id, app);
+      const remoteAccId = app.accessoryId || "ac_none";
+      const remApp = Object.assign({}, app, { accessoryId: remoteAccId });
+      const remCSPlayer = { appearance: remApp, direction: p.facing || 1 };
+      const remState = {
+        glovesId: remApp.glovesId, auraId: remApp.auraId, auraColor: remApp.auraColor,
+        accessoryId: remoteAccId, auraPhase: (now * 0.003) % (Math.PI * 2), viewKey: null,
+      };
+      ctx.fillStyle = "rgba(0,0,0,0.3)";
+      ctx.beginPath();
+      ctx.ellipse(sx, sy + 3, 16, 5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.save();
+      ctx.translate(sx, sy);
+      ctx.scale(SPRITE_DRAW_W / CS.FRAME_W, SPRITE_DRAW_H / CS.FRAME_H);
+      ctx.translate(-sx, -sy);
+      ctx.imageSmoothingEnabled = true;
+      CS.drawPlayer(ctx, sx, sy, remCSPlayer, csImageMap, anim, remState);
+      ctx.restore();
+      if (injectedAcc) {
+        const idx = CS.ACCESSORIES_CATALOG.indexOf(injectedAcc);
+        if (idx !== -1) CS.ACCESSORIES_CATALOG.splice(idx, 1);
+      }
+      _drawRemotePlayerLabel(p, sx, sy);
+      return true;
     }
 
     function drawOtherPlayers() {
@@ -856,66 +935,28 @@
         if (p.map && p.map !== currentMap) continue;
         const sx = p.x - cam.x, sy = p.y - cam.y;
         if (sx < -100 || sx > canvas.width+100 || sy < -120 || sy > canvas.height+120) continue;
-        const anim = otherPlayerAnimators[id];
-        if (anim) anim.update(now);
         const app = normalizeRemoteAppearance(p.appearance, CS, p);
-        const previewImg = otherPlayerPreviewImages[id];
-        if (previewImg && previewImg.complete && previewImg.naturalWidth > 0) {
-          _drawRemotePreviewSprite(sx, sy, previewImg, p.facing, p);
-          continue;
-        }
-        if (app.previewDataURL && !previewImg && !otherPlayerPreviewLoading.has(id)) {
+
+        if (app.previewDataURL && !otherPlayerPreviewImages[id] && !otherPlayerPreviewLoading.has(id)) {
           otherPlayerPreviewLoading.add(id);
           const pimg = new Image();
           pimg.onload = () => { otherPlayerPreviewImages[id] = pimg; otherPlayerPreviewLoading.delete(id); };
           pimg.onerror = () => { otherPlayerPreviewLoading.delete(id); };
           pimg.src = app.previewDataURL;
         }
-        if (CS && csImageMap && anim) {
+
+        if (CS && csImageMap && otherPlayerAnimators[id]) {
           try {
-            const remoteAccId = app.accessoryId || "ac_none";
-            const remoteAccImg = otherPlayerAccessoryImages[id] || null;
-            let injectedAcc = null;
-            if (remoteAccId !== "ac_none" && !remoteAccImg && app.accessoryDataURL && !otherPlayerAccessoryLoading.has(id)) {
-              otherPlayerAccessoryLoading.add(id);
-              const img = new Image();
-              img.onload = () => { otherPlayerAccessoryImages[id] = img; otherPlayerAccessoryLoading.delete(id); };
-              img.onerror = () => { otherPlayerAccessoryLoading.delete(id); };
-              img.src = app.accessoryDataURL;
-            }
-            if (remoteAccId !== "ac_none" && remoteAccImg) {
-              const ex = CS.ACCESSORIES_CATALOG.find((a) => a.id === remoteAccId);
-              if (!ex) {
-                injectedAcc = {
-                  id: remoteAccId, name: "Remoto", type: "other", slot: "over_shirt", color: null,
-                  userImage: remoteAccImg, dataURL: app.accessoryDataURL || null,
-                  isFreeCustomization: remoteAccId.startsWith("fc_"),
-                };
-                CS.ACCESSORIES_CATALOG.push(injectedAcc);
-              } else if (!ex.userImage) {
-                ex.userImage = remoteAccImg;
-                if (!ex.dataURL && app.accessoryDataURL) ex.dataURL = app.accessoryDataURL;
-              }
-            }
-            const remApp = Object.assign({}, app, { accessoryId: remoteAccId });
-            const remCSPlayer = { appearance: remApp, direction: p.facing || 1 };
-            const remState = { glovesId: remApp.glovesId, auraId: remApp.auraId, auraColor: remApp.auraColor, accessoryId: remoteAccId, auraPhase: (now * 0.003) % (Math.PI * 2), viewKey: null };
-            ctx.fillStyle = "rgba(0,0,0,0.3)";
-            ctx.beginPath();
-            ctx.ellipse(sx, sy + 3, 16, 5, 0, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.save();
-            ctx.translate(sx, sy);
-            ctx.scale(SPRITE_DRAW_W / CS.FRAME_W, SPRITE_DRAW_H / CS.FRAME_H);
-            ctx.translate(-sx, -sy);
-            ctx.imageSmoothingEnabled = true;
-            CS.drawPlayer(ctx, sx, sy, remCSPlayer, csImageMap, anim, remState);
-            ctx.restore();
-            if (injectedAcc) { const idx = CS.ACCESSORIES_CATALOG.indexOf(injectedAcc); if (idx !== -1) CS.ACCESSORIES_CATALOG.splice(idx, 1); }
-            _drawRemotePlayerLabel(p, sx, sy);
-            continue;
+            if (_drawRemoteWithCharacterSystem(CS, id, p, sx, sy, app, now)) continue;
           } catch (e) { console.warn("[game] remote draw:", e); }
         }
+
+        const previewImg = otherPlayerPreviewImages[id];
+        if ((app.previewVersion || 0) >= 2 && _isPreviewLikelyValid(previewImg)) {
+          _drawRemotePreviewSprite(sx, sy, previewImg, p.facing, p, app);
+          continue;
+        }
+
         _drawRemotePlayerFallback(p, sx, sy);
       }
     }
