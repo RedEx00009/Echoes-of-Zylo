@@ -237,6 +237,7 @@
       const otherPlayers = {};
       // Cache de animadores para otros jugadores (para que tengan animación fluida)
       const otherPlayerAnimators = {};
+      const otherPlayerAccessoryImages = {}; // cache dataURL→Image por jugador remoto
       let myPlayerId = null;
       let mpConnected = false;
       let mpLastSend = 0;
@@ -247,41 +248,45 @@
       // Construye el objeto de apariencia completo del jugador local para enviar a Firebase
       function buildMyAppearancePayload() {
         const sc = savedChar || {};
+        const CS = window.CharacterSystem;
+        let accessoryDataURL = null;
+        if (CS) {
+          const accId = sc.accessory || sc.accessoryId || "ac_none";
+          const accEntry = CS.ACCESSORIES_CATALOG.find(a => a.id === accId);
+          if (accEntry && accEntry.dataURL) accessoryDataURL = accEntry.dataURL;
+        }
         return {
-          raceId:       sc.race        || "human",
-          gender:       sc.gender      || "male",
-          faceId:       sc.faceId      || null,
-          faceColor:    sc.faceColor   || null,
-          eyeColor:     sc.eyeColor    || "#3a2a1a",
-          browColor:    sc.browColor   || null,
-          pupilColor:   sc.pupilColor  || null,
-          hairId:       sc.hair        || null,
-          hairColor:    sc.hairColor   || "#1a1a1a",
-          topId:        sc.shirt       || null,
-          bottomId:     sc.pants       || null,
-          shoesId:      sc.shoes       || null,
-          glovesId:     sc.gloves      || null,
-          skinColor:    sc.skinColor   || "#e8c898",
-          auraId:       sc.aura        || "a0",
-          auraColor:    sc.auraColor   || "#fdd835",
-          accessoryId:  sc.accessory   || "ac_none",
-          clothColor:   sc.clothColor  || "#ff6a00",
-          hairColorAlt: sc.hairColorAlt|| null,
+          raceId:           sc.race         || "human",
+          gender:           sc.gender       || "male",
+          faceId:           sc.faceId       || null,
+          faceColor:        sc.faceColor    || null,
+          eyeColor:         sc.eyeColor     || "#3a2a1a",
+          browColor:        sc.browColor    || null,
+          pupilColor:       sc.pupilColor   || null,
+          hairId:           sc.hair         || null,
+          hairColor:        sc.hairColor    || "#1a1a1a",
+          topId:            sc.shirt        || null,
+          bottomId:         sc.pants        || null,
+          shoesId:          sc.shoes        || null,
+          glovesId:         sc.gloves       || null,
+          skinColor:        sc.skinColor    || "#e8c898",
+          auraId:           sc.aura         || "a0",
+          auraColor:        sc.auraColor    || "#fdd835",
+          accessoryId:      sc.accessory    || sc.accessoryId || "ac_none",
+          accessoryDataURL: accessoryDataURL,
+          clothColor:       sc.clothColor   || "#ff6a00",
+          hairColorAlt:     sc.hairColorAlt || null,
         };
       }
 
       function initMultiplayer() {
         myPlayerId = "player_" + Math.random().toString(36).substr(2, 9) + "_" + Date.now();
         const myRef = db.ref("players/" + myPlayerId);
-
-        // Al desconectarse, eliminarse de Firebase
         myRef.onDisconnect().remove();
-
         mpConnected = true;
         showHudToast("🌐 Conectado!", "xp");
         updateMpHud();
 
-        // Enviar datos iniciales completos (apariencia + posición + stats)
         myRef.set({
           name:       player.name,
           x:          Math.floor(player.x),
@@ -298,41 +303,52 @@
           t:          Date.now()
         });
 
-        // Escuchar a todos los jugadores en tiempo real
         db.ref("players").on("value", (snapshot) => {
           const allPlayers = snapshot.val() || {};
-          // Limpiar jugadores que ya no están
+
           for (const id in otherPlayers) {
             if (!allPlayers[id]) {
               delete otherPlayers[id];
               delete otherPlayerAnimators[id];
+              delete otherPlayerAccessoryImages[id];
             }
           }
-          // Actualizar otros jugadores
+
           for (const [id, data] of Object.entries(allPlayers)) {
             if (id === myPlayerId) continue;
             if (Date.now() - (data.t || 0) > 10000) {
               delete otherPlayers[id];
               delete otherPlayerAnimators[id];
+              delete otherPlayerAccessoryImages[id];
               continue;
             }
+
             const prev = otherPlayers[id];
             otherPlayers[id] = data;
 
-            // Crear/actualizar el animador de ese jugador remoto
             if (!otherPlayerAnimators[id]) {
               const CS = window.CharacterSystem;
               if (CS) otherPlayerAnimators[id] = new CS.SpriteAnimator("idle");
             }
-            // Sincronizar acción de animación
             if (otherPlayerAnimators[id] && data.animAction) {
               otherPlayerAnimators[id].play(data.animAction);
             }
+
+            const newDataURL  = data.appearance?.accessoryDataURL || null;
+            const prevDataURL = prev?.appearance?.accessoryDataURL || null;
+            if (newDataURL && newDataURL !== prevDataURL) {
+              const img = new Image();
+              img.onload  = () => { otherPlayerAccessoryImages[id] = img; };
+              img.onerror = () => { otherPlayerAccessoryImages[id] = null; };
+              img.src = newDataURL;
+            } else if (!newDataURL) {
+              otherPlayerAccessoryImages[id] = null;
+            }
           }
+
           updateMpHud();
         });
 
-        // Escuchar chat (solo mensajes nuevos)
         db.ref("chat").limitToLast(1).on("child_added", (snapshot) => {
           const msg = snapshot.val();
           if (!msg || msg.id === myPlayerId) return;
@@ -364,7 +380,6 @@
         });
       }
 
-      // ─── Dibujar otros jugadores usando CharacterSystem si está disponible ───
       function drawOtherPlayers() {
         const CS = window.CharacterSystem;
         const now = performance.now();
@@ -374,74 +389,96 @@
           const sy = p.y - cam.y;
           if (sx < -100 || sx > canvas.width + 100 || sy < -120 || sy > canvas.height + 120) continue;
 
-          // Actualizar animador con el timestamp actual
           const anim = otherPlayerAnimators[id];
           if (anim) anim.update(now);
 
-          // ── Intentar dibujar con CharacterSystem completo ──
           if (CS && csImageMap && anim && p.appearance) {
             try {
-              const app = p.appearance;
-              // Construir objeto appearance compatible con CS
+              const app        = p.appearance;
+              const remoteAccId  = app.accessoryId || "ac_none";
+              const remoteAccImg = otherPlayerAccessoryImages[id] || null;
+
+              // Inyectar accesorio remoto en el catálogo si no existe aún
+              let injectedAcc = null;
+              if (remoteAccId !== "ac_none" && remoteAccImg) {
+                const existing = CS.ACCESSORIES_CATALOG.find(a => a.id === remoteAccId);
+                if (!existing) {
+                  injectedAcc = {
+                    id:        remoteAccId,
+                    name:      "Remoto",
+                    type:      "other",
+                    slot:      "over_shirt",
+                    color:     null,
+                    userImage: remoteAccImg,
+                    dataURL:   app.accessoryDataURL || null,
+                  };
+                  CS.ACCESSORIES_CATALOG.push(injectedAcc);
+                } else if (!existing.userImage) {
+                  existing.userImage = remoteAccImg;
+                }
+              }
+
               const remoteAppearance = {
-                raceId:      app.raceId      || "human",
-                gender:      app.gender      || "male",
-                faceId:      app.faceId      || null,
-                faceColor:   app.faceColor   || null,
-                eyeColor:    app.eyeColor    || "#3a2a1a",
-                browColor:   app.browColor   || null,
-                pupilColor:  app.pupilColor  || null,
-                hairId:      app.hairId      || null,
-                hairColor:   app.hairColor   || "#1a1a1a",
-                topId:       app.topId       || null,
-                bottomId:    app.bottomId    || null,
-                shoesId:     app.shoesId     || null,
-                glovesId:    app.glovesId    || null,
-                skinColor:   app.skinColor   || "#e8c898",
-                auraId:      app.auraId      || "a0",
-                auraColor:   app.auraColor   || "#fdd835",
-                accessoryId: app.accessoryId || "ac_none",
+                raceId:      app.raceId    || "human",
+                gender:      app.gender    || "male",
+                faceId:      app.faceId    || null,
+                faceColor:   app.faceColor || null,
+                eyeColor:    app.eyeColor  || "#3a2a1a",
+                browColor:   app.browColor || null,
+                pupilColor:  app.pupilColor|| null,
+                hairId:      app.hairId    || null,
+                hairColor:   app.hairColor || "#1a1a1a",
+                topId:       app.topId     || null,
+                bottomId:    app.bottomId  || null,
+                shoesId:     app.shoesId   || null,
+                glovesId:    app.glovesId  || null,
+                skinColor:   app.skinColor || "#e8c898",
+                auraId:      app.auraId    || "a0",
+                auraColor:   app.auraColor || "#fdd835",
+                accessoryId: remoteAccId,
               };
-              // Construir objeto csPlayer temporal para el jugador remoto
+
               const remoteCSPlayer = {
                 appearance: remoteAppearance,
-                direction:  (p.facing || 1),
+                direction:  p.facing || 1,
               };
+
               const remoteState = {
                 glovesId:    remoteAppearance.glovesId  || "gm0",
                 auraId:      remoteAppearance.auraId    || "a0",
                 auraColor:   remoteAppearance.auraColor || "#fdd835",
-                accessoryId: remoteAppearance.accessoryId || "ac_none",
+                accessoryId: remoteAccId,
                 auraPhase:   (now * 0.003) % (Math.PI * 2),
                 viewKey:     null,
               };
 
-              // Sombra en el suelo
+              // Sombra
               ctx.fillStyle = "rgba(0,0,0,0.3)";
               ctx.beginPath();
               ctx.ellipse(sx, sy + 3, 16, 5, 0, 0, Math.PI * 2);
               ctx.fill();
 
-              // Dibujar sprite completo del personaje remoto
               ctx.save();
-              const scaleX = SPRITE_DRAW_W / CS.FRAME_W;
-              const scaleY = SPRITE_DRAW_H / CS.FRAME_H;
               ctx.translate(sx, sy);
-              ctx.scale(scaleX, scaleY);
+              ctx.scale(SPRITE_DRAW_W / CS.FRAME_W, SPRITE_DRAW_H / CS.FRAME_H);
               ctx.translate(-sx, -sy);
               ctx.imageSmoothingEnabled = true;
               CS.drawPlayer(ctx, sx, sy, remoteCSPlayer, csImageMap, anim, remoteState);
               ctx.restore();
 
-              // Etiqueta de nombre
+              if (injectedAcc) {
+                const idx = CS.ACCESSORIES_CATALOG.indexOf(injectedAcc);
+                if (idx !== -1) CS.ACCESSORIES_CATALOG.splice(idx, 1);
+              }
+
               _drawRemotePlayerLabel(p, sx, sy);
-              continue; // éxito con CS, no hace falta el fallback
+              continue;
+
             } catch (e) {
-              // Si CS falla, cae al fallback geométrico
+              // fallback geométrico
             }
           }
 
-          // ── Fallback: dibujo geométrico si CS no disponible ──
           _drawRemotePlayerFallback(p, sx, sy);
         }
       }
