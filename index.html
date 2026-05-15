@@ -451,6 +451,7 @@
           <button class="cat-btn" data-cat="gloves">         <span class="cat-icon">🥊</span><span class="cat-label">GUANTES</span></button>
           <button class="cat-btn" data-cat="shoes">          <span class="cat-icon">👟</span><span class="cat-label">CALZADO</span></button>
           <button class="cat-btn" data-cat="accessory">      <span class="cat-icon">🎽</span><span class="cat-label">ACCESOR.</span></button>
+          <button class="cat-btn" data-cat="free">           <span class="cat-icon">🧩</span><span class="cat-label">LIBRE</span></button>
           <button class="cat-btn" data-cat="aura">           <span class="cat-icon">✨</span><span class="cat-label">AURA</span></button>
           <button class="cat-btn" data-cat="color">          <span class="cat-icon">🎨</span><span class="cat-label">COLOR</span></button>
         </nav>
@@ -560,13 +561,15 @@
       const LS_KEY      = "dragonCreatorZ_slots";
       const LS_SLOT     = "dragonCreatorZ_activeSlot";
       const LS_ACC_KEY  = "dragonCreatorZ_accessories";
+      const LS_FREE_KEY = "dragonCreatorZ_freeCustomization";
       const PAGE_SIZE   = 8;
 
+      const FREE_CUSTOMIZATION_CATALOG = [];
       let imageMap    = {};
       let animator    = null, finalAnim = null;
       let activeCategory = "race";
       let pageState   = {};
-      let savedSlots  = [null, null, null];
+      let savedSlots  = Array(11).fill(null);
       let activeSlotIndex = 0;
       let uiFlipped   = false, uiZoom = 1;
       let _auraPhase  = 0;
@@ -603,7 +606,7 @@
       /* ══ Persistencia de accesorios importados ══ */
       function _saveAccessoriesToLS() {
         const toStore = ACCESSORIES_CATALOG
-          .filter(a => a.id !== "ac_none" && a.dataURL)
+          .filter(a => a.id !== "ac_none" && a.dataURL && !a.isFreeCustomization)
           .map(a => ({ id: a.id, name: a.name, type: a.type, color: a.color, dataURL: a.dataURL }));
         try { localStorage.setItem(LS_ACC_KEY, JSON.stringify(toStore)); } catch(e) {}
       }
@@ -614,6 +617,35 @@
           if (!raw) return;
           const list = JSON.parse(raw);
           await restoreUserAccessories(list);
+        } catch(e) {}
+      }
+
+      function _saveFreeCustomizationToLS() {
+        const toStore = FREE_CUSTOMIZATION_CATALOG.map(a => ({
+          id:       a.id,
+          name:     a.name,
+          type:     a.type,
+          color:    a.color,
+          dataURL:  a.dataURL,
+          raceName: a.raceName,
+        }));
+        try { localStorage.setItem(LS_FREE_KEY, JSON.stringify(toStore)); } catch(e) {}
+      }
+
+      function _restoreFreeCustomizationFromLS() {
+        try {
+          const raw = localStorage.getItem(LS_FREE_KEY);
+          if (!raw) return;
+          const list = JSON.parse(raw);
+          list.forEach(item => {
+            item.userImage = new Image();
+            item.userImage.src = item.dataURL;
+            item.color = item.color || null;
+            item.raceName = item.raceName || null;
+            item.isFreeCustomization = true;
+            FREE_CUSTOMIZATION_CATALOG.push(item);
+            ACCESSORIES_CATALOG.push(item);
+          });
         } catch(e) {}
       }
 
@@ -630,7 +662,7 @@
         ctx.fillStyle = "#12172e";
         ctx.fillRect(0, 0, w, h);
 
-        const img = cat === "accessory"
+const img = (cat === "accessory" || cat === "free")
           ? (item.userImage || null)
           : (item.spriteKey ? imageMap[item.spriteKey] : null);
 
@@ -760,7 +792,8 @@
         pants:     { label:"SELECCIONA LA ROPA INFERIOR",                              prop:"bottomId"},
         gloves:    { label:"SELECCIONA LOS GUANTES",                                   prop:"glovesId",     isExtra:true },
         shoes:     { label:"SELECCIONA EL CALZADO",                                    prop:"shoesId" },
-        accessory: { label:"ACCESORIOS IMPORTADOS",       catalog: ACCESSORIES_CATALOG, prop:"accessoryId", isExtra:true, isAccImport:true },
+        accessory: { label:"ACCESORIOS IMPORTADOS",       catalog: () => ACCESSORIES_CATALOG.filter(a => !a.isFreeCustomization), prop:"accessoryId", isExtra:true, isAccImport:true },
+        free:      { label:"PERSONALIZACIÓN LIBRE",    catalog: FREE_CUSTOMIZATION_CATALOG, prop:"accessoryId", isExtra:true, isAccImport:true },
         aura:      { label:"SELECCIONA EL AURA",          catalog: AURAS_CATALOG,      prop:"auraId",       isExtra:true, needsColor:true, colorProp:"auraColor", colorLabel:"COLOR AURA", palette:AURA_PALETTE },
         color:     { label:"COLORES", special:"color" },
       };
@@ -787,7 +820,9 @@
 
         if (cfg.special === "color") { renderColorPanel(panel); return; }
 
-        const catalog = cfg.catalog || currentCatalog(cat);
+        const catalog = typeof cfg.catalog === "function"
+          ? cfg.catalog()
+          : (cfg.catalog || currentCatalog(cat));
 
         if (cfg.needsGender) {
           const gRow = document.createElement("div");
@@ -838,10 +873,10 @@
 
           const lbl = document.createElement("div");
           lbl.className = "item-label";
-          lbl.textContent = item.name || item.id;
+          lbl.textContent = item.raceName ? `${item.raceName} · ${item.name || item.id}` : (item.name || item.id);
           thumb.appendChild(lbl);
 
-          if (cat === "accessory" && item.type && item.type !== "none") {
+          if ((cat === "accessory" || cat === "free") && item.type && item.type !== "none") {
             const td = ACCESSORY_TYPES.find(t => t.id === item.type);
             const badge = document.createElement("div");
             badge.className = "acc-type-badge";
@@ -858,8 +893,12 @@
                 charState.accessoryId = "ac_none";
                 player.appearance.accessoryId = "ac_none";
               }
+              if (cat === "free") {
+                const idx = FREE_CUSTOMIZATION_CATALOG.findIndex(x => x.id === item.id);
+                if (idx !== -1) FREE_CUSTOMIZATION_CATALOG.splice(idx, 1);
+                _saveFreeCustomizationToLS();
+              }
               removeUserAccessory(item.id);
-              _saveAccessoriesToLS();
               renderItemsPanel(cat);
               showToast("Accesorio eliminado", "warning");
             });
@@ -907,7 +946,7 @@
         }
 
         if (cfg.isAccImport) {
-          renderImportPanel(panel);
+          renderImportPanel(panel, cat);
         }
 
         if (totalPages > 1) {
@@ -1130,13 +1169,14 @@
       }
 
       /* ── Panel de importación de accesorios ── */
-      function renderImportPanel(panel) {
+      function renderImportPanel(panel, cat) {
+        const isFreeCat = cat === "free";
         const ip = document.createElement("div");
         ip.className = "import-panel";
 
         const t = document.createElement("div");
         t.className = "import-title";
-        t.textContent = "➕ IMPORTAR SPRITESHEET";
+        t.textContent = isFreeCat ? "➕ PERSONALIZACIÓN LIBRE" : "➕ IMPORTAR SPRITESHEET";
         ip.appendChild(t);
 
         const preview = document.createElement("img");
@@ -1154,19 +1194,31 @@
         const nameInput = document.createElement("input");
         nameInput.type = "text";
         nameInput.className = "import-input-text";
-        nameInput.placeholder = "Nombre del accesorio";
+        nameInput.placeholder = isFreeCat ? "Nombre de la personalización" : "Nombre del accesorio";
         nameInput.maxLength = 20;
         row1.appendChild(nameInput);
 
         const typeSelect = document.createElement("select");
         typeSelect.className = "import-select";
-        ACCESSORY_TYPES.forEach(tp => {
-          const opt = document.createElement("option");
-          opt.value = tp.id;
-          opt.textContent = `${tp.icon} ${tp.label}`;
-          typeSelect.appendChild(opt);
-        });
-        row1.appendChild(typeSelect);
+        const raceInput = document.createElement("input");
+        raceInput.type = "text";
+        raceInput.className = "import-input-text";
+        raceInput.placeholder = "Nombre de la raza";
+        raceInput.maxLength = 20;
+
+        if (isFreeCat) {
+          row1.appendChild(raceInput);
+          row1.style.flexWrap = "wrap";
+          row1.style.gap = "4px";
+        } else {
+          ACCESSORY_TYPES.forEach(tp => {
+            const opt = document.createElement("option");
+            opt.value = tp.id;
+            opt.textContent = `${tp.icon} ${tp.label}`;
+            typeSelect.appendChild(opt);
+          });
+          row1.appendChild(typeSelect);
+        }
         ip.appendChild(row1);
 
         const row2 = document.createElement("div");
@@ -1208,20 +1260,25 @@
             showToast("Primero selecciona un archivo PNG", "warning");
             return;
           }
-          const name = nameInput.value.trim() || "Accesorio";
-          const type = typeSelect.value;
-          addUserAccessory({
+          const name = nameInput.value.trim() || (isFreeCat ? "Personalización" : "Accesorio");
+          const type = isFreeCat ? "other" : typeSelect.value;
+          const item = {
+            id: `fc_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
             name,
             type,
             color: null,
             userImage: _importPendingImg,
             dataURL: _importPendingDataURL,
-          });
-          _saveAccessoriesToLS();
+            isFreeCustomization: isFreeCat,
+            raceName: isFreeCat ? raceInput.value.trim() || null : null,
+          };
+          addUserAccessory(item);
+          FREE_CUSTOMIZATION_CATALOG.push(item);
+          _saveFreeCustomizationToLS();
           _importPendingImg = null;
           _importPendingDataURL = null;
           showToast(`"${name}" añadido`, "success");
-          renderItemsPanel("accessory");
+          renderItemsPanel(cat);
         });
         row2.appendChild(addBtn);
         ip.appendChild(row2);
@@ -1369,11 +1426,11 @@
           const raw = localStorage.getItem(LS_KEY);
           const parsed = raw ? JSON.parse(raw) : null;
           savedSlots = Array.isArray(parsed)
-            ? [parsed[0] ?? null, parsed[1] ?? null, parsed[2] ?? null]
-            : [null, null, null];
-        } catch { savedSlots = [null, null, null]; }
+            ? Array.from({ length: 11 }, (_, i) => parsed[i] ?? null)
+            : Array(11).fill(null);
+        } catch { savedSlots = Array(11).fill(null); }
         const si = parseInt(localStorage.getItem(LS_SLOT) || "0", 10);
-        activeSlotIndex = Number.isFinite(si) ? Math.max(0, Math.min(2, si)) : 0;
+        activeSlotIndex = Number.isFinite(si) ? Math.max(0, Math.min(10, si)) : 0;
       }
 
       function saveSlots() { localStorage.setItem(LS_KEY, JSON.stringify(savedSlots)); }
@@ -1450,7 +1507,7 @@
       function renderSlots() {
         const list = document.getElementById("slotsList");
         list.innerHTML = "";
-        for (let i = 0; i < 3; i++) {
+        for (let i = 0; i < 11; i++) {
           const d = savedSlots[i];
           const card = document.createElement("div");
           card.className = "slot-card" + (d ? "" : " empty") + (i === activeSlotIndex && d ? " active-slot" : "");
@@ -1576,6 +1633,7 @@
           showToast("Cargando sprites...", "warning");
 
           await _restoreAccessoriesFromLS();
+          _restoreFreeCustomizationFromLS();
 
           imageMap = await preloadAssets("");
           const loaded = Object.values(imageMap).filter(Boolean).length;
