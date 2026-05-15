@@ -527,13 +527,39 @@
 
     // ══ MULTIPLAYER ══
     const otherPlayers = {}, otherPlayerAnimators = {}, otherPlayerAccessoryImages = {};
+    const otherPlayerPreviewImages = {};
     const otherPlayerAccessoryLoading = new Set();
+    const otherPlayerPreviewLoading = new Set();
     let myPlayerId = null, mpConnected = false, mpLastSend = 0, mpLastAppearance = 0;
     const MP_SEND_RATE = 80;
     const MP_APPEARANCE_RATE = 2500;
     const chatMessages = [], CHAT_MAX = 8;
 
-  /** Comprime accesorios importados para Firebase (evita rechazos por dataURL enorme). */
+    function compressDataURLForNetwork(dataURL, maxDim) {
+      if (!dataURL) return null;
+      if (dataURL.length < 90000) return dataURL;
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          try {
+            const max = maxDim || 128;
+            const ratio = Math.min(max / img.naturalWidth, max / img.naturalHeight, 1);
+            const w = Math.max(1, Math.round(img.naturalWidth * ratio));
+            const h = Math.max(1, Math.round(img.naturalHeight * ratio));
+            const c = document.createElement("canvas");
+            c.width = w;
+            c.height = h;
+            c.getContext("2d").drawImage(img, 0, 0, w, h);
+            resolve(c.toDataURL("image/jpeg", 0.72));
+          } catch (e) {
+            resolve(dataURL);
+          }
+        };
+        img.onerror = () => resolve(dataURL.length < 120000 ? dataURL : null);
+        img.src = dataURL;
+      });
+    }
+
     function compressAccessoryForNetwork(acc) {
       if (!acc) return null;
       if (acc.dataURL && acc.dataURL.length < 90000) return acc.dataURL;
@@ -554,31 +580,114 @@
       }
     }
 
-    function buildMyAppearancePayload() {
+    async function restoreAllAccessoriesForGame(CS) {
+      if (!CS) return;
+      try {
+        const rawAcc = localStorage.getItem("dragonCreatorZ_accessories");
+        if (rawAcc) {
+          const accList = JSON.parse(rawAcc);
+          if (Array.isArray(accList)) await CS.restoreUserAccessories(accList);
+        }
+      } catch (e) {}
+      try {
+        const rawFree = localStorage.getItem("dragonCreatorZ_freeCustomization");
+        if (rawFree) {
+          const list = JSON.parse(rawFree);
+          if (Array.isArray(list)) {
+            await Promise.all(list.map((item) => new Promise((resolve) => {
+              if (!item?.dataURL || CS.ACCESSORIES_CATALOG.find((a) => a.id === item.id)) { resolve(); return; }
+              const img = new Image();
+              img.onload = () => {
+                CS.ACCESSORIES_CATALOG.push({
+                  id: item.id, name: item.name || "Personalización", type: item.type || "other",
+                  slot: item.slot || "over_shirt", color: item.color || null,
+                  userImage: img, dataURL: item.dataURL, isFreeCustomization: true,
+                });
+                resolve();
+              };
+              img.onerror = resolve;
+              img.src = item.dataURL;
+            })));
+          }
+        }
+      } catch (e) {}
+      const sc = savedChar || {};
+      const accId = sc.accessory || sc.accessoryId;
+      if (accId && accId !== "ac_none" && sc.accessoryDataURL && !CS.ACCESSORIES_CATALOG.find((a) => a.id === accId)) {
+        await new Promise((resolve) => {
+          const img = new Image();
+          img.onload = () => {
+            CS.ACCESSORIES_CATALOG.push({
+              id: accId, name: "Personalización", type: "other", slot: "over_shirt",
+              color: null, userImage: img, dataURL: sc.accessoryDataURL,
+            });
+            resolve();
+          };
+          img.onerror = resolve;
+          img.src = sc.accessoryDataURL;
+        });
+      }
+    }
+
+    function renderAppearancePreview(CS) {
+      if (!CS || !csImageMap || !csAnimator) return null;
+      try {
+        const pw = 88, ph = Math.round(SPRITE_DRAW_H * (88 / SPRITE_DRAW_W));
+        const c = document.createElement("canvas");
+        c.width = pw;
+        c.height = ph;
+        const cctx = c.getContext("2d");
+        cctx.clearRect(0, 0, pw, ph);
+        const sx = pw / 2, sy = ph - 4;
+        const scaleX = pw / CS.FRAME_W, scaleY = ph / CS.FRAME_H;
+        cctx.save();
+        cctx.translate(sx, sy);
+        cctx.scale(scaleX, scaleY);
+        cctx.translate(-sx, -sy);
+        CS.drawPlayer(cctx, sx, sy, CS.player, csImageMap, csAnimator, {
+          glovesId: CS.player.appearance.glovesId || "gm0",
+          auraId: "a0",
+          auraColor: CS.player.appearance.auraColor || "#fdd835",
+          accessoryId: CS.player.appearance.accessoryId || "ac_none",
+          auraPhase: 0,
+          viewKey: null,
+        });
+        cctx.restore();
+        return c.toDataURL("image/jpeg", 0.72);
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function buildMyAppearancePayload(includePreview) {
       const CS = window.CharacterSystem;
       const app = CS?.player?.appearance;
       const sc = savedChar || {};
-      const accessoryId =
-        app?.accessoryId || sc.accessory || sc.accessoryId || "ac_none";
+      const raceId = app?.raceId || sc.race || player.race || "human";
+      const gender = app?.gender || sc.gender || "male";
+      const defs = CS ? CS.getDefaultIds(raceId, gender) : {};
+      const accessoryId = app?.accessoryId || sc.accessory || sc.accessoryId || "ac_none";
       let accessoryDataURL = null;
       if (CS && accessoryId !== "ac_none") {
         const acc = CS.ACCESSORIES_CATALOG.find((a) => a.id === accessoryId);
         if (acc) accessoryDataURL = compressAccessoryForNetwork(acc);
       }
-      return {
-        raceId: app?.raceId || sc.race || player.race || "human",
-        gender: app?.gender || sc.gender || "male",
-        faceId: app?.faceId || sc.faceId || null,
+      if (!accessoryDataURL && sc.accessoryDataURL && (sc.accessory === accessoryId || sc.accessoryId === accessoryId)) {
+        accessoryDataURL = sc.accessoryDataURL.length < 90000 ? sc.accessoryDataURL : compressAccessoryForNetwork({ dataURL: sc.accessoryDataURL, userImage: null });
+      }
+      const payload = {
+        raceId, gender,
+        faceId: app?.faceId || sc.faceId || defs.faceId || null,
         faceColor: app?.faceColor ?? sc.faceColor ?? null,
         eyeColor: app?.eyeColor || sc.eyeColor || "#3a2a1a",
         browColor: app?.browColor ?? sc.browColor ?? null,
         pupilColor: app?.pupilColor ?? sc.pupilColor ?? null,
-        hairId: app?.hairId || sc.hair || null,
+        hairId: app?.hairId || sc.hair || defs.hairId || null,
         hairColor: app?.hairColor || sc.hairColor || "#1a1a1a",
-        topId: app?.topId || sc.shirt || null,
-        bottomId: app?.bottomId || sc.pants || null,
-        shoesId: app?.shoesId || sc.shoes || null,
-        glovesId: app?.glovesId || sc.gloves || null,
+        topId: app?.topId || sc.shirt || defs.topId || null,
+        bottomId: app?.bottomId || sc.pants || defs.bottomId || null,
+        shoesId: app?.shoesId || sc.shoes || defs.shoesId || null,
+        glovesId: app?.glovesId || sc.gloves || defs.glovesId || "gm0",
         skinColor: app?.skinColor || sc.skinColor || "#e8c898",
         auraId: app?.auraId || sc.aura || "a0",
         auraColor: app?.auraColor || sc.auraColor || player.auraColor || "#fdd835",
@@ -586,15 +695,51 @@
         accessoryDataURL,
         clothColor: sc.clothColor || "#ff6a00",
       };
+      if (includePreview) payload.previewDataURL = renderAppearancePreview(CS);
+      return payload;
+    }
+
+    function normalizeRemoteAppearance(app, CS, p) {
+      const raceId = app?.raceId || p?.race || "human";
+      const gender = app?.gender || "male";
+      const defs = CS ? CS.getDefaultIds(raceId, gender) : {};
+      return {
+        raceId, gender,
+        faceId: app?.faceId || defs.faceId || null,
+        faceColor: app?.faceColor ?? null,
+        eyeColor: app?.eyeColor || "#3a2a1a",
+        browColor: app?.browColor ?? null,
+        pupilColor: app?.pupilColor ?? null,
+        hairId: app?.hairId || defs.hairId || null,
+        hairColor: app?.hairColor || "#1a1a1a",
+        topId: app?.topId || defs.topId || null,
+        bottomId: app?.bottomId || defs.bottomId || null,
+        shoesId: app?.shoesId || defs.shoesId || null,
+        glovesId: app?.glovesId || defs.glovesId || "gm0",
+        skinColor: app?.skinColor || "#e8c898",
+        auraId: app?.auraId || "a0",
+        auraColor: app?.auraColor || p?.auraColor || "#fdd835",
+        accessoryId: app?.accessoryId || "ac_none",
+        accessoryDataURL: app?.accessoryDataURL || null,
+        previewDataURL: app?.previewDataURL || null,
+        clothColor: app?.clothColor || "#ff6a00",
+      };
     }
 
     let lastAppearanceSig = "";
-    function publishMyAppearance(force) {
+    async function publishMyAppearance(force) {
       if (!mpConnected || !myPlayerId) return;
-      const appearance = buildMyAppearancePayload();
-      const sig = JSON.stringify(appearance);
+      const base = buildMyAppearancePayload(false);
+      const sig = JSON.stringify(base);
       if (!force && sig === lastAppearanceSig) return;
       lastAppearanceSig = sig;
+      let appearance = buildMyAppearancePayload(true);
+      if (appearance.previewDataURL && appearance.previewDataURL.length > 90000) {
+        appearance.previewDataURL = await compressDataURLForNetwork(appearance.previewDataURL, 96);
+      }
+      if (appearance.accessoryDataURL && appearance.accessoryDataURL.length > 90000) {
+        appearance.accessoryDataURL = await compressDataURLForNetwork(appearance.accessoryDataURL, 128);
+      }
       db.ref("players/" + myPlayerId).update({ appearance, t: Date.now() });
     }
 
@@ -603,7 +748,7 @@
       const myRef = db.ref("players/" + myPlayerId);
       myRef.onDisconnect().remove();
       mpConnected = true;
-      myRef.set({ name:player.name, x:Math.floor(player.x), y:Math.floor(player.y), facing:player.facing, animAction:"idle", race:player.race, auraColor:player.auraColor, charColor:player.charColor, level:player.level, hp:player.hp, maxHp:player.maxHp, appearance:buildMyAppearancePayload(), map:currentMap, t:Date.now() });
+      myRef.set({ name:player.name, x:Math.floor(player.x), y:Math.floor(player.y), facing:player.facing, animAction:"idle", race:player.race, auraColor:player.auraColor, charColor:player.charColor, level:player.level, hp:player.hp, maxHp:player.maxHp, appearance:buildMyAppearancePayload(false), map:currentMap, t:Date.now() });
       db.ref("players").on("value", (snapshot) => {
         const allPlayers = snapshot.val() || {};
         for (const id in otherPlayers) {
@@ -611,7 +756,9 @@
             delete otherPlayers[id];
             delete otherPlayerAnimators[id];
             delete otherPlayerAccessoryImages[id];
+            delete otherPlayerPreviewImages[id];
             otherPlayerAccessoryLoading.delete(id);
+            otherPlayerPreviewLoading.delete(id);
           }
         }
         for (const [id, data] of Object.entries(allPlayers)) {
@@ -620,21 +767,34 @@
             delete otherPlayers[id];
             delete otherPlayerAnimators[id];
             delete otherPlayerAccessoryImages[id];
+            delete otherPlayerPreviewImages[id];
             otherPlayerAccessoryLoading.delete(id);
+            otherPlayerPreviewLoading.delete(id);
             continue;
           }
-          const prevURL = otherPlayers[id]?.appearance?.accessoryDataURL || null;
+          const prev = otherPlayers[id];
+          const prevAccURL = prev?.appearance?.accessoryDataURL || null;
+          const prevPreviewURL = prev?.appearance?.previewDataURL || null;
           otherPlayers[id] = data;
           if (!otherPlayerAnimators[id]) { const CS = window.CharacterSystem; if (CS) otherPlayerAnimators[id] = new CS.SpriteAnimator("idle"); }
           if (otherPlayerAnimators[id] && data.animAction) otherPlayerAnimators[id].play(data.animAction);
-          const newURL = data.appearance?.accessoryDataURL || null;
-          if (newURL && newURL !== prevURL) {
+          const newAccURL = data.appearance?.accessoryDataURL || null;
+          if (newAccURL && newAccURL !== prevAccURL) {
             const img = new Image();
             img.onload = () => { otherPlayerAccessoryImages[id] = img; };
             img.onerror = () => { otherPlayerAccessoryImages[id] = null; };
-            img.src = newURL;
-          } else if (!newURL) {
+            img.src = newAccURL;
+          } else if (!newAccURL) {
             otherPlayerAccessoryImages[id] = null;
+          }
+          const newPreviewURL = data.appearance?.previewDataURL || null;
+          if (newPreviewURL && newPreviewURL !== prevPreviewURL) {
+            const pimg = new Image();
+            pimg.onload = () => { otherPlayerPreviewImages[id] = pimg; };
+            pimg.onerror = () => { delete otherPlayerPreviewImages[id]; };
+            pimg.src = newPreviewURL;
+          } else if (!newPreviewURL) {
+            delete otherPlayerPreviewImages[id];
           }
         }
         updateMpHud();
@@ -658,6 +818,21 @@
       }
     }
 
+    function _drawRemotePreviewSprite(sx, sy, img, facing, p) {
+      ctx.fillStyle = "rgba(0,0,0,0.3)";
+      ctx.beginPath();
+      ctx.ellipse(sx, sy + 3, 16, 5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      const dw = SPRITE_DRAW_W, dh = SPRITE_DRAW_H;
+      const dx = sx - dw / 2, dy = sy - dh;
+      ctx.save();
+      if ((facing || 1) === -1) { ctx.translate(sx, 0); ctx.scale(-1, 1); ctx.translate(-sx, 0); }
+      ctx.imageSmoothingEnabled = true;
+      ctx.drawImage(img, dx, dy, dw, dh);
+      ctx.restore();
+      _drawRemotePlayerLabel(p, sx, sy);
+    }
+
     function drawOtherPlayers() {
       const CS = window.CharacterSystem, now = performance.now();
       for (const [id, p] of Object.entries(otherPlayers)) {
@@ -666,9 +841,23 @@
         if (sx < -100 || sx > canvas.width+100 || sy < -120 || sy > canvas.height+120) continue;
         const anim = otherPlayerAnimators[id];
         if (anim) anim.update(now);
-        if (CS && csImageMap && anim && p.appearance) {
+        const app = normalizeRemoteAppearance(p.appearance, CS, p);
+        const previewImg = otherPlayerPreviewImages[id];
+        if (previewImg && previewImg.complete && previewImg.naturalWidth > 0) {
+          _drawRemotePreviewSprite(sx, sy, previewImg, p.facing, p);
+          continue;
+        }
+        if (app.previewDataURL && !previewImg && !otherPlayerPreviewLoading.has(id)) {
+          otherPlayerPreviewLoading.add(id);
+          const pimg = new Image();
+          pimg.onload = () => { otherPlayerPreviewImages[id] = pimg; otherPlayerPreviewLoading.delete(id); };
+          pimg.onerror = () => { otherPlayerPreviewLoading.delete(id); };
+          pimg.src = app.previewDataURL;
+        }
+        if (CS && csImageMap && anim) {
           try {
-            const app = p.appearance, remoteAccId = app.accessoryId||"ac_none", remoteAccImg = otherPlayerAccessoryImages[id]||null;
+            const remoteAccId = app.accessoryId || "ac_none";
+            const remoteAccImg = otherPlayerAccessoryImages[id] || null;
             let injectedAcc = null;
             if (remoteAccId !== "ac_none" && !remoteAccImg && app.accessoryDataURL && !otherPlayerAccessoryLoading.has(id)) {
               otherPlayerAccessoryLoading.add(id);
@@ -678,26 +867,35 @@
               img.src = app.accessoryDataURL;
             }
             if (remoteAccId !== "ac_none" && remoteAccImg) {
-              const ex = CS.ACCESSORIES_CATALOG.find(a=>a.id===remoteAccId);
+              const ex = CS.ACCESSORIES_CATALOG.find((a) => a.id === remoteAccId);
               if (!ex) {
-                injectedAcc={id:remoteAccId,name:"Remoto",type:"other",slot:"over_shirt",color:null,userImage:remoteAccImg,dataURL:app.accessoryDataURL||null};
+                injectedAcc = { id: remoteAccId, name: "Remoto", type: "other", slot: "over_shirt", color: null, userImage: remoteAccImg, dataURL: app.accessoryDataURL || null };
                 CS.ACCESSORIES_CATALOG.push(injectedAcc);
               } else if (!ex.userImage) {
-                ex.userImage=remoteAccImg;
-                if (!ex.dataURL && app.accessoryDataURL) ex.dataURL=app.accessoryDataURL;
+                ex.userImage = remoteAccImg;
+                if (!ex.dataURL && app.accessoryDataURL) ex.dataURL = app.accessoryDataURL;
               }
             }
-            const remApp = { raceId:app.raceId||"human",gender:app.gender||"male",faceId:app.faceId||null,faceColor:app.faceColor||null,eyeColor:app.eyeColor||"#3a2a1a",browColor:app.browColor||null,pupilColor:app.pupilColor||null,hairId:app.hairId||null,hairColor:app.hairColor||"#1a1a1a",topId:app.topId||null,bottomId:app.bottomId||null,shoesId:app.shoesId||null,glovesId:app.glovesId||null,skinColor:app.skinColor||"#e8c898",auraId:app.auraId||"a0",auraColor:app.auraColor||"#fdd835",accessoryId:remoteAccId };
-            const remCSPlayer = { appearance:remApp, direction:p.facing||1 };
-            const remState = { glovesId:remApp.glovesId||"gm0",auraId:remApp.auraId||"a0",auraColor:remApp.auraColor||"#fdd835",accessoryId:remoteAccId,auraPhase:(now*.003)%(Math.PI*2),viewKey:null };
-            ctx.fillStyle="rgba(0,0,0,0.3)"; ctx.beginPath(); ctx.ellipse(sx,sy+3,16,5,0,0,Math.PI*2); ctx.fill();
-            ctx.save(); ctx.translate(sx,sy); ctx.scale(SPRITE_DRAW_W/CS.FRAME_W,SPRITE_DRAW_H/CS.FRAME_H); ctx.translate(-sx,-sy); ctx.imageSmoothingEnabled=true;
-            CS.drawPlayer(ctx,sx,sy,remCSPlayer,csImageMap,anim,remState); ctx.restore();
-            if (injectedAcc) { const idx=CS.ACCESSORIES_CATALOG.indexOf(injectedAcc); if(idx!==-1) CS.ACCESSORIES_CATALOG.splice(idx,1); }
-            _drawRemotePlayerLabel(p,sx,sy); continue;
-          } catch(e) {}
+            const remApp = Object.assign({}, app, { accessoryId: remoteAccId });
+            const remCSPlayer = { appearance: remApp, direction: p.facing || 1 };
+            const remState = { glovesId: remApp.glovesId, auraId: remApp.auraId, auraColor: remApp.auraColor, accessoryId: remoteAccId, auraPhase: (now * 0.003) % (Math.PI * 2), viewKey: null };
+            ctx.fillStyle = "rgba(0,0,0,0.3)";
+            ctx.beginPath();
+            ctx.ellipse(sx, sy + 3, 16, 5, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.save();
+            ctx.translate(sx, sy);
+            ctx.scale(SPRITE_DRAW_W / CS.FRAME_W, SPRITE_DRAW_H / CS.FRAME_H);
+            ctx.translate(-sx, -sy);
+            ctx.imageSmoothingEnabled = true;
+            CS.drawPlayer(ctx, sx, sy, remCSPlayer, csImageMap, anim, remState);
+            ctx.restore();
+            if (injectedAcc) { const idx = CS.ACCESSORIES_CATALOG.indexOf(injectedAcc); if (idx !== -1) CS.ACCESSORIES_CATALOG.splice(idx, 1); }
+            _drawRemotePlayerLabel(p, sx, sy);
+            continue;
+          } catch (e) { console.warn("[game] remote draw:", e); }
         }
-        _drawRemotePlayerFallback(p,sx,sy);
+        _drawRemotePlayerFallback(p, sx, sy);
       }
     }
 
@@ -829,7 +1027,7 @@
     }
 
     // ══ PERSONAJE ══
-    function loadCharacterData(){let slot=0;try{const qs=new URLSearchParams(window.location.search);const rs=qs.get("slot");if(rs!=null)slot=parseInt(rs,10);else{const ra=localStorage.getItem("dragonCreatorZ_activeSlot");if(ra!=null)slot=parseInt(ra,10);}}catch(e){}if(!Number.isFinite(slot))slot=0;slot=Math.max(0,Math.min(2,slot));try{const raw=localStorage.getItem("dragonCreatorZ_slots");if(raw){const slots=JSON.parse(raw);const d=Array.isArray(slots)?slots[slot]:null;if(d&&d.name)return d;if(Array.isArray(slots)){const any=slots.find(s=>s&&s.name);if(any)return any;}}}catch(e){}return null;}
+    function loadCharacterData(){let slot=0;try{const qs=new URLSearchParams(window.location.search);const rs=qs.get("slot");if(rs!=null)slot=parseInt(rs,10);else{const ra=localStorage.getItem("dragonCreatorZ_activeSlot");if(ra!=null)slot=parseInt(ra,10);}}catch(e){}if(!Number.isFinite(slot))slot=0;slot=Math.max(0,Math.min(10,slot));try{const raw=localStorage.getItem("dragonCreatorZ_slots");if(raw){const slots=JSON.parse(raw);const d=Array.isArray(slots)?slots[slot]:null;if(d&&d.name)return d;if(Array.isArray(slots)){const any=slots.find(s=>s&&s.name);if(any)return any;}}}catch(e){}return null;}
 
     const RACE_BASE_STATS={saiyan:{health:80,ki:90,strength:95,defense:70,speed:85},human:{health:85,ki:75,strength:80,defense:80,speed:80},namekian:{health:90,ki:85,strength:85,defense:90,speed:70},android:{health:95,ki:100,strength:90,defense:95,speed:75},kaioshin:{health:70,ki:100,strength:75,defense:80,speed:90},frieza:{health:85,ki:95,strength:88,defense:85,speed:95}};
     const BASE_RACE_COLORS={saiyan:"#f5c400",human:"#00e5ff",namekian:"#00ff9d",android:"#00e5ff",kaioshin:"#9c88ff",frieza:"#e040fb"};
@@ -1537,7 +1735,7 @@
           const CS=window.CharacterSystem;
           if (CS) {
             try {
-              try{const rawAcc=localStorage.getItem("dragonCreatorZ_accessories");if(rawAcc){const accList=JSON.parse(rawAcc);if(Array.isArray(accList))await CS.restoreUserAccessories(accList);}}catch(e){}
+              await restoreAllAccessoriesForGame(CS);
               csImageMap=await CS.preloadAssets("");
               CS.initPlayer();
               if(savedChar){
