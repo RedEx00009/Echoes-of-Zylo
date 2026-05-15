@@ -1349,13 +1349,29 @@ const img = (cat === "accessory" || cat === "free")
         const raceId  = player.appearance.raceId;
         const gender  = player.appearance.gender;
         const defaults = getDefaultIds(raceId, gender);
-        player.appearance.faceId      = defaults.faceId;
-        player.appearance.hairId      = defaults.hairId;
-        player.appearance.topId       = defaults.topId;
-        player.appearance.bottomId    = defaults.bottomId;
-        player.appearance.shoesId     = defaults.shoesId;
-        charState.glovesId            = defaults.glovesId;
-        player.appearance.glovesId    = defaults.glovesId;
+
+        // Cara y cabello sí se resetean al primero de la raza
+        player.appearance.faceId   = defaults.faceId;
+        player.appearance.hairId   = defaults.hairId;
+
+        // Ropa, calzado y guantes → vacío/ninguno
+        player.appearance.topId    = getCatalogFor("shirt",  raceId, gender).find(i => i.spriteKey === null)?.id
+                                   || getCatalogFor("shirt",  raceId, gender).at(-1)?.id
+                                   || defaults.topId;
+
+        player.appearance.bottomId = getCatalogFor("pants",  raceId, gender).find(i => i.spriteKey === null)?.id
+                                   || getCatalogFor("pants",  raceId, gender).at(-1)?.id
+                                   || defaults.bottomId;
+
+        player.appearance.shoesId  = getCatalogFor("shoes",  raceId, gender).find(i => i.spriteKey === null)?.id
+                                   || getCatalogFor("shoes",  raceId, gender).at(-1)?.id
+                                   || defaults.shoesId;
+
+        charState.glovesId         = getCatalogFor("gloves", raceId, gender).find(i => i.spriteKey === null)?.id
+                                   || getCatalogFor("gloves", raceId, gender)[0]?.id
+                                   || "gm0";
+        player.appearance.glovesId = charState.glovesId;
+
         invalidateHairCache();
         ["face","hair","shirt","pants","shoes","gloves"].forEach(c => { pageState[c] = 0; });
       }
