@@ -830,6 +830,35 @@
     return img.naturalWidth >= fw && img.naturalHeight >= fh * TOTAL_ROWS;
   }
 
+  /** Hoja con al menos una celda (p. ej. PNG importado tamaño grilla, 1 fila). */
+  function hasSheetLayout(img) {
+    if (!img || !img.naturalWidth || !img.naturalHeight) return false;
+    const { fw, fh } = getFrameSize(img);
+    return img.naturalWidth >= fw && img.naturalHeight >= fh;
+  }
+
+  function isFreeCustomizationEntry(accDef) {
+    return !!(accDef && accDef.id !== "ac_none" && (accDef.isFreeCustomization || String(accDef.id).startsWith("fc_")));
+  }
+
+  function _getAccessoryImage(accDef) {
+    if (!accDef || accDef.id === "ac_none") return null;
+    const img = accDef.userImage;
+    if (img && img.complete && img.naturalWidth) return img;
+    if (!accDef.dataURL) return img || null;
+    if (!accDef._pendingImage) {
+      const pending = new Image();
+      accDef._pendingImage = pending;
+      pending.onload = () => {
+        accDef.userImage = pending;
+        accDef._pendingImage = null;
+      };
+      pending.onerror = () => { accDef._pendingImage = null; };
+      pending.src = accDef.dataURL;
+    }
+    return accDef.userImage || null;
+  }
+
   function getIdleFrameCoords(img) {
     const { fw, fh } = getFrameSize(img);
     return { srcX: 0, srcY: IDLE_ROW * fh, fw, fh };
@@ -954,14 +983,15 @@
   //  PRELOADER
   // ═══════════════════════════════════════════════════════════════
 
-  async function preloadAssets(basePath = "") {
+  async function preloadAssets(basePath = "", options = {}) {
+    const quiet = !!options.quiet;
     const entries = Object.entries(SPRITE_IMAGES);
     const loadOne = ([key, filename]) => new Promise((resolve) => {
       if (!filename) { resolve([key, null]); return; }
       const img = new Image();
       img.onload  = () => { _frameSizeCache.clear(); resolve([key, img]); };
       img.onerror = () => {
-        console.warn(`[CharacterSystem] No se pudo cargar: ${basePath}${filename}`);
+        if (!quiet) console.warn(`[CharacterSystem] No se pudo cargar: ${basePath}${filename}`);
         resolve([key, null]);
       };
       img.src = basePath + filename;
@@ -1095,15 +1125,23 @@
 
   function _drawLayerSprite(ctx, img, destX, destY, dw, dh, animator) {
     if (!img || !img.complete || !img.naturalWidth) return false;
-    const sheet = isCompatibleSheet(img);
-    ctx.imageSmoothingEnabled = !sheet;
-    if (sheet && animator) {
-      const { srcX, srcY, fw, fh } = animator.getFrameCoords(img);
+    const fullSheet = isCompatibleSheet(img);
+    const partialSheet = !fullSheet && hasSheetLayout(img);
+    const useSheet = fullSheet || partialSheet;
+    ctx.imageSmoothingEnabled = !useSheet;
+    if (useSheet && animator) {
+      let srcX, srcY, fw, fh;
+      if (fullSheet) {
+        ({ srcX, srcY, fw, fh } = animator.getFrameCoords(img));
+      } else {
+        ({ srcX, srcY, fw, fh } = getIdleFrameCoords(img));
+      }
       if (srcX + fw <= img.naturalWidth && srcY + fh <= img.naturalHeight) {
         ctx.drawImage(img, srcX, srcY, fw, fh, destX, destY, dw, dh);
         return true;
       }
     }
+    ctx.imageSmoothingEnabled = true;
     ctx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, destX, destY, dw, dh);
     return true;
   }
@@ -1385,8 +1423,9 @@ function tintFaceDetailed(faceImg, browColor, pupilColor, faceDef, w, h, frameCo
 
     const accessoryId = app.accessoryId || (charState && charState.accessoryId) || "ac_none";
     const accDef      = ACCESSORIES_CATALOG.find((a) => a.id === accessoryId) || ACCESSORIES_CATALOG[0];
-    const accImg      = accDef ? accDef.userImage : null;
+    const accImg      = _getAccessoryImage(accDef);
     const accSlot     = accDef ? accDef.slot : "over_shirt";
+    const freeCustom  = isFreeCustomizationEntry(accDef);
 
     const bodyGender = raceDef.genderless ? "male" : gender;
     const bodyImg    = imageMap ? imageMap[`${raceDef.id}_${bodyGender}`] || null : null;
@@ -1418,6 +1457,13 @@ function tintFaceDetailed(faceImg, browColor, pupilColor, faceDef, w, h, frameCo
       ctx.globalAlpha = 1;
     } else {
       _drawProceduralAura(ctx, screenX, screenY, dw, dh, auraDef, auraColor, auraPhase);
+    }
+
+    // Personalización libre (fc_*): reemplaza cuerpo/ropa del catálogo, no es un accesorio encima
+    if (freeCustom && accImg && accImg.complete && accImg.naturalWidth) {
+      _drawLayerSprite(ctx, accImg, destX, destY, dw, dh, animator);
+      ctx.restore();
+      return;
     }
 
     // 2. ACCESORIO under_shirt
@@ -1611,6 +1657,7 @@ function tintFaceDetailed(faceImg, browColor, pupilColor, faceDef, w, h, frameCo
     HAIR_CATALOG, TOP_CATALOG, BOTTOM_CATALOG, SHOES_CATALOG, GLOVES_CATALOG,
 
     getCatalogFor, getDefaultIds, GENDERLESS_RACES,
+    isFreeCustomizationEntry, _getAccessoryImage, hasSheetLayout,
 
     SPRITE_IMAGES,
 
