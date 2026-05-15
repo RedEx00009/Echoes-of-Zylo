@@ -914,9 +914,11 @@
       ctx.beginPath();
       ctx.ellipse(sx, sy + 3, 16, 5, 0, 0, Math.PI * 2);
       ctx.fill();
+      const scaleX = SPRITE_DRAW_W / CS.DISPLAY_W;
+      const scaleY = SPRITE_DRAW_H / CS.DISPLAY_H;
       ctx.save();
       ctx.translate(sx, sy);
-      ctx.scale(SPRITE_DRAW_W / CS.FRAME_W, SPRITE_DRAW_H / CS.FRAME_H);
+      ctx.scale(scaleX, scaleY);
       ctx.translate(-sx, -sy);
       ctx.imageSmoothingEnabled = true;
       CS.drawPlayer(ctx, sx, sy, remCSPlayer, csImageMap, anim, remState);
@@ -1703,7 +1705,8 @@
       if (useCS) {
         const csState={glovesId:CS.player.appearance.glovesId||"gm0",auraId:CS.player.appearance.auraId||"a0",auraColor:CS.player.appearance.auraColor||"#fdd835",accessoryId:CS.player.appearance.accessoryId||"ac_none",auraPhase:player.auraPhase||0,viewKey:null};
         ctx.fillStyle="rgba(0,0,0,0.3)"; ctx.beginPath(); ctx.ellipse(sx,sy+3,16,5,0,0,Math.PI*2); ctx.fill();
-        ctx.save(); ctx.translate(sx,sy); ctx.scale(SPRITE_DRAW_W/CS.FRAME_W,SPRITE_DRAW_H/CS.FRAME_H); ctx.translate(-sx,-sy); ctx.imageSmoothingEnabled=true;
+        const scaleX=SPRITE_DRAW_W/CS.DISPLAY_W, scaleY=SPRITE_DRAW_H/CS.DISPLAY_H;
+        ctx.save(); ctx.translate(sx,sy); ctx.scale(scaleX,scaleY); ctx.translate(-sx,-sy); ctx.imageSmoothingEnabled=true;
         CS.drawPlayer(ctx,sx,sy,CS.player,csImageMap,csAnimator,csState); ctx.restore();
         return;
       }
