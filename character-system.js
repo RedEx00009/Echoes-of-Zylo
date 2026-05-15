@@ -983,15 +983,14 @@
   //  PRELOADER
   // ═══════════════════════════════════════════════════════════════
 
-  async function preloadAssets(basePath = "", options = {}) {
-    const quiet = !!options.quiet;
+  async function preloadAssets(basePath = "") {
     const entries = Object.entries(SPRITE_IMAGES);
     const loadOne = ([key, filename]) => new Promise((resolve) => {
       if (!filename) { resolve([key, null]); return; }
       const img = new Image();
       img.onload  = () => { _frameSizeCache.clear(); resolve([key, img]); };
       img.onerror = () => {
-        if (!quiet) console.warn(`[CharacterSystem] No se pudo cargar: ${basePath}${filename}`);
+        console.warn(`[CharacterSystem] No se pudo cargar: ${basePath}${filename}`);
         resolve([key, null]);
       };
       img.src = basePath + filename;
@@ -1657,7 +1656,6 @@ function tintFaceDetailed(faceImg, browColor, pupilColor, faceDef, w, h, frameCo
     HAIR_CATALOG, TOP_CATALOG, BOTTOM_CATALOG, SHOES_CATALOG, GLOVES_CATALOG,
 
     getCatalogFor, getDefaultIds, GENDERLESS_RACES,
-    isFreeCustomizationEntry, _getAccessoryImage, hasSheetLayout,
 
     SPRITE_IMAGES,
 
