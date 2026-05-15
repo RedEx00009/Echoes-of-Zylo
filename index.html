@@ -1750,7 +1750,7 @@ const img = (cat === "accessory" || cat === "free")
           await _restoreAccessoriesFromLS();
           _restoreFreeCustomizationFromLS();
 
-          imageMap = await preloadAssets("");
+          imageMap = await preloadAssets("", { quiet: true });
           const loaded = Object.values(imageMap).filter(Boolean).length;
           showToast(
             loaded > 0 ? `${loaded} sprites cargados` : "Modo procedimental activo",
