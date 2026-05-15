@@ -16,53 +16,6 @@
  *   Row 11 → fly_map     (3 frames)
  *   Row 12 → trans1_view (transformación 1, 3 frames)
  *   Row 13 → trans2_view (transformación 2, 3 frames)
- *
- *  HISTORIAL DE CAMBIOS:
- *
- *  v4.3 — ACCESSORIES + FACE_CATALOG
- *  - ACCESSORIES: eliminados los sprites fijos. El sistema ahora
- *    admite accesorios importados por el usuario (ObjectURL / base64).
- *    ACCESSORIES_CATALOG actúa como registro de slots; cada slot
- *    guarda { id, name, type, slot, color, userImage } donde
- *    userImage es un HTMLImageElement cargado en runtime.
- *  - FACE_CATALOG añadido: nueva capa de cara (ojos, marcas, cicatrices,
- *    expresiones) idéntica a las demás capas, con soporte de tinte.
- *  - drawPlayer dibuja la capa de cara entre el cuerpo y el cabello.
- *
- *  v4.3.1 — FIX tintLayer
- *  - Algoritmo completamente reescrito (pixel-by-pixel).
- *  - Píxeles muy oscuros (contornos) se preservan sin alteración.
- *  - Píxeles casi blancos/grises se tiñen sólo levemente (colorize suave).
- *  - Píxeles saturados reciben hue-replace completo conservando luminosidad.
- *  - Sin distorsión de blancos ni artefactos en cabello claro.
- *
- *  v4.3.2 — FIX cabello
- *  - tintHair ahora usa _tintSprite (multiply + destination-in)
- *    igual que el tinte de piel. Funciona correctamente con negro,
- *    rojo, azul y cualquier color saturado u oscuro.
- *  - tintLayer sigue usándose para marcas/tatuajes/pinturas de cara.
- *
- *  v4.3.3 — FIX ojos
- *  - tintFaceColor añadida: usa _tintSprite (multiply + destination-in)
- *    igual que cabello y piel. Se aplica cuando faceDef.eyeColor === true.
- *  - Negro, rojo, azul y cualquier color saturado en ojos funciona
- *    correctamente sin artefactos del algoritmo pixel-by-pixel.
- *  - tintLayer conservado para marcas/tatuajes/pinturas (degradados).
- *
- *  v1.0.2 — tintFaceDetailed: cejas y pupilas con colores independientes
- *  - Nueva función tintFaceDetailed(): tiñe cejas y pupilas con dos
- *    colores distintos en una sola pasada pixel-by-pixel.
- *  - REQUISITO DE SPRITESHEET para faces con eyeColor:true:
- *      · Cejas   → pintadas en ROJO PURO  (#ff0000, hue ~0°)
- *      · Pupilas → pintadas en AZUL PURO  (#0000ff, hue ~240°)
- *      · Contornos → negro  (#000000) → no se toca
- *      · Esclerótica → blanco (#ffffff) → no se toca
- *      · Sombras de piel → grises de baja saturación → no se tocan
- *  - appearance ahora soporta browColor y pupilColor además de eyeColor.
- *  - drawPlayer sección 9 prioriza tintFaceDetailed si browColor o
- *    pupilColor están definidos, cae a tintFaceColor si solo hay eyeColor,
- *    y a tintLayer para marcas/tatuajes/pinturas.
- *  - tintFaceDetailed exportada en CharacterSystem.
  */
 
 "use strict";
@@ -830,7 +783,6 @@
     return img.naturalWidth >= fw && img.naturalHeight >= fh * TOTAL_ROWS;
   }
 
-  /** Hoja con al menos una celda (p. ej. PNG importado tamaño grilla, 1 fila). */
   function hasSheetLayout(img) {
     if (!img || !img.naturalWidth || !img.naturalHeight) return false;
     const { fw, fh } = getFrameSize(img);
@@ -866,11 +818,6 @@
 
   // ═══════════════════════════════════════════════════════════════
   //  OBJETO PLAYER
-  //
-  //  appearance ahora incluye browColor y pupilColor (v1.0.2):
-  //    browColor  → color de las cejas  (null = usa eyeColor como fallback)
-  //    pupilColor → color de las pupilas (null = usa eyeColor como fallback)
-  //    eyeColor   → color global de ojos (fallback si los otros son null)
   // ═══════════════════════════════════════════════════════════════
 
   const player = {
@@ -892,9 +839,9 @@
       auraId:      "a1",
       auraColor:   "#fdd835",
       skinColor:   "#e8c898",
-      eyeColor:    "#3a2a1a",   // color global de ojos (fallback)
-      browColor:   null,        // color de cejas  (null = usa eyeColor)
-      pupilColor:  null,        // color de pupilas (null = usa eyeColor)
+      eyeColor:    "#3a2a1a",
+      browColor:   null,
+      pupilColor:  null,
       accessoryId: "ac_none",
     },
     _animator: null,
@@ -980,17 +927,18 @@
   }
 
   // ═══════════════════════════════════════════════════════════════
-  //  PRELOADER
+  //  PRELOADER — acepta options.quiet para suprimir warnings
   // ═══════════════════════════════════════════════════════════════
 
-  async function preloadAssets(basePath = "") {
+  async function preloadAssets(basePath = "", options = {}) {
+    const quiet = !!options.quiet;
     const entries = Object.entries(SPRITE_IMAGES);
     const loadOne = ([key, filename]) => new Promise((resolve) => {
       if (!filename) { resolve([key, null]); return; }
       const img = new Image();
       img.onload  = () => { _frameSizeCache.clear(); resolve([key, img]); };
       img.onerror = () => {
-        console.warn(`[CharacterSystem] No se pudo cargar: ${basePath}${filename}`);
+        if (!quiet) console.warn(`[CharacterSystem] No se pudo cargar: ${basePath}${filename}`);
         resolve([key, null]);
       };
       img.src = basePath + filename;
@@ -1043,9 +991,7 @@
   }
 
   // ═══════════════════════════════════════════════════════════════
-  //  tintLayer v4.3.1
-  //  Usado para MARCAS, TATUAJES y PINTURAS (tintable:true, eyeColor falsy).
-  //  Pixel-by-pixel: preserva degradados y matices múltiples.
+  //  tintLayer — para MARCAS, TATUAJES, PINTURAS
   // ═══════════════════════════════════════════════════════════════
 
   function tintLayer(img, color, cacheKey, w = DISPLAY_W, h = DISPLAY_H, frameCoords = null) {
@@ -1122,13 +1068,24 @@
   //  RENDER HELPERS
   // ═══════════════════════════════════════════════════════════════
 
+  /**
+   * _drawLayerSprite — FIX imágenes importadas (accesorios/personalización libre)
+   *
+   * Cambios vs versión anterior:
+   * - Spritesheets (fullSheet/partialSheet): igual que antes, pixelado perfecto.
+   * - Imágenes importadas libres (no son spritesheet): se escalan
+   *   proporcionalmente para encajar en dw×dh, centradas, con
+   *   imageSmoothingQuality "high" para máxima calidad.
+   */
   function _drawLayerSprite(ctx, img, destX, destY, dw, dh, animator) {
     if (!img || !img.complete || !img.naturalWidth) return false;
-    const fullSheet = isCompatibleSheet(img);
+    const fullSheet   = isCompatibleSheet(img);
     const partialSheet = !fullSheet && hasSheetLayout(img);
-    const useSheet = fullSheet || partialSheet;
-    ctx.imageSmoothingEnabled = !useSheet;
+    const useSheet    = fullSheet || partialSheet;
+
     if (useSheet && animator) {
+      // Spritesheet: dibujar frame exacto sin suavizado (pixelart)
+      ctx.imageSmoothingEnabled = false;
       let srcX, srcY, fw, fh;
       if (fullSheet) {
         ({ srcX, srcY, fw, fh } = animator.getFrameCoords(img));
@@ -1140,8 +1097,17 @@
         return true;
       }
     }
+
+    // Imagen importada libre (accesorio, personalización):
+    // escalar proporcionalmente y centrar con alta calidad
+    const iw = img.naturalWidth, ih = img.naturalHeight;
+    const scale = Math.min(dw / iw, dh / ih);
+    const drawW = iw * scale, drawH = ih * scale;
+    const offsetX = destX + (dw - drawW) / 2;
+    const offsetY = destY + (dh - drawH) / 2;
     ctx.imageSmoothingEnabled = true;
-    ctx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, destX, destY, dw, dh);
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(img, 0, 0, iw, ih, offsetX, offsetY, drawW, drawH);
     return true;
   }
 
@@ -1174,11 +1140,6 @@
     }
   }
 
-  /**
-   * _tintSprite — multiply blend + destination-in.
-   * Usado por tintHair y tintFaceColor.
-   * Negro (#000000) → negro perfecto. Rojo → solo canal R. Blanco → sin cambio.
-   */
   function _tintSprite(sheetImg, color, w, h, coords, fullImg, iw, ih) {
     const off = document.createElement("canvas"); off.width = w; off.height = h;
     const c = off.getContext("2d");
@@ -1188,6 +1149,7 @@
       c.drawImage(sheetImg, coords.srcX, coords.srcY, coords.fw || FRAME_W, coords.fh || FRAME_H, 0, 0, w, h);
     } else if (fullImg) {
       c.imageSmoothingEnabled = true;
+      c.imageSmoothingQuality = "high";
       c.drawImage(fullImg, 0, 0, iw, ih, 0, 0, w, h);
     }
 
@@ -1203,6 +1165,7 @@
       c.drawImage(sheetImg, coords.srcX, coords.srcY, coords.fw || FRAME_W, coords.fh || FRAME_H, 0, 0, w, h);
     } else if (fullImg) {
       c.imageSmoothingEnabled = true;
+      c.imageSmoothingQuality = "high";
       c.drawImage(fullImg, 0, 0, iw, ih, 0, 0, w, h);
     }
 
@@ -1210,9 +1173,6 @@
     return off;
   }
 
-  /**
-   * tintHair v4.3.2 — multiply igual que la piel.
-   */
   function tintHair(hairImg, hairColor, hairDef, w, h, frameCoords) {
     if (!hairImg || !hairImg.complete || !hairImg.naturalWidth) return null;
     const color = hairColor || "#1a1a1a";
@@ -1234,10 +1194,6 @@
     return result;
   }
 
-  /**
-   * tintFaceColor v4.3.3 — multiply para ojos con un solo color (eyeColor).
-   * Fallback cuando browColor y pupilColor son null.
-   */
   function tintFaceColor(faceImg, color, faceDef, w, h, frameCoords) {
     if (!faceImg || !faceImg.complete || !faceImg.naturalWidth) return null;
     const fc  = frameCoords
@@ -1258,134 +1214,94 @@
     return result;
   }
 
-  /**
-   * tintFaceDetailed v1.0.2
-   * Tiñe cejas y pupilas con DOS colores independientes en una sola pasada.
-   *
-   * REQUISITO DEL SPRITESHEET (faces con eyeColor:true):
-   *   · Cejas    → ROJO PURO   (#ff0000, hue 0°)   en el .png
-   *   · Pupilas  → AZUL PURO   (#0000ff, hue 240°) en el .png
-   *   · Contornos → negro      (#000000) → no se toca (l < 0.12)
-   *   · Esclerótica → blanco   (#ffffff) → no se toca (l > 0.88)
-   *   · Sombras de piel → grises de baja saturación (s < 0.25) → no se tocan
-   *
-   * Si browColor y pupilColor son iguales se comporta igual que tintFaceColor
-   * pero con detección por zona en lugar de multiply global.
-   *
-   * @param {HTMLImageElement} faceImg
-   * @param {string}      browColor    - hex color destino para cejas
-   * @param {string}      pupilColor   - hex color destino para pupilas
-   * @param {object}      faceDef
-   * @param {number}      w, h         - tamaño de salida
-   * @param {object|null} frameCoords  - { srcX, srcY, fw, fh }
-   */
-function tintFaceDetailed(faceImg, browColor, pupilColor, faceDef, w, h, frameCoords) {
-  if (!faceImg || !faceImg.complete || !faceImg.naturalWidth) return null;
+  function tintFaceDetailed(faceImg, browColor, pupilColor, faceDef, w, h, frameCoords) {
+    if (!faceImg || !faceImg.complete || !faceImg.naturalWidth) return null;
 
-  const fc  = frameCoords
-    ? `${frameCoords.srcX}_${frameCoords.srcY}_${frameCoords.fw}_${frameCoords.fh}`
-    : "full";
-  const key = `faceDetail|${faceDef ? faceDef.id : "face"}|${faceImg.src || ""}|${w}|${h}|${browColor}|${pupilColor}|${fc}`;
+    const fc  = frameCoords
+      ? `${frameCoords.srcX}_${frameCoords.srcY}_${frameCoords.fw}_${frameCoords.fh}`
+      : "full";
+    const key = `faceDetail|${faceDef ? faceDef.id : "face"}|${faceImg.src || ""}|${w}|${h}|${browColor}|${pupilColor}|${fc}`;
 
-  if (_tintCache.has(key)) return _tintCache.get(key);
-  if (_tintCache.size > 512) { const k = _tintCache.keys().next().value; _tintCache.delete(k); }
+    if (_tintCache.has(key)) return _tintCache.get(key);
+    if (_tintCache.size > 512) { const k = _tintCache.keys().next().value; _tintCache.delete(k); }
 
-  const off = document.createElement("canvas");
-  off.width = w; off.height = h;
-  const ctx = off.getContext("2d");
-  ctx.imageSmoothingEnabled = false;
+    const off = document.createElement("canvas");
+    off.width = w; off.height = h;
+    const ctx = off.getContext("2d");
+    ctx.imageSmoothingEnabled = false;
 
-  if (frameCoords) {
-    ctx.drawImage(faceImg, frameCoords.srcX, frameCoords.srcY, frameCoords.fw, frameCoords.fh, 0, 0, w, h);
-  } else {
-    ctx.drawImage(faceImg, 0, 0, faceImg.naturalWidth, faceImg.naturalHeight, 0, 0, w, h);
-  }
-
-  let imageData;
-  try { imageData = ctx.getImageData(0, 0, w, h); }
-  catch(e) { _tintCache.set(key, off); return off; }
-
-  const data = imageData.data;
-
-  // Pre-calcular HSL de los colores destino
-  const browRgb  = _hexToRgb(browColor);
-  const pupilRgb = _hexToRgb(pupilColor);
-  const { h: browH,  s: browS,  l: browL  } = _rgbToHsl(browRgb.r,  browRgb.g,  browRgb.b);
-  const { h: pupilH, s: pupilS, l: pupilL } = _rgbToHsl(pupilRgb.r, pupilRgb.g, pupilRgb.b);
-
-  for (let i = 0; i < data.length; i += 4) {
-    const a = data[i + 3];
-    if (a < 16) continue;
-
-    const r = data[i], g = data[i+1], b = data[i+2];
-
-    // Rojo puro del sprite = ceja (R dominante, G y B casi 0)
-    const isBrow = r > 10 && g < 20 && b < 20 && r > g * 3 && r > b * 3;
-
-    // Azul puro del sprite = iris (B dominante, R y G casi 0)
-    const isIris = b > 10 && r < 30 && g < 30 && b > r * 2 && b > g * 2;
-
-    if (!isBrow && !isIris) continue;
-
-    // Luminosidad del pixel original del sprite
-    // Para rojos: L = R/255/2 (ya que G=B=0, L=(R/255+0)/2)
-    // Para azules: L = B/255/2
-    const srcL = isBrow ? (r / 255 * 0.5) : (b / 255 * 0.5);
-
-    let finalH, finalS, finalL;
-
-    if (isBrow) {
-      finalH = browH;
-      finalS = browS;
-      // Escalar luminosidad del pixel al rango del color destino
-      // srcL va de 0 (borde oscuro) a ~0.43 (highlight)
-      // Lo mapeamos a [browL*0.3 ... browL*1.0 + (1-browL)*0.4]
-      if (browS < 0.05) {
-        // Destino acromático (negro, blanco, gris)
-        finalS = 0;
-        finalL = browL < 0.5
-          ? srcL * (browL * 2 + 0.1)           // negro/gris oscuro: escalar hacia abajo
-          : 0.5 + srcL * (browL - 0.5) * 2;    // blanco/gris claro: escalar hacia arriba
-      } else {
-        // Destino con color: conservar L del pixel, cambiar H+S
-        finalL = Math.max(srcL * 0.8, 0.03);
-      }
-} else {
-      // IRIS: píxel azul puro (0,0,B)
-      // srcL calculada de B da valores muy bajos — usar rango más amplio
-      // B va de ~10 (oscuro) a ~255 (claro), normalizar a 0–1
-      const srcLNorm = b / 255;  // 0=oscuro, 1=claro
-
-      finalH = pupilH;
-      finalS = pupilS;
-
-      if (pupilS < 0.05) {
-        // Destino acromático (negro, blanco, gris)
-        finalS = 0;
-        finalL = pupilL < 0.5
-          ? srcLNorm * pupilL * 1.5
-          : pupilL * 0.5 + srcLNorm * (1 - pupilL) * 0.5;
-      } else {
-        // Destino con color: mapear brillo del azul al rango del color destino
-        // oscuro (B bajo) → versión oscura del destino
-        // claro  (B alto) → versión clara del destino
-        const darkL  = Math.max(pupilL * 0.3, 0.04);
-        const lightL = Math.min(pupilL * 1.6, 0.85);
-        finalL = darkL + srcLNorm * (lightL - darkL);
-      }
+    if (frameCoords) {
+      ctx.drawImage(faceImg, frameCoords.srcX, frameCoords.srcY, frameCoords.fw, frameCoords.fh, 0, 0, w, h);
+    } else {
+      ctx.drawImage(faceImg, 0, 0, faceImg.naturalWidth, faceImg.naturalHeight, 0, 0, w, h);
     }
 
-    const { r: nr, g: ng, b: nb } = _hslToRgb(finalH, finalS, finalL);
-    data[i] = nr; data[i+1] = ng; data[i+2] = nb;
+    let imageData;
+    try { imageData = ctx.getImageData(0, 0, w, h); }
+    catch(e) { _tintCache.set(key, off); return off; }
+
+    const data = imageData.data;
+
+    const browRgb  = _hexToRgb(browColor);
+    const pupilRgb = _hexToRgb(pupilColor);
+    const { h: browH,  s: browS,  l: browL  } = _rgbToHsl(browRgb.r,  browRgb.g,  browRgb.b);
+    const { h: pupilH, s: pupilS, l: pupilL } = _rgbToHsl(pupilRgb.r, pupilRgb.g, pupilRgb.b);
+
+    for (let i = 0; i < data.length; i += 4) {
+      const a = data[i + 3];
+      if (a < 16) continue;
+
+      const r = data[i], g = data[i+1], b = data[i+2];
+
+      const isBrow = r > 10 && g < 20 && b < 20 && r > g * 3 && r > b * 3;
+      const isIris = b > 10 && r < 30 && g < 30 && b > r * 2 && b > g * 2;
+
+      if (!isBrow && !isIris) continue;
+
+      const srcL = isBrow ? (r / 255 * 0.5) : (b / 255 * 0.5);
+
+      let finalH, finalS, finalL;
+
+      if (isBrow) {
+        finalH = browH;
+        finalS = browS;
+        if (browS < 0.05) {
+          finalS = 0;
+          finalL = browL < 0.5
+            ? srcL * (browL * 2 + 0.1)
+            : 0.5 + srcL * (browL - 0.5) * 2;
+        } else {
+          finalL = Math.max(srcL * 0.8, 0.03);
+        }
+      } else {
+        const srcLNorm = b / 255;
+
+        finalH = pupilH;
+        finalS = pupilS;
+
+        if (pupilS < 0.05) {
+          finalS = 0;
+          finalL = pupilL < 0.5
+            ? srcLNorm * pupilL * 1.5
+            : pupilL * 0.5 + srcLNorm * (1 - pupilL) * 0.5;
+        } else {
+          const darkL  = Math.max(pupilL * 0.3, 0.04);
+          const lightL = Math.min(pupilL * 1.6, 0.85);
+          finalL = darkL + srcLNorm * (lightL - darkL);
+        }
+      }
+
+      const { r: nr, g: ng, b: nb } = _hslToRgb(finalH, finalS, finalL);
+      data[i] = nr; data[i+1] = ng; data[i+2] = nb;
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+    _tintCache.set(key, off);
+    return off;
   }
 
-  ctx.putImageData(imageData, 0, 0);
-  _tintCache.set(key, off);
-  return off;
-}
-
   // ═══════════════════════════════════════════════════════════════
-  //  drawPlayer — orden de capas v1.0.2
+  //  drawPlayer
   // ═══════════════════════════════════════════════════════════════
 
   function drawPlayer(ctx, screenX, screenY, playerObj, imageMap, animator, charState) {
@@ -1458,7 +1374,7 @@ function tintFaceDetailed(faceImg, browColor, pupilColor, faceDef, w, h, frameCo
       _drawProceduralAura(ctx, screenX, screenY, dw, dh, auraDef, auraColor, auraPhase);
     }
 
-    // Personalización libre (fc_*): reemplaza cuerpo/ropa del catálogo, no es un accesorio encima
+    // Personalización libre: reemplaza todo el sprite
     if (freeCustom && accImg && accImg.complete && accImg.naturalWidth) {
       _drawLayerSprite(ctx, accImg, destX, destY, dw, dh, animator);
       ctx.restore();
@@ -1492,7 +1408,7 @@ function tintFaceDetailed(faceImg, browColor, pupilColor, faceDef, w, h, frameCo
     // 5. CALZADO
     _drawLayerSprite(ctx, imageMap?.[shoesDef?.spriteKey]  || null, destX, destY, dw, dh, animator);
 
-    // 6. CINTURÓN belt_slot
+    // 6. CINTURÓN
     if (accSlot === "belt_slot" && accImg && accImg.complete && accImg.naturalWidth) {
       _drawLayerSprite(ctx, accImg, destX, destY, dw, dh, animator);
     }
@@ -1504,29 +1420,9 @@ function tintFaceDetailed(faceImg, browColor, pupilColor, faceDef, w, h, frameCo
     _drawLayerSprite(ctx, imageMap?.[glovesDef?.spriteKey] || null, destX, destY, dw, dh, animator);
 
     // 9. CARA
-    //
-    //  Árbol de decisión (v1.0.2):
-    //
-    //  tintable:false
-    //    └── dibujar sin tinte (_drawLayerSprite)
-    //
-    //  tintable:true, eyeColor:false
-    //    └── tintLayer (pixel-by-pixel, preserva degradados)
-    //        color = app.faceColor
-    //
-    //  tintable:true, eyeColor:true
-    //    ├── browColor o pupilColor definidos
-    //    │     └── tintFaceDetailed (cejas=browColor, pupilas=pupilColor)
-    //    │         REQUIERE spritesheet con cejas en rojo y pupilas en azul
-    //    └── solo eyeColor
-    //          └── tintFaceColor (multiply global, igual que cabello)
-    //              color = app.eyeColor
     const faceImg = imageMap ? imageMap[faceDef?.spriteKey] || null : null;
     if (faceImg && faceImg.complete && faceImg.naturalWidth) {
-
       if (faceDef && faceDef.tintable) {
-
-        // Calcular frameCoords una sola vez
         const faceSheet = isCompatibleSheet(faceImg);
         let frameCoords = null;
         if (faceSheet && animator) {
@@ -1537,15 +1433,12 @@ function tintFaceDetailed(faceImg, browColor, pupilColor, faceDef, w, h, frameCo
         }
 
         if (faceDef.eyeColor) {
-          // --- Ojos ---
           const browColor  = app.browColor  || null;
           const pupilColor = app.pupilColor || null;
           const eyeColor   = app.eyeColor   || null;
-
           let tinted = null;
 
           if (browColor || pupilColor) {
-            // Modo detallado: cejas y pupilas con colores independientes
             tinted = tintFaceDetailed(
               faceImg,
               browColor  || eyeColor || "#1a1a1a",
@@ -1553,7 +1446,6 @@ function tintFaceDetailed(faceImg, browColor, pupilColor, faceDef, w, h, frameCo
               faceDef, dw, dh, frameCoords
             );
           } else if (eyeColor) {
-            // Modo simple: un solo color para toda la capa (multiply)
             tinted = tintFaceColor(faceImg, eyeColor, faceDef, dw, dh, frameCoords);
           }
 
@@ -1563,9 +1455,7 @@ function tintFaceDetailed(faceImg, browColor, pupilColor, faceDef, w, h, frameCo
           } else {
             _drawLayerSprite(ctx, faceImg, destX, destY, dw, dh, animator);
           }
-
         } else {
-          // --- Marcas, tatuajes, pinturas, barbas ---
           const faceColor = app.faceColor || null;
           if (faceColor) {
             const cacheKey = (faceDef.id || "face") + "|" + (faceImg.src || "");
@@ -1580,14 +1470,12 @@ function tintFaceDetailed(faceImg, browColor, pupilColor, faceDef, w, h, frameCo
             _drawLayerSprite(ctx, faceImg, destX, destY, dw, dh, animator);
           }
         }
-
       } else {
-        // tintable:false → dibujar sin tinte
         _drawLayerSprite(ctx, faceImg, destX, destY, dw, dh, animator);
       }
     }
 
-    // 10. CABELLO — tintHair v4.3.2 (multiply)
+    // 10. CABELLO
     const hairImg = imageMap ? imageMap[hairDef?.spriteKey] || null : null;
     if (hairImg && hairImg.complete && hairImg.naturalWidth) {
       const sheet = isCompatibleSheet(hairImg) && animator;
@@ -1656,6 +1544,7 @@ function tintFaceDetailed(faceImg, browColor, pupilColor, faceDef, w, h, frameCo
     HAIR_CATALOG, TOP_CATALOG, BOTTOM_CATALOG, SHOES_CATALOG, GLOVES_CATALOG,
 
     getCatalogFor, getDefaultIds, GENDERLESS_RACES,
+    isFreeCustomizationEntry, _getAccessoryImage, hasSheetLayout,
 
     SPRITE_IMAGES,
 
