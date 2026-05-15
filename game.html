@@ -44,6 +44,14 @@ cat > /mnt/user-data/outputs/game.html << 'ENDOFFILE'
       .hud-top { position:absolute; top:12px; left:12px; right:12px; display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
 
       /* ── MENÚ LATERAL ── */
+      .menu-backdrop {
+        position:fixed; inset:0; background:rgba(0,0,0,.5);
+        opacity:0; pointer-events:none; z-index:15;
+        transition:opacity .3s ease;
+        display:none;
+      }
+      .menu-backdrop.open { opacity:1; pointer-events:auto; }
+      
       .left-menu {
         position:absolute; top:12px; left:12px; width:200px;
         background:var(--ui-bg); border:1px solid #2a3560;
@@ -204,8 +212,16 @@ cat > /mnt/user-data/outputs/game.html << 'ENDOFFILE'
         .dialog-box{bottom:185px;}
         .minimap-wrap{top:12px;right:12px;width:80px;height:80px;}
         .mission-box{top:110px;}
-        /* Menú lateral — en mobile no se expande más allá de su ancho fijo */
-        .left-menu{top:64px; max-height:calc(100vh - 80px); overflow-y:auto; width:210px;}
+        /* En mobile, el menú es un overlay full-screen */
+        .menu-backdrop { display:block; }
+        .left-menu{
+          position:fixed; top:0; left:0; width:280px; height:100vh;
+          border-radius:0; border:none;
+          max-height:100vh; overflow-y:auto;
+          transform:translateX(-300px);
+          z-index:25;
+        }
+        .left-menu.open { transform:translateX(0); }
         .hud-top{left:60px;}
       }
       @media (pointer:fine) and (min-width:769px) {
@@ -261,6 +277,9 @@ cat > /mnt/user-data/outputs/game.html << 'ENDOFFILE'
     </div>
     <canvas id="gameCanvas"></canvas>
     <div id="hud">
+      <!-- Backdrop para el menú en mobile -->
+      <div class="menu-backdrop" id="menuBackdrop"></div>
+      
       <!-- Botón hamburguesa -->
       <button id="menuToggleBtn" onclick="toggleMenu()">
         <span></span><span></span><span></span>
@@ -359,6 +378,7 @@ cat > /mnt/user-data/outputs/game.html << 'ENDOFFILE'
         menuOpen = !menuOpen;
         document.getElementById("leftMenu").classList.toggle("open", menuOpen);
         document.getElementById("menuToggleBtn").classList.toggle("open", menuOpen);
+        document.getElementById("menuBackdrop").classList.toggle("open", menuOpen);
         if (menuOpen) renderMenuSlots();
       }
       window.toggleMenu = toggleMenu;
@@ -368,11 +388,21 @@ cat > /mnt/user-data/outputs/game.html << 'ENDOFFILE'
         if (!menuOpen) return;
         const menu = document.getElementById("leftMenu");
         const btn  = document.getElementById("menuToggleBtn");
+        const backdrop = document.getElementById("menuBackdrop");
         if (!menu.contains(e.target) && !btn.contains(e.target)) {
           menuOpen = false;
           menu.classList.remove("open");
           btn.classList.remove("open");
+          backdrop.classList.remove("open");
         }
+      });
+
+      // Click en backdrop cierra el menú
+      document.getElementById("menuBackdrop").addEventListener("click", function() {
+        menuOpen = false;
+        document.getElementById("leftMenu").classList.remove("open");
+        document.getElementById("menuToggleBtn").classList.remove("open");
+        document.getElementById("menuBackdrop").classList.remove("open");
       });
 
       function renderMenuSlots() {
@@ -469,6 +499,12 @@ cat > /mnt/user-data/outputs/game.html << 'ENDOFFILE'
 
         updatePlayerHud();
         showHudToast(`✅ ${player.name} cargado`, "xp");
+
+        // Cerrar menú después de cargar
+        menuOpen = false;
+        document.getElementById("leftMenu").classList.remove("open");
+        document.getElementById("menuToggleBtn").classList.remove("open");
+        document.getElementById("menuBackdrop").classList.remove("open");
 
         // Actualizar Firebase con nuevo nombre/apariencia
         if (mpConnected && myPlayerId) {
