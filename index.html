@@ -1,1783 +1,1824 @@
 <!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Dragon Creator Z</title>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <style>
-      :root {
-        --bg-deep: #08090f;
-        --bg-panel: #0d1020;
-        --bg-card: #12172e;
-        --bg-hover: #1a2040;
-        --border: #2a3560;
-        --glow: #4a6aff;
-        --accent: #f5c400;
-        --accent2: #ff6a00;
-        --cyan: #00e5ff;
-        --green: #00ff9d;
-        --red: #ff1744;
-        --orange: #ff6a00;
-        --magenta: #e040fb;
-        --tp: #e8eaf6;
-        --td: #8892b0;
-        --tm: #3d4a6b;
-        --fh: "Orbitron", monospace;
-        --fb: "Rajdhani", sans-serif;
-        --r: 6px;
-        --tr: 0.15s ease;
-      }
-      *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
-      html, body { height: 100%; overflow: hidden; }
-      @media (max-width: 768px) { html, body { height: auto; overflow: auto; -webkit-overflow-scrolling: touch; } }
-      body { background: var(--bg-deep); color: var(--tp); font-family: var(--fb); font-size: 14px; }
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <title>Dragon World Z — Lobby</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg:      #07080e;
+      --bg2:     #0d1020;
+      --bg3:     #12172e;
+      --border:  #1e2a4a;
+      --border2: #2a3560;
+      --accent:  #f5c400;
+      --accent2: #ff6a00;
+      --cyan:    #00e5ff;
+      --green:   #00e676;
+      --red:     #ff1744;
+      --purple:  #aa00ff;
+      --tp:      #e8eaf6;
+      --td:      #8892b0;
+      --tm:      #3d4a6b;
+      --fh: "Orbitron", monospace;
+      --fb: "Rajdhani", sans-serif;
+      --panel: rgba(7,8,14,0.92);
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);}
+    body{font-family:var(--fb);color:var(--tp);}
 
-      /* ── HEADER ── */
-      .app-header {
-        display: flex; align-items: center; justify-content: space-between;
-        padding: 10px 20px; height: 52px;
-        background: linear-gradient(90deg, #0d1020, #111830, #0d1020);
-        border-bottom: 2px solid var(--border);
-        box-shadow: 0 2px 20px rgba(74,106,255,.25);
-        position: relative; z-index: 10;
-      }
-      .app-header::after {
-        content: ""; position: absolute; bottom: -4px; left: 0; right: 0; height: 2px;
-        background: linear-gradient(90deg, transparent, var(--accent), var(--glow), var(--accent), transparent);
-        opacity: .6;
-      }
-      .header-logo { font-size: 24px; filter: drop-shadow(0 0 8px var(--accent)); animation: pulseLogo 2s ease-in-out infinite; }
-      @keyframes pulseLogo {
-        0%,100% { filter: drop-shadow(0 0 8px var(--accent)); }
-        50%      { filter: drop-shadow(0 0 20px var(--accent)) drop-shadow(0 0 36px var(--accent2)); }
-      }
-      .header-title { font-family: var(--fh); font-size: 20px; font-weight: 900; letter-spacing: 3px; margin-left: 10px; }
-      .header-title .acc { color: var(--accent); text-shadow: 0 0 12px var(--accent); }
-      .header-sub { font-family: var(--fh); font-size: 9px; letter-spacing: 2px; color: var(--tm); }
+    /* ── LOADING ── */
+    #screenLoading{
+      position:fixed;inset:0;z-index:9999;
+      background:radial-gradient(ellipse at 50% 30%,#0a1535,#07080e 70%);
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+    }
+    .ld-title{font-family:var(--fh);font-size:clamp(20px,5vw,44px);font-weight:900;
+      letter-spacing:4px;color:var(--accent);text-shadow:0 0 30px var(--accent),0 0 60px var(--accent2);}
+    .ld-bar-wrap{width:300px;height:3px;background:#1a2040;border-radius:2px;overflow:hidden;}
+    .ld-bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0%;transition:width .3s;}
+    .ld-label{font-family:var(--fh);font-size:9px;letter-spacing:2px;color:var(--tm);}
 
-      /* ── LAYOUT ── */
-      .creator-layout { display: grid; grid-template-columns: 200px 1fr 300px; height: calc(100vh - 52px); overflow: hidden; }
+    /* ── CANVAS ── */
+    #gameCanvas{display:block;position:fixed;top:0;left:0;width:100vw;height:100vh;cursor:default;}
+    #gameCanvas.edit-mode{cursor:crosshair;}
 
-      /* ── COL IZQUIERDA ── */
-      .left-col { display: flex; flex-direction: row; border-right: 1px solid var(--border); overflow: hidden; height: 100%; }
-      .cat-nav {
-        width: 68px; flex-shrink: 0; background: var(--bg-panel);
-        border-right: 1px solid var(--border);
-        display: flex; flex-direction: column; align-items: center; gap: 4px;
-        padding: 10px 4px; overflow-y: auto; scrollbar-width: none; height: 100%;
-      }
-      .cat-nav::-webkit-scrollbar { display: none; }
-      .cat-btn {
-        width: 56px; height: 52px;
-        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
-        background: transparent; border: 1px solid transparent; border-radius: var(--r);
-        color: var(--td); cursor: pointer; transition: all var(--tr);
-        font-family: var(--fb); font-size: 9px; font-weight: 600; letter-spacing: 1px;
-        text-align: center; line-height: 1.1;
-        touch-action: manipulation; -webkit-tap-highlight-color: transparent;
-      }
-      .cat-btn:hover { background: var(--bg-hover); border-color: var(--border); color: var(--tp); }
-      .cat-btn.active {
-        background: linear-gradient(135deg, rgba(245,196,0,.15), rgba(74,106,255,.1));
-        border-color: var(--accent); color: var(--accent);
-        box-shadow: 0 0 10px rgba(245,196,0,.2), inset 0 0 8px rgba(245,196,0,.05);
-      }
-      .cat-icon  { font-size: 18px; line-height: 1; }
-      .cat-label { font-size: 8px; letter-spacing: 1px; margin-top: 1px; }
+    /* ── HUD CONTENEDOR ── */
+    #hud{position:fixed;inset:0;pointer-events:none;z-index:10;}
 
-      .items-panel { flex: 1; background: var(--bg-panel); display: flex; flex-direction: column; overflow: hidden; min-width: 0; height: 100%; }
-      .items-section-title {
-        font-family: var(--fh); font-size: 9px; letter-spacing: 2px; color: var(--td);
-        padding: 10px 10px 6px; border-bottom: 1px solid var(--border); flex-shrink: 0;
-      }
-      .items-scroll {
-        flex: 1; overflow-y: auto; padding: 8px;
-        scrollbar-width: thin; scrollbar-color: var(--border) transparent; min-height: 0;
-      }
-      .items-scroll::-webkit-scrollbar { width: 3px; }
-      .items-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-      .items-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 8px; }
+    /* ── PANEL SUPERIOR ── */
+    .hud-topbar{
+      position:absolute;top:0;left:0;right:0;height:44px;
+      background:linear-gradient(180deg,rgba(7,8,14,.95),transparent);
+      display:flex;align-items:center;padding:0 14px;gap:10px;
+      pointer-events:auto;
+    }
+    .topbar-logo{font-family:var(--fh);font-size:13px;font-weight:900;letter-spacing:3px;
+      color:var(--accent);text-shadow:0 0 10px var(--accent);}
+    .topbar-map{font-family:var(--fh);font-size:9px;letter-spacing:2px;color:var(--cyan);
+      background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.3);
+      border-radius:4px;padding:2px 8px;}
+    .topbar-spacer{flex:1;}
+    .topbar-online{font-family:var(--fh);font-size:9px;letter-spacing:1px;color:var(--td);}
+    .topbar-btn{
+      height:28px;padding:0 10px;background:rgba(255,255,255,.06);
+      border:1px solid var(--border2);border-radius:4px;color:var(--td);
+      font-family:var(--fh);font-size:8px;letter-spacing:1px;cursor:pointer;
+      transition:all .15s;display:flex;align-items:center;gap:5px;
+    }
+    .topbar-btn:hover{border-color:var(--accent);color:var(--accent);}
+    .topbar-btn.active{border-color:var(--accent);color:var(--accent);
+      background:rgba(245,196,0,.12);box-shadow:0 0 8px rgba(245,196,0,.2);}
 
-      .item-thumb {
-        aspect-ratio: 1; background: var(--bg-card); border: 2px solid var(--border);
-        border-radius: var(--r); cursor: pointer; overflow: hidden; transition: all var(--tr);
-        display: flex; align-items: center; justify-content: center; position: relative;
-        touch-action: manipulation; -webkit-tap-highlight-color: transparent;
-      }
-      .item-thumb:hover { border-color: var(--td); transform: scale(1.04); background: var(--bg-hover); }
-      .item-thumb.selected { border-color: var(--accent); box-shadow: 0 0 12px rgba(245,196,0,.4); background: rgba(245,196,0,.08); }
-      .item-thumb canvas { width: 100%; height: 100%; image-rendering: pixelated; }
-      .item-thumb .item-label {
-        position: absolute; bottom: 0; left: 0; right: 0;
-        background: rgba(8,9,15,.85); font-family: var(--fh); font-size: 6px;
-        letter-spacing: .5px; color: var(--td); text-align: center; padding: 2px 1px; line-height: 1.2;
-      }
-      .item-thumb.selected .item-label { color: var(--accent); }
+    /* ── MINIMAP ── */
+    .minimap-wrap{
+      position:absolute;top:52px;right:12px;
+      background:var(--panel);border:1px solid var(--border2);border-radius:6px;
+      overflow:hidden;width:100px;height:100px;
+    }
+    #minimapCanvas{width:100%;height:100%;image-rendering:pixelated;}
+    .minimap-label{
+      position:absolute;bottom:3px;left:0;right:0;text-align:center;
+      font-family:var(--fh);font-size:7px;letter-spacing:2px;color:var(--tm);
+    }
 
-      .acc-delete-btn {
-        position: absolute; top: 2px; right: 2px; width: 14px; height: 14px;
-        background: rgba(255,23,68,.8); border: none; border-radius: 2px;
-        color: white; font-size: 9px; cursor: pointer; display: flex;
-        align-items: center; justify-content: center; line-height: 1;
-        opacity: 0; transition: opacity .15s;
-        touch-action: manipulation;
-      }
-      .item-thumb:hover .acc-delete-btn { opacity: 1; }
-      .item-thumb.selected .acc-delete-btn { opacity: .7; }
-      .item-thumb.selected .acc-delete-btn:hover { opacity: 1; }
+    /* ── CHAT ── */
+    .chat-wrap{
+      position:absolute;bottom:80px;left:12px;width:240px;
+      background:var(--panel);border:1px solid var(--border2);border-radius:8px;
+      overflow:hidden;pointer-events:auto;
+    }
+    .chat-header{
+      padding:5px 10px;border-bottom:1px solid var(--border);
+      font-family:var(--fh);font-size:8px;letter-spacing:2px;color:var(--cyan);
+      display:flex;align-items:center;gap:6px;
+    }
+    .chat-dot{width:6px;height:6px;border-radius:50%;background:var(--green);
+      box-shadow:0 0 4px var(--green);animation:pulse 2s infinite;}
+    @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+    #chatBox{
+      height:120px;overflow-y:auto;padding:6px 8px;
+      font-size:11px;line-height:1.5;color:var(--td);
+      scrollbar-width:thin;scrollbar-color:var(--border) transparent;
+    }
+    #chatBox::-webkit-scrollbar{width:2px;}
+    #chatBox::-webkit-scrollbar-thumb{background:var(--border);}
+    .chat-input-row{display:flex;gap:4px;padding:6px;}
+    .chat-input{
+      flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:4px;
+      padding:4px 8px;color:var(--tp);font-family:var(--fb);font-size:11px;outline:none;
+      transition:border-color .15s;
+    }
+    .chat-input:focus{border-color:var(--cyan);}
+    .chat-send{
+      background:rgba(0,229,255,.15);border:1px solid var(--cyan);border-radius:4px;
+      color:var(--cyan);padding:4px 8px;font-family:var(--fh);font-size:9px;cursor:pointer;
+      transition:all .15s;
+    }
+    .chat-send:hover{background:rgba(0,229,255,.3);}
 
-      .acc-type-badge {
-        display: inline-block; padding: 1px 4px; border-radius: 2px;
-        font-family: var(--fh); font-size: 6px; letter-spacing: .5px;
-        background: rgba(0,229,255,.12); border: 1px solid var(--cyan);
-        color: var(--cyan); position: absolute; top: 2px; left: 2px; line-height: 1.4;
-        pointer-events: none;
-      }
+    /* ── PLAYER HUD ── */
+    .player-hud{
+      position:absolute;top:52px;left:12px;
+      background:var(--panel);border:1px solid var(--border2);border-radius:8px;
+      padding:8px 12px;min-width:160px;pointer-events:none;
+    }
+    .ph-name{font-family:var(--fh);font-size:10px;letter-spacing:2px;color:var(--accent);margin-bottom:4px;}
+    .ph-race{font-size:10px;color:var(--td);letter-spacing:1px;}
+    .ph-online{font-family:var(--fh);font-size:8px;color:var(--green);margin-top:4px;letter-spacing:1px;}
 
-      /* ── PANEL DE IMPORTAR ACCESORIO ── */
-      .import-panel {
-        flex-shrink: 0; padding: 8px; border-top: 1px solid var(--border);
-        background: rgba(0,229,255,.03);
-      }
-      .import-title { font-family: var(--fh); font-size: 8px; letter-spacing: 2px; color: var(--cyan); margin-bottom: 6px; }
-      .import-row { display: flex; gap: 4px; margin-bottom: 5px; flex-wrap: wrap; }
-      .import-input-text {
-        flex: 1; min-width: 0; background: var(--bg-card); border: 1px solid var(--border);
-        border-radius: 4px; padding: 4px 7px; color: var(--tp); font-family: var(--fb);
-        font-size: 11px; outline: none; transition: border-color var(--tr);
-      }
-      .import-input-text:focus { border-color: var(--cyan); }
-      .import-input-text::placeholder { color: var(--tm); }
-      .import-select {
-        background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px;
-        padding: 4px 5px; color: var(--tp); font-family: var(--fb); font-size: 11px;
-        outline: none; cursor: pointer; transition: border-color var(--tr);
-        -webkit-appearance: none; appearance: none; min-width: 70px;
-      }
-      .import-select:focus { border-color: var(--cyan); }
-      .import-file-label {
-        display: flex; align-items: center; gap: 4px; cursor: pointer;
-        background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px;
-        padding: 4px 8px; color: var(--td); font-family: var(--fh); font-size: 8px;
-        letter-spacing: 1px; transition: all var(--tr); flex-shrink: 0;
-      }
-      .import-file-label:hover { border-color: var(--cyan); color: var(--cyan); }
-      .import-file-label input { display: none; }
-      .import-add-btn {
-        background: linear-gradient(135deg, rgba(0,229,255,.15), rgba(74,106,255,.15));
-        border: 1px solid var(--cyan); border-radius: 4px;
-        padding: 4px 10px; color: var(--cyan); font-family: var(--fh); font-size: 8px;
-        letter-spacing: 1px; cursor: pointer; transition: all var(--tr); flex-shrink: 0;
-        display: flex; align-items: center; gap: 4px;
-      }
-      .import-add-btn:hover { background: rgba(0,229,255,.25); box-shadow: 0 0 8px rgba(0,229,255,.3); }
-      .import-add-btn:disabled { opacity: .4; cursor: not-allowed; }
-      .import-preview {
-        width: 100%; height: 40px; object-fit: contain; border-radius: 4px;
-        border: 1px dashed var(--border); background: var(--bg-card);
-        display: none; image-rendering: pixelated; margin-bottom: 4px;
-      }
-      .import-preview.visible { display: block; }
+    /* ── CONTROLES MÓVIL ── */
+    .mobile-controls{
+      position:absolute;bottom:0;left:0;right:0;height:150px;
+      display:none;align-items:flex-end;justify-content:space-between;
+      padding:0 20px 16px;pointer-events:auto;
+    }
+    .joystick-wrap{position:relative;width:110px;height:110px;}
+    #joystickBase{position:absolute;inset:0;background:rgba(255,255,255,.06);
+      border:2px solid rgba(255,255,255,.15);border-radius:50%;}
+    #joystickKnob{position:absolute;width:48px;height:48px;top:31px;left:31px;
+      background:radial-gradient(circle,rgba(245,196,0,.85),rgba(245,196,0,.45));
+      border:2px solid rgba(245,196,0,.7);border-radius:50%;
+      box-shadow:0 0 12px rgba(245,196,0,.5);}
+    .mob-btns{display:flex;gap:10px;align-items:flex-end;}
+    .mob-btn{
+      width:56px;height:56px;border-radius:50%;border:2px solid;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      gap:2px;cursor:pointer;backdrop-filter:blur(8px);font-size:10px;
+      touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+    }
+    .mob-btn-interact{background:rgba(0,229,255,.2);border-color:rgba(0,229,255,.7);color:var(--cyan);}
+    .mob-btn-emote{background:rgba(245,196,0,.15);border-color:rgba(245,196,0,.6);color:var(--accent);}
 
-      /* ── PANEL CARA ── */
-      .face-color-row { display: flex; gap: 4px; padding: 6px 8px 4px; flex-shrink: 0; flex-wrap: wrap; }
-      .face-color-chip {
-        width: 18px; height: 18px; border-radius: 3px; border: 2px solid transparent;
-        cursor: pointer; transition: transform .1s, border-color .1s; flex-shrink: 0;
-      }
-      .face-color-chip:hover { transform: scale(1.15); }
-      .face-color-chip.active { border-color: white; }
-      .face-color-picker { width: 18px; height: 18px; padding: 0; border: 1px solid var(--border); border-radius: 3px; background: transparent; cursor: pointer; }
-      .face-color-picker::-webkit-color-swatch-wrapper { padding: 2px; }
-      .face-color-picker::-webkit-color-swatch { border: none; border-radius: 2px; }
-      .face-color-label { font-size: 9px; color: var(--td); letter-spacing: .5px; width: 100%; margin-top: 2px; }
+    /* ── TOAST ── */
+    #toastWrap{
+      position:absolute;top:52px;left:50%;transform:translateX(-50%);
+      display:flex;flex-direction:column;align-items:center;gap:4px;
+      pointer-events:none;
+    }
+    .toast{
+      font-family:var(--fh);font-size:10px;letter-spacing:2px;
+      background:var(--bg3);border:1px solid var(--border2);border-radius:4px;
+      padding:5px 14px;color:var(--tp);
+      animation:toastIn .2s ease,toastOut .3s ease 2.5s forwards;white-space:nowrap;
+    }
+    .toast.success{border-color:var(--green);color:var(--green);}
+    .toast.warn{border-color:var(--accent);color:var(--accent);}
+    .toast.error{border-color:var(--red);color:var(--red);}
+    @keyframes toastIn{from{opacity:0;transform:translateY(-8px);}to{opacity:1;transform:none;}}
+    @keyframes toastOut{from{opacity:1;}to{opacity:0;transform:translateY(-8px);}}
 
-      .pagination {
-        display: flex; align-items: center; justify-content: center; gap: 8px;
-        padding: 6px 8px; border-top: 1px solid var(--border); flex-shrink: 0;
-      }
-      .page-btn {
-        width: 24px; height: 24px; background: var(--bg-card); border: 1px solid var(--border);
-        color: var(--td); border-radius: 4px; cursor: pointer; font-size: 11px;
-        transition: all var(--tr); display: flex; align-items: center; justify-content: center;
-      }
-      .page-btn:hover { border-color: var(--accent); color: var(--accent); }
-      .page-btn:disabled { opacity: .3; cursor: default; }
-      .page-info { font-family: var(--fh); font-size: 9px; color: var(--td); letter-spacing: 1px; }
+    /* ── PANEL EDITOR DE MAPA (GM) ── */
+    #mapEditorPanel{
+      position:absolute;top:52px;right:120px;
+      background:var(--panel);border:1px solid var(--border2);border-radius:8px;
+      padding:10px;width:200px;pointer-events:auto;display:none;
+    }
+    #mapEditorPanel.visible{display:block;}
+    .ep-title{font-family:var(--fh);font-size:8px;letter-spacing:2px;color:var(--accent);margin-bottom:8px;}
+    .ep-tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:8px;}
+    .ep-tile{
+      aspect-ratio:1;border-radius:4px;border:2px solid transparent;cursor:pointer;
+      transition:all .12s;position:relative;overflow:hidden;
+    }
+    .ep-tile:hover{transform:scale(1.1);}
+    .ep-tile.selected{border-color:white;box-shadow:0 0 8px rgba(255,255,255,.4);}
+    .ep-tile span{
+      position:absolute;bottom:1px;left:0;right:0;text-align:center;
+      font-family:var(--fh);font-size:5px;color:rgba(255,255,255,.7);letter-spacing:.3px;
+    }
+    .ep-section{font-family:var(--fh);font-size:7px;letter-spacing:2px;color:var(--td);
+      margin:6px 0 4px;}
+    .ep-eraser{
+      width:100%;padding:5px;background:rgba(255,23,68,.12);border:1px solid var(--red);
+      border-radius:4px;color:var(--red);font-family:var(--fh);font-size:8px;
+      letter-spacing:1px;cursor:pointer;transition:all .15s;text-align:center;
+    }
+    .ep-eraser:hover{background:rgba(255,23,68,.25);}
+    .ep-eraser.active{background:rgba(255,23,68,.35);}
+    .ep-save{
+      width:100%;padding:5px;background:rgba(0,230,118,.12);border:1px solid var(--green);
+      border-radius:4px;color:var(--green);font-family:var(--fh);font-size:8px;
+      letter-spacing:1px;cursor:pointer;transition:all .15s;text-align:center;margin-top:6px;
+    }
+    .ep-save:hover{background:rgba(0,230,118,.25);}
 
-      .gender-row { display: flex; gap: 6px; padding: 8px 8px 4px; flex-shrink: 0; }
-      .gender-btn {
-        flex: 1; padding: 5px 0; background: var(--bg-card); border: 2px solid var(--border);
-        border-radius: var(--r); color: var(--td); font-family: var(--fh); font-size: 9px;
-        letter-spacing: 1px; cursor: pointer; transition: all var(--tr);
-        display: flex; align-items: center; justify-content: center; gap: 4px;
-      }
-      .gender-btn:hover { background: var(--bg-hover); border-color: var(--td); }
-      .gender-btn.active { border-color: var(--cyan); color: var(--cyan); background: rgba(0,229,255,.08); }
-      .gender-btn:disabled { opacity: .3; cursor: not-allowed; }
+    /* ── PANEL EDITOR DE NPC (GM) ── */
+    #npcEditorPanel{
+      position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+      background:var(--bg2);border:1px solid var(--border2);border-radius:10px;
+      padding:16px;width:min(520px,95vw);z-index:200;display:none;
+      box-shadow:0 20px 60px rgba(0,0,0,.8);pointer-events:auto;
+    }
+    #npcEditorPanel.visible{display:block;}
+    .nep-title{font-family:var(--fh);font-size:11px;letter-spacing:3px;color:var(--cyan);margin-bottom:12px;
+      display:flex;align-items:center;justify-content:space-between;}
+    .nep-close{background:none;border:none;color:var(--td);font-size:16px;cursor:pointer;
+      transition:color .15s;}
+    .nep-close:hover{color:var(--red);}
+    .nep-body{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+    .nep-left{display:flex;flex-direction:column;gap:8px;}
+    .nep-right{display:flex;flex-direction:column;gap:8px;}
+    .nep-label{font-family:var(--fh);font-size:7px;letter-spacing:2px;color:var(--td);margin-bottom:3px;}
+    .nep-input{
+      width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:4px;
+      padding:5px 8px;color:var(--tp);font-family:var(--fb);font-size:12px;outline:none;
+      transition:border-color .15s;
+    }
+    .nep-input:focus{border-color:var(--cyan);}
+    .nep-textarea{
+      width:100%;height:80px;background:var(--bg3);border:1px solid var(--border2);border-radius:4px;
+      padding:6px 8px;color:var(--tp);font-family:var(--fb);font-size:11px;
+      outline:none;resize:none;transition:border-color .15s;line-height:1.5;
+    }
+    .nep-textarea:focus{border-color:var(--cyan);}
 
-      .color-section { padding: 6px 8px 8px; flex-shrink: 0; border-top: 1px solid var(--border); }
-      .color-section-title { font-family: var(--fh); font-size: 8px; letter-spacing: 2px; color: var(--cyan); margin-bottom: 6px; }
-      .color-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
-      .color-row-label { font-size: 10px; font-weight: 600; color: var(--td); width: 44px; flex-shrink: 0; letter-spacing: .5px; }
-      .color-gradient-wrap { flex: 1; display: flex; align-items: center; gap: 4px; }
-      .color-result { width: 20px; height: 20px; border-radius: 3px; border: 1px solid var(--border); flex-shrink: 0; cursor: pointer; transition: transform var(--tr); }
-      .color-result:hover { transform: scale(1.1); }
-      input[type="color"] { width: 20px; height: 20px; padding: 0; border: 1px solid var(--border); border-radius: 3px; background: transparent; cursor: pointer; }
-      input[type="color"]::-webkit-color-swatch-wrapper { padding: 2px; }
-      input[type="color"]::-webkit-color-swatch { border: none; border-radius: 2px; }
+    /* Grilla de spritesheet */
+    .nep-sprite-wrap{position:relative;border:1px solid var(--border2);border-radius:4px;overflow:hidden;
+      background:#0a0d1a;cursor:crosshair;}
+    #npcSpritePreview{display:block;image-rendering:pixelated;max-width:100%;user-select:none;}
+    #npcSpriteSelector{position:absolute;top:0;left:0;pointer-events:none;
+      border:2px solid var(--cyan);box-shadow:0 0 0 1px rgba(0,229,255,.3);
+      background:rgba(0,229,255,.08);}
+    .nep-sprite-controls{display:flex;gap:6px;flex-wrap:wrap;}
+    .nep-file-label{
+      display:flex;align-items:center;gap:4px;cursor:pointer;
+      background:var(--bg3);border:1px solid var(--border2);border-radius:4px;
+      padding:4px 8px;color:var(--td);font-family:var(--fh);font-size:7px;
+      letter-spacing:1px;transition:all .15s;font-size:8px;
+    }
+    .nep-file-label:hover{border-color:var(--cyan);color:var(--cyan);}
+    .nep-file-label input{display:none;}
+    .nep-num{
+      width:56px;background:var(--bg3);border:1px solid var(--border2);border-radius:4px;
+      padding:4px 6px;color:var(--tp);font-family:var(--fb);font-size:11px;outline:none;
+      transition:border-color .15s;text-align:center;
+    }
+    .nep-num:focus{border-color:var(--cyan);}
+    .nep-preview-char{
+      width:80px;height:96px;border:1px solid var(--border2);border-radius:4px;
+      background:#0a0d1a;image-rendering:pixelated;display:block;margin:0 auto;
+    }
+    .nep-dialogs{display:flex;flex-direction:column;gap:4px;max-height:120px;overflow-y:auto;}
+    .nep-dialog-row{display:flex;gap:4px;}
+    .nep-dialog-row input{
+      flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:4px;
+      padding:4px 7px;color:var(--tp);font-family:var(--fb);font-size:11px;outline:none;
+    }
+    .nep-dialog-row input:focus{border-color:var(--cyan);}
+    .nep-dialog-del{background:none;border:none;color:var(--tm);cursor:pointer;font-size:13px;
+      transition:color .15s;padding:0 2px;}
+    .nep-dialog-del:hover{color:var(--red);}
+    .nep-add-dialog{
+      width:100%;padding:4px;background:rgba(0,229,255,.08);border:1px dashed rgba(0,229,255,.3);
+      border-radius:4px;color:var(--cyan);font-family:var(--fh);font-size:7px;letter-spacing:1px;
+      cursor:pointer;transition:all .15s;text-align:center;
+    }
+    .nep-add-dialog:hover{background:rgba(0,229,255,.15);}
+    .nep-footer{display:flex;gap:8px;margin-top:12px;}
+    .nep-btn{
+      flex:1;padding:8px;border-radius:4px;font-family:var(--fh);font-size:9px;
+      letter-spacing:1px;cursor:pointer;transition:all .15s;border:1px solid;
+    }
+    .nep-btn-save{background:rgba(0,230,118,.15);border-color:var(--green);color:var(--green);}
+    .nep-btn-save:hover{background:rgba(0,230,118,.3);}
+    .nep-btn-del{background:rgba(255,23,68,.12);border-color:var(--red);color:var(--red);}
+    .nep-btn-del:hover{background:rgba(255,23,68,.25);}
+    .nep-btn-cancel{background:rgba(255,255,255,.05);border-color:var(--border2);color:var(--td);}
+    .nep-btn-cancel:hover{border-color:var(--td);}
 
-      .race-badge {
-        display: inline-block; padding: 2px 6px; border-radius: 3px;
-        font-family: var(--fh); font-size: 7px; letter-spacing: 1px;
-        background: rgba(74,106,255,.15); border: 1px solid var(--glow); color: var(--cyan);
-        margin-left: 6px; vertical-align: middle;
-      }
+    /* ── DIÁLOGO NPC ── */
+    #dialogBox{
+      position:absolute;bottom:160px;left:50%;transform:translateX(-50%);
+      background:var(--panel);border:1px solid var(--border2);border-radius:8px;
+      padding:14px 16px;max-width:380px;width:92vw;pointer-events:auto;display:none;
+    }
+    #dialogBox.visible{display:block;}
+    .dlg-name{font-family:var(--fh);font-size:9px;letter-spacing:2px;color:var(--accent);margin-bottom:6px;}
+    .dlg-text{font-size:14px;color:var(--tp);line-height:1.5;margin-bottom:10px;}
+    .dlg-next{
+      width:100%;padding:8px;background:rgba(245,196,0,.12);border:1px solid rgba(245,196,0,.4);
+      border-radius:4px;color:var(--accent);font-family:var(--fh);font-size:9px;
+      letter-spacing:1px;cursor:pointer;transition:all .15s;text-align:center;
+    }
+    .dlg-next:hover{background:rgba(245,196,0,.22);}
 
-      /* ── COL CENTRAL ── */
-      .center-col { display: flex; flex-direction: column; background: #0a0d1a; border-right: 1px solid var(--border); overflow: hidden; height: 100%; }
-      .preview-header { padding: 8px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0; background: linear-gradient(90deg, rgba(74,106,255,.08), transparent); }
-      .preview-title { font-family: var(--fh); font-size: 10px; letter-spacing: 3px; color: var(--cyan); text-shadow: 0 0 6px var(--cyan); }
+    /* ── PANEL ADD NPC BOTÓN ── */
+    .ep-add-npc{
+      width:100%;padding:5px;background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.3);
+      border-radius:4px;color:var(--cyan);font-family:var(--fh);font-size:8px;
+      letter-spacing:1px;cursor:pointer;transition:all .15s;text-align:center;margin-top:4px;
+    }
+    .ep-add-npc:hover{background:rgba(0,229,255,.18);}
 
-      .view-anim-bar { display: flex; flex-direction: column; gap: 4px; padding: 8px 12px 6px; border-bottom: 1px solid var(--border); flex-shrink: 0; background: rgba(74,106,255,.03); }
-      .view-anim-row { display: flex; align-items: center; gap: 4px; }
-      .view-anim-label { font-family: var(--fh); font-size: 7px; letter-spacing: 2px; color: var(--tm); min-width: 42px; }
-      .view-btns { display: flex; gap: 3px; flex-wrap: wrap; flex: 1; }
-      .view-btn {
-        padding: 3px 7px; background: var(--bg-card); border: 1px solid var(--border);
-        border-radius: 4px; color: var(--td); font-family: var(--fh); font-size: 7px;
-        letter-spacing: 1px; cursor: pointer; transition: all var(--tr); white-space: nowrap;
-      }
-      .view-btn:hover { border-color: var(--td); color: var(--tp); }
-      .view-btn.active-view  { border-color: var(--orange); color: var(--orange); background: rgba(255,106,0,.1); box-shadow: 0 0 6px rgba(255,106,0,.25); }
-      .view-btn.active-anim  { border-color: var(--accent); color: var(--accent); background: rgba(245,196,0,.1); box-shadow: 0 0 6px rgba(245,196,0,.25); }
+    /* ── OVERLAY oscuro para modal ── */
+    #modalOverlay{
+      position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:199;display:none;
+      pointer-events:auto;
+    }
+    #modalOverlay.visible{display:block;}
 
-      .preview-canvas-wrap {
-        flex: 1; display: flex; align-items: center; justify-content: center;
-        position: relative; overflow: hidden;
-      }
-      .preview-canvas-wrap::before {
-        content: ""; position: absolute; inset: 0;
-        background:
-          radial-gradient(ellipse 60% 50% at 50% 90%, rgba(74,106,255,.1) 0%, transparent 70%),
-          repeating-linear-gradient(0deg,   transparent, transparent 31px, rgba(42,53,96,.12) 32px),
-          repeating-linear-gradient(90deg,  transparent, transparent 31px, rgba(42,53,96,.12) 32px);
-        pointer-events: none;
-      }
-      .preview-shadow {
-        position: absolute; width: 90px; height: 16px; bottom: 18px; left: 50%;
-        transform: translateX(-50%);
-        background: radial-gradient(ellipse, rgba(74,106,255,.3) 0%, transparent 70%);
-        border-radius: 50%; pointer-events: none;
-      }
-      #previewCanvas { image-rendering: pixelated; image-rendering: crisp-edges; position: relative; z-index: 1; width: 180px; height: 260px; }
+    /* ── RESPONSIVE ── */
+    @media(pointer:coarse),(max-width:768px){
+      .mobile-controls{display:flex;}
+      .chat-wrap{width:calc(100vw - 24px);bottom:155px;}
+    }
+    @media(pointer:fine) and (min-width:769px){
+      .mobile-controls{display:none!important;}
+    }
+  </style>
+</head>
+<body>
 
-      .name-section { padding: 10px 16px 8px; flex-shrink: 0; border-top: 1px solid var(--border); }
-      .name-label { display: block; font-family: var(--fh); font-size: 8px; letter-spacing: 2px; color: var(--td); margin-bottom: 5px; text-align: center; }
-      .name-input-wrap { position: relative; display: flex; align-items: center; }
-      .name-input {
-        width: 100%; background: var(--bg-card); border: 1px solid var(--border);
-        border-radius: var(--r); padding: 7px 32px 7px 12px; color: var(--tp);
-        font-family: var(--fh); font-size: 13px; letter-spacing: 1px; outline: none;
-        transition: border-color var(--tr); text-align: center;
-      }
-      .name-input:focus { border-color: var(--cyan); box-shadow: 0 0 8px rgba(0,229,255,.15); }
-      .name-edit-icon { position: absolute; right: 10px; font-size: 13px; pointer-events: none; color: var(--td); }
+<!-- LOADING -->
+<div id="screenLoading">
+  <div class="ld-title">DRAGON WORLD Z</div>
+  <div style="font-family:var(--fh);font-size:9px;letter-spacing:3px;color:var(--tm);margin-top:-8px;">LOBBY — BASE DE OPERACIONES</div>
+  <div class="ld-bar-wrap"><div class="ld-bar" id="ldBar"></div></div>
+  <div class="ld-label" id="ldLabel">INICIALIZANDO...</div>
+</div>
 
-      .stats-section { padding: 0 16px 10px; flex-shrink: 0; }
-      .stats-title { font-family: var(--fh); font-size: 8px; letter-spacing: 3px; color: var(--td); margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
-      .stat-row { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
-      .stat-icon { font-size: 12px; width: 16px; text-align: center; }
-      .stat-name { width: 72px; font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--td); }
-      .stat-bar-wrap { flex: 1; height: 7px; background: rgba(255,255,255,.06); border-radius: 3px; overflow: hidden; border: 1px solid rgba(255,255,255,.06); }
-      .stat-bar { height: 100%; border-radius: 2px; transition: width .4s ease; position: relative; }
-      .stat-bar::after { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 50%; background: rgba(255,255,255,.2); border-radius: 2px; }
-      .health-bar { background: linear-gradient(90deg,#00c853,var(--green)); box-shadow: 0 0 5px rgba(0,230,118,.5); }
-      .ki-bar     { background: linear-gradient(90deg,#1565c0,#2979ff); box-shadow: 0 0 5px rgba(41,121,255,.5); }
-      .str-bar    { background: linear-gradient(90deg,#c62828,var(--red)); box-shadow: 0 0 5px rgba(255,23,68,.5); }
-      .def-bar    { background: linear-gradient(90deg,#e65100,#ff9800); box-shadow: 0 0 5px rgba(255,152,0,.5); }
-      .spd-bar    { background: linear-gradient(90deg,#6a1b9a,#aa00ff); box-shadow: 0 0 5px rgba(170,0,255,.5); }
-      .stat-val { font-family: var(--fh); font-size: 9px; color: var(--td); min-width: 24px; text-align: right; }
+<!-- CANVAS -->
+<canvas id="gameCanvas"></canvas>
 
-      /* ── COL DERECHA ── */
-      .right-col { display: flex; flex-direction: column; background: var(--bg-panel); overflow: hidden; height: 100%; }
-      .right-header { padding: 8px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0; background: linear-gradient(90deg, rgba(74,106,255,.08), transparent); }
-      .right-title { font-family: var(--fh); font-size: 10px; letter-spacing: 3px; color: var(--cyan); text-shadow: 0 0 6px var(--cyan); }
-      .final-canvas-wrap {
-        flex-shrink: 0; display: flex; align-items: center; justify-content: center;
-        padding: 12px; position: relative; overflow: hidden;
-        background: linear-gradient(180deg,#0a0d1a 0%,var(--bg-panel) 100%);
-      }
-      .final-canvas-wrap::before {
-        content: ""; position: absolute; inset: 0;
-        background: radial-gradient(ellipse 70% 60% at 50% 80%, rgba(74,106,255,.1) 0%, transparent 70%);
-        pointer-events: none;
-      }
-      #finalCanvas { image-rendering: pixelated; image-rendering: crisp-edges; border-radius: 8px; width: 200px; height: 240px; position: relative; z-index: 1; }
+<!-- HUD -->
+<div id="hud">
 
-      .final-controls { display: flex; gap: 8px; justify-content: center; padding: 0 14px 10px; flex-shrink: 0; }
-      .ctrl-btn {
-        background: var(--bg-card); border: 1px solid var(--border); color: var(--td);
-        width: 40px; height: 40px; border-radius: var(--r); cursor: pointer; font-size: 16px;
-        transition: all var(--tr); display: flex; align-items: center; justify-content: center;
-        touch-action: manipulation; -webkit-tap-highlight-color: transparent;
-      }
-      .ctrl-btn:hover { border-color: var(--cyan); color: var(--cyan); box-shadow: 0 0 8px rgba(0,229,255,.2); transform: scale(1.05); }
-      .ctrl-btn:active { transform: scale(.95); }
+  <!-- TOPBAR -->
+  <div class="hud-topbar">
+    <span class="topbar-logo">⚡ DWZ</span>
+    <span class="topbar-map" id="topbarMap">LOBBY</span>
+    <div class="topbar-spacer"></div>
+    <span class="topbar-online" id="topbarOnline">1 en línea</span>
+    <button class="topbar-btn" id="btnBack" onclick="goBack()">← SALIR</button>
+    <!-- Solo visible para GM -->
+    <button class="topbar-btn" id="btnGM" style="display:none" onclick="toggleGMMode()">🗺 GM</button>
+  </div>
 
-      .save-section { flex: 1; overflow-y: auto; padding: 0 12px 10px; scrollbar-width: none; }
-      .save-section::-webkit-scrollbar { display: none; }
-      .save-title { font-family: var(--fh); font-size: 8px; letter-spacing: 3px; color: var(--td); margin-bottom: 8px; padding: 0 0 5px; border-bottom: 1px solid var(--border); }
-      .slots-list { display: flex; flex-direction: column; gap: 6px; }
+  <!-- PLAYER HUD -->
+  <div class="player-hud">
+    <div class="ph-name" id="phName">GUERRERO Z</div>
+    <div class="ph-race" id="phRace">HUMANO · ♂</div>
+    <div class="ph-online" id="phOnline">● EN LÍNEA</div>
+  </div>
 
-      .slot-card {
-        display: flex; align-items: center; gap: 8px;
-        background: var(--bg-card); border: 1px solid var(--border);
-        border-radius: var(--r); padding: 7px 8px; cursor: pointer;
-        transition: all var(--tr); position: relative;
-      }
-      .slot-card:hover { border-color: var(--accent); background: var(--bg-hover); }
-      .slot-card.active-slot { border-color: var(--accent); box-shadow: 0 0 10px rgba(245,196,0,.2); }
-      .slot-card.empty { opacity: .5; }
-      .slot-card.empty:hover { border-color: var(--border); background: var(--bg-card); }
-      .slot-num { font-family: var(--fh); font-size: 16px; font-weight: 900; color: var(--tm); width: 22px; text-align: center; flex-shrink: 0; }
-      .slot-card.active-slot .slot-num { color: var(--accent); }
-      .slot-mini { width: 34px; height: 44px; flex-shrink: 0; position: relative; }
-      .slot-mini canvas { image-rendering: pixelated; border-radius: 3px; width: 100%; height: 100%; }
-      .slot-info { flex: 1; min-width: 0; }
-      .slot-name { font-family: var(--fh); font-size: 10px; letter-spacing: 1px; color: var(--tp); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-      .slot-level { font-size: 10px; color: var(--td); letter-spacing: 1px; }
-      .slot-save-btn {
-        background: transparent; border: 1px solid var(--border); color: var(--td);
-        padding: 3px 7px; border-radius: 4px; font-size: 9px; font-family: var(--fh);
-        cursor: pointer; letter-spacing: 1px; transition: all var(--tr); flex-shrink: 0;
-      }
-      .slot-save-btn:hover { border-color: var(--accent); color: var(--accent); }
-      .slot-delete-btn {
-        background: transparent; border: none; color: var(--tm); font-size: 13px;
-        cursor: pointer; padding: 2px; transition: color var(--tr); flex-shrink: 0; line-height: 1;
-      }
-      .slot-delete-btn:hover { color: var(--red); }
+  <!-- MINIMAP -->
+  <div class="minimap-wrap">
+    <canvas id="minimapCanvas" width="100" height="100"></canvas>
+    <div class="minimap-label">MAPA</div>
+  </div>
 
-      .start-btn {
-        flex-shrink: 0; margin: 0 12px 12px; padding: 12px;
-        background: linear-gradient(135deg,#1b5e20,#2e7d32,#388e3c);
-        border: 2px solid #4caf50; border-radius: var(--r); color: white;
-        font-family: var(--fh); font-size: 13px; font-weight: 700; letter-spacing: 3px;
-        cursor: pointer; transition: all var(--tr);
-        text-shadow: 0 1px 3px rgba(0,0,0,.5); position: relative; overflow: hidden;
-        touch-action: manipulation; -webkit-tap-highlight-color: transparent;
-      }
-      .start-btn::before {
-        content: ""; position: absolute; top: 0; left: -100%; right: 0; bottom: 0;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,.15), transparent);
-        transition: left .4s ease;
-      }
-      .start-btn:hover { background: linear-gradient(135deg,#2e7d32,#388e3c,#4caf50); box-shadow: 0 0 18px rgba(76,175,80,.5); transform: translateY(-2px); }
-      .start-btn:hover::before { left: 100%; }
-      .start-btn:active { transform: translateY(0); }
+  <!-- EDITOR DE MAPA (GM) -->
+  <div id="mapEditorPanel">
+    <div class="ep-title">✦ EDITOR DE MAPA</div>
+    <div class="ep-section">TILES</div>
+    <div class="ep-tiles" id="epTiles"></div>
+    <div class="ep-section">HERRAMIENTAS</div>
+    <div class="ep-eraser" id="epEraser" onclick="toggleEraser()">🗑 BORRADOR</div>
+    <div class="ep-add-npc" onclick="openNpcEditor(null)">+ AÑADIR NPC</div>
+    <div class="ep-save" onclick="saveMapToFirebase()">💾 GUARDAR MAPA</div>
+  </div>
 
-      #toastContainer {
-        position: fixed; bottom: 20px; right: 20px;
-        display: flex; flex-direction: column; gap: 6px; z-index: 1000; pointer-events: none;
-      }
-      .toast {
-        background: var(--bg-card); border: 1px solid var(--glow); border-radius: var(--r);
-        padding: 8px 14px; font-family: var(--fh); font-size: 10px; letter-spacing: 1px;
-        color: var(--tp); max-width: 250px;
-        animation: toastIn .25s ease, toastOut .3s ease 2.3s forwards;
-      }
-      .toast.success { border-color: var(--green); color: var(--green); }
-      .toast.warning { border-color: var(--accent); color: var(--accent); }
-      .toast.error   { border-color: var(--red);   color: var(--red); }
-      @keyframes toastIn  { from { opacity:0; transform: translateX(20px); } to { opacity:1; transform: none; } }
-      @keyframes toastOut { from { opacity:1; } to { opacity:0; transform: translateX(20px); } }
+  <!-- CHAT -->
+  <div class="chat-wrap">
+    <div class="chat-header">
+      <div class="chat-dot"></div>
+      <span>CHAT GLOBAL</span>
+    </div>
+    <div id="chatBox"></div>
+    <div class="chat-input-row">
+      <input class="chat-input" id="chatInput" type="text" maxlength="80"
+        placeholder="Escribí un mensaje..."
+        onkeydown="if(event.key==='Enter')sendChat()"/>
+      <button class="chat-send" onclick="sendChat()">➤</button>
+    </div>
+  </div>
 
-      /* ── RESPONSIVE ── */
-      @media (max-width: 768px) {
-        .app-header { padding: 8px 12px; height: 48px; }
-        .header-title { font-size: 15px; letter-spacing: 1px; }
-        .header-sub { display: none; }
-        .creator-layout { display: flex; flex-direction: column; height: auto; overflow: visible; }
-        .left-col { flex-direction: column; border-right: none; border-bottom: 1px solid var(--border); height: auto; }
-        .cat-nav { width:100%; height:auto; flex-direction:row; flex-shrink:0; border-right:none; border-bottom:1px solid var(--border); padding:6px 8px; overflow-x:auto; overflow-y:hidden; gap:6px; }
-        .cat-btn { width:52px; height:48px; flex-shrink:0; }
-        .items-panel { height: auto; }
-        .items-scroll { max-height: 240px; }
-        .items-grid { grid-template-columns: repeat(4,1fr); }
-        .center-col { height:auto; border-right:none; border-bottom:1px solid var(--border); }
-        .preview-canvas-wrap { min-height:220px; padding:12px 0; }
-        #previewCanvas { width:140px; height:200px; }
-        .right-col { height: auto; }
-        .final-canvas-wrap { padding: 8px; }
-        #finalCanvas { width:160px; height:200px; }
-        .save-section { overflow-y: visible; }
-        .start-btn { margin:0 12px 16px; font-size:12px; padding:14px 12px; letter-spacing:2px; }
-        #toastContainer { bottom:12px; right:50%; transform:translateX(50%); align-items:center; }
-        .toast { text-align:center; max-width:90vw; }
-      }
-      @media (min-width:769px) and (max-width:1024px) {
-        .creator-layout { grid-template-columns: 220px 1fr; grid-template-rows: 1fr auto; height: calc(100vh - 52px); }
-        .left-col { grid-row: 1 / 3; }
-        .center-col { border-right:none; border-bottom:1px solid var(--border); }
-        .right-col { grid-column: 2; }
-      }
-    </style>
-  </head>
-  <body>
-    <header class="app-header">
-      <div style="display:flex;align-items:center">
-        <span class="header-logo">⚡</span>
-        <div style="margin-left:10px">
-          <h1 class="header-title">DRAGON CREATOR <span class="acc">Z</span></h1>
-        </div>
+  <!-- DIÁLOGO NPC -->
+  <div id="dialogBox">
+    <div class="dlg-name" id="dlgName">NPC</div>
+    <div class="dlg-text" id="dlgText"></div>
+    <button class="dlg-next" id="dlgNext" onclick="advanceDialog()">CONTINUAR ▶</button>
+  </div>
+
+  <!-- TOASTS -->
+  <div id="toastWrap"></div>
+
+  <!-- CONTROLES MÓVIL -->
+  <div class="mobile-controls">
+    <div class="joystick-wrap" id="joystickWrap">
+      <div id="joystickBase"></div>
+      <div id="joystickKnob"></div>
+    </div>
+    <div class="mob-btns">
+      <div class="mob-btn mob-btn-interact" onclick="interactNearby()">
+        <span style="font-size:20px">💬</span>
+        <span style="font-family:var(--fh);font-size:7px;letter-spacing:1px">HABLAR</span>
       </div>
-      <span class="header-sub">CHARACTER BUILDER v4.3</span>
-    </header>
-
-    <main class="creator-layout">
-      <!-- COL IZQUIERDA -->
-      <div class="left-col">
-        <nav class="cat-nav" id="categoryNav">
-          <button class="cat-btn active" data-cat="race">    <span class="cat-icon">👾</span><span class="cat-label">RAZA</span></button>
-          <button class="cat-btn" data-cat="face">           <span class="cat-icon">😶</span><span class="cat-label">CARA</span></button>
-          <button class="cat-btn" data-cat="hair">           <span class="cat-icon">💇</span><span class="cat-label">CABELLO</span></button>
-          <button class="cat-btn" data-cat="shirt">          <span class="cat-icon">👕</span><span class="cat-label">ROPA SUP.</span></button>
-          <button class="cat-btn" data-cat="pants">          <span class="cat-icon">👖</span><span class="cat-label">ROPA INF.</span></button>
-          <button class="cat-btn" data-cat="gloves">         <span class="cat-icon">🥊</span><span class="cat-label">GUANTES</span></button>
-          <button class="cat-btn" data-cat="shoes">          <span class="cat-icon">👟</span><span class="cat-label">CALZADO</span></button>
-          <button class="cat-btn" data-cat="accessory">      <span class="cat-icon">🎽</span><span class="cat-label">ACCESOR.</span></button>
-          <button class="cat-btn" data-cat="free">           <span class="cat-icon">🧩</span><span class="cat-label">LIBRE</span></button>
-          <button class="cat-btn" data-cat="aura">           <span class="cat-icon">✨</span><span class="cat-label">AURA</span></button>
-          <button class="cat-btn" data-cat="color">          <span class="cat-icon">🎨</span><span class="cat-label">COLOR</span></button>
-        </nav>
-        <div class="items-panel" id="itemsPanel"></div>
+      <div class="mob-btn mob-btn-emote" onclick="doEmote()">
+        <span style="font-size:20px">✨</span>
+        <span style="font-family:var(--fh);font-size:7px;letter-spacing:1px">EMOTE</span>
       </div>
+    </div>
+  </div>
 
-      <!-- COL CENTRAL -->
-      <div class="center-col">
-        <div class="preview-header"><span class="preview-title">VISTA PREVIA</span></div>
-        <div class="view-anim-bar">
-          <div class="view-anim-row">
-            <span class="view-anim-label">VISTA</span>
-            <div class="view-btns" id="viewBtns">
-              <button class="view-btn" data-view="base_view">BASE</button>
-              <button class="view-btn" data-view="trans1_view">TRANS 1</button>
-              <button class="view-btn" data-view="trans2_view">TRANS 2</button>
+</div><!-- /hud -->
+
+<!-- OVERLAY MODAL -->
+<div id="modalOverlay" onclick="closeNpcEditor()"></div>
+
+<!-- EDITOR DE NPC -->
+<div id="npcEditorPanel">
+  <div class="nep-title">
+    <span id="nepTitleText">✦ EDITOR DE NPC</span>
+    <button class="nep-close" onclick="closeNpcEditor()">✕</button>
+  </div>
+  <div class="nep-body">
+    <!-- IZQUIERDA: datos -->
+    <div class="nep-left">
+      <div>
+        <div class="nep-label">NOMBRE DEL NPC</div>
+        <input class="nep-input" id="nepName" type="text" placeholder="Ej: Bulma" maxlength="24"/>
+      </div>
+      <div>
+        <div class="nep-label">COLOR DE NOMBRE</div>
+        <input type="color" id="nepColor" value="#00e5ff"
+          style="width:100%;height:28px;border:1px solid var(--border2);border-radius:4px;background:none;cursor:pointer;padding:2px;"/>
+      </div>
+      <div>
+        <div class="nep-label">VELOCIDAD (px/frame)</div>
+        <input class="nep-num" id="nepSpeed" type="number" min="0" max="3" step="0.1" value="0.8" style="width:100%;"/>
+      </div>
+      <div>
+        <div class="nep-label">ESCALA VISUAL</div>
+        <input class="nep-num" id="nepScale" type="number" min="0.5" max="3" step="0.1" value="1" style="width:100%;"/>
+      </div>
+      <div>
+        <div class="nep-label">DIÁLOGOS (en orden)</div>
+        <div class="nep-dialogs" id="nepDialogs"></div>
+        <button class="nep-add-dialog" onclick="addDialogLine()">+ AÑADIR LÍNEA</button>
+      </div>
+    </div>
+    <!-- DERECHA: sprite -->
+    <div class="nep-right">
+      <div>
+        <div class="nep-label">SPRITESHEET</div>
+        <div class="nep-sprite-controls" style="margin-bottom:6px;">
+          <label class="nep-file-label">
+            <input type="file" accept="image/*" id="nepSpriteFile" onchange="loadNepSprite(event)"/>
+            📁 PNG
+          </label>
+          <div style="display:flex;flex-direction:column;gap:3px;flex:1;">
+            <div style="display:flex;gap:4px;align-items:center;">
+              <span style="font-family:var(--fh);font-size:7px;color:var(--td);width:24px;">FW</span>
+              <input class="nep-num" id="nepFW" type="number" min="8" max="256" value="48" style="flex:1;"/>
             </div>
-          </div>
-          <div class="view-anim-row">
-            <span class="view-anim-label">ANIM</span>
-            <div class="view-btns" id="animBtns">
-              <button class="view-btn active-anim" data-anim="idle">IDLE</button>
-              <button class="view-btn" data-anim="walk">WALK</button>
-              <button class="view-btn" data-anim="run">RUN</button>
-              <button class="view-btn" data-anim="attack_1">ATK1</button>
-              <button class="view-btn" data-anim="attack_2">ATK2</button>
-              <button class="view-btn" data-anim="jump">JUMP</button>
-              <button class="view-btn" data-anim="hurt">HURT</button>
-              <button class="view-btn" data-anim="death">DEATH</button>
-              <button class="view-btn" data-anim="ki_charge">KI</button>
-              <button class="view-btn" data-anim="fly">FLY</button>
-              <button class="view-btn" data-anim="fly_map">MAP</button>
+            <div style="display:flex;gap:4px;align-items:center;">
+              <span style="font-family:var(--fh);font-size:7px;color:var(--td);width:24px;">FH</span>
+              <input class="nep-num" id="nepFH" type="number" min="8" max="256" value="48" style="flex:1;"/>
             </div>
           </div>
         </div>
-        <div class="preview-canvas-wrap">
-          <div class="preview-shadow"></div>
-          <canvas id="previewCanvas" width="180" height="260"></canvas>
-        </div>
-        <div class="name-section">
-          <label class="name-label">NOMBRE DEL PERSONAJE</label>
-          <div class="name-input-wrap">
-            <input class="name-input" type="text" id="charName" value="Guerrero Z" maxlength="24" autocomplete="off" />
-            <span class="name-edit-icon">✏️</span>
+        <!-- Contenedor del spritesheet con selector -->
+        <div class="nep-sprite-wrap" id="npcSpriteWrap" style="min-height:80px;max-height:200px;overflow:auto;">
+          <img id="npcSpritePreview" src="" alt="" style="display:none;"/>
+          <div id="npcSpriteSelector" style="display:none;"></div>
+          <div id="npcSpriteEmpty" style="padding:20px;text-align:center;
+            font-family:var(--fh);font-size:8px;color:var(--tm);letter-spacing:2px;">
+            CARGÁ UN SPRITESHEET
           </div>
         </div>
-        <div class="stats-section">
-          <div class="stats-title">ESTADÍSTICAS</div>
-          <div class="stat-row"><span class="stat-icon">❤️</span><span class="stat-name">SALUD</span>    <div class="stat-bar-wrap"><div class="stat-bar health-bar" id="barHealth" style="width:75%"></div></div><span class="stat-val" id="valHealth">75</span></div>
-          <div class="stat-row"><span class="stat-icon">💙</span><span class="stat-name">KI</span>       <div class="stat-bar-wrap"><div class="stat-bar ki-bar"     id="barKi"     style="width:85%"></div></div><span class="stat-val" id="valKi">85</span></div>
-          <div class="stat-row"><span class="stat-icon">💥</span><span class="stat-name">FUERZA</span>   <div class="stat-bar-wrap"><div class="stat-bar str-bar"    id="barStr"    style="width:80%"></div></div><span class="stat-val" id="valStr">80</span></div>
-          <div class="stat-row"><span class="stat-icon">🛡️</span><span class="stat-name">DEFENSA</span>  <div class="stat-bar-wrap"><div class="stat-bar def-bar"    id="barDef"    style="width:70%"></div></div><span class="stat-val" id="valDef">70</span></div>
-          <div class="stat-row"><span class="stat-icon">⚡</span><span class="stat-name">VELOCIDAD</span><div class="stat-bar-wrap"><div class="stat-bar spd-bar"    id="barSpd"    style="width:90%"></div></div><span class="stat-val" id="valSpd">90</span></div>
+      </div>
+      <div>
+        <div class="nep-label">FRAME SELECCIONADO (IDLE)</div>
+        <canvas class="nep-preview-char" id="npcFramePreview" width="80" height="96"></canvas>
+      </div>
+      <div>
+        <div class="nep-label">FRAMES DE ANIMACIÓN (idle)</div>
+        <div style="display:flex;gap:4px;align-items:center;">
+          <input class="nep-num" id="nepAnimFrames" type="number" min="1" max="24" value="1" style="width:50px;"/>
+          <span style="font-family:var(--fh);font-size:7px;color:var(--td);">frames horiz. desde selección</span>
         </div>
       </div>
+    </div>
+  </div>
+  <div class="nep-footer">
+    <button class="nep-btn nep-btn-save" onclick="saveNpc()">💾 GUARDAR NPC</button>
+    <button class="nep-btn nep-btn-del" id="nepDelBtn" onclick="deleteNpc()">🗑 ELIMINAR</button>
+    <button class="nep-btn nep-btn-cancel" onclick="closeNpcEditor()">✕ CANCELAR</button>
+  </div>
+</div>
 
-      <!-- COL DERECHA -->
-      <div class="right-col">
-        <div class="right-header"><span class="right-title">VISTA FINAL</span></div>
-        <div class="final-canvas-wrap">
-          <canvas id="finalCanvas" width="220" height="260"></canvas>
-        </div>
-        <div class="final-controls">
-          <button class="ctrl-btn" id="btnRotate" title="Rotar">🔄</button>
-          <button class="ctrl-btn" id="btnZoom"   title="Zoom">🔍</button>
-          <button class="ctrl-btn" id="btnFlip"   title="Espejo">↔️</button>
-        </div>
-        <div class="save-section">
-          <div class="save-title">GUARDAR PERSONAJE</div>
-          <div class="slots-list" id="slotsList"></div>
-        </div>
-        <button class="start-btn" id="btnStart">⚔️ COMENZAR A JUGAR</button>
-      </div>
-    </main>
+<!-- FIREBASE -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="character-system.js"></script>
+<script>
+"use strict";
 
-    <div id="toastContainer"></div>
+// ═══════════════════════════════════════
+//  FIREBASE
+// ═══════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyBYZwK41XAUkLeRlWQRms0oEyJ1QXMQVg8",
+  authDomain: "dragon-world-z.firebaseapp.com",
+  databaseURL: "https://dragon-world-z-default-rtdb.firebaseio.com",
+  projectId: "dragon-world-z",
+  storageBucket: "dragon-world-z.firebasestorage.app",
+  messagingSenderId: "994414993412",
+  appId: "1:994414993412:web:66813401c499f41e46d551"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
-    <script src="character-system.js"></script>
-    <script>
-      "use strict";
+// ═══════════════════════════════════════
+//  CONSTANTES
+// ═══════════════════════════════════════
+const TILE       = 48;
+const WORLD_W    = 60;   // tiles
+const WORLD_H    = 40;
+const CAM_LERP   = 0.10;
+const PLAYER_SPD = 2.4;
 
-      if (!window.CharacterSystem) {
-        document.body.innerHTML = '<p style="color:#f44;padding:40px;font-family:monospace">ERROR: character-system.js no encontrado.</p>';
-        throw new Error("CharacterSystem no cargado");
+// GM_PASSWORD — cambiá esto por lo que quieras
+const GM_PASSWORD = "kamehameha";
+
+// ═══════════════════════════════════════
+//  TILES DEFINICIÓN
+// ═══════════════════════════════════════
+const TILES = [
+  { id:0, name:"Piso Base",   color:"#1a2a18", walkable:true  },
+  { id:1, name:"Agua",        color:"#0d2a4a", walkable:false },
+  { id:2, name:"Pared",       color:"#2a2a3a", walkable:false },
+  { id:3, name:"Arena",       color:"#3a3020", walkable:true  },
+  { id:4, name:"Madera",      color:"#3a2010", walkable:true  },
+  { id:5, name:"Metal",       color:"#1a2535", walkable:true  },
+  { id:6, name:"Hierba",      color:"#1a3518", walkable:true  },
+  { id:7, name:"Roca",        color:"#282828", walkable:false },
+  { id:8, name:"Portal",      color:"#0a0a2a", walkable:true  },
+  { id:9, name:"Luz",         color:"#2a2810", walkable:true  },
+  { id:10,name:"Tech Floor",  color:"#0e1a2a", walkable:true  },
+  { id:11,name:"Vacío",       color:"#050508", walkable:false },
+];
+
+// Detalles decorativos por tile
+const TILE_DETAIL = {
+  0: (ctx,x,y,t,ts)=>{ if((x+y)%5===0){ctx.fillStyle="rgba(255,255,255,.04)";ctx.fillRect(x+12,y+12,4,4);} },
+  6: (ctx,x,y,t,ts)=>{ ctx.fillStyle="rgba(0,200,80,.1)";if((x*y)%7===0)ctx.beginPath(),ctx.arc(x+20,y+20,6,0,Math.PI*2),ctx.fill(); },
+  9: (ctx,x,y,t,ts)=>{ ctx.fillStyle=`rgba(255,230,100,${.05+.03*Math.sin(t*.003+x+y)})`;ctx.fillRect(x+4,y+4,ts-8,ts-8); },
+  10:(ctx,x,y,t,ts)=>{ ctx.strokeStyle="rgba(0,229,255,.1)";ctx.lineWidth=1;if(x%2===0){ctx.beginPath();ctx.moveTo(x,y+ts/2);ctx.lineTo(x+ts,y+ts/2);ctx.stroke();} },
+  1: (ctx,x,y,t,ts)=>{ ctx.fillStyle=`rgba(0,100,200,${.08+.04*Math.sin(t*.002+x)})`;ctx.fillRect(x,y,ts,ts); },
+  8: (ctx,x,y,t,ts)=>{ const a=.15+.1*Math.sin(t*.004+x*y);ctx.fillStyle=`rgba(100,50,255,${a})`;ctx.fillRect(x+4,y+4,ts-8,ts-8); },
+};
+
+// ═══════════════════════════════════════
+//  ESTADO GLOBAL
+// ═══════════════════════════════════════
+let worldMap    = [];
+let npcs        = [];         // [ { id, name, color, x, y, spd, scale, dialogs, spriteDataURL, frameX, frameY, fw, fh, animFrames, _img } ]
+let gameState   = "loading";
+let isGM        = false;
+let gmMode      = false;      // editor activo
+let selectedTile= 0;
+let eraserMode  = false;
+
+const cam    = { x:0, y:0, tx:0, ty:0 };
+const keys   = {};
+const joystick = { active:false, dx:0, dy:0, startX:0, startY:0 };
+
+// Personaje local
+const savedChar = loadCharacterData();
+const raceId    = savedChar?.race || "human";
+const gender    = savedChar?.gender || "male";
+
+const localPlayer = {
+  name:      savedChar?.name  || "Guerrero Z",
+  race:      raceId,
+  gender,
+  x:         WORLD_W/2 * TILE,
+  y:         WORLD_H/2 * TILE,
+  facing:    1,
+  moving:    false,
+  emoting:   false,
+  emoteTimer:0,
+  emoteText: "",
+  auraColor: savedChar?.auraColor || "#fdd835",
+};
+
+// Multiplayer
+let myId           = null;
+let otherPlayers   = {};
+let otherAnimators = {};
+
+// CharacterSystem
+let csImageMap = null, csAnimator = null;
+
+// NPC interacción
+let activeNpc     = null;
+let dialogIndex   = 0;
+
+// Editor NPC
+let editingNpcId  = null;
+let nepSpriteImg  = null;
+let nepSpriteDataURL = null;
+let nepSelectedFrameX = 0;
+let nepSelectedFrameY = 0;
+
+// ═══════════════════════════════════════
+//  CANVAS SETUP
+// ═══════════════════════════════════════
+const canvas  = document.getElementById("gameCanvas");
+const ctx     = canvas.getContext("2d");
+const mmCv    = document.getElementById("minimapCanvas");
+const mmCtx   = mmCv.getContext("2d");
+
+function resizeCanvas(){
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener("resize", resizeCanvas);
+
+// ═══════════════════════════════════════
+//  HELPERS LOCALSTORAGE
+// ═══════════════════════════════════════
+function loadCharacterData(){
+  let slot = 0;
+  try{
+    const qs = new URLSearchParams(window.location.search);
+    const rs = qs.get("slot");
+    if(rs!=null) slot=parseInt(rs,10);
+    else{ const a=localStorage.getItem("dragonCreatorZ_activeSlot"); if(a!=null)slot=parseInt(a,10); }
+  }catch(e){}
+  slot = Math.max(0,Math.min(2,isNaN(slot)?0:slot));
+  try{
+    const raw = localStorage.getItem("dragonCreatorZ_slots");
+    if(raw){ const s=JSON.parse(raw); const d=Array.isArray(s)?s[slot]:null; if(d&&d.name)return d;
+      if(Array.isArray(s)){const any=s.find(x=>x&&x.name);if(any)return any;} }
+  }catch(e){}
+  return null;
+}
+
+// ═══════════════════════════════════════
+//  GENERACIÓN DE MAPA PREDETERMINADO
+// ═══════════════════════════════════════
+function generateDefaultMap(){
+  const map=[];
+  for(let y=0;y<WORLD_H;y++){
+    map[y]=[];
+    for(let x=0;x<WORLD_W;x++){
+      // Bordes de agua
+      if(x===0||y===0||x===WORLD_W-1||y===WORLD_H-1){ map[y][x]=1; continue; }
+      // Zona central tech (sala de reunión)
+      if(x>=22&&x<=37&&y>=15&&y<=24){ map[y][x]=10; continue; }
+      // Paredes de la sala
+      if((x===22||x===37)&&y>=15&&y<=24){ map[y][x]=2; continue; }
+      if((y===15||y===24)&&x>=22&&x<=37){ map[y][x]=2; continue; }
+      // Entradas a la sala
+      if(x===29&&(y===15||y===24)){ map[y][x]=10; continue; }
+      // Iluminación central
+      if(x>=28&&x<=31&&y>=18&&y<=21){ map[y][x]=9; continue; }
+      // Zonas de descanso
+      if(x>=5&&x<=12&&y>=5&&y<=12){ map[y][x]=6; continue; }
+      if(x>=47&&x<=54&&y>=5&&y<=12){ map[y][x]=6; continue; }
+      if(x>=5&&x<=12&&y>=27&&y<=34){ map[y][x]=3; continue; }
+      if(x>=47&&x<=54&&y>=27&&y<=34){ map[y][x]=4; continue; }
+      // Caminos
+      if(y===19||y===20){ map[y][x]=5; continue; }
+      if(x===29||x===30){ map[y][x]=5; continue; }
+      // Rocas decorativas
+      if((x===15&&y===10)||(x===44&&y===10)||(x===15&&y===29)||(x===44&&y===29)){ map[y][x]=7; continue; }
+      // Portal en esquinas
+      if((x>=7&&x<=9)&&(y>=30&&y<=32)){ map[y][x]=8; continue; }
+      map[y][x]=0;
+    }
+  }
+  return map;
+}
+
+function isWalkable(tx,ty){
+  if(tx<0||ty<0||tx>=WORLD_W||ty>=WORLD_H) return false;
+  const t = worldMap[ty]?.[tx];
+  return TILES[t]?.walkable !== false;
+}
+
+// ═══════════════════════════════════════
+//  FIREBASE — MAPA Y NPCs
+// ═══════════════════════════════════════
+function loadMapFromFirebase(){
+  return new Promise(resolve=>{
+    db.ref("lobby/map").once("value", snap=>{
+      const data = snap.val();
+      if(data && Array.isArray(data) && data.length===WORLD_H){
+        worldMap = data;
+      } else {
+        worldMap = generateDefaultMap();
+      }
+      resolve();
+    });
+  });
+}
+
+function saveMapToFirebase(){
+  if(!isGM){ showToast("Solo el GM puede guardar","error"); return; }
+  db.ref("lobby/map").set(worldMap).then(()=>{
+    showToast("Mapa guardado","success");
+  }).catch(()=>showToast("Error al guardar","error"));
+}
+
+function loadNpcsFromFirebase(){
+  db.ref("lobby/npcs").on("value", snap=>{
+    const data = snap.val() || {};
+    // Reconstruir NPCs preservando imágenes ya cargadas
+    const newNpcs = [];
+    for(const [id,n] of Object.entries(data)){
+      const existing = npcs.find(x=>x.id===id);
+      const npc = { ...n, id };
+      if(existing && existing._img && existing.spriteDataURL === n.spriteDataURL){
+        npc._img = existing._img;
+      } else if(n.spriteDataURL){
+        const img = new Image();
+        img.src = n.spriteDataURL;
+        npc._img = img;
+      } else {
+        npc._img = null;
+      }
+      newNpcs.push(npc);
+    }
+    npcs = newNpcs;
+  });
+}
+
+function saveNpcToFirebase(npc){
+  const { _img, id, ...data } = npc;
+  db.ref(`lobby/npcs/${id}`).set(data);
+}
+
+function deleteNpcFromFirebase(id){
+  db.ref(`lobby/npcs/${id}`).remove();
+}
+
+// ═══════════════════════════════════════
+//  FIREBASE — MULTIPLAYER
+// ═══════════════════════════════════════
+function buildMyPayload(){
+  const sc = savedChar || {};
+  return {
+    name:      localPlayer.name,
+    race:      localPlayer.race,
+    gender:    localPlayer.gender,
+    x:         Math.floor(localPlayer.x),
+    y:         Math.floor(localPlayer.y),
+    facing:    localPlayer.facing,
+    moving:    localPlayer.moving,
+    emoting:   localPlayer.emoting,
+    emoteText: localPlayer.emoteText,
+    auraColor: localPlayer.auraColor,
+    appearance:{
+      raceId:     sc.race      || "human",
+      gender:     sc.gender    || "male",
+      hairId:     sc.hair      || null,
+      hairColor:  sc.hairColor || "#1a1a1a",
+      topId:      sc.shirt     || null,
+      bottomId:   sc.pants     || null,
+      shoesId:    sc.shoes     || null,
+      glovesId:   sc.gloves    || "gm0",
+      faceId:     sc.faceId    || null,
+      faceColor:  sc.faceColor || null,
+      eyeColor:   sc.eyeColor  || "#3a2a1a",
+      skinColor:  sc.skinColor || "#e8c898",
+      auraId:     sc.aura      || "a0",
+      auraColor:  sc.auraColor || "#fdd835",
+      accessoryId:sc.accessory || "ac_none",
+    },
+    t: Date.now(),
+  };
+}
+
+let mpLastSend = 0;
+const MP_RATE  = 80;
+
+function sendPlayerUpdate(){
+  if(!myId) return;
+  const now = performance.now();
+  if(now - mpLastSend < MP_RATE) return;
+  mpLastSend = now;
+  db.ref(`lobby/players/${myId}`).update({
+    x:      Math.floor(localPlayer.x),
+    y:      Math.floor(localPlayer.y),
+    facing: localPlayer.facing,
+    moving: localPlayer.moving,
+    emoting:localPlayer.emoting,
+    emoteText:localPlayer.emoteText,
+    t:      Date.now(),
+  });
+}
+
+function initMultiplayer(){
+  myId = "p_"+Math.random().toString(36).substr(2,9)+"_"+Date.now();
+  const myRef = db.ref(`lobby/players/${myId}`);
+  myRef.onDisconnect().remove();
+  myRef.set(buildMyPayload());
+
+  db.ref("lobby/players").on("value", snap=>{
+    const all = snap.val() || {};
+    // Limpiar desconectados
+    for(const id in otherPlayers){
+      if(!all[id]){ delete otherPlayers[id]; delete otherAnimators[id]; }
+    }
+    // Actualizar
+    let count = 0;
+    for(const [id,data] of Object.entries(all)){
+      count++;
+      if(id===myId) continue;
+      if(Date.now()-(data.t||0)>12000){ delete otherPlayers[id]; delete otherAnimators[id]; continue; }
+      otherPlayers[id]=data;
+      if(!otherAnimators[id] && window.CharacterSystem){
+        otherAnimators[id]=new window.CharacterSystem.SpriteAnimator("idle");
+      }
+      if(otherAnimators[id]){
+        otherAnimators[id].play(data.moving?"walk":"idle");
+      }
+    }
+    document.getElementById("topbarOnline").textContent=`${count} en línea`;
+    document.getElementById("phOnline").innerHTML=`<span style="color:var(--green)">●</span> EN LÍNEA`;
+  });
+
+  // Chat
+  db.ref("lobby/chat").limitToLast(1).on("child_added",snap=>{
+    const m=snap.val();
+    if(!m||m.id===myId) return;
+    addChatMsg(m.name, m.text, m.color||"#00e5ff");
+  });
+
+  showToast("Conectado al lobby","success");
+}
+
+// ═══════════════════════════════════════
+//  CHAT
+// ═══════════════════════════════════════
+function addChatMsg(name, text, color="#00e5ff"){
+  const box = document.getElementById("chatBox");
+  const d   = document.createElement("div");
+  d.style.cssText="margin-bottom:2px;";
+  d.innerHTML=`<span style="color:${color};font-weight:700;font-family:'Orbitron',monospace;font-size:9px">${name}</span>: <span style="color:#c8cfe8">${text}</span>`;
+  box.appendChild(d);
+  while(box.children.length>40) box.removeChild(box.firstChild);
+  box.scrollTop=box.scrollHeight;
+}
+
+function sendChat(){
+  const inp=document.getElementById("chatInput");
+  const text=inp.value.trim();
+  if(!text) return;
+  inp.value="";
+
+  // Comando GM
+  if(text.startsWith("/gm ")){
+    const pass=text.split(" ")[1];
+    if(pass===GM_PASSWORD){
+      isGM=true;
+      document.getElementById("btnGM").style.display="flex";
+      showToast("Modo GM activado","success");
+    } else {
+      showToast("Contraseña incorrecta","error");
+    }
+    return;
+  }
+
+  const rColor = localPlayer.auraColor||"#f5c400";
+  addChatMsg("Tú", text, rColor);
+
+  const ref=db.ref("lobby/chat").push();
+  ref.set({ id:myId, name:localPlayer.name, text, color:rColor, t:Date.now() });
+  // Limpiar mensajes viejos
+  db.ref("lobby/chat").once("value",snap=>{
+    const keys=Object.keys(snap.val()||{});
+    if(keys.length>30) keys.slice(0,keys.length-30).forEach(k=>db.ref(`lobby/chat/${k}`).remove());
+  });
+}
+window.sendChat=sendChat;
+
+// ═══════════════════════════════════════
+//  GM EDITOR DE MAPA
+// ═══════════════════════════════════════
+function toggleGMMode(){
+  gmMode=!gmMode;
+  const btn=document.getElementById("btnGM");
+  const panel=document.getElementById("mapEditorPanel");
+  btn.classList.toggle("active",gmMode);
+  panel.classList.toggle("visible",gmMode);
+  canvas.classList.toggle("edit-mode",gmMode);
+  eraserMode=false;
+  document.getElementById("epEraser").classList.remove("active");
+  showToast(gmMode?"Editor de mapa ON":"Editor de mapa OFF", gmMode?"warn":"success");
+}
+window.toggleGMMode=toggleGMMode;
+
+function toggleEraser(){
+  eraserMode=!eraserMode;
+  document.getElementById("epEraser").classList.toggle("active",eraserMode);
+}
+window.toggleEraser=toggleEraser;
+
+function buildTilePanel(){
+  const container=document.getElementById("epTiles");
+  container.innerHTML="";
+  TILES.forEach(t=>{
+    const d=document.createElement("div");
+    d.className="ep-tile"+(selectedTile===t.id?" selected":"");
+    d.style.background=t.color;
+    d.title=t.name;
+    const s=document.createElement("span");
+    s.textContent=t.name.split(" ")[0].substr(0,4).toUpperCase();
+    d.appendChild(s);
+    d.addEventListener("click",()=>{
+      selectedTile=t.id;
+      eraserMode=false;
+      document.getElementById("epEraser").classList.remove("active");
+      container.querySelectorAll(".ep-tile").forEach(x=>x.classList.remove("selected"));
+      d.classList.add("selected");
+    });
+    container.appendChild(d);
+  });
+}
+
+// Click en canvas para pintar tiles
+canvas.addEventListener("click", e=>{
+  if(!gmMode||!isGM) return;
+  if(activeNpc) return;
+  const tx=Math.floor((e.clientX+cam.x)/TILE);
+  const ty=Math.floor((e.clientY+cam.y)/TILE);
+  if(tx<0||ty<0||tx>=WORLD_W||ty>=WORLD_H) return;
+  if(eraserMode){
+    worldMap[ty][tx]=0;
+  } else {
+    worldMap[ty][tx]=selectedTile;
+  }
+});
+
+// Click derecho en NPC para editar (GM)
+canvas.addEventListener("contextmenu", e=>{
+  e.preventDefault();
+  if(!isGM) return;
+  const wx=e.clientX+cam.x, wy=e.clientY+cam.y;
+  const npc=npcs.find(n=>Math.hypot(n.x-wx,n.y-wy)<40);
+  if(npc) openNpcEditor(npc);
+});
+
+// ═══════════════════════════════════════
+//  EDITOR DE NPC
+// ═══════════════════════════════════════
+function openNpcEditor(npc){
+  editingNpcId = npc ? npc.id : null;
+  nepSpriteImg = npc?._img || null;
+  nepSpriteDataURL = npc?.spriteDataURL || null;
+  nepSelectedFrameX = npc?.frameX || 0;
+  nepSelectedFrameY = npc?.frameY || 0;
+
+  document.getElementById("nepName").value    = npc?.name    || "NPC";
+  document.getElementById("nepColor").value   = npc?.color   || "#00e5ff";
+  document.getElementById("nepSpeed").value   = npc?.spd     ?? 0.8;
+  document.getElementById("nepScale").value   = npc?.scale   ?? 1;
+  document.getElementById("nepFW").value      = npc?.fw      || 48;
+  document.getElementById("nepFH").value      = npc?.fh      || 48;
+  document.getElementById("nepAnimFrames").value = npc?.animFrames || 1;
+  document.getElementById("nepDelBtn").style.display = npc ? "block" : "none";
+
+  // Diálogos
+  const dlgContainer = document.getElementById("nepDialogs");
+  dlgContainer.innerHTML="";
+  const dialogs = npc?.dialogs || [""];
+  dialogs.forEach(d=>addDialogLine(d));
+
+  // Sprite
+  renderNepSprite();
+
+  document.getElementById("npcEditorPanel").classList.add("visible");
+  document.getElementById("modalOverlay").classList.add("visible");
+}
+window.openNpcEditor=openNpcEditor;
+
+function closeNpcEditor(){
+  document.getElementById("npcEditorPanel").classList.remove("visible");
+  document.getElementById("modalOverlay").classList.remove("visible");
+  editingNpcId=null; nepSpriteImg=null; nepSpriteDataURL=null;
+}
+window.closeNpcEditor=closeNpcEditor;
+
+function addDialogLine(text=""){
+  const c=document.getElementById("nepDialogs");
+  const row=document.createElement("div");
+  row.className="nep-dialog-row";
+  const inp=document.createElement("input");
+  inp.value=text;
+  inp.placeholder="Línea de diálogo...";
+  const del=document.createElement("button");
+  del.className="nep-dialog-del";
+  del.textContent="✕";
+  del.onclick=()=>c.removeChild(row);
+  row.appendChild(inp); row.appendChild(del);
+  c.appendChild(row);
+}
+window.addDialogLine=addDialogLine;
+
+function loadNepSprite(e){
+  const file=e.target.files[0];
+  if(!file) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    nepSpriteDataURL=ev.target.result;
+    const img=new Image();
+    img.onload=()=>{ nepSpriteImg=img; renderNepSprite(); renderNepFrame(); };
+    img.src=nepSpriteDataURL;
+  };
+  reader.readAsDataURL(file);
+}
+window.loadNepSprite=loadNepSprite;
+
+function renderNepSprite(){
+  const wrap=document.getElementById("npcSpriteWrap");
+  const preview=document.getElementById("npcSpritePreview");
+  const selector=document.getElementById("npcSpriteSelector");
+  const empty=document.getElementById("npcSpriteEmpty");
+
+  if(!nepSpriteImg){
+    preview.style.display="none";
+    selector.style.display="none";
+    empty.style.display="block";
+    return;
+  }
+  empty.style.display="none";
+  preview.src=nepSpriteDataURL;
+  preview.style.display="block";
+
+  const fw=parseInt(document.getElementById("nepFW").value)||48;
+  const fh=parseInt(document.getElementById("nepFH").value)||48;
+  const scale=Math.min(3, Math.max(1, 180/nepSpriteImg.naturalWidth));
+  preview.style.width =(nepSpriteImg.naturalWidth*scale)+"px";
+  preview.style.height=(nepSpriteImg.naturalHeight*scale)+"px";
+
+  // Selector visual
+  selector.style.display="block";
+  selector.style.left  =(nepSelectedFrameX*scale)+"px";
+  selector.style.top   =(nepSelectedFrameY*scale)+"px";
+  selector.style.width =(fw*scale)+"px";
+  selector.style.height=(fh*scale)+"px";
+}
+
+// Click en el spritesheet para seleccionar frame
+document.getElementById("npcSpriteWrap").addEventListener("click",e=>{
+  if(!nepSpriteImg) return;
+  const preview=document.getElementById("npcSpritePreview");
+  const rect=preview.getBoundingClientRect();
+  const scaleX=nepSpriteImg.naturalWidth/rect.width;
+  const scaleY=nepSpriteImg.naturalHeight/rect.height;
+  const px=(e.clientX-rect.left)*scaleX;
+  const py=(e.clientY-rect.top)*scaleY;
+  const fw=parseInt(document.getElementById("nepFW").value)||48;
+  const fh=parseInt(document.getElementById("nepFH").value)||48;
+  nepSelectedFrameX=Math.floor(px/fw)*fw;
+  nepSelectedFrameY=Math.floor(py/fh)*fh;
+  renderNepSprite();
+  renderNepFrame();
+});
+
+// Actualizar selector al cambiar FW/FH
+["nepFW","nepFH"].forEach(id=>{
+  document.getElementById(id).addEventListener("input",()=>{
+    renderNepSprite(); renderNepFrame();
+  });
+});
+
+function renderNepFrame(){
+  const cv=document.getElementById("npcFramePreview");
+  const c=cv.getContext("2d");
+  c.clearRect(0,0,cv.width,cv.height);
+  c.fillStyle="#0a0d1a";
+  c.fillRect(0,0,cv.width,cv.height);
+  if(!nepSpriteImg) return;
+  const fw=parseInt(document.getElementById("nepFW").value)||48;
+  const fh=parseInt(document.getElementById("nepFH").value)||48;
+  c.imageSmoothingEnabled=false;
+  const scale=Math.min(cv.width/fw, cv.height/fh)*0.9;
+  const dw=fw*scale, dh=fh*scale;
+  const dx=(cv.width-dw)/2, dy=(cv.height-dh)/2;
+  c.drawImage(nepSpriteImg, nepSelectedFrameX, nepSelectedFrameY, fw, fh, dx, dy, dw, dh);
+}
+
+function saveNpc(){
+  const name   = document.getElementById("nepName").value.trim()||"NPC";
+  const color  = document.getElementById("nepColor").value;
+  const spd    = parseFloat(document.getElementById("nepSpeed").value)||0.8;
+  const scale  = parseFloat(document.getElementById("nepScale").value)||1;
+  const fw     = parseInt(document.getElementById("nepFW").value)||48;
+  const fh     = parseInt(document.getElementById("nepFH").value)||48;
+  const animF  = parseInt(document.getElementById("nepAnimFrames").value)||1;
+
+  const dialogInputs=[...document.getElementById("nepDialogs").querySelectorAll("input")];
+  const dialogs=dialogInputs.map(i=>i.value.trim()).filter(Boolean);
+  if(!dialogs.length) dialogs.push("...");
+
+  // Posición: si es nuevo, ponerlo cerca del jugador
+  let px = localPlayer.x, py = localPlayer.y;
+  if(editingNpcId){
+    const ex=npcs.find(n=>n.id===editingNpcId);
+    if(ex){ px=ex.x; py=ex.y; }
+  }
+
+  const id = editingNpcId || `npc_${Date.now()}_${Math.random().toString(36).substr(2,5)}`;
+  const npc={
+    id, name, color, spd, scale, fw, fh, animFrames:animF,
+    dialogs, x:px, y:py,
+    frameX:nepSelectedFrameX,
+    frameY:nepSelectedFrameY,
+    spriteDataURL: nepSpriteDataURL||null,
+    _img: nepSpriteImg||null,
+  };
+
+  saveNpcToFirebase(npc);
+  closeNpcEditor();
+  showToast(`NPC "${name}" guardado`,"success");
+}
+window.saveNpc=saveNpc;
+
+function deleteNpc(){
+  if(!editingNpcId) return;
+  deleteNpcFromFirebase(editingNpcId);
+  closeNpcEditor();
+  showToast("NPC eliminado","warn");
+}
+window.deleteNpc=deleteNpc;
+
+// ═══════════════════════════════════════
+//  INPUT
+// ═══════════════════════════════════════
+window.addEventListener("keydown",e=>{
+  const active=document.activeElement;
+  if(active&&(active.tagName==="INPUT"||active.tagName==="TEXTAREA")) return;
+  keys[e.code]=true;
+  if(e.code==="KeyF") { e.preventDefault(); interactNearby(); }
+  if(e.code==="KeyE") { e.preventDefault(); doEmote(); }
+  if(e.code==="Escape") {
+    if(activeNpc) closeDialog();
+    else if(gmMode) toggleGMMode();
+  }
+});
+window.addEventListener("keyup",e=>{ keys[e.code]=false; });
+
+// Joystick
+const jw=document.getElementById("joystickWrap");
+const jk=document.getElementById("joystickKnob");
+jw.addEventListener("touchstart",e=>{
+  e.preventDefault();
+  const r=jw.getBoundingClientRect();
+  joystick.active=true;
+  joystick.startX=r.left+r.width/2;
+  joystick.startY=r.top+r.height/2;
+},{passive:false});
+window.addEventListener("touchmove",e=>{
+  e.preventDefault();
+  if(!joystick.active) return;
+  const t=e.touches[0];
+  const dx=t.clientX-joystick.startX, dy=t.clientY-joystick.startY;
+  const maxR=40, dist=Math.hypot(dx,dy);
+  const nx=dist>maxR?(dx/dist)*maxR:dx;
+  const ny=dist>maxR?(dy/dist)*maxR:dy;
+  joystick.dx=nx/maxR; joystick.dy=ny/maxR;
+  jk.style.transform=`translate(${nx}px,${ny}px)`;
+},{passive:false});
+window.addEventListener("touchend",()=>{
+  if(!joystick.active) return;
+  joystick.active=false; joystick.dx=0; joystick.dy=0;
+  jk.style.transform="translate(0,0)";
+});
+
+// ═══════════════════════════════════════
+//  PLAYER UPDATE
+// ═══════════════════════════════════════
+function updatePlayer(dt){
+  if(gameState!=="playing") return;
+  if(activeNpc) return; // bloqueado en diálogo
+
+  let mx=0, my=0;
+  if(keys["ArrowLeft"]||keys["KeyA"]) mx-=1;
+  if(keys["ArrowRight"]||keys["KeyD"]) mx+=1;
+  if(keys["ArrowUp"]||keys["KeyW"]) my-=1;
+  if(keys["ArrowDown"]||keys["KeyS"]) my+=1;
+  if(joystick.active){ mx=joystick.dx; my=joystick.dy; }
+
+  const len=Math.sqrt(mx*mx+my*my);
+  if(len>0){ mx/=len; my/=len; }
+
+  localPlayer.moving=(len>0.1);
+  if(mx!==0) localPlayer.facing=mx>0?1:-1;
+
+  // Emote timer
+  if(localPlayer.emoting){
+    localPlayer.emoteTimer-=dt;
+    if(localPlayer.emoteTimer<=0){
+      localPlayer.emoting=false;
+      localPlayer.emoteText="";
+    }
+  }
+
+  const spd=PLAYER_SPD*dt*60;
+  const nx=localPlayer.x+mx*spd;
+  const ny=localPlayer.y+my*spd;
+
+  // Colisión simple
+  const hw=14,hh=10;
+  const cx1=Math.floor((nx-hw)/TILE), cx2=Math.floor((nx+hw)/TILE);
+  const cy1=Math.floor((ny-hh)/TILE), cy2=Math.floor((ny+hh)/TILE);
+
+  if(isWalkable(cx1,cy1)&&isWalkable(cx2,cy1)&&isWalkable(cx1,cy2)&&isWalkable(cx2,cy2)){
+    localPlayer.x=nx; localPlayer.y=ny;
+  } else {
+    const ox1=Math.floor((localPlayer.x-hw)/TILE),ox2=Math.floor((localPlayer.x+hw)/TILE);
+    const oy1=Math.floor((localPlayer.y-hh)/TILE),oy2=Math.floor((localPlayer.y+hh)/TILE);
+    if(isWalkable(Math.floor((nx-hw)/TILE),oy1)&&isWalkable(Math.floor((nx+hw)/TILE),oy1)&&
+       isWalkable(Math.floor((nx-hw)/TILE),oy2)&&isWalkable(Math.floor((nx+hw)/TILE),oy2))
+      localPlayer.x=nx;
+    if(isWalkable(ox1,Math.floor((ny-hh)/TILE))&&isWalkable(ox2,Math.floor((ny-hh)/TILE))&&
+       isWalkable(ox1,Math.floor((ny+hh)/TILE))&&isWalkable(ox2,Math.floor((ny+hh)/TILE)))
+      localPlayer.y=ny;
+  }
+
+  localPlayer.x=Math.max(TILE,Math.min(localPlayer.x,(WORLD_W-1)*TILE));
+  localPlayer.y=Math.max(TILE,Math.min(localPlayer.y,(WORLD_H-1)*TILE));
+
+  // CharacterSystem animator
+  const CS=window.CharacterSystem;
+  if(CS&&csAnimator){
+    CS.player.direction=localPlayer.facing;
+    csAnimator.play(localPlayer.moving?"walk":"idle");
+  }
+}
+
+function updateCamera(){
+  cam.tx=localPlayer.x-canvas.width/2;
+  cam.ty=localPlayer.y-canvas.height/2;
+  cam.tx=Math.max(0,Math.min(cam.tx,WORLD_W*TILE-canvas.width));
+  cam.ty=Math.max(0,Math.min(cam.ty,WORLD_H*TILE-canvas.height));
+  cam.x+=(cam.tx-cam.x)*CAM_LERP;
+  cam.y+=(cam.ty-cam.y)*CAM_LERP;
+}
+
+// ═══════════════════════════════════════
+//  NPC INTERACCIÓN
+// ═══════════════════════════════════════
+function interactNearby(){
+  if(activeNpc){ closeDialog(); return; }
+  const npc=npcs.find(n=>Math.hypot(n.x-localPlayer.x,n.y-localPlayer.y)<60);
+  if(npc) openDialog(npc);
+}
+window.interactNearby=interactNearby;
+
+function openDialog(npc){
+  if(!npc.dialogs||!npc.dialogs.length) return;
+  activeNpc=npc; dialogIndex=0;
+  showDialogLine();
+  gameState="dialog";
+}
+
+function showDialogLine(){
+  if(!activeNpc) return;
+  document.getElementById("dialogBox").classList.add("visible");
+  document.getElementById("dlgName").textContent=activeNpc.name;
+  document.getElementById("dlgName").style.color=activeNpc.color||"#00e5ff";
+  document.getElementById("dlgText").textContent=activeNpc.dialogs[dialogIndex]||"...";
+  const isLast=dialogIndex>=activeNpc.dialogs.length-1;
+  document.getElementById("dlgNext").textContent=isLast?"CERRAR ✕":"CONTINUAR ▶";
+}
+
+function advanceDialog(){
+  if(!activeNpc) return;
+  if(dialogIndex<activeNpc.dialogs.length-1){
+    dialogIndex++;
+    showDialogLine();
+  } else {
+    closeDialog();
+  }
+}
+window.advanceDialog=advanceDialog;
+
+function closeDialog(){
+  activeNpc=null; dialogIndex=0;
+  document.getElementById("dialogBox").classList.remove("visible");
+  gameState="playing";
+}
+
+// ═══════════════════════════════════════
+//  EMOTES
+// ═══════════════════════════════════════
+const EMOTES=["✨","💥","👊","⚡","🌀","❤️","😤","🔥"];
+let emoteIdx=0;
+function doEmote(){
+  localPlayer.emoting=true;
+  localPlayer.emoteTimer=2.5;
+  localPlayer.emoteText=EMOTES[emoteIdx%EMOTES.length];
+  emoteIdx++;
+}
+window.doEmote=doEmote;
+
+// ═══════════════════════════════════════
+//  DIBUJO — MUNDO
+// ═══════════════════════════════════════
+let gameTime=0;
+function drawWorld(now){
+  const startX=Math.floor(cam.x/TILE);
+  const startY=Math.floor(cam.y/TILE);
+  const endX=Math.min(WORLD_W,startX+Math.ceil(canvas.width/TILE)+2);
+  const endY=Math.min(WORLD_H,startY+Math.ceil(canvas.height/TILE)+2);
+
+  for(let ty=startY;ty<endY;ty++){
+    for(let tx=startX;tx<endX;tx++){
+      const tileId=worldMap[ty]?.[tx]??0;
+      const tileDef=TILES[tileId]||TILES[0];
+      const sx=tx*TILE-cam.x, sy=ty*TILE-cam.y;
+
+      ctx.fillStyle=tileDef.color;
+      ctx.fillRect(sx,sy,TILE+1,TILE+1);
+
+      // Detalles
+      if(TILE_DETAIL[tileId]){
+        TILE_DETAIL[tileId](ctx,sx,sy,now,TILE);
       }
 
-      const {
-        player, RACE_CATALOG, AURAS_CATALOG,
-        ACCESSORIES_CATALOG, ACCESSORY_TYPES,
-        addUserAccessory, removeUserAccessory, restoreUserAccessories,
-        VIEW_META, ACTIONS_META,
-        SpriteAnimator, initPlayer, preloadAssets, drawPlayer,
-        tintHair, tintLayer, invalidateHairCache, getById, cycleId,
-        getCatalogFor, getDefaultIds, GENDERLESS_RACES,
-        isCompatibleSheet, getIdleFrameCoords,
-      } = window.CharacterSystem;
-
-      /* ══ Paletas ══ */
-      const SKIN_PALETTE  = ["#f5d5a8","#e8c898","#d4a574","#c07840","#8d5524","#4caf50","#9c88ff","#c0c0c0","#f0e0f0"];
-      const EYE_PALETTE   = ["#1a1a1a","#f5f5f5","#00e676","#2979ff","#b71c1c","#aa00ff","#ffd600","#ff6a00","#00e5ff","#ff69b4"];
-      const HAIR_PALETTE  = ["#1a1a1a","#8B4513","#c0840a","#ffd700","#ff4400","#00e5ff","#aa00ff","#e8eaf6","#ff69b4","#00e676"];
-      const FACE_PALETTE  = ["#b71c1c","#1565c0","#2e7d32","#6a1b9a","#ffd700","#00e5ff","#ff69b4","#1a1a1a","#e040fb","#00e676"];
-      const CLOTH_PALETTE = ["#ff6a00","#1565c0","#b71c1c","#2e7d32","#6a1b9a","#ffd700","#1a1a1a","#e0e0e0"];
-      const AURA_PALETTE  = ["#fdd835","#00b0ff","#ff1744","#aa00ff","#00e676","#e8eaf6","#90a4ae","#ff6a00"];
-
-      /* ══ Estado global ══ */
-      const LS_KEY      = "dragonCreatorZ_slots";
-      const LS_SLOT     = "dragonCreatorZ_activeSlot";
-      const LS_ACC_KEY  = "dragonCreatorZ_accessories";
-      const LS_FREE_KEY = "dragonCreatorZ_freeCustomization";
-      const PAGE_SIZE   = 8;
-
-      const FREE_CUSTOMIZATION_CATALOG = [];
-      let imageMap    = {};
-      let animator    = null, finalAnim = null;
-      let activeCategory = "race";
-      let pageState   = {};
-      let savedSlots  = Array(11).fill(null);
-      let activeSlotIndex = 0;
-      let uiFlipped   = false, uiZoom = 1;
-      let _auraPhase  = 0;
-
-      let activeViewKey  = null;
-      let activeAnimKey  = "idle";
-
-      let _importPendingImg    = null;
-      let _importPendingDataURL = null;
-
-      const charState = {
-        name:        "Guerrero Z",
-        level:       1,
-        glovesId:    "gm0",
-        auraId:      "a1",
-        auraColor:   "#fdd835",
-        clothColor:  "#ff6a00",
-        accessoryId: "ac_none",
-        get viewKey()   { return activeViewKey; },
-        get auraPhase() { return _auraPhase; },
-      };
-
-      /* ══ Canvas ══ */
-      const previewCanvas = document.getElementById("previewCanvas");
-      const previewCtx    = previewCanvas.getContext("2d");
-      const finalCanvas   = document.getElementById("finalCanvas");
-      const finalCtx      = finalCanvas.getContext("2d");
-
-      /* ══ Helper ══ */
-      function currentCatalog(cat) {
-        return getCatalogFor(cat, player.appearance.raceId, player.appearance.gender);
+      // Grid en modo editor
+      if(gmMode){
+        ctx.strokeStyle="rgba(255,255,255,.06)";
+        ctx.lineWidth=1;
+        ctx.strokeRect(sx,sy,TILE,TILE);
       }
-
-      /* ══ Persistencia de accesorios importados ══ */
-      function _saveAccessoriesToLS() {
-        const toStore = ACCESSORIES_CATALOG
-          .filter(a => a.id !== "ac_none" && a.dataURL && !a.isFreeCustomization)
-          .map(a => ({ id: a.id, name: a.name, type: a.type, color: a.color, dataURL: a.dataURL }));
-        try { localStorage.setItem(LS_ACC_KEY, JSON.stringify(toStore)); } catch(e) {}
-      }
-
-      async function _restoreAccessoriesFromLS() {
-        try {
-          const raw = localStorage.getItem(LS_ACC_KEY);
-          if (!raw) return;
-          const list = JSON.parse(raw);
-          await restoreUserAccessories(list);
-        } catch(e) {}
-      }
-
-      /* ══ Persistencia Free Customization ══ */
-      function _saveFreeCustomizationToLS() {
-        const toStore = FREE_CUSTOMIZATION_CATALOG.map(a => ({
-          id:       a.id,
-          name:     a.name,
-          type:     a.type,
-          slot:     a.slot,
-          color:    a.color,
-          dataURL:  a.dataURL,
-          raceName: a.raceName || null,
-        }));
-        try { localStorage.setItem(LS_FREE_KEY, JSON.stringify(toStore)); } catch(e) {}
-      }
-
-      function _restoreFreeCustomizationFromLS() {
-        try {
-          const raw = localStorage.getItem(LS_FREE_KEY);
-          if (!raw) return;
-          const list = JSON.parse(raw);
-          list.forEach(item => {
-            // Evitar duplicados
-            if (ACCESSORIES_CATALOG.find(a => a.id === item.id)) return;
-            const img = new Image();
-            img.src = item.dataURL;
-            const entry = {
-              id:                  item.id,
-              name:                item.name,
-              type:                item.type || "other",
-              slot:                item.slot || "over_shirt",
-              color:               item.color || null,
-              userImage:           img,
-              dataURL:             item.dataURL,
-              raceName:            item.raceName || null,
-              isFreeCustomization: true,  // ← siempre true al restaurar libre
-            };
-            FREE_CUSTOMIZATION_CATALOG.push(entry);
-            ACCESSORIES_CATALOG.push(entry);  // misma referencia
-          });
-        } catch(e) {
-          console.warn("Error restaurando free customization:", e);
-        }
-      }
-
-      /* ══════════════════════════════════════════════════════════════
-       *  drawThumbCanvas — CORREGIDO v4.3.1
-       *  Usa tintLayer directamente sobre el frame idle recortado,
-       *  igual que lo hace drawPlayer. Ya no hay desajuste entre
-       *  la miniatura y el personaje en pantalla.
-       * ══════════════════════════════════════════════════════════════ */
-      function drawThumbCanvas(canvas, cat, item) {
-        const ctx = canvas.getContext("2d");
-        const w = canvas.width, h = canvas.height;
-        ctx.clearRect(0, 0, w, h);
-        ctx.fillStyle = "#12172e";
-        ctx.fillRect(0, 0, w, h);
-
-const img = (cat === "accessory" || cat === "free")
-          ? (item.userImage || null)
-          : (item.spriteKey ? imageMap[item.spriteKey] : null);
-
-        if (img && img.complete && img.naturalWidth) {
-          const sheet = isCompatibleSheet(img);
-          let srcX, srcY, srcW, srcH;
-          if (sheet) {
-            const coords = getIdleFrameCoords(img);
-            srcX = coords.srcX; srcY = coords.srcY;
-            srcW = coords.fw;   srcH = coords.fh;
-            if (srcX + srcW > img.naturalWidth || srcY + srcH > img.naturalHeight) {
-              srcX = 0; srcY = 0; srcW = img.naturalWidth; srcH = img.naturalHeight;
-            }
-          } else {
-            srcX = 0; srcY = 0; srcW = img.naturalWidth; srcH = img.naturalHeight;
-          }
-
-          const scale = Math.min(w / srcW, h / srcH) * 0.88;
-          const dw = Math.round(srcW * scale), dh = Math.round(srcH * scale);
-          const dx = Math.round((w - dw) / 2),  dy = Math.round((h - dh) / 2);
-          ctx.imageSmoothingEnabled = false;
-
-          // ── CABELLO: usa tintLayer v4.3.1 ──
-          if (cat === "hair" && item.tintable && player.appearance.hairColor) {
-            const frameCoords = sheet ? { srcX, srcY, fw: srcW, fh: srcH } : null;
-            const cacheKey = (item.id || "hair") + "|" + (img.src || "");
-            const tinted = tintLayer(img, player.appearance.hairColor, cacheKey, dw, dh, frameCoords);
-            if (tinted) ctx.drawImage(tinted, dx, dy, dw, dh);
-            else ctx.drawImage(img, srcX, srcY, srcW, srcH, dx, dy, dw, dh);
-
-          // ── CARA: usa tintLayer v4.3.1 ──
-          } else if (cat === "face" && item.tintable) {
-            const faceColor = item.eyeColor
-              ? (player.appearance.eyeColor || null)
-              : (player.appearance.faceColor || null);
-            if (faceColor) {
-              const frameCoords = sheet ? { srcX, srcY, fw: srcW, fh: srcH } : null;
-              const cacheKey = (item.id || "face") + "|" + (img.src || "");
-              const tinted = tintLayer(img, faceColor, cacheKey, dw, dh, frameCoords);
-              if (tinted) ctx.drawImage(tinted, dx, dy, dw, dh);
-              else ctx.drawImage(img, srcX, srcY, srcW, srcH, dx, dy, dw, dh);
-            } else {
-              ctx.drawImage(img, srcX, srcY, srcW, srcH, dx, dy, dw, dh);
-            }
-
-          // ── AURA: multiply color ──
-          } else if (cat === "aura" && item.color) {
-            ctx.drawImage(img, srcX, srcY, srcW, srcH, dx, dy, dw, dh);
-            const aColor = charState.auraColor || item.color;
-            ctx.globalCompositeOperation = "multiply";
-            ctx.fillStyle = aColor;
-            ctx.fillRect(dx, dy, dw, dh);
-            ctx.globalCompositeOperation = "destination-in";
-            ctx.drawImage(img, srcX, srcY, srcW, srcH, dx, dy, dw, dh);
-            ctx.globalCompositeOperation = "source-over";
-
-          // ── RESTO: dibujo directo ──
-          } else {
-            ctx.drawImage(img, srcX, srcY, srcW, srcH, dx, dy, dw, dh);
-          }
-
-        } else {
-          // Sin imagen — color sólido + icono
-          const color = item.color || item.color1 || item.skinColor || "#2a3560";
-          if (color) {
-            ctx.fillStyle = color + "88";
-            ctx.beginPath();
-            if (ctx.roundRect) ctx.roundRect(4, 4, w - 8, h - 8, 4);
-            else ctx.rect(4, 4, w - 8, h - 8);
-            ctx.fill();
-          }
-          const ACC_TYPE_ICONS = {
-            belt:"🥋", cape:"🧣", bag:"🎒", collar:"📿",
-            brace:"⌚", mask:"🥽", scouter:"🔭", tail:"🐾", wings:"🦋", none:"➕", other:"✨",
-          };
-          const BASE_ICONS = { race:"👾", face:"😶", hair:"💇", shirt:"👕", pants:"👖", gloves:"🥊", shoes:"👟", aura:"✨" };
-          const icon = cat === "accessory"
-            ? (ACC_TYPE_ICONS[item.type] || "🎽")
-            : (BASE_ICONS[cat] || "?");
-          ctx.font = `${Math.round(h * 0.38)}px sans-serif`;
-          ctx.textAlign = "center"; ctx.textBaseline = "middle";
-          ctx.fillText(icon, w / 2, h / 2);
-          ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
-        }
-      }
-
-      /* ══ Selector vista / animación ══ */
-      function initViewAnimBar() {
-        document.querySelectorAll("#viewBtns .view-btn").forEach((btn) => {
-          btn.addEventListener("click", () => {
-            const vk = btn.dataset.view;
-            if (activeViewKey === vk) {
-              activeViewKey = null;
-              btn.classList.remove("active-view");
-              _setAnim(activeAnimKey);
-            } else {
-              activeViewKey = vk;
-              document.querySelectorAll("#viewBtns .view-btn").forEach(b => b.classList.remove("active-view"));
-              document.querySelectorAll("#animBtns .view-btn").forEach(b => b.classList.remove("active-anim"));
-              btn.classList.add("active-view");
-              animator.setView(vk);
-              finalAnim.setView(vk);
-            }
-          });
-        });
-        document.querySelectorAll("#animBtns .view-btn").forEach((btn) => {
-          btn.addEventListener("click", () => _setAnim(btn.dataset.anim));
-        });
-      }
-
-      function _setAnim(animKey) {
-        activeViewKey = null; activeAnimKey = animKey;
-        document.querySelectorAll("#viewBtns .view-btn").forEach(b => b.classList.remove("active-view"));
-        document.querySelectorAll("#animBtns .view-btn").forEach(b => b.classList.remove("active-anim"));
-        const t = document.querySelector(`#animBtns .view-btn[data-anim="${animKey}"]`);
-        if (t) t.classList.add("active-anim");
-        animator.clearView(); animator.play(animKey);
-        finalAnim.clearView(); finalAnim.play(animKey);
-      }
-
-      /* ══ Config de categorías ══ */
-      const CAT_CONFIG = {
-        race:      { label:"SELECCIONA LA RAZA",          catalog: RACE_CATALOG,     prop:"raceId",       needsGender:true },
-        face:      { label:"SELECCIONA LA CARA",                                       prop:"faceId",       needsFaceColor:true },
-        hair:      { label:"SELECCIONA EL CABELLO",                                    prop:"hairId",       needsColor:true, colorProp:"hairColor",  colorLabel:"COLOR CABELLO", palette:HAIR_PALETTE },
-        shirt:     { label:"SELECCIONA LA ROPA SUPERIOR",                              prop:"topId"   },
-        pants:     { label:"SELECCIONA LA ROPA INFERIOR",                              prop:"bottomId"},
-        gloves:    { label:"SELECCIONA LOS GUANTES",                                   prop:"glovesId",     isExtra:true },
-        shoes:     { label:"SELECCIONA EL CALZADO",                                    prop:"shoesId" },
-        accessory: {
-          label: "ACCESORIOS IMPORTADOS",
-          catalog: () => ACCESSORIES_CATALOG.filter(a =>
-            !a.isFreeCustomization && !a.id.startsWith("fc_")
-          ),
-          prop:"accessoryId", isExtra:true, isAccImport:true
-        },
-        free: {
-          label: "PERSONALIZACIÓN LIBRE",
-          catalog: () => ACCESSORIES_CATALOG.filter(a =>
-            a.isFreeCustomization || a.id.startsWith("fc_")
-          ),
-          prop:"accessoryId", isExtra:true, isAccImport:true
-        },
-        aura:      { label:"SELECCIONA EL AURA",          catalog: AURAS_CATALOG,      prop:"auraId",       isExtra:true, needsColor:true, colorProp:"auraColor", colorLabel:"COLOR AURA", palette:AURA_PALETTE },
-        color:     { label:"COLORES", special:"color" },
-      };
-
-      /* ══ renderItemsPanel ══ */
-      function renderItemsPanel(cat) {
-        const panel = document.getElementById("itemsPanel");
-        panel.innerHTML = "";
-        const cfg = CAT_CONFIG[cat];
-        if (!cfg) return;
-
-        const titleEl = document.createElement("div");
-        titleEl.className = "items-section-title";
-        const raceId  = player.appearance.raceId;
-        const gender  = player.appearance.gender;
-        const raceDef = RACE_CATALOG.find(r => r.id === raceId);
-        const showBadge = !["race","color","aura","accessory"].includes(cat);
-        if (showBadge && raceDef) {
-          titleEl.innerHTML = cfg.label + `<span class="race-badge">${raceDef.name}${GENDERLESS_RACES.includes(raceId) ? "" : gender === "female" ? " ♀" : " ♂"}</span>`;
-        } else {
-          titleEl.textContent = cfg.label;
-        }
-        panel.appendChild(titleEl);
-
-        if (cfg.special === "color") { renderColorPanel(panel); return; }
-
-        const catalog = typeof cfg.catalog === "function"
-          ? cfg.catalog()
-          : (cfg.catalog || currentCatalog(cat));
-
-        if (cfg.needsGender) {
-          const gRow = document.createElement("div");
-          gRow.className = "gender-row";
-          const genderless = GENDERLESS_RACES.includes(player.appearance.raceId);
-          ["male","female"].forEach(g => {
-            const btn = document.createElement("button");
-            btn.className = "gender-btn" + (player.appearance.gender === g ? " active" : "");
-            btn.textContent = g === "male" ? "♂ MASC" : "♀ FEM";
-            if (genderless) btn.disabled = true;
-            btn.addEventListener("click", () => {
-              if (player.appearance.gender === g) return;
-              player.appearance.gender = g;
-              _resetEquipmentForCurrentRaceGender();
-              document.querySelectorAll(".gender-btn").forEach(b => b.classList.remove("active"));
-              btn.classList.add("active");
-              updateStats();
-              if (activeCategory !== "race") renderItemsPanel(activeCategory);
-            });
-            gRow.appendChild(btn);
-          });
-          panel.appendChild(gRow);
-        }
-
-        const scroll = document.createElement("div");
-        scroll.className = "items-scroll";
-        panel.appendChild(scroll);
-
-        const page = pageState[cat] || 0;
-        const totalPages = Math.ceil(catalog.length / PAGE_SIZE);
-        const items = catalog.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
-
-        const grid = document.createElement("div");
-        grid.className = "items-grid";
-
-        items.forEach(item => {
-          const thumb = document.createElement("div");
-          thumb.className = "item-thumb";
-          const currentId = cfg.isExtra
-            ? (charState[cfg.prop] || player.appearance[cfg.prop])
-            : player.appearance[cfg.prop];
-          if (item.id === currentId) thumb.classList.add("selected");
-
-          const cv = document.createElement("canvas");
-          cv.width = 52; cv.height = 52;
-          drawThumbCanvas(cv, cat, item);
-          thumb.appendChild(cv);
-
-          const lbl = document.createElement("div");
-          lbl.className = "item-label";
-          lbl.textContent = item.raceName ? `${item.raceName} · ${item.name || item.id}` : (item.name || item.id);
-          thumb.appendChild(lbl);
-
-          if ((cat === "accessory" || cat === "free") && item.type && item.type !== "none") {
-            const td = ACCESSORY_TYPES.find(t => t.id === item.type);
-            const badge = document.createElement("div");
-            badge.className = "acc-type-badge";
-            badge.textContent = (td ? td.icon : "✨");
-            thumb.appendChild(badge);
-
-            const delBtn = document.createElement("button");
-            delBtn.className = "acc-delete-btn";
-            delBtn.textContent = "✕";
-            delBtn.title = "Eliminar accesorio";
-            delBtn.addEventListener("click", e => {
-              e.stopPropagation();
-              if (charState.accessoryId === item.id || player.appearance.accessoryId === item.id) {
-                charState.accessoryId = "ac_none";
-                player.appearance.accessoryId = "ac_none";
-              }
-              if (cat === "free") {
-                const idx = FREE_CUSTOMIZATION_CATALOG.findIndex(x => x.id === item.id);
-                if (idx !== -1) FREE_CUSTOMIZATION_CATALOG.splice(idx, 1);
-                _saveFreeCustomizationToLS();
-              }
-              removeUserAccessory(item.id);
-              renderItemsPanel(cat);
-              showToast("Accesorio eliminado", "warning");
-            });
-            thumb.appendChild(delBtn);
-          }
-
-          thumb.addEventListener("click", () => {
-            grid.querySelectorAll(".item-thumb").forEach(t => t.classList.remove("selected"));
-            thumb.classList.add("selected");
-
-            if (cfg.isExtra) {
-              charState[cfg.prop] = item.id;
-              player.appearance[cfg.prop] = item.id;
-              if (cat === "aura" && item.color) {
-                charState.auraColor = item.color;
-                player.appearance.auraColor = item.color;
-                grid.querySelectorAll("canvas").forEach((c, i) => { if (items[i]) drawThumbCanvas(c, cat, items[i]); });
-              }
-            } else {
-              player.appearance[cfg.prop] = item.id;
-              if (cat === "race") {
-                const race = RACE_CATALOG.find(r => r.id === item.id);
-                if (race) {
-                  player.appearance.skinColor = race.skinColor;
-                  player.appearance.eyeColor  = race.eyeColor;
-                }
-                if (GENDERLESS_RACES.includes(item.id)) player.appearance.gender = "male";
-                _resetEquipmentForCurrentRaceGender();
-              }
-              if (cat === "hair") invalidateHairCache();
-              if (cat === "face") invalidateHairCache();
-            }
-            updateStats();
-          });
-          grid.appendChild(thumb);
-        });
-        scroll.appendChild(grid);
-
-        if (cfg.needsFaceColor) {
-          renderFaceColorSection(panel, grid, items, cat);
-        }
-
-        if (cfg.needsColor && cfg.palette) {
-          renderColorSwatchSection(panel, grid, items, cat, cfg);
-        }
-
-        if (cfg.isAccImport) {
-          renderImportPanel(panel, cat);
-        }
-
-        if (totalPages > 1) {
-          const pag = document.createElement("div");
-          pag.className = "pagination";
-          const prev = document.createElement("button"); prev.className="page-btn"; prev.textContent="‹"; prev.disabled = page===0;
-          prev.addEventListener("click", () => { pageState[cat]=page-1; renderItemsPanel(cat); });
-          const info = document.createElement("span"); info.className="page-info"; info.textContent=`${page+1} / ${totalPages}`;
-          const next = document.createElement("button"); next.className="page-btn"; next.textContent="›"; next.disabled = page>=totalPages-1;
-          next.addEventListener("click", () => { pageState[cat]=page+1; renderItemsPanel(cat); });
-          pag.appendChild(prev); pag.appendChild(info); pag.appendChild(next);
-          panel.appendChild(pag);
-        }
-      }
-
-      /* ── Sección color de ojos / cara ── */
-      function renderFaceColorSection(panel, grid, items, cat) {
-        const wrap = document.createElement("div");
-        wrap.className = "color-section";
-
-        const t = document.createElement("div");
-        t.className = "color-section-title";
-        t.textContent = "COLOR OJOS / MARCAS";
-        wrap.appendChild(t);
-
-        const eyeRow = document.createElement("div");
-        eyeRow.className = "face-color-row";
-        const eyeLbl = document.createElement("span");
-        eyeLbl.className = "face-color-label";
-        eyeLbl.textContent = "OJOS";
-        eyeRow.appendChild(eyeLbl);
-
-        const eyePicker = document.createElement("input");
-        eyePicker.type = "color";
-        eyePicker.value = player.appearance.eyeColor || "#3a2a1a";
-        eyePicker.className = "face-color-picker";
-
-        EYE_PALETTE.forEach(hex => {
-          const sw = document.createElement("div");
-          sw.className = "face-color-chip" + (player.appearance.eyeColor === hex ? " active" : "");
-          sw.style.background = hex;
-          sw.addEventListener("click", () => {
-            player.appearance.eyeColor = hex;
-            eyePicker.value = hex;
-            eyeRow.querySelectorAll(".face-color-chip").forEach(c => c.classList.remove("active"));
-            sw.classList.add("active");
-            invalidateHairCache();
-            grid.querySelectorAll("canvas").forEach((c, i) => { if (items[i]) drawThumbCanvas(c, cat, items[i]); });
-          });
-          eyeRow.appendChild(sw);
-        });
-        eyePicker.addEventListener("input", e => {
-          player.appearance.eyeColor = e.target.value;
-          eyeRow.querySelectorAll(".face-color-chip").forEach(c => c.classList.remove("active"));
-          invalidateHairCache();
-          grid.querySelectorAll("canvas").forEach((c, i) => { if (items[i]) drawThumbCanvas(c, cat, items[i]); });
-        });
-        eyeRow.appendChild(eyePicker);
-        wrap.appendChild(eyeRow);
-
-        const markRow = document.createElement("div");
-        markRow.className = "face-color-row";
-        const markLbl = document.createElement("span");
-        markLbl.className = "face-color-label";
-        markLbl.textContent = "MARCAS";
-        markRow.appendChild(markLbl);
-
-        const markPicker = document.createElement("input");
-        markPicker.type = "color";
-        markPicker.value = player.appearance.faceColor || "#b71c1c";
-        markPicker.className = "face-color-picker";
-
-        FACE_PALETTE.forEach(hex => {
-          const sw = document.createElement("div");
-          sw.className = "face-color-chip" + (player.appearance.faceColor === hex ? " active" : "");
-          sw.style.background = hex;
-          sw.addEventListener("click", () => {
-            player.appearance.faceColor = hex;
-            markPicker.value = hex;
-            markRow.querySelectorAll(".face-color-chip").forEach(c => c.classList.remove("active"));
-            sw.classList.add("active");
-            invalidateHairCache();
-            grid.querySelectorAll("canvas").forEach((c, i) => { if (items[i]) drawThumbCanvas(c, cat, items[i]); });
-          });
-          markRow.appendChild(sw);
-        });
-        markPicker.addEventListener("input", e => {
-          player.appearance.faceColor = e.target.value;
-          markRow.querySelectorAll(".face-color-chip").forEach(c => c.classList.remove("active"));
-          invalidateHairCache();
-          grid.querySelectorAll("canvas").forEach((c, i) => { if (items[i]) drawThumbCanvas(c, cat, items[i]); });
-        });
-        markRow.appendChild(markPicker);
-        wrap.appendChild(markRow);
-
-        const browRow = document.createElement("div");
-        browRow.className = "face-color-row";
-        const browLbl = document.createElement("span");
-        browLbl.className = "face-color-label";
-        browLbl.textContent = "CEJAS";
-        browRow.appendChild(browLbl);
-
-        const browPicker = document.createElement("input");
-        browPicker.type = "color";
-        browPicker.value = player.appearance.browColor || "#1a1a1a";
-        browPicker.className = "face-color-picker";
-
-        FACE_PALETTE.forEach(hex => {
-          const sw = document.createElement("div");
-          sw.className = "face-color-chip" + (player.appearance.browColor === hex ? " active" : "");
-          sw.style.background = hex;
-          sw.addEventListener("click", () => {
-            player.appearance.browColor = hex;
-            browPicker.value = hex;
-            browRow.querySelectorAll(".face-color-chip").forEach(c => c.classList.remove("active"));
-            sw.classList.add("active");
-            invalidateHairCache();
-            grid.querySelectorAll("canvas").forEach((c, i) => { if (items[i]) drawThumbCanvas(c, cat, items[i]); });
-          });
-          browRow.appendChild(sw);
-        });
-        browPicker.addEventListener("input", e => {
-          player.appearance.browColor = e.target.value;
-          browRow.querySelectorAll(".face-color-chip").forEach(c => c.classList.remove("active"));
-          invalidateHairCache();
-          grid.querySelectorAll("canvas").forEach((c, i) => { if (items[i]) drawThumbCanvas(c, cat, items[i]); });
-        });
-        browRow.appendChild(browPicker);
-        wrap.appendChild(browRow);
-
-        const pupilRow = document.createElement("div");
-        pupilRow.className = "face-color-row";
-        const pupilLbl = document.createElement("span");
-        pupilLbl.className = "face-color-label";
-        pupilLbl.textContent = "PUPILAS";
-        pupilRow.appendChild(pupilLbl);
-
-        const pupilPicker = document.createElement("input");
-        pupilPicker.type = "color";
-        pupilPicker.value = player.appearance.pupilColor || "#1a1a1a";
-        pupilPicker.className = "face-color-picker";
-
-        EYE_PALETTE.forEach(hex => {
-          const sw = document.createElement("div");
-          sw.className = "face-color-chip" + (player.appearance.pupilColor === hex ? " active" : "");
-          sw.style.background = hex;
-          sw.addEventListener("click", () => {
-            player.appearance.pupilColor = hex;
-            pupilPicker.value = hex;
-            pupilRow.querySelectorAll(".face-color-chip").forEach(c => c.classList.remove("active"));
-            sw.classList.add("active");
-            invalidateHairCache();
-            grid.querySelectorAll("canvas").forEach((c, i) => { if (items[i]) drawThumbCanvas(c, cat, items[i]); });
-          });
-          pupilRow.appendChild(sw);
-        });
-        pupilPicker.addEventListener("input", e => {
-          player.appearance.pupilColor = e.target.value;
-          pupilRow.querySelectorAll(".face-color-chip").forEach(c => c.classList.remove("active"));
-          invalidateHairCache();
-          grid.querySelectorAll("canvas").forEach((c, i) => { if (items[i]) drawThumbCanvas(c, cat, items[i]); });
-        });
-        pupilRow.appendChild(pupilPicker);
-        wrap.appendChild(pupilRow);
-
-        panel.appendChild(wrap);
-      }
-
-      /* ── Sección swatches de color genérica ── */
-      function renderColorSwatchSection(panel, grid, items, cat, cfg) {
-        const cs = document.createElement("div");
-        cs.className = "color-section";
-        const cst = document.createElement("div");
-        cst.className = "color-section-title";
-        cst.textContent = cfg.colorLabel || "COLOR";
-        cs.appendChild(cst);
-
-        const swWrap = document.createElement("div");
-        swWrap.style.cssText = "display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px";
-
-        const picker = document.createElement("input");
-        picker.type  = "color";
-        picker.value = (cfg.isExtra ? charState[cfg.colorProp] : player.appearance[cfg.colorProp]) || "#ffd700";
-
-        cfg.palette.forEach(hex => {
-          const sw = document.createElement("div");
-          const cur = cfg.isExtra ? charState[cfg.colorProp] : player.appearance[cfg.colorProp];
-          sw.style.cssText = `width:20px;height:20px;border-radius:3px;background:${hex};border:2px solid ${cur === hex ? "white" : "transparent"};cursor:pointer;flex-shrink:0;transition:.12s`;
-          sw.addEventListener("click", () => {
-            swWrap.querySelectorAll("div").forEach(s => s.style.borderColor = "transparent");
-            sw.style.borderColor = "white";
-            if (cfg.isExtra) { charState[cfg.colorProp] = hex; player.appearance[cfg.colorProp] = hex; }
-            else { player.appearance[cfg.colorProp] = hex; if (cfg.colorProp === "hairColor") invalidateHairCache(); }
-            picker.value = hex;
-            if (cat === "hair" || cat === "aura") {
-              grid.querySelectorAll("canvas").forEach((c, i) => { if (items[i]) drawThumbCanvas(c, cat, items[i]); });
-            }
-          });
-          swWrap.appendChild(sw);
-        });
-        cs.appendChild(swWrap);
-
-        const pickerRow = document.createElement("div");
-        pickerRow.style.cssText = "display:flex;align-items:center;gap:6px";
-        const pickerLabel = document.createElement("span");
-        pickerLabel.style.cssText = "font-size:10px;color:var(--td);letter-spacing:1px;flex:1";
-        pickerLabel.textContent = "PERSONALIZAR";
-        picker.addEventListener("input", e => {
-          if (cfg.isExtra) { charState[cfg.colorProp] = e.target.value; player.appearance[cfg.colorProp] = e.target.value; }
-          else { player.appearance[cfg.colorProp] = e.target.value; if (cfg.colorProp === "hairColor") invalidateHairCache(); }
-          swWrap.querySelectorAll("div").forEach(s => s.style.borderColor = "transparent");
-          if (cat === "hair" || cat === "aura") {
-            grid.querySelectorAll("canvas").forEach((c, i) => { if (items[i]) drawThumbCanvas(c, cat, items[i]); });
-          }
-        });
-        pickerRow.appendChild(pickerLabel);
-        pickerRow.appendChild(picker);
-        cs.appendChild(pickerRow);
-        panel.appendChild(cs);
-      }
-
-      /* ── Panel de importación — reemplazá renderImportPanel completo ── */
-      function renderImportPanel(panel, cat) {
-        const isFreeCat = cat === "free";
-        const ip = document.createElement("div");
-        ip.className = "import-panel";
-
-        const t = document.createElement("div");
-        t.className = "import-title";
-        t.textContent = isFreeCat ? "➕ IMPORTAR PERSONALIZACIÓN LIBRE" : "➕ IMPORTAR ACCESORIO";
-        ip.appendChild(t);
-
-        const preview = document.createElement("img");
-        preview.className = "import-preview";
-        preview.alt = "preview";
-        if (_importPendingImg && _importPendingDataURL) {
-          preview.src = _importPendingDataURL;
-          preview.classList.add("visible");
-        }
-        ip.appendChild(preview);
-
-        const row1 = document.createElement("div");
-        row1.className = "import-row";
-
-        const nameInput = document.createElement("input");
-        nameInput.type = "text";
-        nameInput.className = "import-input-text";
-        nameInput.placeholder = isFreeCat ? "Nombre (ej: Mi Raza Custom)" : "Nombre del accesorio";
-        nameInput.maxLength = 24;
-        row1.appendChild(nameInput);
-
-        // Selector de tipo o campo de raza
-        const typeSelect = document.createElement("select");
-        typeSelect.className = "import-select";
-
-        const raceInput = document.createElement("input");
-        raceInput.type = "text";
-        raceInput.className = "import-input-text";
-        raceInput.placeholder = "Raza (opcional)";
-        raceInput.maxLength = 20;
-        raceInput.style.marginTop = "4px";
-
-        if (isFreeCat) {
-          // Free: solo campo de raza como referencia visual, tipo fijo "other"
-          row1.appendChild(raceInput);
-        } else {
-          // Accesorio: selector de tipo
-          ACCESSORY_TYPES.forEach(tp => {
-            const opt = document.createElement("option");
-            opt.value = tp.id;
-            opt.textContent = `${tp.icon} ${tp.label}`;
-            typeSelect.appendChild(opt);
-          });
-          row1.appendChild(typeSelect);
-        }
-        ip.appendChild(row1);
-
-        const row2 = document.createElement("div");
-        row2.className = "import-row";
-
-        const fileLabel = document.createElement("label");
-        fileLabel.className = "import-file-label";
-        const fileInput = document.createElement("input");
-        fileInput.type = "file";
-        fileInput.accept = "image/*";
-        fileInput.addEventListener("change", e => {
-          const file = e.target.files[0];
-          if (!file) return;
-          const reader = new FileReader();
-          reader.onload = ev => {
-            _importPendingDataURL = ev.target.result;
-            const img = new Image();
-            img.onload = () => {
-              _importPendingImg = img;
-              preview.src = _importPendingDataURL;
-              preview.classList.add("visible");
-              addBtn.disabled = false;
-            };
-            img.onerror = () => showToast("No se pudo cargar la imagen", "error");
-            img.src = _importPendingDataURL;
-          };
-          reader.readAsDataURL(file);
-        });
-        fileLabel.appendChild(fileInput);
-        fileLabel.appendChild(document.createTextNode("📁 ARCHIVO PNG"));
-        row2.appendChild(fileLabel);
-
-        const addBtn = document.createElement("button");
-        addBtn.className = "import-add-btn";
-        addBtn.disabled = !_importPendingImg;
-        addBtn.innerHTML = "✚ AÑADIR";
-
-        addBtn.addEventListener("click", () => {
-          if (!_importPendingImg || !_importPendingDataURL) {
-            showToast("Primero seleccioná un archivo PNG", "warning");
-            return;
-          }
-          const name    = nameInput.value.trim() || (isFreeCat ? "Personalización" : "Accesorio");
-          const type    = isFreeCat ? "other" : typeSelect.value;
-          const typeDef = ACCESSORY_TYPES.find(td => td.id === type)
-                       || ACCESSORY_TYPES[ACCESSORY_TYPES.length - 1];
-
-          // Prefijo diferente según categoría
-          const newId = isFreeCat
-            ? `fc_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`
-            : `user_acc_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
-
-          const entry = {
-            id:                  newId,
-            name:                name,
-            type:                type,
-            slot:                typeDef.slot,
-            color:               null,
-            userImage:           _importPendingImg,
-            dataURL:             _importPendingDataURL,
-            raceName:            isFreeCat ? (raceInput.value.trim() || null) : null,
-            isFreeCustomization: isFreeCat,  // ← flag siempre correcto
-          };
-
-          // Agregar UNA sola vez a ACCESSORIES_CATALOG
-          // El filtro en CAT_CONFIG se encarga de mostrarlo en el panel correcto
-          if (!ACCESSORIES_CATALOG.find(a => a.id === entry.id)) {
-            ACCESSORIES_CATALOG.push(entry);
-          }
-
-          // También al catálogo de libre para persistencia
-          if (isFreeCat) {
-            if (!FREE_CUSTOMIZATION_CATALOG.find(a => a.id === entry.id)) {
-              FREE_CUSTOMIZATION_CATALOG.push(entry);
-            }
-            _saveFreeCustomizationToLS();
-          } else {
-            _saveAccessoriesToLS();
-          }
-
-          // Seleccionar automáticamente
-          charState.accessoryId         = entry.id;
-          player.appearance.accessoryId = entry.id;
-
-          _importPendingImg     = null;
-          _importPendingDataURL = null;
-
-          showToast(`"${name}" añadido`, "success");
-          renderItemsPanel(cat);
-        });
-
-        row2.appendChild(addBtn);
-        ip.appendChild(row2);
-        panel.appendChild(ip);
-      }
-
-      /* ══ Reset equipo al cambiar raza/género ══ */
-      function _resetEquipmentForCurrentRaceGender() {
-        const raceId  = player.appearance.raceId;
-        const gender  = player.appearance.gender;
-        const defaults = getDefaultIds(raceId, gender);
-
-        // Cara y cabello sí se resetean al primero de la raza
-        player.appearance.faceId   = defaults.faceId;
-        player.appearance.hairId   = defaults.hairId;
-
-        // Ropa, calzado y guantes → vacío/ninguno
-        player.appearance.topId    = getCatalogFor("shirt",  raceId, gender).find(i => i.spriteKey === null)?.id
-                                   || getCatalogFor("shirt",  raceId, gender).at(-1)?.id
-                                   || defaults.topId;
-
-        player.appearance.bottomId = getCatalogFor("pants",  raceId, gender).find(i => i.spriteKey === null)?.id
-                                   || getCatalogFor("pants",  raceId, gender).at(-1)?.id
-                                   || defaults.bottomId;
-
-        player.appearance.shoesId  = getCatalogFor("shoes",  raceId, gender).find(i => i.spriteKey === null)?.id
-                                   || getCatalogFor("shoes",  raceId, gender).at(-1)?.id
-                                   || defaults.shoesId;
-
-        charState.glovesId         = getCatalogFor("gloves", raceId, gender).find(i => i.spriteKey === null)?.id
-                                   || getCatalogFor("gloves", raceId, gender)[0]?.id
-                                   || "gm0";
-        player.appearance.glovesId = charState.glovesId;
-
-        invalidateHairCache();
-        ["face","hair","shirt","pants","shoes","gloves"].forEach(c => { pageState[c] = 0; });
-      }
-
-      /* ══ Panel especial de colores ══ */
-      function renderColorPanel(panel) {
-        const scroll = document.createElement("div");
-        scroll.className = "items-scroll";
-        panel.appendChild(scroll);
-        const cs = document.createElement("div");
-        cs.className = "color-section";
-        cs.style.cssText = "border-top:none;padding:8px 0";
-        scroll.appendChild(cs);
-
-        function addColorRow(label, palette, prop, isExtra) {
-          const row = document.createElement("div"); row.className="color-row";
-          const lbl = document.createElement("span"); lbl.className="color-row-label"; lbl.textContent=label;
-          row.appendChild(lbl);
-          const gwrap = document.createElement("div"); gwrap.className="color-gradient-wrap";
-          const swWrap = document.createElement("div"); swWrap.style.cssText="display:flex;gap:3px;flex-wrap:wrap;flex:1";
-          const picker = document.createElement("input"); picker.type="color";
-          const curVal = isExtra ? charState[prop] : player.appearance[prop];
-          picker.value = curVal || "#ffffff";
-          picker.style.cssText = "margin-left:4px;flex-shrink:0";
-          const result = document.createElement("div"); result.className="color-result"; result.style.background=curVal||"#fff";
-          function updateResult() { result.style.background=(isExtra?charState[prop]:player.appearance[prop])||"#fff"; }
-          palette.forEach(hex => {
-            const sw = document.createElement("div");
-            const cur = isExtra?charState[prop]:player.appearance[prop];
-            sw.style.cssText=`width:16px;height:16px;border-radius:3px;background:${hex};border:2px solid ${cur===hex?"white":"transparent"};cursor:pointer;flex-shrink:0;transition:.12s`;
-            sw.addEventListener("click", () => {
-              swWrap.querySelectorAll("div").forEach(s=>s.style.borderColor="transparent");
-              sw.style.borderColor="white";
-              if(isExtra){charState[prop]=hex;player.appearance[prop]=hex;}
-              else{
-                player.appearance[prop]=hex;
-                if(prop==="hairColor"||prop==="eyeColor"||prop==="faceColor") invalidateHairCache();
-              }
-              picker.value=hex; updateResult();
-            });
-            swWrap.appendChild(sw);
-          });
-          picker.addEventListener("input", e=>{
-            if(isExtra){charState[prop]=e.target.value;player.appearance[prop]=e.target.value;}
-            else{
-              player.appearance[prop]=e.target.value;
-              if(prop==="hairColor"||prop==="eyeColor"||prop==="faceColor") invalidateHairCache();
-            }
-            swWrap.querySelectorAll("div").forEach(s=>s.style.borderColor="transparent");
-            updateResult();
-          });
-          gwrap.appendChild(swWrap); gwrap.appendChild(picker); gwrap.appendChild(result);
-          row.appendChild(gwrap); cs.appendChild(row);
-        }
-
-        addColorRow("PIEL",    SKIN_PALETTE,  "skinColor",  false);
-        addColorRow("OJOS",    EYE_PALETTE,   "eyeColor",   false);
-        addColorRow("MARCAS",  FACE_PALETTE,  "faceColor",  false);
-        addColorRow("CABELLO", HAIR_PALETTE,  "hairColor",  false);
-        addColorRow("ROPA",    CLOTH_PALETTE, "clothColor", true);
-        addColorRow("AURA",    AURA_PALETTE,  "auraColor",  true);
-      }
-
-      /* ══ Stats ══ */
-      const RACE_STATS = {
-        human:    { health:85, ki:75,  strength:80, defense:80, speed:80 },
-        saiyan:   { health:80, ki:90,  strength:95, defense:70, speed:85 },
-        namekian: { health:90, ki:85,  strength:85, defense:90, speed:70 },
-        android:  { health:95, ki:100, strength:90, defense:95, speed:75 },
-        kaioshin: { health:70, ki:100, strength:75, defense:80, speed:90 },
-        frieza:   { health:85, ki:95,  strength:88, defense:85, speed:95 },
-      };
-      function updateStats() {
-        const stats = RACE_STATS[player.appearance.raceId] || RACE_STATS.human;
-        [
-          ["health","barHealth","valHealth"],
-          ["ki","barKi","valKi"],
-          ["strength","barStr","valStr"],
-          ["defense","barDef","valDef"],
-          ["speed","barSpd","valSpd"],
-        ].forEach(([key,barId,valId]) => {
-          const v = stats[key] || 75;
-          document.getElementById(barId).style.width = v + "%";
-          document.getElementById(valId).textContent = v;
-        });
-      }
-
-      /* ══ buildCharState ══ */
-      function buildCharState() {
-        return {
-          glovesId:    charState.glovesId    || player.appearance.glovesId    || "gm0",
-          auraId:      charState.auraId      || player.appearance.auraId      || "a0",
-          auraColor:   charState.auraColor   || player.appearance.auraColor   || "#fdd835",
-          accessoryId: charState.accessoryId || player.appearance.accessoryId || "ac_none",
-          auraPhase:   _auraPhase,
-          viewKey:     activeViewKey,
+    }
+  }
+
+  // Objetos decorativos hardcoded del lobby
+  drawLobbyObjects(now);
+}
+
+function drawLobbyObjects(now){
+  // Mesa central (sala tech)
+  const tableX=28*TILE-cam.x, tableY=18*TILE-cam.y;
+  ctx.fillStyle="#0e2038";
+  ctx.fillRect(tableX+4,tableY+4,4*TILE-8,2*TILE-8);
+  ctx.strokeStyle="rgba(0,229,255,.3)";
+  ctx.lineWidth=1;
+  ctx.strokeRect(tableX+4,tableY+4,4*TILE-8,2*TILE-8);
+  // Brillo de mesa
+  ctx.fillStyle=`rgba(0,229,255,${.04+.02*Math.sin(now*.002)})`;
+  ctx.fillRect(tableX+8,tableY+8,4*TILE-16,2*TILE-16);
+
+  // Portales (blink)
+  const a=.4+.3*Math.sin(now*.004);
+  ctx.fillStyle=`rgba(120,50,255,${a})`;
+  for(const [px,py] of [[7,30],[7,31],[8,30],[8,31]]){
+    const sx2=px*TILE-cam.x, sy2=py*TILE-cam.y;
+    ctx.beginPath();
+    ctx.ellipse(sx2+TILE/2,sy2+TILE/2,TILE*.4,TILE*.5,0,0,Math.PI*2);
+    ctx.fill();
+  }
+  ctx.strokeStyle=`rgba(160,80,255,${a+.1})`;
+  ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.ellipse(7.5*TILE-cam.x+TILE/2, 30.5*TILE-cam.y+TILE/2,TILE*.8,TILE*1.1,0,0,Math.PI*2);
+  ctx.stroke();
+}
+
+// ═══════════════════════════════════════
+//  DIBUJO — NPCs
+// ═══════════════════════════════════════
+const npcAnimTimers={};
+
+function drawNpcs(now, dt){
+  for(const npc of npcs){
+    const sx=npc.x-cam.x, sy=npc.y-cam.y;
+    if(sx<-100||sx>canvas.width+100||sy<-100||sy>canvas.height+100) continue;
+
+    // Animación frame
+    if(!npcAnimTimers[npc.id]) npcAnimTimers[npc.id]={frame:0,elapsed:0};
+    const at=npcAnimTimers[npc.id];
+    at.elapsed+=dt;
+    const fps=6;
+    if(at.elapsed>=1/fps){ at.elapsed=0; at.frame=(at.frame+1)%(npc.animFrames||1); }
+
+    const scale=npc.scale||1;
+    const fw=npc.fw||48, fh=npc.fh||48;
+    const dw=fw*scale, dh=fh*scale;
+
+    // Sombra
+    ctx.fillStyle="rgba(0,0,0,.3)";
+    ctx.beginPath();
+    ctx.ellipse(sx,sy+4,12*scale,4*scale,0,0,Math.PI*2);
+    ctx.fill();
+
+    // Indicador de interacción
+    const distToPlayer=Math.hypot(npc.x-localPlayer.x,npc.y-localPlayer.y);
+    if(distToPlayer<70){
+      const bounce=Math.sin(now*.005)*3;
+      ctx.fillStyle=`rgba(245,196,0,${.5+.4*Math.abs(Math.sin(now*.004))})`;
+      ctx.font="bold 12px Orbitron,monospace";
+      ctx.textAlign="center";
+      ctx.fillText("[F]",sx,sy-dh/2-16+bounce);
+    }
+
+    // Sprite del NPC
+    if(npc._img&&npc._img.complete&&npc._img.naturalWidth){
+      const frameX=(npc.frameX||0)+at.frame*fw;
+      const frameY=npc.frameY||0;
+      ctx.imageSmoothingEnabled=false;
+      ctx.drawImage(npc._img, frameX, frameY, fw, fh, sx-dw/2, sy-dh, dw, dh);
+    } else {
+      // Fallback geométrico
+      ctx.fillStyle=npc.color||"#00e5ff";
+      ctx.fillRect(sx-12*scale,sy-40*scale,24*scale,40*scale);
+      ctx.beginPath();
+      ctx.arc(sx,sy-46*scale,10*scale,0,Math.PI*2);
+      ctx.fill();
+    }
+
+    // Nombre
+    ctx.save();
+    ctx.font=`bold 9px Orbitron,monospace`;
+    ctx.textAlign="center";
+    const nameW=ctx.measureText(npc.name).width+10;
+    ctx.fillStyle="rgba(7,8,14,.8)";
+    ctx.fillRect(sx-nameW/2,sy-dh-20,nameW,14);
+    ctx.fillStyle=npc.color||"#00e5ff";
+    ctx.fillText(npc.name,sx,sy-dh-9);
+    ctx.restore();
+
+    // Indicador GM (click derecho para editar)
+    if(isGM){
+      ctx.strokeStyle="rgba(245,196,0,.4)";
+      ctx.lineWidth=1;
+      ctx.setLineDash([3,3]);
+      ctx.strokeRect(sx-dw/2,sy-dh,dw,dh);
+      ctx.setLineDash([]);
+    }
+  }
+}
+
+// ═══════════════════════════════════════
+//  DIBUJO — JUGADOR LOCAL
+// ═══════════════════════════════════════
+function drawLocalPlayer(now){
+  const sx=localPlayer.x-cam.x, sy=localPlayer.y-cam.y;
+  const CS=window.CharacterSystem;
+
+  // Sombra
+  ctx.fillStyle="rgba(0,0,0,.35)";
+  ctx.beginPath();
+  ctx.ellipse(sx,sy+3,16,5,0,0,Math.PI*2);
+  ctx.fill();
+
+  if(CS&&csImageMap&&csAnimator){
+    const csState={
+      glovesId:   CS.player.appearance.glovesId  ||"gm0",
+      auraId:     CS.player.appearance.auraId    ||"a0",
+      auraColor:  CS.player.appearance.auraColor ||"#fdd835",
+      accessoryId:CS.player.appearance.accessoryId||"ac_none",
+      auraPhase:  now*.003%( Math.PI*2),
+      viewKey:    null,
+    };
+    const DRAW_W=48, DRAW_H=70;
+    ctx.save();
+    ctx.translate(sx,sy);
+    ctx.scale(DRAW_W/CS.FRAME_W, DRAW_H/CS.FRAME_H);
+    ctx.translate(-sx,-sy);
+    ctx.imageSmoothingEnabled=true;
+    CS.drawPlayer(ctx,sx,sy,CS.player,csImageMap,csAnimator,csState);
+    ctx.restore();
+  } else {
+    // Fallback geométrico
+    const sc = savedChar||{};
+    const skinColor=sc.skinColor||"#d4a574";
+    const clothColor=sc.clothColor||"#ff6a00";
+    const hairColor=sc.hairColor||"#1a1a1a";
+    if(localPlayer.facing===-1){ctx.save();ctx.scale(-1,1);ctx.translate(-sx*2,0);}
+    ctx.fillStyle=clothColor;ctx.fillRect(sx-7,sy-16,7,18);ctx.fillRect(sx+1,sy-16,7,18);
+    ctx.fillStyle="#1a1a1a";ctx.fillRect(sx-8,sy+2,8,6);ctx.fillRect(sx+1,sy+2,8,6);
+    ctx.fillStyle=localPlayer.auraColor||"#f5c400";ctx.fillRect(sx-10,sy-36,20,22);
+    ctx.fillStyle=skinColor;ctx.fillRect(sx-16,sy-36,7,16);ctx.fillRect(sx+9,sy-36,7,16);
+    ctx.beginPath();ctx.arc(sx,sy-44,10,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle=hairColor;ctx.beginPath();ctx.arc(sx,sy-50,9,Math.PI,Math.PI*2);ctx.fill();
+    if(localPlayer.facing===-1)ctx.restore();
+  }
+
+  // Nombre propio
+  ctx.save();
+  ctx.font="bold 9px Orbitron,monospace";
+  ctx.textAlign="center";
+  const nw=ctx.measureText(localPlayer.name).width+10;
+  ctx.fillStyle="rgba(7,8,14,.75)";
+  ctx.fillRect(sx-nw/2,sy-78,nw,14);
+  ctx.fillStyle=localPlayer.auraColor||"#f5c400";
+  ctx.fillText(localPlayer.name,sx,sy-67);
+  ctx.restore();
+
+  // Emote bubble
+  if(localPlayer.emoting){
+    ctx.save();
+    ctx.font="22px sans-serif";
+    ctx.textAlign="center";
+    const ey=sy-92+Math.sin(now*.008)*3;
+    ctx.fillStyle="rgba(7,8,14,.7)";
+    ctx.beginPath();
+    if(ctx.roundRect) ctx.roundRect(sx-16,ey-22,32,28,6);
+    else ctx.rect(sx-16,ey-22,32,28);
+    ctx.fill();
+    ctx.fillText(localPlayer.emoteText,sx,ey);
+    ctx.restore();
+  }
+}
+
+// ═══════════════════════════════════════
+//  DIBUJO — OTROS JUGADORES
+// ═══════════════════════════════════════
+function drawOtherPlayers(now){
+  const CS=window.CharacterSystem;
+  for(const [id,p] of Object.entries(otherPlayers)){
+    const sx=p.x-cam.x, sy=p.y-cam.y;
+    if(sx<-100||sx>canvas.width+100||sy<-120||sy>canvas.height+120) continue;
+
+    const anim=otherAnimators[id];
+    if(anim) anim.update(now);
+
+    // Sombra
+    ctx.fillStyle="rgba(0,0,0,.3)";
+    ctx.beginPath();
+    ctx.ellipse(sx,sy+3,16,5,0,0,Math.PI*2);
+    ctx.fill();
+
+    if(CS&&csImageMap&&anim&&p.appearance){
+      try{
+        const remotePlayer={
+          appearance:{
+            raceId:     p.appearance.raceId    ||"human",
+            gender:     p.appearance.gender    ||"male",
+            hairId:     p.appearance.hairId    ||null,
+            hairColor:  p.appearance.hairColor ||"#1a1a1a",
+            topId:      p.appearance.topId     ||null,
+            bottomId:   p.appearance.bottomId  ||null,
+            shoesId:    p.appearance.shoesId   ||null,
+            glovesId:   p.appearance.glovesId  ||"gm0",
+            faceId:     p.appearance.faceId    ||null,
+            faceColor:  p.appearance.faceColor ||null,
+            eyeColor:   p.appearance.eyeColor  ||"#3a2a1a",
+            skinColor:  p.appearance.skinColor ||"#e8c898",
+            auraId:     p.appearance.auraId    ||"a0",
+            auraColor:  p.appearance.auraColor ||"#fdd835",
+            accessoryId:p.appearance.accessoryId||"ac_none",
+          },
+          direction: p.facing||1,
         };
-      }
-
-      /* ══ Game Loop ══ */
-      function loop(now) {
-        requestAnimationFrame(loop);
-        _auraPhase++;
-        animator.update(now);
-        finalAnim.update(now);
-        const ps = buildCharState();
-
-        previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
-        drawPlayer(previewCtx, previewCanvas.width / 2, previewCanvas.height - 16, player, imageMap, animator, ps);
-
-        finalCtx.clearRect(0, 0, finalCanvas.width, finalCanvas.height);
-        finalCtx.save();
-        const fw = finalCanvas.width, fh = finalCanvas.height;
-        finalCtx.translate(fw / 2, fh / 2);
-        if (uiFlipped) finalCtx.scale(-uiZoom, uiZoom);
-        else           finalCtx.scale(uiZoom, uiZoom);
-        finalCtx.translate(-fw / 2, -fh / 2);
-        const fp = Object.assign({}, player, { direction: 1, appearance: Object.assign({}, player.appearance) });
-        drawPlayer(finalCtx, fw / 2, fh - 16, fp, imageMap, finalAnim, ps);
-        finalCtx.restore();
-      }
-
-      /* ══ Slots ══ */
-      function loadSlots() {
-        try {
-          const raw = localStorage.getItem(LS_KEY);
-          const parsed = raw ? JSON.parse(raw) : null;
-          savedSlots = Array.isArray(parsed)
-            ? Array.from({ length: 11 }, (_, i) => parsed[i] ?? null)
-            : Array(11).fill(null);
-        } catch { savedSlots = Array(11).fill(null); }
-        const si = parseInt(localStorage.getItem(LS_SLOT) || "0", 10);
-        activeSlotIndex = Number.isFinite(si) ? Math.max(0, Math.min(10, si)) : 0;
-      }
-
-      function saveSlots() { localStorage.setItem(LS_KEY, JSON.stringify(savedSlots)); }
-
-      /* ── saveToSlot — agregá freeCustomizationDataURL ── */
-      function saveToSlot(i) {
-        const accId = charState.accessoryId || player.appearance.accessoryId || "ac_none";
-
-        // Buscar dataURL del accesorio activo (sea libre o importado)
-        let accessoryDataURL = null;
-        const accEntry = ACCESSORIES_CATALOG.find(a => a.id === accId);
-        if (accEntry && accEntry.dataURL) accessoryDataURL = accEntry.dataURL;
-
-        const d = {
-          name:             document.getElementById("charName").value || "Guerrero Z",
-          level:            1,
-          race:             player.appearance.raceId,
-          gender:           player.appearance.gender,
-          faceId:           player.appearance.faceId,
-          faceColor:        player.appearance.faceColor,
-          browColor:        player.appearance.browColor  || null,
-          pupilColor:       player.appearance.pupilColor || null,
-          hair:             player.appearance.hairId,
-          hairColor:        player.appearance.hairColor,
-          shirt:            player.appearance.topId,
-          pants:            player.appearance.bottomId,
-          shoes:            player.appearance.shoesId,
-          skinColor:        player.appearance.skinColor,
-          eyeColor:         player.appearance.eyeColor,
-          gloves:           charState.glovesId    || player.appearance.glovesId    || "gm0",
-          aura:             charState.auraId      || player.appearance.auraId      || "a0",
-          auraColor:        charState.auraColor   || player.appearance.auraColor   || "#fdd835",
-          clothColor:       charState.clothColor  || "#ff6a00",
-          accessory:        accId,
-          accessoryDataURL: accessoryDataURL,
+        const rState={
+          glovesId:   remotePlayer.appearance.glovesId  ||"gm0",
+          auraId:     remotePlayer.appearance.auraId    ||"a0",
+          auraColor:  remotePlayer.appearance.auraColor ||"#fdd835",
+          accessoryId:remotePlayer.appearance.accessoryId||"ac_none",
+          auraPhase:  now*.003%(Math.PI*2),
+          viewKey:    null,
         };
-        savedSlots[i] = d;
-        activeSlotIndex = i;
-        localStorage.setItem(LS_SLOT, String(i));
-        saveSlots();
-        renderSlots();
-        showToast(`"${d.name}" guardado en slot ${i + 1}`, "success");
+        const DRAW_W=48, DRAW_H=70;
+        ctx.save();
+        ctx.translate(sx,sy);
+        ctx.scale(DRAW_W/CS.FRAME_W, DRAW_H/CS.FRAME_H);
+        ctx.translate(-sx,-sy);
+        ctx.imageSmoothingEnabled=true;
+        CS.drawPlayer(ctx,sx,sy,remotePlayer,csImageMap,anim,rState);
+        ctx.restore();
+      }catch(e){
+        drawRemoteFallback(p,sx,sy);
       }
+    } else {
+      drawRemoteFallback(p,sx,sy);
+    }
 
-      /* ── loadFromSlot — restaurar accesorio libre si tiene dataURL ── */
-      function loadFromSlot(i) {
-        const d = savedSlots[i];
-        if (!d) return;
+    // Nombre
+    ctx.save();
+    ctx.font="bold 9px Orbitron,monospace";
+    ctx.textAlign="center";
+    const nw=ctx.measureText((p.name||"?")+` Lv.${p.level||1}`).width+10;
+    ctx.fillStyle="rgba(7,8,14,.75)";
+    ctx.fillRect(sx-nw/2,sy-78,nw,14);
+    ctx.fillStyle=p.auraColor||"#00e5ff";
+    ctx.fillText((p.name||"?"),sx,sy-67);
+    ctx.restore();
 
-        player.appearance.raceId      = d.race       || "human";
-        player.appearance.gender      = d.gender     || "male";
-        player.appearance.faceId      = d.faceId     || "fm0";
-        player.appearance.faceColor   = d.faceColor  || null;
-        player.appearance.browColor   = d.browColor  || null;
-        player.appearance.pupilColor  = d.pupilColor || null;
-        player.appearance.hairId      = d.hair       || "hm1";
-        player.appearance.hairColor   = d.hairColor  || "#1a1a1a";
-        player.appearance.topId       = d.shirt      || "sm1";
-        player.appearance.bottomId    = d.pants      || "pm1";
-        player.appearance.shoesId     = d.shoes      || "shm1";
-        player.appearance.skinColor   = d.skinColor  || "#e8c898";
-        player.appearance.eyeColor    = d.eyeColor   || "#3a2a1a";
-        charState.glovesId            = d.gloves     || "gm0";
-        charState.auraId              = d.aura       || "a0";
-        charState.auraColor           = d.auraColor  || "#fdd835";
-        charState.clothColor          = d.clothColor || "#ff6a00";
-        player.appearance.glovesId    = charState.glovesId;
-        player.appearance.auraId      = charState.auraId;
-        player.appearance.auraColor   = charState.auraColor;
+    // Emote
+    if(p.emoting&&p.emoteText){
+      ctx.save();
+      ctx.font="20px sans-serif";
+      ctx.textAlign="center";
+      const ey=sy-92+Math.sin(now*.008+parseInt(id,36))*3;
+      ctx.fillStyle="rgba(7,8,14,.7)";
+      ctx.beginPath();
+      if(ctx.roundRect) ctx.roundRect(sx-15,ey-20,30,26,5);
+      else ctx.rect(sx-15,ey-20,30,26);
+      ctx.fill();
+      ctx.fillText(p.emoteText,sx,ey);
+      ctx.restore();
+    }
+  }
+}
 
-        // Restaurar accesorio: si el ID no está en el catálogo pero hay dataURL, reconstruirlo
-        const accId = d.accessory || "ac_none";
-        const existing = ACCESSORIES_CATALOG.find(a => a.id === accId);
-        if (!existing && d.accessoryDataURL && accId !== "ac_none") {
-          const img = new Image();
-          img.src = d.accessoryDataURL;
-          const isFreeCat = accId.startsWith("fc_");
-          const entry = {
-            id:                  accId,
-            name:                d.accessoryName || "Personalización",
-            type:                "other",
-            slot:                "over_shirt",
-            color:               null,
-            userImage:           img,
-            dataURL:             d.accessoryDataURL,
-            raceName:            null,
-            isFreeCustomization: isFreeCat,
-          };
-          ACCESSORIES_CATALOG.push(entry);
-          if (isFreeCat && !FREE_CUSTOMIZATION_CATALOG.find(x => x.id === accId)) {
-            FREE_CUSTOMIZATION_CATALOG.push(entry);
+function drawRemoteFallback(p,sx,sy){
+  const color=p.auraColor||"#00e5ff";
+  const skin=p.appearance?.skinColor||"#e8c898";
+  if((p.facing||1)===-1){ctx.save();ctx.scale(-1,1);ctx.translate(-sx*2,0);}
+  ctx.fillStyle=color;ctx.fillRect(sx-10,sy-36,20,22);
+  ctx.fillStyle=skin;ctx.fillRect(sx-16,sy-36,7,16);ctx.fillRect(sx+9,sy-36,7,16);
+  ctx.beginPath();ctx.arc(sx,sy-44,10,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle=p.appearance?.hairColor||"#1a1a1a";
+  ctx.beginPath();ctx.arc(sx,sy-50,9,Math.PI,Math.PI*2);ctx.fill();
+  if((p.facing||1)===-1)ctx.restore();
+}
+
+// ═══════════════════════════════════════
+//  MINIMAP
+// ═══════════════════════════════════════
+function drawMinimap(){
+  const mw=mmCv.width,mh=mmCv.height;
+  const scX=mw/WORLD_W, scY=mh/WORLD_H;
+  mmCtx.clearRect(0,0,mw,mh);
+  mmCtx.fillStyle="#07080e";
+  mmCtx.fillRect(0,0,mw,mh);
+
+  // Tiles
+  for(let ty=0;ty<WORLD_H;ty+=2){
+    for(let tx=0;tx<WORLD_W;tx+=2){
+      const t=worldMap[ty]?.[tx]??0;
+      mmCtx.fillStyle=TILES[t]?.color||"#1a2a18";
+      mmCtx.fillRect(tx*scX,ty*scY,scX*2+1,scY*2+1);
+    }
+  }
+
+  // NPCs
+  mmCtx.fillStyle="#f5c400";
+  for(const n of npcs){
+    mmCtx.fillRect((n.x/TILE)*scX-1,(n.y/TILE)*scY-1,3,3);
+  }
+
+  // Otros jugadores
+  for(const p of Object.values(otherPlayers)){
+    mmCtx.fillStyle=p.auraColor||"#00e5ff";
+    mmCtx.beginPath();
+    mmCtx.arc((p.x/TILE)*scX,(p.y/TILE)*scY,2,0,Math.PI*2);
+    mmCtx.fill();
+  }
+
+  // Jugador local
+  const px=(localPlayer.x/TILE)*scX, py=(localPlayer.y/TILE)*scY;
+  mmCtx.fillStyle=localPlayer.auraColor||"#f5c400";
+  mmCtx.shadowColor=localPlayer.auraColor||"#f5c400";
+  mmCtx.shadowBlur=4;
+  mmCtx.beginPath();
+  mmCtx.arc(px,py,2.5,0,Math.PI*2);
+  mmCtx.fill();
+  mmCtx.shadowBlur=0;
+
+  // Viewport
+  mmCtx.strokeStyle="rgba(255,255,255,.2)";
+  mmCtx.lineWidth=1;
+  mmCtx.strokeRect((cam.x/TILE)*scX,(cam.y/TILE)*scY,
+    (canvas.width/TILE)*scX,(canvas.height/TILE)*scY);
+}
+
+// ═══════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════
+function showToast(msg, type="success"){
+  const wrap=document.getElementById("toastWrap");
+  const t=document.createElement("div");
+  t.className=`toast ${type}`;
+  t.textContent=msg;
+  wrap.appendChild(t);
+  setTimeout(()=>t.remove(),3200);
+}
+window.showToast=showToast;
+
+// ═══════════════════════════════════════
+//  BACK
+// ═══════════════════════════════════════
+function goBack(){
+  if(myId) db.ref(`lobby/players/${myId}`).remove();
+  if(window.history.length>1) window.history.back();
+  else window.location.href="index.html";
+}
+window.goBack=goBack;
+
+// ═══════════════════════════════════════
+//  GAME LOOP
+// ═══════════════════════════════════════
+let lastTime=0;
+function loop(now){
+  requestAnimationFrame(loop);
+  const dt=Math.min((now-lastTime)/1000,.05);
+  lastTime=now;
+  gameTime=now;
+
+  updatePlayer(dt);
+  updateCamera();
+
+  const CS=window.CharacterSystem;
+  if(CS&&csAnimator) csAnimator.update(now);
+
+  // Fondo
+  ctx.fillStyle="#07080e";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  // Ambiente sutil
+  const grad=ctx.createRadialGradient(canvas.width/2,canvas.height/2,0,canvas.width/2,canvas.height/2,canvas.width*.7);
+  grad.addColorStop(0,"rgba(20,30,80,.15)");
+  grad.addColorStop(1,"transparent");
+  ctx.fillStyle=grad;
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  drawWorld(now);
+  drawNpcs(now,dt);
+  drawOtherPlayers(now);
+  drawLocalPlayer(now);
+  drawMinimap();
+
+  sendPlayerUpdate();
+}
+
+// ═══════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════
+async function init(){
+  const bar=document.getElementById("ldBar");
+  const label=document.getElementById("ldLabel");
+
+  const steps=[
+    ["GENERANDO MAPA...", async()=>{ await loadMapFromFirebase(); }],
+    ["CARGANDO PERSONAJE...", async()=>{
+      const CS=window.CharacterSystem;
+      if(CS){
+        try{
+          csImageMap=await CS.preloadAssets("");
+          CS.initPlayer();
+          if(savedChar){
+            const rid=savedChar.race||"human", gen=savedChar.gender||"male";
+            const defs=CS.getDefaultIds(rid,gen);
+            CS.player.appearance.raceId      = rid;
+            CS.player.appearance.gender      = gen;
+            CS.player.appearance.faceId      = savedChar.faceId    || defs.faceId;
+            CS.player.appearance.faceColor   = savedChar.faceColor || null;
+            CS.player.appearance.eyeColor    = savedChar.eyeColor  || "#3a2a1a";
+            CS.player.appearance.hairId      = savedChar.hair      || defs.hairId;
+            CS.player.appearance.hairColor   = savedChar.hairColor || "#1a1a1a";
+            CS.player.appearance.topId       = savedChar.shirt     || defs.topId;
+            CS.player.appearance.bottomId    = savedChar.pants     || defs.bottomId;
+            CS.player.appearance.shoesId     = savedChar.shoes     || defs.shoesId;
+            CS.player.appearance.glovesId    = savedChar.gloves    || defs.glovesId;
+            CS.player.appearance.skinColor   = savedChar.skinColor || "#e8c898";
+            CS.player.appearance.auraId      = savedChar.aura      || "a0";
+            CS.player.appearance.auraColor   = savedChar.auraColor || "#fdd835";
+            CS.player.appearance.accessoryId = savedChar.accessory || "ac_none";
           }
-        }
-
-        charState.accessoryId         = accId;
-        player.appearance.accessoryId = accId;
-
-        document.getElementById("charName").value = d.name || "Guerrero Z";
-        invalidateHairCache();
-        activeSlotIndex = i;
-        localStorage.setItem(LS_SLOT, String(i));
-        renderSlots();
-        renderItemsPanel(activeCategory);
-        updateStats();
-        showToast(`"${d.name}" cargado`, "success");
+          CS.player.direction=localPlayer.facing;
+          csAnimator=new CS.SpriteAnimator("idle");
+        }catch(e){console.warn("[lobby] CS error:",e);}
       }
+      // HUD
+      document.getElementById("phName").textContent=localPlayer.name;
+      const raceName=({human:"HUMANO",saiyan:"SAIYAN",namekian:"NAMEKIANO",
+        android:"ANDROIDE",kaioshin:"KAIOSHIN",frieza:"ARCOSIANO"})[raceId]||raceId.toUpperCase();
+      document.getElementById("phRace").textContent=`${raceName} · ${gender==="female"?"♀":"♂"}`;
+    }],
+    ["CARGANDO NPCs...", async()=>{ loadNpcsFromFirebase(); }],
+    ["CONECTANDO...", async()=>{
+      initMultiplayer();
+      await new Promise(r=>setTimeout(r,600));
+    }],
+    ["¡LOBBY LISTO!", ()=>{}],
+  ];
 
-      function deleteSlot(i) {
-        savedSlots[i] = null;
-        saveSlots();
-        renderSlots();
-        showToast(`Slot ${i + 1} eliminado`, "warning");
-      }
+  for(let i=0;i<steps.length;i++){
+    label.textContent=steps[i][0];
+    bar.style.width=`${((i+1)/steps.length)*100}%`;
+    await Promise.resolve(steps[i][1]());
+    await new Promise(r=>setTimeout(r,250));
+  }
+  await new Promise(r=>setTimeout(r,400));
 
-      function renderSlots() {
-        const list = document.getElementById("slotsList");
-        list.innerHTML = "";
-        for (let i = 0; i < 11; i++) {
-          const d = savedSlots[i];
-          const card = document.createElement("div");
-          card.className = "slot-card" + (d ? "" : " empty") + (i === activeSlotIndex && d ? " active-slot" : "");
+  buildTilePanel();
+  document.getElementById("screenLoading").style.display="none";
+  gameState="playing";
+  lastTime=performance.now();
+  requestAnimationFrame(loop);
 
-          const num = document.createElement("div"); num.className = "slot-num"; num.textContent = i + 1;
+  // Instrucciones
+  setTimeout(()=>showToast("Bienvenido al Lobby · F: hablar · E: emote","success"),500);
+  setTimeout(()=>showToast("Escribe /gm [contraseña] en chat para modo GM","warn"),2500);
+}
 
-          const miniWrap = document.createElement("div"); miniWrap.className = "slot-mini";
-          const mcv = document.createElement("canvas"); mcv.width = 34; mcv.height = 44;
-          const mctx = mcv.getContext("2d");
-          mctx.fillStyle = "#0d1020"; mctx.fillRect(0, 0, 34, 44);
-
-          if (d) {
-            const slotRace   = d.race   || "human";
-            const slotGender = d.gender || "male";
-            const slotGloves = d.gloves  || getDefaultIds(slotRace, slotGender).glovesId;
-            const slotAcc    = d.accessory || "ac_none";
-            const mp = {
-              direction: 1,
-              appearance: {
-                raceId:      slotRace,
-                gender:      slotGender,
-                faceId:      d.faceId  || getDefaultIds(slotRace, slotGender).faceId,
-                faceColor:   d.faceColor || null,
-                hairId:      d.hair    || getDefaultIds(slotRace, slotGender).hairId,
-                hairColor:   d.hairColor || "#1a1a1a",
-                topId:       d.shirt   || getDefaultIds(slotRace, slotGender).topId,
-                bottomId:    d.pants   || getDefaultIds(slotRace, slotGender).bottomId,
-                shoesId:     d.shoes   || getDefaultIds(slotRace, slotGender).shoesId,
-                skinColor:   d.skinColor || "#e8c898",
-                eyeColor:    d.eyeColor  || "#3a2a1a",
-                glovesId:    slotGloves,
-                auraId:      "a0",
-                auraColor:   "#fdd835",
-                accessoryId: slotAcc,
-              },
-            };
-            drawPlayer(mctx, 17, 42, mp, imageMap, null, {
-              glovesId: slotGloves, auraId: "a0", auraColor: "#fdd835",
-              accessoryId: slotAcc, auraPhase: 0, viewKey: null,
-            });
-          } else {
-            mctx.fillStyle = "#2a3560";
-            mctx.font = "22px sans-serif"; mctx.textAlign = "center";
-            mctx.fillText("+", 17, 32);
-          }
-          miniWrap.appendChild(mcv);
-
-          const info = document.createElement("div"); info.className = "slot-info";
-          const nm = document.createElement("div"); nm.className = "slot-name"; nm.textContent = d ? d.name : "VACÍO";
-          const lv = document.createElement("div"); lv.className = "slot-level"; lv.textContent = d ? `NIVEL ${d.level || 1}` : "—";
-          info.appendChild(nm); info.appendChild(lv);
-
-          card.appendChild(num); card.appendChild(miniWrap); card.appendChild(info);
-
-          if (d) {
-            const lb = document.createElement("button"); lb.className = "slot-save-btn"; lb.textContent = "CARGAR";
-            lb.addEventListener("click", e => { e.stopPropagation(); loadFromSlot(i); });
-            const db = document.createElement("button"); db.className = "slot-delete-btn"; db.innerHTML = "✕";
-            db.addEventListener("click", e => { e.stopPropagation(); deleteSlot(i); });
-            card.appendChild(lb); card.appendChild(db);
-            card.addEventListener("click", () => saveToSlot(i));
-            card.title = "Click para sobreescribir";
-          } else {
-            const sb = document.createElement("button"); sb.className = "slot-save-btn"; sb.textContent = "GUARDAR";
-            sb.addEventListener("click", e => { e.stopPropagation(); saveToSlot(i); });
-            card.appendChild(sb);
-          }
-          list.appendChild(card);
-        }
-      }
-
-      /* ══ Eventos ══ */
-      function initEvents() {
-        document.querySelectorAll(".cat-btn").forEach(btn => {
-          btn.addEventListener("click", () => {
-            document.querySelectorAll(".cat-btn").forEach(b => b.classList.remove("active"));
-            btn.classList.add("active");
-            activeCategory = btn.dataset.cat;
-            pageState[activeCategory] = 0;
-            renderItemsPanel(activeCategory);
-          });
-        });
-
-        document.getElementById("btnFlip").addEventListener("click", () => {
-          uiFlipped = !uiFlipped;
-          showToast(uiFlipped ? "Vista espejo" : "Vista normal", "success");
-        });
-        document.getElementById("btnZoom").addEventListener("click", () => {
-          uiZoom = uiZoom === 1 ? 1.25 : uiZoom === 1.25 ? 0.8 : 1;
-          showToast(`Zoom: ${Math.round(uiZoom * 100)}%`, "success");
-        });
-        document.getElementById("btnRotate").addEventListener("click", () =>
-          showToast("Rotación no disponible en esta versión", "warning")
-        );
-        document.getElementById("charName").addEventListener("input", e => {
-          charState.name = e.target.value || "Guerrero Z";
-        });
-        document.getElementById("btnStart").addEventListener("click", () => {
-          saveToSlot(activeSlotIndex);
-          showToast(`Iniciando con slot ${activeSlotIndex + 1}...`, "success");
-          setTimeout(() => { window.location.href = `game.html?slot=${activeSlotIndex}`; }, 600);
-        });
-      }
-
-      /* ══ Toast ══ */
-      function showToast(msg, type = "success") {
-        const c = document.getElementById("toastContainer");
-        const t = document.createElement("div");
-        t.className = `toast ${type}`;
-        t.textContent = msg;
-        c.appendChild(t);
-        setTimeout(() => t.remove(), 3000);
-      }
-
-      /* ══ Init ══ */
-      async function init() {
-        loadSlots();
-        try {
-          initPlayer();
-          animator  = new SpriteAnimator("idle");
-          finalAnim = new SpriteAnimator("idle");
-          initViewAnimBar();
-          showToast("Cargando sprites...", "warning");
-
-          await _restoreAccessoriesFromLS();
-          _restoreFreeCustomizationFromLS();
-
-          imageMap = await preloadAssets("");
-          const loaded = Object.values(imageMap).filter(Boolean).length;
-          showToast(
-            loaded > 0 ? `${loaded} sprites cargados` : "Modo procedimental activo",
-            loaded > 0 ? "success" : "warning"
-          );
-
-          if (savedSlots[activeSlotIndex]) {
-            try { loadFromSlot(activeSlotIndex); }
-            catch (err) { console.warn("Slot corrupto:", err); showToast("Datos de slot inválidos", "warning"); }
-          }
-          renderItemsPanel("race");
-          renderSlots();
-          updateStats();
-        } catch (err) {
-          console.error(err);
-          imageMap = imageMap || {};
-          showToast("Falló parte de la carga — modo procedural activo.", "error");
-          try { initViewAnimBar(); renderItemsPanel("race"); renderSlots(); updateStats(); }
-          catch (e2) { console.error(e2); }
-        } finally {
-          initEvents();
-          requestAnimationFrame(loop);
-        }
-        setTimeout(() => showToast("¡Bienvenido a Dragon Creator Z!", "success"), 500);
-      }
-
-      document.addEventListener("DOMContentLoaded", init);
-    </script>
-  </body>
+document.addEventListener("DOMContentLoaded",init);
+</script>
+</body>
 </html>
