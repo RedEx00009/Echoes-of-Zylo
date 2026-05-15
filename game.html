@@ -1,1707 +1,1826 @@
-// @ts-nocheck
-/**
- * DRAGON CREATOR Z — Character System v1.0.2
- * Spritesheet de 14 filas (igual para body, hair, face, tops, bottoms, shoes, gloves, auras):
- *   Row 0  → base_view   (vista base, 3 frames)
- *   Row 1  → idle        (3 frames)
- *   Row 2  → walk        (4 frames)
- *   Row 3  → run         (4 frames)
- *   Row 4  → attack_1    (6 frames)
- *   Row 5  → attack_2    (3 frames)
- *   Row 6  → jump        (3 frames)
- *   Row 7  → hurt        (1 frame)
- *   Row 8  → death       (3 frames)
- *   Row 9  → ki_charge   (3 frames)
- *   Row 10 → fly         (3 frames)
- *   Row 11 → fly_map     (3 frames)
- *   Row 12 → trans1_view (transformación 1, 3 frames)
- *   Row 13 → trans2_view (transformación 2, 3 frames)
- *
- *  HISTORIAL DE CAMBIOS:
- *
- *  v4.3 — ACCESSORIES + FACE_CATALOG
- *  - ACCESSORIES: eliminados los sprites fijos. El sistema ahora
- *    admite accesorios importados por el usuario (ObjectURL / base64).
- *    ACCESSORIES_CATALOG actúa como registro de slots; cada slot
- *    guarda { id, name, type, slot, color, userImage } donde
- *    userImage es un HTMLImageElement cargado en runtime.
- *  - FACE_CATALOG añadido: nueva capa de cara (ojos, marcas, cicatrices,
- *    expresiones) idéntica a las demás capas, con soporte de tinte.
- *  - drawPlayer dibuja la capa de cara entre el cuerpo y el cabello.
- *
- *  v4.3.1 — FIX tintLayer
- *  - Algoritmo completamente reescrito (pixel-by-pixel).
- *  - Píxeles muy oscuros (contornos) se preservan sin alteración.
- *  - Píxeles casi blancos/grises se tiñen sólo levemente (colorize suave).
- *  - Píxeles saturados reciben hue-replace completo conservando luminosidad.
- *  - Sin distorsión de blancos ni artefactos en cabello claro.
- *
- *  v4.3.2 — FIX cabello
- *  - tintHair ahora usa _tintSprite (multiply + destination-in)
- *    igual que el tinte de piel. Funciona correctamente con negro,
- *    rojo, azul y cualquier color saturado u oscuro.
- *  - tintLayer sigue usándose para marcas/tatuajes/pinturas de cara.
- *
- *  v4.3.3 — FIX ojos
- *  - tintFaceColor añadida: usa _tintSprite (multiply + destination-in)
- *    igual que cabello y piel. Se aplica cuando faceDef.eyeColor === true.
- *  - Negro, rojo, azul y cualquier color saturado en ojos funciona
- *    correctamente sin artefactos del algoritmo pixel-by-pixel.
- *  - tintLayer conservado para marcas/tatuajes/pinturas (degradados).
- *
- *  v1.0.2 — tintFaceDetailed: cejas y pupilas con colores independientes
- *  - Nueva función tintFaceDetailed(): tiñe cejas y pupilas con dos
- *    colores distintos en una sola pasada pixel-by-pixel.
- *  - REQUISITO DE SPRITESHEET para faces con eyeColor:true:
- *      · Cejas   → pintadas en ROJO PURO  (#ff0000, hue ~0°)
- *      · Pupilas → pintadas en AZUL PURO  (#0000ff, hue ~240°)
- *      · Contornos → negro  (#000000) → no se toca
- *      · Esclerótica → blanco (#ffffff) → no se toca
- *      · Sombras de piel → grises de baja saturación → no se tocan
- *  - appearance ahora soporta browColor y pupilColor además de eyeColor.
- *  - drawPlayer sección 9 prioriza tintFaceDetailed si browColor o
- *    pupilColor están definidos, cae a tintFaceColor si solo hay eyeColor,
- *    y a tintLayer para marcas/tatuajes/pinturas.
- *  - tintFaceDetailed exportada en CharacterSystem.
- */
-
-"use strict";
-
-(function () {
-
-  const FRAME_W   = 96;
-  const FRAME_H   = 96;
-  const DISPLAY_W = 180;
-  const DISPLAY_H = 220;
-
-  // ═══════════════════════════════════════════════════════════════
-  //  META COMPARTIDA
-  // ═══════════════════════════════════════════════════════════════
-
-  const VIEW_META = {
-    base_view:   { row: 0,  frames: 3, fps: 2,  loop: true,  label: "Base"             },
-    trans1_view: { row: 12, frames: 3, fps: 2,  loop: true,  label: "Transformación 1"  },
-    trans2_view: { row: 13, frames: 3, fps: 2,  loop: true,  label: "Transformación 2"  },
-  };
-
-  const ACTIONS_META = {
-    idle:      { row: 1,  frames: 3, fps: 2,  loop: true,  label: "Idle"      },
-    walk:      { row: 2,  frames: 4, fps: 5,  loop: true,  label: "Walk"      },
-    run:       { row: 3,  frames: 4, fps: 12, loop: true,  label: "Run"       },
-    attack_1:  { row: 4,  frames: 6, fps: 8,  loop: false, label: "Attack 1"  },
-    attack_2:  { row: 5,  frames: 3, fps: 8,  loop: false, label: "Attack 2"  },
-    jump:      { row: 6,  frames: 3, fps: 8,  loop: false, label: "Jump"      },
-    hurt:      { row: 7,  frames: 1, fps: 6,  loop: false, label: "Hurt"      },
-    death:     { row: 8,  frames: 3, fps: 4,  loop: false, label: "Death"     },
-    ki_charge: { row: 9,  frames: 3, fps: 6,  loop: true,  label: "Ki Charge" },
-    fly:       { row: 10, frames: 3, fps: 2,  loop: true,  label: "Fly"       },
-    fly_map:   { row: 11, frames: 3, fps: 1,  loop: true,  label: "Fly Map"   },
-  };
-
-  const ACTIONS_META_MALE   = ACTIONS_META;
-  const ACTIONS_META_FEMALE = ACTIONS_META;
-
-  const HAIR_VIEW_META       = VIEW_META;
-  const HAIR_ACTIONS_META    = ACTIONS_META;
-  const FACE_VIEW_META       = VIEW_META;
-  const FACE_ACTIONS_META    = ACTIONS_META;
-  const TOP_VIEW_META        = VIEW_META;
-  const TOP_ACTIONS_META     = ACTIONS_META;
-  const BOTTOM_VIEW_META     = VIEW_META;
-  const BOTTOM_ACTIONS_META  = ACTIONS_META;
-  const SHOES_VIEW_META      = VIEW_META;
-  const SHOES_ACTIONS_META   = ACTIONS_META;
-  const GLOVES_VIEW_META     = VIEW_META;
-  const GLOVES_ACTIONS_META  = ACTIONS_META;
-  const AURA_VIEW_META       = VIEW_META;
-  const AURA_ACTIONS_META    = ACTIONS_META;
-
-  function getActionsMeta()       { return ACTIONS_META; }
-  function getViewMeta()          { return VIEW_META; }
-  function getHairViewMeta()      { return HAIR_VIEW_META; }
-  function getHairActionsMeta()   { return HAIR_ACTIONS_META; }
-  function getFaceViewMeta()      { return FACE_VIEW_META; }
-  function getFaceActionsMeta()   { return FACE_ACTIONS_META; }
-  function getTopViewMeta()       { return TOP_VIEW_META; }
-  function getTopActionsMeta()    { return TOP_ACTIONS_META; }
-  function getBottomViewMeta()    { return BOTTOM_VIEW_META; }
-  function getBottomActionsMeta() { return BOTTOM_ACTIONS_META; }
-  function getShoesViewMeta()     { return SHOES_VIEW_META; }
-  function getShoesActionsMeta()  { return SHOES_ACTIONS_META; }
-  function getGlovesViewMeta()    { return GLOVES_VIEW_META; }
-  function getGlovesActionsMeta() { return GLOVES_ACTIONS_META; }
-  function getAuraViewMeta()      { return AURA_VIEW_META; }
-  function getAuraActionsMeta()   { return AURA_ACTIONS_META; }
-
-  // ═══════════════════════════════════════════════════════════════
-  //  RAZAS
-  // ═══════════════════════════════════════════════════════════════
-
-  const RACE_CATALOG = [
-    { id: "human",    name: "HUMANO",    spriteKey: "human_male",    skinColor: "#e8c898", eyeColor: "#3a2a1a" },
-    { id: "saiyan",   name: "SAIYAN",    spriteKey: "saiyan_male",   skinColor: "#d4a574", eyeColor: "#1a1a1a" },
-    { id: "namekian", name: "NAMEKIANO", spriteKey: "namekian_male", skinColor: "#4caf50", eyeColor: "#ff0000", genderless: true },
-    { id: "android",  name: "ANDROIDE",  spriteKey: "android_male",  skinColor: "#c0c0c0", eyeColor: "#00e5ff" },
-    { id: "kaioshin", name: "KAIOSHIN",  spriteKey: "kaioshin_male", skinColor: "#9c88ff", eyeColor: "#ffd700" },
-    { id: "frieza",   name: "FRIEZA",    spriteKey: "frieza_male",   skinColor: "#f0e0f0", eyeColor: "#ff0000", genderless: true },
-    { id: "Custom",   name: "CUSTOM",    spriteKey: "null",   skinColor: "#f0e0f0", eyeColor: "#ffffff", genderless: true },
-  ];
-
-  // ═══════════════════════════════════════════════════════════════
-  //  CATÁLOGOS DE CARA
-  // ═══════════════════════════════════════════════════════════════
-
-  const FACE_CATALOG_MALE = [
-    { id: "fm0", name: "Sin cara",   spriteKey: null,          tintable: false },
-    { id: "fm1", name: "Ojos Nor",   spriteKey: "face_fm1",    tintable: true,  eyeColor: true  },
-    { id: "fm2", name: "Ojos Fri",   spriteKey: "face_fm2",    tintable: true,  eyeColor: true  },
-    { id: "fm3", name: "Cicatriz 1", spriteKey: "face_fm3",    tintable: false },
-    { id: "fm4", name: "Cicatriz 2", spriteKey: "face_fm4",    tintable: false },
-    { id: "fm5", name: "Marcas War", spriteKey: "face_fm5",    tintable: true  },
-    { id: "fm6", name: "Pinturas",   spriteKey: "face_fm6",    tintable: true  },
-    { id: "fm7", name: "Tatuaje",    spriteKey: "face_fm7",    tintable: true  },
-    { id: "fm8", name: "Barba",      spriteKey: "face_fm8",    tintable: true  },
-  ];
-
-  const FACE_CATALOG_FEMALE = [
-    { id: "ff0", name: "Sin cara",   spriteKey: null,          tintable: false },
-    { id: "ff1", name: "Ojos Nor F", spriteKey: "face_ff1",    tintable: true,  eyeColor: true  },
-    { id: "ff2", name: "Ojos Cat F", spriteKey: "face_ff2",    tintable: true,  eyeColor: true  },
-    { id: "ff3", name: "Rubor",      spriteKey: "face_ff3",    tintable: true  },
-    { id: "ff4", name: "Pintura F",  spriteKey: "face_ff4",    tintable: true  },
-    { id: "ff5", name: "Marcas F",   spriteKey: "face_ff5",    tintable: true  },
-    { id: "ff6", name: "Cicatriz F", spriteKey: "face_ff6",    tintable: false },
-    { id: "ff7", name: "Tatuaje F",  spriteKey: "face_ff7",    tintable: true  },
-    { id: "ff8", name: "Pecas",      spriteKey: "face_ff8",    tintable: false },
-  ];
-
-  const FACE_CATALOG_NAMEKIAN = [
-    { id: "fn0", name: "Sin cara",    spriteKey: null,          tintable: false },
-    { id: "fn1", name: "Ojos Nam",    spriteKey: "face_fn1",    tintable: true,  eyeColor: true  },
-    { id: "fn2", name: "Marcas Nam",  spriteKey: "face_fn2",    tintable: true  },
-    { id: "fn3", name: "Ira Nam",     spriteKey: "face_fn3",    tintable: false },
-    { id: "fn4", name: "Puntitos",    spriteKey: "face_fn4",    tintable: true  },
-  ];
-
-  const FACE_CATALOG_FRIEZA = [
-    { id: "fr0", name: "Sin cara",    spriteKey: null,          tintable: false },
-    { id: "fr1", name: "Ojos Arc",    spriteKey: "face_fr1",    tintable: true,  eyeColor: true  },
-    { id: "fr2", name: "Marca Arc",   spriteKey: "face_fr2",    tintable: true  },
-    { id: "fr3", name: "Lineas Arc",  spriteKey: "face_fr3",    tintable: true  },
-    { id: "fr4", name: "Máscara",     spriteKey: "face_fr4",    tintable: false },
-  ];
-
-  // ═══════════════════════════════════════════════════════════════
-  //  CATÁLOGOS DE CABELLO
-  // ═══════════════════════════════════════════════════════════════
-
-  const HAIR_CATALOG_MALE = [
-    { id: "hm1", name: "Calvo",  spriteKey: "hair_hm1", tintable: true },
-    { id: "hm2", name: "Vegeta", spriteKey: "hair_hm2", tintable: true },
-    { id: "hm3", name: "SSJ",    spriteKey: "hair_hm3", tintable: true },
-    { id: "hm4", name: "Blue",   spriteKey: "hair_hm4", tintable: true },
-    { id: "hm5", name: "Trunks", spriteKey: "hair_hm5", tintable: true },
-    { id: "hm6", name: "Corto",  spriteKey: "hair_hm6", tintable: true },
-    { id: "hm7", name: "Largo",  spriteKey: "hair_hm7", tintable: true },
-    { id: "hm8", name: "Goku",   spriteKey: "hair_hm8", tintable: true },
-  ];
-
-  const HAIR_CATALOG_FEMALE = [
-    { id: "hf1", name: "Largo 1", spriteKey: "hair_hf1", tintable: true },
-    { id: "hf2", name: "Coleta",  spriteKey: "hair_hf2", tintable: true },
-    { id: "hf3", name: "Kefla",   spriteKey: "hair_hf3", tintable: true },
-    { id: "hf4", name: "Corto F", spriteKey: "hair_hf4", tintable: true },
-    { id: "hf5", name: "Trenzas", spriteKey: "hair_hf5", tintable: true },
-    { id: "hf6", name: "Rizos",   spriteKey: "hair_hf6", tintable: true },
-    { id: "hf7", name: "SSJ-F",   spriteKey: "hair_hf7", tintable: true },
-    { id: "hf8", name: "Calva",   spriteKey: "hair_hf8", tintable: true },
-  ];
-
-  const HAIR_CATALOG_NAMEKIAN = [
-    { id: "hn1", name: "Antenas 1", spriteKey: "hair_hn1", tintable: true },
-    { id: "hn2", name: "Antenas 2", spriteKey: "hair_hn2", tintable: true },
-    { id: "hn3", name: "Cresta",    spriteKey: "hair_hn3", tintable: true },
-    { id: "hn4", name: "Cuernos",   spriteKey: "hair_hn4", tintable: true },
-    { id: "hn5", name: "Sin crest", spriteKey: "hair_hn5", tintable: true },
-    { id: "hn6", name: "Picos Nam", spriteKey: "hair_hn6", tintable: true },
-    { id: "hn7", name: "Aletas",    spriteKey: "hair_hn7", tintable: true },
-    { id: "hn8", name: "Dientes",   spriteKey: "hair_hn8", tintable: true },
-  ];
-
-  const HAIR_CATALOG_FRIEZA = [
-    { id: "hr1", name: "Cuernos 1",  spriteKey: "hair_hr1", tintable: true },
-    { id: "hr2", name: "Cuernos 2",  spriteKey: "hair_hr2", tintable: true },
-    { id: "hr3", name: "Cresta Arc", spriteKey: "hair_hr3", tintable: true },
-    { id: "hr4", name: "Picos Arc",  spriteKey: "hair_hr4", tintable: true },
-    { id: "hr5", name: "Sin head",   spriteKey: "hair_hr5", tintable: true },
-    { id: "hr6", name: "Armadura",   spriteKey: "hair_hr6", tintable: true },
-    { id: "hr7", name: "Máscara",    spriteKey: "hair_hr7", tintable: true },
-    { id: "hr8", name: "Corona",     spriteKey: "hair_hr8", tintable: true },
-  ];
-
-  // ═══════════════════════════════════════════════════════════════
-  //  CATÁLOGOS DE ROPA SUPERIOR
-  // ═══════════════════════════════════════════════════════════════
-
-  const TOP_CATALOG_MALE = [
-    { id: "sm1", name: "Gi Naranja", spriteKey: "top_sm1", color1: "#ff6a00", color2: "#1565c0", style: "gi"    },
-    { id: "sm2", name: "Gi Azul",    spriteKey: "top_sm2", color1: "#1565c0", color2: "#ffffff", style: "gi"    },
-    { id: "sm3", name: "Armadura",   spriteKey: "top_sm3", color1: "#c0c0c0", color2: "#333333", style: "armor" },
-    { id: "sm4", name: "Gi Verde",   spriteKey: "top_sm4", color1: "#2e7d32", color2: "#ffffff", style: "gi"    },
-    { id: "sm5", name: "Gi Morado",  spriteKey: "top_sm5", color1: "#6a1b9a", color2: "#ffd700", style: "gi"    },
-    { id: "sm6", name: "Gi Rojo",    spriteKey: "top_sm6", color1: "#b71c1c", color2: "#ffffff", style: "gi"    },
-    { id: "sm7", name: "Manga Neg",  spriteKey: "top_sm7", color1: "#1a1a1a", color2: "#444444", style: "plain" },
-    { id: "sm8", name: "Sin ropa",   spriteKey: null,       color1: null,      color2: null,      style: "bare"  },
-  ];
-
-  const TOP_CATALOG_FEMALE = [
-    { id: "sf1", name: "Gi Rosa",      spriteKey: "top_sf1", color1: "#e91e8c", color2: "#ffffff", style: "gi"    },
-    { id: "sf2", name: "Gi Azul F",    spriteKey: "top_sf2", color1: "#1565c0", color2: "#ffffff", style: "gi"    },
-    { id: "sf3", name: "Armadura F",   spriteKey: "top_sf3", color1: "#c0c0c0", color2: "#333333", style: "armor" },
-    { id: "sf4", name: "Gi Verde F",   spriteKey: "top_sf4", color1: "#2e7d32", color2: "#ffffff", style: "gi"    },
-    { id: "sf5", name: "Gi Naranja F", spriteKey: "top_sf5", color1: "#ff6a00", color2: "#1565c0", style: "gi"    },
-    { id: "sf6", name: "Top Negro",    spriteKey: "top_sf6", color1: "#1a1a1a", color2: "#555555", style: "plain" },
-    { id: "sf7", name: "Gi Morado F",  spriteKey: "top_sf7", color1: "#6a1b9a", color2: "#ffd700", style: "gi"    },
-    { id: "sf8", name: "Sin ropa F",   spriteKey: null,       color1: null,      color2: null,      style: "bare"  },
-  ];
-
-  const TOP_CATALOG_NAMEKIAN = [
-    { id: "sn1", name: "Manto Nam",  spriteKey: "top_sn1", color1: "#4caf50", color2: "#1b5e20", style: "gi"    },
-    { id: "sn2", name: "Gi Nam 1",   spriteKey: "top_sn2", color1: "#388e3c", color2: "#ffffff", style: "gi"    },
-    { id: "sn3", name: "Armad Nam",  spriteKey: "top_sn3", color1: "#2e7d32", color2: "#a5d6a7", style: "armor" },
-    { id: "sn4", name: "Gi Nam 2",   spriteKey: "top_sn4", color1: "#1b5e20", color2: "#69f0ae", style: "gi"    },
-    { id: "sn5", name: "Gi Nam 3",   spriteKey: "top_sn5", color1: "#00695c", color2: "#ffffff", style: "gi"    },
-    { id: "sn6", name: "Gi Nam 4",   spriteKey: "top_sn6", color1: "#558b2f", color2: "#ccff90", style: "gi"    },
-    { id: "sn7", name: "Mant Osc",   spriteKey: "top_sn7", color1: "#1a2a1a", color2: "#4caf50", style: "plain" },
-    { id: "sn8", name: "Sin ropa N", spriteKey: null,       color1: null,      color2: null,      style: "bare"  },
-  ];
-
-  const TOP_CATALOG_FRIEZA = [
-    { id: "sr1", name: "Armad Arc 1", spriteKey: "top_sr1", color1: "#7c4dff", color2: "#1a1a1a", style: "armor" },
-    { id: "sr2", name: "Armad Arc 2", spriteKey: "top_sr2", color1: "#e040fb", color2: "#ffffff", style: "armor" },
-    { id: "sr3", name: "Manto Arc",   spriteKey: "top_sr3", color1: "#f0e0f0", color2: "#9e9e9e", style: "gi"    },
-    { id: "sr4", name: "Armad Arc 3", spriteKey: "top_sr4", color1: "#c0c0c0", color2: "#7c4dff", style: "armor" },
-    { id: "sr5", name: "Gi Arc 1",    spriteKey: "top_sr5", color1: "#1a1a1a", color2: "#7c4dff", style: "gi"    },
-    { id: "sr6", name: "Gi Arc 2",    spriteKey: "top_sr6", color1: "#f0e0f0", color2: "#e040fb", style: "gi"    },
-    { id: "sr7", name: "Armad Dor",   spriteKey: "top_sr7", color1: "#ffd700", color2: "#1a1a1a", style: "armor" },
-    { id: "sr8", name: "Sin ropa A",  spriteKey: null,       color1: null,      color2: null,      style: "bare"  },
-  ];
-
-  // ═══════════════════════════════════════════════════════════════
-  //  CATÁLOGOS DE ROPA INFERIOR
-  // ═══════════════════════════════════════════════════════════════
-
-  const BOTTOM_CATALOG_MALE = [
-    { id: "pm1", name: "Naranja", spriteKey: "bottom_pm1", color: "#ff6a00" },
-    { id: "pm2", name: "Azul",    spriteKey: "bottom_pm2", color: "#1565c0" },
-    { id: "pm3", name: "Blanco",  spriteKey: "bottom_pm3", color: "#e0e0e0" },
-    { id: "pm4", name: "Morado",  spriteKey: "bottom_pm4", color: "#7b1fa2" },
-    { id: "pm5", name: "Negro",   spriteKey: "bottom_pm5", color: "#1a1a1a" },
-    { id: "pm6", name: "Verde",   spriteKey: "bottom_pm6", color: "#2e7d32" },
-    { id: "pm7", name: "Rojo",    spriteKey: "bottom_pm7", color: "#b71c1c" },
-    { id: "pm8", name: "Marrón",  spriteKey: "bottom_pm8", color: "#5d4037" },
-  ];
-
-  const BOTTOM_CATALOG_FEMALE = [
-    { id: "pf1", name: "Falda Nar",  spriteKey: "bottom_pf1", color: "#ff6a00" },
-    { id: "pf2", name: "Pantalon F", spriteKey: "bottom_pf2", color: "#1565c0" },
-    { id: "pf3", name: "Falda Bla",  spriteKey: "bottom_pf3", color: "#e0e0e0" },
-    { id: "pf4", name: "Leggings",   spriteKey: "bottom_pf4", color: "#1a1a1a" },
-    { id: "pf5", name: "Falda Mor",  spriteKey: "bottom_pf5", color: "#7b1fa2" },
-    { id: "pf6", name: "Short Ver",  spriteKey: "bottom_pf6", color: "#2e7d32" },
-    { id: "pf7", name: "Falda Roj",  spriteKey: "bottom_pf7", color: "#b71c1c" },
-    { id: "pf8", name: "Short Neg",  spriteKey: "bottom_pf8", color: "#1a1a1a" },
-  ];
-
-  const BOTTOM_CATALOG_NAMEKIAN = [
-    { id: "pn1", name: "Pantam Nam", spriteKey: "bottom_pn1", color: "#4caf50" },
-    { id: "pn2", name: "Manto Inf",  spriteKey: "bottom_pn2", color: "#1b5e20" },
-    { id: "pn3", name: "Faja Nam",   spriteKey: "bottom_pn3", color: "#388e3c" },
-    { id: "pn4", name: "Short Nam",  spriteKey: "bottom_pn4", color: "#2e7d32" },
-    { id: "pn5", name: "Pant Osc",   spriteKey: "bottom_pn5", color: "#1a2a1a" },
-    { id: "pn6", name: "Pant Cla",   spriteKey: "bottom_pn6", color: "#a5d6a7" },
-    { id: "pn7", name: "Pant Amar",  spriteKey: "bottom_pn7", color: "#f9a825" },
-    { id: "pn8", name: "Pant Azul",  spriteKey: "bottom_pn8", color: "#0d47a1" },
-  ];
-
-  const BOTTOM_CATALOG_FRIEZA = [
-    { id: "pr1", name: "Arm Inf 1",  spriteKey: "bottom_pr1", color: "#7c4dff" },
-    { id: "pr2", name: "Arm Inf 2",  spriteKey: "bottom_pr2", color: "#e040fb" },
-    { id: "pr3", name: "Manto Arc",  spriteKey: "bottom_pr3", color: "#f0e0f0" },
-    { id: "pr4", name: "Escam Neg",  spriteKey: "bottom_pr4", color: "#1a1a1a" },
-    { id: "pr5", name: "Escam Bla",  spriteKey: "bottom_pr5", color: "#f5f5f5" },
-    { id: "pr6", name: "Pant Arc",   spriteKey: "bottom_pr6", color: "#9e9e9e" },
-    { id: "pr7", name: "Pant Dor",   spriteKey: "bottom_pr7", color: "#ffd700" },
-    { id: "pr8", name: "Arm Inf 3",  spriteKey: "bottom_pr8", color: "#311b92" },
-  ];
-
-  // ═══════════════════════════════════════════════════════════════
-  //  CATÁLOGOS DE CALZADO
-  // ═══════════════════════════════════════════════════════════════
-
-  const SHOES_CATALOG_MALE = [
-    { id: "shm1", name: "Botas Azul", spriteKey: "shoes_shm1", color1: "#1565c0", color2: "#f5f5f5", style: "boots"   },
-    { id: "shm2", name: "Botas Neg",  spriteKey: "shoes_shm2", color1: "#1a1a1a", color2: "#555555", style: "boots"   },
-    { id: "shm3", name: "Botas Dor",  spriteKey: "shoes_shm3", color1: "#ffd600", color2: "#ff6f00", style: "boots"   },
-    { id: "shm4", name: "Botas Mor",  spriteKey: "shoes_shm4", color1: "#7b1fa2", color2: "#e040fb", style: "boots"   },
-    { id: "shm5", name: "Sandalia",   spriteKey: "shoes_shm5", color1: "#8d6e63", color2: "#6d4c41", style: "sandals" },
-    { id: "shm6", name: "San Neg",    spriteKey: "shoes_shm6", color1: "#212121", color2: "#616161", style: "sandals" },
-    { id: "shm7", name: "Botas Roj",  spriteKey: "shoes_shm7", color1: "#c62828", color2: "#ff5252", style: "boots"   },
-    { id: "shm8", name: "Sin calz",   spriteKey: null,          color1: null,      color2: null,      style: "bare"    },
-  ];
-
-  const SHOES_CATALOG_FEMALE = [
-    { id: "shf1", name: "Bota Alta",   spriteKey: "shoes_shf1", color1: "#1565c0", color2: "#f5f5f5", style: "boots"   },
-    { id: "shf2", name: "Bota Neg F",  spriteKey: "shoes_shf2", color1: "#1a1a1a", color2: "#555555", style: "boots"   },
-    { id: "shf3", name: "Bota Roja F", spriteKey: "shoes_shf3", color1: "#c62828", color2: "#ff5252", style: "boots"   },
-    { id: "shf4", name: "Sandal F",    spriteKey: "shoes_shf4", color1: "#8d6e63", color2: "#6d4c41", style: "sandals" },
-    { id: "shf5", name: "Tacón Dor",   spriteKey: "shoes_shf5", color1: "#ffd600", color2: "#ff6f00", style: "boots"   },
-    { id: "shf6", name: "Zapato Bla",  spriteKey: "shoes_shf6", color1: "#f5f5f5", color2: "#bdbdbd", style: "boots"   },
-    { id: "shf7", name: "Bota Mor F",  spriteKey: "shoes_shf7", color1: "#7b1fa2", color2: "#e040fb", style: "boots"   },
-    { id: "shf8", name: "Sin calz F",  spriteKey: null,          color1: null,      color2: null,      style: "bare"    },
-  ];
-
-  const SHOES_CATALOG_NAMEKIAN = [
-    { id: "shn1", name: "Sandal Nam",  spriteKey: "shoes_shn1", color1: "#4caf50", color2: "#1b5e20", style: "sandals" },
-    { id: "shn2", name: "Bota Nam",    spriteKey: "shoes_shn2", color1: "#2e7d32", color2: "#a5d6a7", style: "boots"   },
-    { id: "shn3", name: "Desc Nam",    spriteKey: null,          color1: null,      color2: null,      style: "bare"    },
-    { id: "shn4", name: "Vendaje",     spriteKey: "shoes_shn4", color1: "#8d6e63", color2: "#4caf50", style: "sandals" },
-    { id: "shn5", name: "Bota Osc",    spriteKey: "shoes_shn5", color1: "#1a2a1a", color2: "#4caf50", style: "boots"   },
-    { id: "shn6", name: "Bota Amar",   spriteKey: "shoes_shn6", color1: "#f9a825", color2: "#f57f17", style: "boots"   },
-    { id: "shn7", name: "Sandal Neg",  spriteKey: "shoes_shn7", color1: "#212121", color2: "#388e3c", style: "sandals" },
-    { id: "shn8", name: "Bota Azul N", spriteKey: "shoes_shn8", color1: "#0d47a1", color2: "#4caf50", style: "boots"   },
-  ];
-
-  const SHOES_CATALOG_FRIEZA = [
-    { id: "shr1", name: "Bota Arc 1", spriteKey: "shoes_shr1", color1: "#7c4dff", color2: "#1a1a1a", style: "boots"   },
-    { id: "shr2", name: "Bota Arc 2", spriteKey: "shoes_shr2", color1: "#f0e0f0", color2: "#9e9e9e", style: "boots"   },
-    { id: "shr3", name: "Escam Pie",  spriteKey: "shoes_shr3", color1: "#e040fb", color2: "#1a1a1a", style: "boots"   },
-    { id: "shr4", name: "Desc Arc",   spriteKey: null,          color1: null,      color2: null,      style: "bare"    },
-    { id: "shr5", name: "Bota Neg A", spriteKey: "shoes_shr5", color1: "#1a1a1a", color2: "#7c4dff", style: "boots"   },
-    { id: "shr6", name: "Bota Dor A", spriteKey: "shoes_shr6", color1: "#ffd700", color2: "#1a1a1a", style: "boots"   },
-    { id: "shr7", name: "Bota Bla A", spriteKey: "shoes_shr7", color1: "#f5f5f5", color2: "#e040fb", style: "boots"   },
-    { id: "shr8", name: "Sandal Arc", spriteKey: "shoes_shr8", color1: "#9e9e9e", color2: "#7c4dff", style: "sandals" },
-  ];
-
-  // ═══════════════════════════════════════════════════════════════
-  //  CATÁLOGOS DE GUANTES
-  // ═══════════════════════════════════════════════════════════════
-
-  const GLOVES_CATALOG_MALE = [
-    { id: "gm0", name: "Sin guantes", spriteKey: null,         color: null      },
-    { id: "gm1", name: "Blancos",     spriteKey: "glove_gm1", color: "#f5f5f5" },
-    { id: "gm2", name: "Negros",      spriteKey: "glove_gm2", color: "#212121" },
-    { id: "gm3", name: "Rojos",       spriteKey: "glove_gm3", color: "#c62828" },
-    { id: "gm4", name: "Azules",      spriteKey: "glove_gm4", color: "#1565c0" },
-    { id: "gm5", name: "Dorados",     spriteKey: "glove_gm5", color: "#ffd600" },
-    { id: "gm6", name: "Cibernét.",   spriteKey: "glove_gm6", color: "#00bcd4" },
-    { id: "gm7", name: "Morados",     spriteKey: "glove_gm7", color: "#6a1b9a" },
-  ];
-
-  const GLOVES_CATALOG_FEMALE = [
-    { id: "gf0", name: "Sin guantes", spriteKey: null,         color: null      },
-    { id: "gf1", name: "Blancos F",   spriteKey: "glove_gf1", color: "#f5f5f5" },
-    { id: "gf2", name: "Negros F",    spriteKey: "glove_gf2", color: "#212121" },
-    { id: "gf3", name: "Rojos F",     spriteKey: "glove_gf3", color: "#c62828" },
-    { id: "gf4", name: "Azules F",    spriteKey: "glove_gf4", color: "#1565c0" },
-    { id: "gf5", name: "Dorados F",   spriteKey: "glove_gf5", color: "#ffd600" },
-    { id: "gf6", name: "Cristal",     spriteKey: "glove_gf6", color: "#e1f5fe" },
-    { id: "gf7", name: "Morados F",   spriteKey: "glove_gf7", color: "#6a1b9a" },
-  ];
-
-  const GLOVES_CATALOG_NAMEKIAN = [
-    { id: "gn0", name: "Sin guantes",  spriteKey: null,          color: null      },
-    { id: "gn1", name: "Guant Nam 1",  spriteKey: "glove_gn1",  color: "#4caf50" },
-    { id: "gn2", name: "Guant Nam 2",  spriteKey: "glove_gn2",  color: "#1b5e20" },
-    { id: "gn3", name: "Vendaje",      spriteKey: "glove_gn3",  color: "#8d6e63" },
-    { id: "gn4", name: "Guant Neg N",  spriteKey: "glove_gn4",  color: "#1a2a1a" },
-    { id: "gn5", name: "Guant Amar",   spriteKey: "glove_gn5",  color: "#f9a825" },
-    { id: "gn6", name: "Guant Azul N", spriteKey: "glove_gn6",  color: "#0d47a1" },
-    { id: "gn7", name: "Guant Bla N",  spriteKey: "glove_gn7",  color: "#c8e6c9" },
-  ];
-
-  const GLOVES_CATALOG_FRIEZA = [
-    { id: "gr0", name: "Sin guantes", spriteKey: null,         color: null      },
-    { id: "gr1", name: "Arm Mano 1",  spriteKey: "glove_gr1", color: "#7c4dff" },
-    { id: "gr2", name: "Arm Mano 2",  spriteKey: "glove_gr2", color: "#f0e0f0" },
-    { id: "gr3", name: "Garra Arc",   spriteKey: "glove_gr3", color: "#1a1a1a" },
-    { id: "gr4", name: "Guant Dor A", spriteKey: "glove_gr4", color: "#ffd700" },
-    { id: "gr5", name: "Guant Neg A", spriteKey: "glove_gr5", color: "#212121" },
-    { id: "gr6", name: "Arm Mano 3",  spriteKey: "glove_gr6", color: "#e040fb" },
-    { id: "gr7", name: "Guant Cris",  spriteKey: "glove_gr7", color: "#e1f5fe" },
-  ];
-
-  // ═══════════════════════════════════════════════════════════════
-  //  AURAS
-  // ═══════════════════════════════════════════════════════════════
-
-  const AURAS_CATALOG = [
-    { id: "a0", name: "Sin aura",  spriteKey: null,       color: null,      style: "none"     },
-    { id: "a1", name: "Amarilla",  spriteKey: "aura_a1", color: "#fdd835", style: "flames"   },
-    { id: "a2", name: "Azul",      spriteKey: "aura_a2", color: "#00b0ff", style: "flames"   },
-    { id: "a3", name: "Roja",      spriteKey: "aura_a3", color: "#ff1744", style: "flames"   },
-    { id: "a4", name: "Morada",    spriteKey: "aura_a4", color: "#aa00ff", style: "flames"   },
-    { id: "a5", name: "Verde",     spriteKey: "aura_a5", color: "#00e676", style: "flames"   },
-    { id: "a6", name: "Blanca",    spriteKey: "aura_a6", color: "#e8eaf6", style: "divine"   },
-    { id: "a7", name: "Eléctrica", spriteKey: "aura_a7", color: "#90a4ae", style: "electric" },
-  ];
-
-  // ═══════════════════════════════════════════════════════════════
-  //  ACCESORIOS IMPORTADOS POR USUARIO
-  // ═══════════════════════════════════════════════════════════════
-
-  const ACCESSORIES_CATALOG = [
-    { id: "ac_none", name: "Ninguno", type: "none", slot: "over_shirt", color: null, userImage: null, dataURL: null },
-  ];
-
-  const ACCESSORY_TYPES = [
-    { id: "belt",    label: "Cinturón",  slot: "belt_slot",   icon: "🥋" },
-    { id: "cape",    label: "Capa",      slot: "under_shirt", icon: "🧣" },
-    { id: "bag",     label: "Mochila",   slot: "under_shirt", icon: "🎒" },
-    { id: "collar",  label: "Collar",    slot: "over_shirt",  icon: "📿" },
-    { id: "brace",   label: "Brazal",    slot: "over_shirt",  icon: "⌚" },
-    { id: "mask",    label: "Máscara",   slot: "over_shirt",  icon: "🥽" },
-    { id: "scouter", label: "Scouter",   slot: "over_shirt",  icon: "🔭" },
-    { id: "tail",    label: "Cola",      slot: "under_shirt", icon: "🐾" },
-    { id: "wings",   label: "Alas",      slot: "under_shirt", icon: "🦋" },
-    { id: "other",   label: "Otro",      slot: "over_shirt",  icon: "✨" },
-  ];
-
-  function addUserAccessory({ name, type, color, userImage, dataURL }) {
-    const typeDef = ACCESSORY_TYPES.find(t => t.id === type) || ACCESSORY_TYPES[ACCESSORY_TYPES.length - 1];
-    const entry = {
-      id:         "user_acc_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
-      name:       name || "Accesorio",
-      type:       typeDef.id,
-      slot:       typeDef.slot,
-      color:      color || "#888888",
-      userImage:  userImage || null,
-      dataURL:    dataURL   || null,
-    };
-    ACCESSORIES_CATALOG.push(entry);
-    return entry;
-  }
-
-  function removeUserAccessory(id) {
-    if (id === "ac_none") return false;
-    const idx = ACCESSORIES_CATALOG.findIndex(a => a.id === id);
-    if (idx === -1) return false;
-    ACCESSORIES_CATALOG.splice(idx, 1);
-    return true;
-  }
-
-  async function restoreUserAccessories(storedList) {
-    if (!Array.isArray(storedList)) return;
-    const loads = storedList.map(entry => new Promise(resolve => {
-      if (!entry.dataURL) { resolve(); return; }
-      const img = new Image();
-      img.onload = () => {
-        ACCESSORIES_CATALOG.push({
-          id:        entry.id,
-          name:      entry.name,
-          type:      entry.type,
-          slot:      (ACCESSORY_TYPES.find(t => t.id === entry.type) || { slot: "over_shirt" }).slot,
-          color:     entry.color,
-          userImage: img,
-          dataURL:   entry.dataURL,
-        });
-        resolve();
-      };
-      img.onerror = () => resolve();
-      img.src = entry.dataURL;
-    }));
-    await Promise.all(loads);
-  }
-
-  // ═══════════════════════════════════════════════════════════════
-  //  Alias de catálogos por defecto (masculino)
-  // ═══════════════════════════════════════════════════════════════
-
-  const HAIR_CATALOG   = HAIR_CATALOG_MALE;
-  const FACE_CATALOG   = FACE_CATALOG_MALE;
-  const TOP_CATALOG    = TOP_CATALOG_MALE;
-  const BOTTOM_CATALOG = BOTTOM_CATALOG_MALE;
-  const SHOES_CATALOG  = SHOES_CATALOG_MALE;
-  const GLOVES_CATALOG = GLOVES_CATALOG_MALE;
-
-  const GENDERLESS_RACES = ["namekian", "frieza"];
-
-  function getCatalogFor(cat, raceId, gender) {
-    if (cat === "aura")      return AURAS_CATALOG;
-    if (cat === "accessory") return ACCESSORIES_CATALOG;
-    if (raceId === "namekian") {
-      switch (cat) {
-        case "face":   return FACE_CATALOG_NAMEKIAN;
-        case "hair":   return HAIR_CATALOG_NAMEKIAN;
-        case "shirt":  return TOP_CATALOG_NAMEKIAN;
-        case "pants":  return BOTTOM_CATALOG_NAMEKIAN;
-        case "shoes":  return SHOES_CATALOG_NAMEKIAN;
-        case "gloves": return GLOVES_CATALOG_NAMEKIAN;
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>Dragon World Z</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet"/>
+    <style>
+      :root {
+        --accent: #f5c400;
+        --accent2: #ff6a00;
+        --ki: #2979ff;
+        --hp: #00e676;
+        --danger: #ff1744;
+        --ui-bg: rgba(8, 9, 15, 0.92);
+        --font-head: "Orbitron", monospace;
+        --font-body: "Rajdhani", sans-serif;
+        --btn-size: 64px;
+        --btn-icon: 24px;
+        --menu-w: 260px;
       }
-    }
-    if (raceId === "frieza") {
-      switch (cat) {
-        case "face":   return FACE_CATALOG_FRIEZA;
-        case "hair":   return HAIR_CATALOG_FRIEZA;
-        case "shirt":  return TOP_CATALOG_FRIEZA;
-        case "pants":  return BOTTOM_CATALOG_FRIEZA;
-        case "shoes":  return SHOES_CATALOG_FRIEZA;
-        case "gloves": return GLOVES_CATALOG_FRIEZA;
+      *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; user-select:none; -webkit-user-select:none; }
+      html, body { width:100%; height:100%; overflow:hidden; background:#000; }
+      body { font-family:var(--font-body); touch-action:none; }
+
+      #screenLoading, #screenDead {
+        position:fixed; inset:0; display:flex; flex-direction:column;
+        align-items:center; justify-content:center;
+        background:radial-gradient(ellipse at 50% 30%,#0a1535 0%,#08090f 70%);
+        z-index:200;
       }
-    }
-    const isFemale = gender === "female";
-    switch (cat) {
-      case "face":   return isFemale ? FACE_CATALOG_FEMALE   : FACE_CATALOG_MALE;
-      case "hair":   return isFemale ? HAIR_CATALOG_FEMALE   : HAIR_CATALOG_MALE;
-      case "shirt":  return isFemale ? TOP_CATALOG_FEMALE    : TOP_CATALOG_MALE;
-      case "pants":  return isFemale ? BOTTOM_CATALOG_FEMALE : BOTTOM_CATALOG_MALE;
-      case "shoes":  return isFemale ? SHOES_CATALOG_FEMALE  : SHOES_CATALOG_MALE;
-      case "gloves": return isFemale ? GLOVES_CATALOG_FEMALE : GLOVES_CATALOG_MALE;
-    }
-    return [];
-  }
+      #screenDead { background:radial-gradient(ellipse at 50% 30%,#350a0a 0%,#08090f 70%); display:none; }
+      .screen-title { font-family:var(--font-head); font-size:clamp(22px,5vw,48px); font-weight:900; letter-spacing:4px; color:var(--accent); text-shadow:0 0 30px var(--accent),0 0 60px var(--accent2); margin-bottom:12px; }
+      .screen-sub { font-family:var(--font-head); font-size:11px; letter-spacing:3px; color:#8892b0; margin-bottom:40px; }
+      .loading-bar-wrap { width:280px; height:4px; background:#1a2040; border-radius:2px; overflow:hidden; }
+      .loading-bar { height:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); border-radius:2px; width:0%; transition:width .3s ease; box-shadow:0 0 10px var(--accent); }
+      .loading-label { font-family:var(--font-head); font-size:9px; letter-spacing:2px; color:#3d4a6b; margin-top:12px; }
+      #respawnBtn { margin-top:24px; padding:16px 44px; background:linear-gradient(135deg,#b71c1c,#d32f2f); border:2px solid #ff5252; border-radius:6px; color:white; font-family:var(--font-head); font-size:13px; letter-spacing:3px; cursor:pointer; transition:all .2s; min-height:52px; touch-action:manipulation; }
 
-  function getDefaultIds(raceId, gender) {
-    const face   = getCatalogFor("face",   raceId, gender);
-    const hair   = getCatalogFor("hair",   raceId, gender);
-    const shirt  = getCatalogFor("shirt",  raceId, gender);
-    const pants  = getCatalogFor("pants",  raceId, gender);
-    const shoes  = getCatalogFor("shoes",  raceId, gender);
-    const gloves = getCatalogFor("gloves", raceId, gender);
-    return {
-      faceId:      face[0]   ? face[0].id   : "fm0",
-      hairId:      hair[0]   ? hair[0].id   : "hm1",
-      topId:       shirt[0]  ? shirt[0].id  : "sm1",
-      bottomId:    pants[0]  ? pants[0].id  : "pm1",
-      shoesId:     shoes[0]  ? shoes[0].id  : "shm1",
-      glovesId:    gloves[0] ? gloves[0].id : "gm0",
-      accessoryId: "ac_none",
-    };
-  }
+      #gameCanvas { display:block; position:fixed; top:0; left:0; width:100vw; height:100vh; }
+      #hud { position:fixed; inset:0; pointer-events:none; z-index:10; }
 
-  // ═══════════════════════════════════════════════════════════════
-  //  MAPA DE SPRITES
-  // ═══════════════════════════════════════════════════════════════
-
-  const SPRITE_IMAGES = {
-    human_male:      "Skins/HumanIdle.png",
-    human_female:    "Skins/MujerIdle.png",
-    saiyan_male:     "Skins/HumanIdle.png",
-    saiyan_female:   "Skins/MujerIdle.png",
-    namekian_male:   "Skins/NamekianIdle.png",
-    android_male:    "Skins/HumanIdle.png",
-    android_female:  "Skins/MujerIdle.png",
-    kaioshin_male:   "Skins/Kaioshin.png",
-    kaioshin_female: "Skins/KaioshinF.png",
-    frieza_male:     "Skins/Arcosiano.png",
-
-    face_fm1: "face/male/fm1_eyes_normal.png",
-    face_fm2: "face/male/fm2_eyes_fierce.png",
-    face_fm3: "face/male/fm3_scar1.png",
-    face_fm4: "face/male/fm4_scar2.png",
-    face_fm5: "face/male/fm5_war_marks.png",
-    face_fm6: "face/male/fm6_paint.png",
-    face_fm7: "face/male/fm7_tattoo.png",
-    face_fm8: "face/male/fm8_beard.png",
-
-    face_ff1: "face/female/ff1_eyes_normal.png",
-    face_ff2: "face/female/ff2_eyes_cat.png",
-    face_ff3: "face/female/ff3_blush.png",
-    face_ff4: "face/female/ff4_paint.png",
-    face_ff5: "face/female/ff5_marks.png",
-    face_ff6: "face/female/ff6_scar.png",
-    face_ff7: "face/female/ff7_tattoo.png",
-    face_ff8: "face/female/ff8_freckles.png",
-
-    face_fn1: "face/namekian/fn1_eyes.png",
-    face_fn2: "face/namekian/fn2_marks.png",
-    face_fn3: "face/namekian/fn3_angry.png",
-    face_fn4: "face/namekian/fn4_dots.png",
-
-    face_fr1: "face/frieza/fr1_eyes.png",
-    face_fr2: "face/frieza/fr2_mark.png",
-    face_fr3: "face/frieza/fr3_lines.png",
-    face_fr4: "face/frieza/fr4_mask.png",
-
-    hair_hm1: "hair/male/hm1_mondongo.png",
-    hair_hm2: "hair/male/BaseSpriteSheet.png",
-    hair_hm3: "hair/male/hm3_ssj.png",
-    hair_hm4: "hair/male/hm4_blue.png",
-    hair_hm5: "hair/male/hm5_trunks.png",
-    hair_hm6: "hair/male/hm6_corto.png",
-    hair_hm7: "hair/male/hm7_largo.png",
-    hair_hm8: "hair/male/hm8_mohawk.png",
-
-    hair_hf1: "hair/female/hf1_largo1.png",
-    hair_hf2: "hair/female/hf2_coleta.png",
-    hair_hf3: "hair/female/hf3_kefla.png",
-    hair_hf4: "hair/female/hf4_corto.png",
-    hair_hf5: "hair/female/hf5_trenzas.png",
-    hair_hf6: "hair/female/hf6_rizos.png",
-    hair_hf7: "hair/female/hf7_ssjf.png",
-    hair_hf8: "hair/female/hf8_calva.png",
-
-    hair_hn1: "hair/namekian/hn1_antenas1.png",
-    hair_hn2: "hair/namekian/hn2_antenas2.png",
-    hair_hn3: "hair/namekian/hn3_cresta.png",
-    hair_hn4: "hair/namekian/hn4_cuernos.png",
-    hair_hn5: "hair/namekian/hn5_sin.png",
-    hair_hn6: "hair/namekian/hn6_picos.png",
-    hair_hn7: "hair/namekian/hn7_aletas.png",
-    hair_hn8: "hair/namekian/hn8_dientes.png",
-
-    hair_hr1: "hair/frieza/hr1_cuernos1.png",
-    hair_hr2: "hair/frieza/hr2_cuernos2.png",
-    hair_hr3: "hair/frieza/hr3_cresta.png",
-    hair_hr4: "hair/frieza/hr4_picos.png",
-    hair_hr5: "hair/frieza/hr5_sin.png",
-    hair_hr6: "hair/frieza/hr6_armadura.png",
-    hair_hr7: "hair/frieza/hr7_mascara.png",
-    hair_hr8: "hair/frieza/hr8_corona.png",
-
-    top_sm1: "tops/male/sm1_gi_orange.png",
-    top_sm2: "tops/male/sm2_gi_blue.png",
-    top_sm3: "tops/male/sm3_armor.png",
-    top_sm4: "tops/male/sm4_gi_green.png",
-    top_sm5: "tops/male/sm5_gi_purple.png",
-    top_sm6: "tops/male/sm6_gi_red.png",
-    top_sm7: "tops/male/sm7_black_sleeves.png",
-
-    top_sf1: "tops/female/sf1_gi_pink.png",
-    top_sf2: "tops/female/sf2_gi_blue.png",
-    top_sf3: "tops/female/sf3_armor.png",
-    top_sf4: "tops/female/sf4_gi_green.png",
-    top_sf5: "tops/female/sf5_gi_orange.png",
-    top_sf6: "tops/female/sf6_top_black.png",
-    top_sf7: "tops/female/sf7_gi_purple.png",
-
-    top_sn1: "tops/namekian/sn1_manto.png",
-    top_sn2: "tops/namekian/sn2_gi1.png",
-    top_sn3: "tops/namekian/sn3_armor.png",
-    top_sn4: "tops/namekian/sn4_gi2.png",
-    top_sn5: "tops/namekian/sn5_gi3.png",
-    top_sn6: "tops/namekian/sn6_gi4.png",
-    top_sn7: "tops/namekian/sn7_mant_osc.png",
-
-    top_sr1: "tops/frieza/sr1_armor1.png",
-    top_sr2: "tops/frieza/sr2_armor2.png",
-    top_sr3: "tops/frieza/sr3_manto.png",
-    top_sr4: "tops/frieza/sr4_armor3.png",
-    top_sr5: "tops/frieza/sr5_gi1.png",
-    top_sr6: "tops/frieza/sr6_gi2.png",
-    top_sr7: "tops/frieza/sr7_armor_gold.png",
-
-    bottom_pm1: "bottoms/male/pm1_orange.png",
-    bottom_pm2: "bottoms/male/pm2_blue.png",
-    bottom_pm3: "bottoms/male/pm3_white.png",
-    bottom_pm4: "bottoms/male/pm4_purple.png",
-    bottom_pm5: "bottoms/male/pm5_black.png",
-    bottom_pm6: "bottoms/male/pm6_green.png",
-    bottom_pm7: "bottoms/male/pm7_red.png",
-    bottom_pm8: "bottoms/male/pm8_brown.png",
-
-    bottom_pf1: "bottoms/female/pf1_skirt_orange.png",
-    bottom_pf2: "bottoms/female/pf2_pants_blue.png",
-    bottom_pf3: "bottoms/female/pf3_skirt_white.png",
-    bottom_pf4: "bottoms/female/pf4_leggings.png",
-    bottom_pf5: "bottoms/female/pf5_skirt_purple.png",
-    bottom_pf6: "bottoms/female/pf6_short_green.png",
-    bottom_pf7: "bottoms/female/pf7_skirt_red.png",
-    bottom_pf8: "bottoms/female/pf8_short_black.png",
-
-    bottom_pn1: "bottoms/namekian/pn1_pants.png",
-    bottom_pn2: "bottoms/namekian/pn2_manto_inf.png",
-    bottom_pn3: "bottoms/namekian/pn3_faja.png",
-    bottom_pn4: "bottoms/namekian/pn4_short.png",
-    bottom_pn5: "bottoms/namekian/pn5_osc.png",
-    bottom_pn6: "bottoms/namekian/pn6_cla.png",
-    bottom_pn7: "bottoms/namekian/pn7_amar.png",
-    bottom_pn8: "bottoms/namekian/pn8_azul.png",
-
-    bottom_pr1: "bottoms/frieza/pr1_armor1.png",
-    bottom_pr2: "bottoms/frieza/pr2_armor2.png",
-    bottom_pr3: "bottoms/frieza/pr3_manto.png",
-    bottom_pr4: "bottoms/frieza/pr4_escamas_neg.png",
-    bottom_pr5: "bottoms/frieza/pr5_escamas_bla.png",
-    bottom_pr6: "bottoms/frieza/pr6_pants.png",
-    bottom_pr7: "bottoms/frieza/pr7_gold.png",
-    bottom_pr8: "bottoms/frieza/pr8_armor3.png",
-
-    shoes_shm1: "shoes/male/shm1_blue.png",
-    shoes_shm2: "shoes/male/shm2_black.png",
-    shoes_shm3: "shoes/male/shm3_gold.png",
-    shoes_shm4: "shoes/male/shm4_purple.png",
-    shoes_shm5: "shoes/male/shm5_sandals.png",
-    shoes_shm6: "shoes/male/shm6_sandals_black.png",
-    shoes_shm7: "shoes/male/shm7_red.png",
-
-    shoes_shf1: "shoes/female/shf1_high_blue.png",
-    shoes_shf2: "shoes/female/shf2_black.png",
-    shoes_shf3: "shoes/female/shf3_red.png",
-    shoes_shf4: "shoes/female/shf4_sandals.png",
-    shoes_shf5: "shoes/female/shf5_gold.png",
-    shoes_shf6: "shoes/female/shf6_white.png",
-    shoes_shf7: "shoes/female/shf7_purple.png",
-
-    shoes_shn1: "shoes/namekian/shn1_sandals.png",
-    shoes_shn2: "shoes/namekian/shn2_boots.png",
-    shoes_shn4: "shoes/namekian/shn4_vendaje.png",
-    shoes_shn5: "shoes/namekian/shn5_osc.png",
-    shoes_shn6: "shoes/namekian/shn6_amar.png",
-    shoes_shn7: "shoes/namekian/shn7_sandals_black.png",
-    shoes_shn8: "shoes/namekian/shn8_blue.png",
-
-    shoes_shr1: "shoes/frieza/shr1_armor1.png",
-    shoes_shr2: "shoes/frieza/shr2_armor2.png",
-    shoes_shr3: "shoes/frieza/shr3_escamas.png",
-    shoes_shr5: "shoes/frieza/shr5_black.png",
-    shoes_shr6: "shoes/frieza/shr6_gold.png",
-    shoes_shr7: "shoes/frieza/shr7_white.png",
-    shoes_shr8: "shoes/frieza/shr8_sandals.png",
-
-    glove_gm1: "gloves/male/gm1_white.png",
-    glove_gm2: "gloves/male/gm2_black.png",
-    glove_gm3: "gloves/male/gm3_red.png",
-    glove_gm4: "gloves/male/gm4_blue.png",
-    glove_gm5: "gloves/male/gm5_gold.png",
-    glove_gm6: "gloves/male/gm6_cyber.png",
-    glove_gm7: "gloves/male/gm7_purple.png",
-
-    glove_gf1: "gloves/female/gf1_white.png",
-    glove_gf2: "gloves/female/gf2_black.png",
-    glove_gf3: "gloves/female/gf3_red.png",
-    glove_gf4: "gloves/female/gf4_blue.png",
-    glove_gf5: "gloves/female/gf5_gold.png",
-    glove_gf6: "gloves/female/gf6_crystal.png",
-    glove_gf7: "gloves/female/gf7_purple.png",
-
-    glove_gn1: "gloves/namekian/gn1_green.png",
-    glove_gn2: "gloves/namekian/gn2_dark.png",
-    glove_gn3: "gloves/namekian/gn3_vendaje.png",
-    glove_gn4: "gloves/namekian/gn4_black.png",
-    glove_gn5: "gloves/namekian/gn5_yellow.png",
-    glove_gn6: "gloves/namekian/gn6_blue.png",
-    glove_gn7: "gloves/namekian/gn7_white.png",
-
-    glove_gr1: "gloves/frieza/gr1_armor1.png",
-    glove_gr2: "gloves/frieza/gr2_armor2.png",
-    glove_gr3: "gloves/frieza/gr3_claw.png",
-    glove_gr4: "gloves/frieza/gr4_gold.png",
-    glove_gr5: "gloves/frieza/gr5_black.png",
-    glove_gr6: "gloves/frieza/gr6_armor3.png",
-    glove_gr7: "gloves/frieza/gr7_crystal.png",
-
-    aura_a1: "auras/a1_yellow.png",
-    aura_a2: "auras/a2_blue.png",
-    aura_a3: "auras/a3_red.png",
-    aura_a4: "auras/a4_purple.png",
-    aura_a5: "auras/a5_green.png",
-    aura_a6: "auras/a6_white.png",
-    aura_a7: "auras/a7_electric.png",
-  };
-
-  // ═══════════════════════════════════════════════════════════════
-  //  DETECCIÓN DE FRAME SIZE
-  // ═══════════════════════════════════════════════════════════════
-
-  const MAX_COLS   = 6;
-  const TOTAL_ROWS = 14;
-  const IDLE_ROW   = ACTIONS_META.idle.row;
-
-  function detectFrameSize(img) {
-    if (!img || !img.naturalWidth) return { fw: FRAME_W, fh: FRAME_H };
-    const fw = Math.floor(img.naturalWidth  / MAX_COLS);
-    const fh = Math.floor(img.naturalHeight / TOTAL_ROWS);
-    return { fw: fw > 0 ? fw : FRAME_W, fh: fh > 0 ? fh : FRAME_H };
-  }
-
-  const _frameSizeCache = new Map();
-
-  function getFrameSize(img) {
-    if (!img) return { fw: FRAME_W, fh: FRAME_H };
-    const key = img.src || (img.naturalWidth + "x" + img.naturalHeight);
-    if (!_frameSizeCache.has(key)) _frameSizeCache.set(key, detectFrameSize(img));
-    return _frameSizeCache.get(key);
-  }
-
-  function isCompatibleSheet(img) {
-    if (!img || !img.naturalWidth || !img.naturalHeight) return false;
-    const { fw, fh } = getFrameSize(img);
-    return img.naturalWidth >= fw && img.naturalHeight >= fh * TOTAL_ROWS;
-  }
-
-  /** Hoja con al menos una celda (p. ej. PNG importado tamaño grilla, 1 fila). */
-  function hasSheetLayout(img) {
-    if (!img || !img.naturalWidth || !img.naturalHeight) return false;
-    const { fw, fh } = getFrameSize(img);
-    return img.naturalWidth >= fw && img.naturalHeight >= fh;
-  }
-
-  function isFreeCustomizationEntry(accDef) {
-    return !!(accDef && accDef.id !== "ac_none" && (accDef.isFreeCustomization || String(accDef.id).startsWith("fc_")));
-  }
-
-  function _getAccessoryImage(accDef) {
-    if (!accDef || accDef.id === "ac_none") return null;
-    const img = accDef.userImage;
-    if (img && img.complete && img.naturalWidth) return img;
-    if (!accDef.dataURL) return img || null;
-    if (!accDef._pendingImage) {
-      const pending = new Image();
-      accDef._pendingImage = pending;
-      pending.onload = () => {
-        accDef.userImage = pending;
-        accDef._pendingImage = null;
-      };
-      pending.onerror = () => { accDef._pendingImage = null; };
-      pending.src = accDef.dataURL;
-    }
-    return accDef.userImage || null;
-  }
-
-  function getIdleFrameCoords(img) {
-    const { fw, fh } = getFrameSize(img);
-    return { srcX: 0, srcY: IDLE_ROW * fh, fw, fh };
-  }
-
-  // ═══════════════════════════════════════════════════════════════
-  //  OBJETO PLAYER
-  //
-  //  appearance ahora incluye browColor y pupilColor (v1.0.2):
-  //    browColor  → color de las cejas  (null = usa eyeColor como fallback)
-  //    pupilColor → color de las pupilas (null = usa eyeColor como fallback)
-  //    eyeColor   → color global de ojos (fallback si los otros son null)
-  // ═══════════════════════════════════════════════════════════════
-
-  const player = {
-    x: 0, y: 0, vx: 0, vy: 0,
-    direction: 1,
-    onGround: false,
-    state: "idle",
-    appearance: {
-      raceId:      "human",
-      gender:      "male",
-      faceId:      "fm0",
-      faceColor:   null,
-      hairId:      "hm1",
-      hairColor:   "#1a1a1a",
-      topId:       "sm1",
-      bottomId:    "pm1",
-      shoesId:     "shm1",
-      glovesId:    "gm0",
-      auraId:      "a1",
-      auraColor:   "#fdd835",
-      skinColor:   "#e8c898",
-      eyeColor:    "#3a2a1a",   // color global de ojos (fallback)
-      browColor:   null,        // color de cejas  (null = usa eyeColor)
-      pupilColor:  null,        // color de pupilas (null = usa eyeColor)
-      accessoryId: "ac_none",
-    },
-    _animator: null,
-  };
-
-  // ═══════════════════════════════════════════════════════════════
-  //  ANIMADOR
-  // ═══════════════════════════════════════════════════════════════
-
-  class SpriteAnimator {
-    constructor(action = "idle") {
-      this.action      = action;
-      this.frame       = 0;
-      this.elapsed     = 0;
-      this._lastTime   = performance.now();
-      this._onComplete = null;
-      this._queue      = [];
-      this.currentView = null;
-    }
-
-    get meta() {
-      if (this.currentView && VIEW_META[this.currentView]) return VIEW_META[this.currentView];
-      return ACTIONS_META[this.action] || ACTIONS_META.idle;
-    }
-
-    setView(viewKey) {
-      if (!VIEW_META[viewKey]) return this;
-      this.currentView = viewKey; this.frame = 0; this.elapsed = 0;
-      return this;
-    }
-
-    clearView() { this.currentView = null; return this; }
-
-    play(action, onComplete = null) {
-      const m = ACTIONS_META[action];
-      if (!m) return this;
-      this.currentView = null;
-      if (this.action === action && m.loop && !onComplete) return this;
-      this.action = action; this.frame = 0; this.elapsed = 0;
-      this._onComplete = onComplete;
-      return this;
-    }
-
-    then(action) { this._queue.push(action); return this; }
-
-    update(now = performance.now()) {
-      const delta = now - this._lastTime;
-      this._lastTime = now;
-      const m = this.meta;
-      if (!m) return;
-      this.elapsed += delta;
-      const fd = 1000 / m.fps;
-      while (this.elapsed >= fd) {
-        this.elapsed -= fd;
-        this.frame++;
-        if (this.frame >= m.frames) {
-          if (m.loop) {
-            this.frame = 0;
-          } else {
-            this.frame = m.frames - 1;
-            if (this._onComplete) { this._onComplete(); this._onComplete = null; }
-            if (this._queue.length > 0) this.play(this._queue.shift());
-          }
-        }
+      /* ── HAMBURGER ── */
+      #menuToggleBtn {
+        position:fixed; top:12px; left:12px; z-index:120;
+        width:44px; height:44px; background:var(--ui-bg); border:1px solid #2a3560;
+        border-radius:8px; display:flex; flex-direction:column;
+        align-items:center; justify-content:center; gap:5px;
+        cursor:pointer; pointer-events:auto; touch-action:manipulation;
+        backdrop-filter:blur(8px);
       }
+      #menuToggleBtn span { display:block; width:20px; height:2px; background:var(--accent); border-radius:2px; transition:all .25s; }
+      #menuToggleBtn.open span:nth-child(1) { transform:translateY(7px) rotate(45deg); }
+      #menuToggleBtn.open span:nth-child(2) { opacity:0; }
+      #menuToggleBtn.open span:nth-child(3) { transform:translateY(-7px) rotate(-45deg); }
+
+      #menuBackdrop { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:100; opacity:0; transition:opacity .3s ease; pointer-events:none; }
+      #menuBackdrop.open { opacity:1; pointer-events:auto; }
+
+      #leftMenu {
+        position:fixed; top:0; left:0; width:var(--menu-w); height:100vh;
+        background:var(--ui-bg); border-right:1px solid #2a3560;
+        display:flex; flex-direction:column; backdrop-filter:blur(12px);
+        box-shadow:4px 0 24px rgba(0,0,0,.5); z-index:110;
+        transform:translateX(calc(-1 * var(--menu-w) - 10px));
+        transition:transform .3s cubic-bezier(.4,0,.2,1);
+        overflow-y:auto; overflow-x:hidden;
+      }
+      #leftMenu.open { transform:translateX(0); }
+      .menu-header { display:flex; align-items:center; justify-content:center; padding:16px 16px 10px; border-bottom:1px solid #2a3560; flex-shrink:0; }
+      .menu-header-title { font-family:var(--font-head); font-size:11px; letter-spacing:3px; color:var(--accent); }
+      .menu-section { padding:10px 12px; border-bottom:1px solid rgba(42,53,96,.5); flex-shrink:0; }
+      .menu-section-label { font-family:var(--font-head); font-size:7px; letter-spacing:2px; color:#3d4a6b; margin-bottom:8px; }
+      .menu-btn { width:100%; padding:11px 13px; margin-bottom:6px; background:linear-gradient(135deg,rgba(245,196,0,.08),rgba(245,196,0,.16)); border:1px solid rgba(245,196,0,.2); border-radius:8px; color:#fff; font-family:var(--font-head); font-size:11px; letter-spacing:1px; text-align:left; cursor:pointer; transition:transform .15s,box-shadow .15s; touch-action:manipulation; display:flex; align-items:center; gap:9px; pointer-events:auto; }
+      .menu-btn:hover { transform:translateY(-1px); box-shadow:0 0 14px rgba(245,196,0,.2); }
+      .menu-btn .btn-ic { font-size:15px; }
+      .slot-list { display:flex; flex-direction:column; gap:5px; }
+      .slot-item { display:flex; align-items:center; gap:8px; background:rgba(255,255,255,.04); border:1px solid #2a3560; border-radius:7px; padding:8px 10px; cursor:pointer; transition:all .15s; pointer-events:auto; touch-action:manipulation; }
+      .slot-item:hover { border-color:var(--accent); background:rgba(245,196,0,.08); }
+      .slot-item.active { border-color:var(--accent); background:rgba(245,196,0,.1); }
+      .slot-num { font-family:var(--font-head); font-size:14px; color:var(--accent); width:18px; flex-shrink:0; text-align:center; }
+      .slot-info { flex:1; min-width:0; }
+      .slot-name { font-family:var(--font-head); font-size:10px; color:#e8eaf6; letter-spacing:.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+      .slot-race { font-size:9px; color:#4a5880; letter-spacing:.5px; margin-top:1px; }
+      .slot-load-lbl { font-family:var(--font-head); font-size:8px; color:var(--accent); opacity:.7; }
+      .slot-empty-label { font-family:var(--font-head); font-size:9px; color:#3d4a6b; text-align:center; padding:6px 0; }
+
+      /* ── HUD TOP ── */
+      .hud-top { position:absolute; top:12px; left:64px; right:12px; display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+      .player-hud { background:var(--ui-bg); border:1px solid #2a3560; border-radius:8px; padding:8px 12px; min-width:180px; backdrop-filter:blur(8px); }
+      .player-name { font-family:var(--font-head); font-size:11px; letter-spacing:2px; color:var(--accent); margin-bottom:6px; }
+      .bar-row { display:flex; align-items:center; gap:6px; margin-bottom:4px; }
+      .bar-icon { font-size:11px; width:14px; text-align:center; }
+      .bar-track { flex:1; height:8px; background:rgba(255,255,255,.07); border-radius:3px; overflow:hidden; border:1px solid rgba(255,255,255,.08); }
+      .bar-fill { height:100%; border-radius:2px; transition:width .2s ease; position:relative; }
+      .bar-fill::after { content:""; position:absolute; top:0; left:0; right:0; height:50%; background:rgba(255,255,255,.2); border-radius:2px; }
+      #barHp { background:linear-gradient(90deg,#00c853,var(--hp)); box-shadow:0 0 6px rgba(0,230,118,.5); }
+      #barKi { background:linear-gradient(90deg,#1565c0,var(--ki)); box-shadow:0 0 6px rgba(41,121,255,.5); }
+      .bar-val { font-family:var(--font-head); font-size:9px; color:#8892b0; min-width:32px; text-align:right; }
+      .level-badge { display:flex; align-items:center; gap:6px; margin-top:5px; }
+      .level-num { font-family:var(--font-head); font-size:9px; letter-spacing:1px; color:var(--accent); background:rgba(245,196,0,.1); border:1px solid rgba(245,196,0,.3); border-radius:3px; padding:1px 5px; }
+      .xp-track { flex:1; height:4px; background:rgba(255,255,255,.07); border-radius:2px; overflow:hidden; }
+      .xp-fill { height:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); border-radius:2px; transition:width .4s ease; }
+
+      /* ── MINIMAP ── */
+      .minimap-wrap { position:absolute; top:12px; right:12px; width:90px; height:90px; background:var(--ui-bg); border:1px solid #2a3560; border-radius:6px; overflow:hidden; backdrop-filter:blur(8px); }
+      #minimapCanvas { width:100%; height:100%; image-rendering:pixelated; }
+      .minimap-label { position:absolute; bottom:4px; left:0; right:0; text-align:center; font-family:var(--font-head); font-size:7px; letter-spacing:2px; color:#3d4a6b; }
+
+      /* ── REGION / ZONA ── */
+      .region-label { font-family:var(--font-head); font-size:10px; letter-spacing:3px; color:rgba(255,255,255,.4); pointer-events:none; }
+
+      /* ── PORTAL PANEL ── */
+      #portalPanel {
+        position:absolute; bottom:100px; left:50%; transform:translateX(-50%);
+        background:var(--ui-bg); border:1px solid rgba(0,229,255,.4); border-radius:12px;
+        padding:14px 20px; display:none; backdrop-filter:blur(12px); pointer-events:auto;
+        min-width:280px; text-align:center; z-index:20;
+      }
+      #portalPanel.visible { display:block; }
+      .portal-title { font-family:var(--font-head); font-size:10px; letter-spacing:3px; color:#00e5ff; margin-bottom:10px; }
+      .portal-btns { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+      .portal-btn {
+        padding:9px 16px; border-radius:6px; font-family:var(--font-head); font-size:10px;
+        letter-spacing:1px; cursor:pointer; border:1px solid; transition:all .15s;
+        touch-action:manipulation; pointer-events:auto;
+      }
+      .portal-btn-earth { background:rgba(30,120,30,.2); border-color:#00e676; color:#00e676; }
+      .portal-btn-space { background:rgba(50,50,180,.2); border-color:#2979ff; color:#2979ff; }
+      .portal-btn-earth:hover { background:rgba(30,120,30,.4); box-shadow:0 0 10px rgba(0,230,118,.3); }
+      .portal-btn-space:hover { background:rgba(50,50,180,.4); box-shadow:0 0 10px rgba(41,121,255,.3); }
+
+      /* ── TRAILER PANEL ── */
+      #trailerPanel {
+        position:absolute; bottom:100px; left:50%; transform:translateX(-50%);
+        background:var(--ui-bg); border:1px solid rgba(245,196,0,.4); border-radius:12px;
+        padding:14px 20px; display:none; backdrop-filter:blur(12px); pointer-events:auto;
+        min-width:320px; text-align:center; z-index:20;
+      }
+      #trailerPanel.visible { display:block; }
+      .trailer-title { font-family:var(--font-head); font-size:10px; letter-spacing:3px; color:var(--accent); margin-bottom:10px; }
+      .trailer-info { font-size:12px; color:#c8cfe8; margin-bottom:12px; line-height:1.5; }
+      .trailer-btns { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+      .trailer-btn {
+        padding:9px 16px; border-radius:6px; font-family:var(--font-head); font-size:10px;
+        letter-spacing:1px; cursor:pointer; border:1px solid; transition:all .15s;
+        touch-action:manipulation; pointer-events:auto;
+      }
+      .trailer-btn-enter { background:rgba(245,196,0,.15); border-color:var(--accent); color:var(--accent); }
+      .trailer-btn-invite { background:rgba(0,229,255,.1); border-color:#00e5ff; color:#00e5ff; }
+      .trailer-btn-close { background:rgba(255,255,255,.05); border-color:rgba(255,255,255,.2); color:#8892b0; }
+      .trailer-btn-enter:hover { background:rgba(245,196,0,.3); box-shadow:0 0 10px rgba(245,196,0,.3); }
+
+      /* ── INTERIOR TRAILER ── */
+      #trailerInterior {
+        position:fixed; inset:0; display:none; z-index:50;
+        background:#0a0510;
+      }
+      #trailerInterior.visible { display:flex; flex-direction:column; }
+      #trailerCanvas { flex:1; display:block; width:100%; }
+      .trailer-hud-bar {
+        display:flex; align-items:center; gap:10px; padding:8px 16px;
+        background:rgba(8,9,15,.95); border-top:1px solid #2a3560;
+        pointer-events:auto; flex-shrink:0;
+      }
+      .trailer-exit-btn {
+        padding:8px 18px; background:rgba(255,23,68,.15); border:1px solid var(--danger);
+        border-radius:6px; color:var(--danger); font-family:var(--font-head); font-size:9px;
+        letter-spacing:2px; cursor:pointer; touch-action:manipulation;
+      }
+      .trailer-chat-input {
+        flex:1; background:#12172e; border:1px solid #2a3560; border-radius:4px;
+        padding:6px 10px; color:#e8eaf6; font-size:12px; outline:none; font-family:var(--font-body); pointer-events:auto;
+      }
+      .trailer-send-btn {
+        padding:8px 14px; background:rgba(0,229,255,.15); border:1px solid #00e5ff;
+        border-radius:4px; color:#00e5ff; font-family:var(--font-head); font-size:9px;
+        cursor:pointer; touch-action:manipulation;
+      }
+      .trailer-name-label { font-family:var(--font-head); font-size:9px; letter-spacing:2px; color:var(--accent); }
+
+      /* ── SKILLS BAR (PC) ── */
+      .skills-bar { position:absolute; bottom:20px; left:50%; transform:translateX(-50%); display:flex; gap:10px; }
+      .skill-btn { width:var(--btn-size); height:var(--btn-size); background:var(--ui-bg); border:2px solid #2a3560; border-radius:10px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; backdrop-filter:blur(8px); position:relative; pointer-events:auto; cursor:pointer; transition:border-color .15s; touch-action:manipulation; }
+      .skill-btn:active,.skill-btn.active { border-color:var(--accent); box-shadow:0 0 14px rgba(245,196,0,.4); }
+      .skill-btn.run-active { border-color:#00e676; box-shadow:0 0 14px rgba(0,230,118,.4); }
+      .skill-icon { font-size:var(--btn-icon); }
+      .skill-key { font-family:var(--font-head); font-size:8px; letter-spacing:1px; color:#3d4a6b; }
+
+      /* ── MOBILE CONTROLS ── */
+      .mobile-controls { position:absolute; bottom:0; left:0; right:0; height:170px; display:none; align-items:flex-end; justify-content:space-between; padding:0 16px 16px; pointer-events:auto; }
+      .joystick-wrap { position:relative; width:120px; height:120px; flex-shrink:0; }
+      #joystickBase { position:absolute; inset:0; background:rgba(255,255,255,.06); border:2px solid rgba(255,255,255,.15); border-radius:50%; backdrop-filter:blur(4px); }
+      #joystickKnob { position:absolute; width:52px; height:52px; background:radial-gradient(circle,rgba(245,196,0,.85),rgba(245,196,0,.45)); border:2px solid rgba(245,196,0,.7); border-radius:50%; top:34px; left:34px; box-shadow:0 0 14px rgba(245,196,0,.5); }
+      .action-grid { display:grid; grid-template-columns:repeat(2,var(--btn-size)); grid-template-rows:repeat(3,var(--btn-size)); gap:8px; align-items:center; justify-items:center; }
+      .action-btn { width:var(--btn-size); height:var(--btn-size); border-radius:50%; border:2px solid; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; cursor:pointer; backdrop-filter:blur(8px); transition:all .12s; touch-action:manipulation; pointer-events:auto; }
+      .action-btn:active { transform:scale(.88); }
+      .btn-interact { background:rgba(0,229,255,.2); border-color:rgba(0,229,255,.7); }
+      .btn-trailer  { background:rgba(245,196,0,.15); border-color:rgba(245,196,0,.6); }
+      .btn-emote    { background:rgba(170,0,255,.2); border-color:rgba(170,0,255,.7); }
+      .btn-run      { background:rgba(0,230,118,.15); border-color:rgba(0,230,118,.6); transition:all .2s; }
+      .btn-run.run-active { background:rgba(0,230,118,.4); border-color:#00e676; box-shadow:0 0 14px rgba(0,230,118,.5); }
+      .action-btn .btn-icon  { font-size:var(--btn-icon); }
+      .action-btn .btn-label { font-family:var(--font-head); font-size:7px; letter-spacing:.5px; color:rgba(255,255,255,.65); }
+
+      /* ── DIALOG ── */
+      .dialog-box { position:absolute; bottom:185px; left:50%; transform:translateX(-50%); background:var(--ui-bg); border:1px solid #2a3560; border-radius:8px; padding:16px 18px; max-width:350px; width:92vw; backdrop-filter:blur(12px); pointer-events:auto; display:none; }
+      .dialog-box.visible { display:block; }
+      .dialog-name { font-family:var(--font-head); font-size:10px; letter-spacing:2px; color:var(--accent); margin-bottom:6px; }
+      .dialog-text { font-size:15px; color:#c8cfe8; line-height:1.5; margin-bottom:10px; }
+      .dialog-opts { display:flex; flex-direction:column; gap:8px; }
+      .dialog-opt { background:rgba(74,106,255,.1); border:1px solid rgba(74,106,255,.3); border-radius:4px; padding:10px 12px; font-size:13px; color:#c8cfe8; cursor:pointer; transition:all .15s; min-height:44px; display:flex; align-items:center; touch-action:manipulation; }
+      .dialog-opt:hover { background:rgba(74,106,255,.25); border-color:rgba(74,106,255,.6); }
+
+      /* ── TOASTS ── */
+      #toastHud { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); pointer-events:none; }
+      .hud-toast { font-family:var(--font-head); font-size:14px; letter-spacing:3px; color:white; text-shadow:0 0 10px var(--accent); text-align:center; animation:toastPop 2s forwards; white-space:nowrap; position:absolute; }
+      .hud-toast.xp  { color:var(--accent); text-shadow:0 0 10px var(--accent); }
+      .hud-toast.lvl { color:#00e676; font-size:20px; text-shadow:0 0 20px #00e676; }
+      .hud-toast.dmg { color:var(--danger); }
+      .hud-toast.info { color:#00e5ff; }
+      @keyframes toastPop { 0%{opacity:0;transform:translateY(10px) scale(.8);} 15%{opacity:1;transform:translateY(-10px) scale(1);} 70%{opacity:1;transform:translateY(-20px);} 100%{opacity:0;transform:translateY(-30px);} }
+
+      /* ── RESPONSIVE ── */
+      @media (pointer:coarse), (max-width:768px) {
+        #menuBackdrop { display:block; }
+        .mobile-controls { display:flex; }
+        .skills-bar { display:none; }
+        .region-label { position:absolute; bottom:182px; left:50%; transform:translateX(-50%); }
+        .dialog-box { bottom:190px; }
+        .minimap-wrap { top:12px; right:12px; width:80px; height:80px; }
+        .hud-top { left:64px; right:100px; }
+      }
+      @media (pointer:fine) and (min-width:769px) {
+        .mobile-controls { display:none !important; }
+        .skills-bar { display:flex; }
+        .region-label { position:absolute; bottom:92px; left:50%; transform:translateX(-50%); }
+        .dialog-box { bottom:120px; }
+        .hud-top { left:64px; }
+      }
+      @media (max-width:400px) { :root { --btn-size:50px; --btn-icon:18px; } .joystick-wrap { width:100px; height:100px; } #joystickKnob { width:40px; height:40px; top:30px; left:30px; } }
+      @media (max-height:460px) and (orientation:landscape) {
+        :root { --btn-size:48px; --btn-icon:17px; }
+        .mobile-controls { height:130px; padding:0 10px 8px; }
+        .joystick-wrap { width:90px; height:90px; }
+        #joystickKnob { width:36px; height:36px; top:27px; left:27px; }
+        .minimap-wrap { width:68px; height:68px; top:8px; right:8px; }
+        .dialog-box { bottom:140px; }
+      }
+    </style>
+  </head>
+  <body>
+
+    <div id="screenLoading">
+      <div class="screen-title">DRAGON WORLD Z</div>
+      <div class="screen-sub">CARGANDO LOBBY...</div>
+      <div class="loading-bar-wrap"><div class="loading-bar" id="loadBar"></div></div>
+      <div class="loading-label" id="loadLabel">INICIALIZANDO</div>
+    </div>
+
+    <div id="screenDead">
+      <div class="screen-title">¿QUÉ HACÉS ACÁ?</div>
+      <div class="screen-sub">ESTO ES EL LOBBY, NO TE PODÉS MORIR</div>
+      <button id="respawnBtn" onclick="respawn()">⚡ VOLVER</button>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- INTERIOR TRAILER -->
+    <div id="trailerInterior">
+      <canvas id="trailerCanvas"></canvas>
+      <div class="trailer-hud-bar">
+        <span class="trailer-name-label" id="trailerOwnerLabel">🏠 TU CASA RODANTE</span>
+        <input class="trailer-chat-input" id="trailerChatInput" type="text" maxlength="60" placeholder="Chat privado..." onkeydown="if(event.key==='Enter')sendTrailerChat()"/>
+        <button class="trailer-send-btn" onclick="sendTrailerChat()">➤</button>
+        <button class="trailer-exit-btn" onclick="exitTrailer()">✕ SALIR</button>
+      </div>
+    </div>
+
+    <div id="hud">
+      <div id="menuBackdrop"></div>
+
+      <button id="menuToggleBtn" onclick="toggleMenu()">
+        <span></span><span></span><span></span>
+      </button>
+
+      <div id="leftMenu">
+        <div style="height:64px;flex-shrink:0;"></div>
+        <div class="menu-header"><span class="menu-header-title">⚡ DRAGON WORLD Z</span></div>
+
+        <div class="menu-section">
+          <div class="menu-section-label">Navegación</div>
+          <button class="menu-btn" onclick="goBack()"><span class="btn-ic">🎨</span> CREAR PERSONAJE</button>
+        </div>
+
+        <div class="menu-section">
+          <div class="menu-section-label">Mundos</div>
+          <button class="menu-btn" onclick="travelTo('lobby');closeMenu()"><span class="btn-ic">🏠</span> LOBBY BASE</button>
+          <button class="menu-btn" onclick="travelTo('earth');closeMenu()"><span class="btn-ic">🌍</span> PLANETA TIERRA</button>
+          <button class="menu-btn" onclick="travelTo('space');closeMenu()"><span class="btn-ic">🌌</span> ESPACIO</button>
+        </div>
+
+        <div class="menu-section">
+          <div class="menu-section-label">Tu casa rodante</div>
+          <button class="menu-btn" onclick="openMyTrailer();closeMenu()"><span class="btn-ic">🚐</span> ENTRAR A MI TRAILER</button>
+        </div>
+
+        <div class="menu-section">
+          <div class="menu-section-label">Cargar personaje</div>
+          <div class="slot-list" id="menuSlotList"><div class="slot-empty-label">Cargando...</div></div>
+        </div>
+      </div>
+
+      <!-- HUD TOP -->
+      <div class="hud-top">
+        <div class="player-hud">
+          <div class="player-name" id="hudPlayerName">GUERRERO Z</div>
+          <div class="bar-row"><span class="bar-icon">❤️</span><div class="bar-track"><div class="bar-fill" id="barHp" style="width:100%"></div></div><span class="bar-val" id="valHp">100/100</span></div>
+          <div class="bar-row"><span class="bar-icon">💧</span><div class="bar-track"><div class="bar-fill" id="barKi" style="width:100%"></div></div><span class="bar-val" id="valKi">100/100</span></div>
+          <div class="level-badge"><span class="level-num" id="hudLevel">LV 1</span><div class="xp-track"><div class="xp-fill" id="xpFill" style="width:0%"></div></div></div>
+        </div>
+      </div>
+
+      <div class="minimap-wrap">
+        <canvas id="minimapCanvas" width="90" height="90"></canvas>
+        <div class="minimap-label" id="minimapLabel">LOBBY</div>
+      </div>
+
+      <div class="region-label" id="regionLabel">BASE LOBBY</div>
+
+      <!-- Portal Panel -->
+      <div id="portalPanel">
+        <div class="portal-title">✦ PORTAL DE VIAJE</div>
+        <div class="portal-btns">
+          <button class="portal-btn portal-btn-earth" onclick="travelTo('earth')">🌍 TIERRA</button>
+          <button class="portal-btn portal-btn-space" onclick="travelTo('space')">🌌 ESPACIO</button>
+          <button class="portal-btn" style="background:rgba(245,196,0,.1);border-color:var(--accent);color:var(--accent)" onclick="document.getElementById('portalPanel').classList.remove('visible');gameState='playing'">✕ CERRAR</button>
+        </div>
+      </div>
+
+      <!-- Trailer Panel -->
+      <div id="trailerPanel">
+        <div class="trailer-title">🚐 CASA RODANTE</div>
+        <div class="trailer-info" id="trailerPanelInfo">Tu espacio privado</div>
+        <div class="trailer-btns">
+          <button class="trailer-btn trailer-btn-enter" id="trailerEnterBtn" onclick="enterTrailerFromPanel()">🚪 ENTRAR</button>
+          <button class="trailer-btn trailer-btn-invite" id="trailerInviteBtn" onclick="inviteToTrailer()">📨 INVITAR</button>
+          <button class="trailer-btn trailer-btn-close" onclick="closeTrailerPanel()">✕</button>
+        </div>
+      </div>
+
+      <!-- Skills bar PC -->
+      <div class="skills-bar" id="skillsBar">
+        <div class="skill-btn" onclick="interactNearby()" title="Interactuar [Z]"><span class="skill-icon">💬</span><span class="skill-key">Z</span></div>
+        <div class="skill-btn" onclick="openMyTrailer()" title="Mi Trailer [Q]"><span class="skill-icon">🚐</span><span class="skill-key">Q</span></div>
+        <div class="skill-btn" onclick="sendEmote('wave')" title="Saludar [E]"><span class="skill-icon">👋</span><span class="skill-key">E</span></div>
+        <div class="skill-btn" onclick="sendEmote('bow')" title="Reverencia [R]"><span class="skill-icon">🙇</span><span class="skill-key">R</span></div>
+        <div class="skill-btn" id="skillRun" onclick="toggleRunPC()"><span class="skill-icon">🏃</span><span class="skill-key">SHIFT</span></div>
+      </div>
+
+      <!-- Mobile controls -->
+      <div class="mobile-controls">
+        <div class="joystick-wrap" id="joystickWrap">
+          <div id="joystickBase"></div>
+          <div id="joystickKnob"></div>
+        </div>
+        <div class="action-grid">
+          <div class="action-btn btn-interact" onclick="interactNearby()"><span class="btn-icon">💬</span><span class="btn-label">HABLAR</span></div>
+          <div class="action-btn btn-trailer" onclick="openMyTrailer()"><span class="btn-icon">🚐</span><span class="btn-label">TRAILER</span></div>
+          <div class="action-btn btn-emote" onclick="sendEmote('wave')"><span class="btn-icon">👋</span><span class="btn-label">SALUDAR</span></div>
+          <div class="action-btn btn-emote" onclick="sendEmote('bow')"><span class="btn-icon">🙇</span><span class="btn-label">REVERENC.</span></div>
+          <div class="action-btn btn-run" id="mobileRunBtn" onclick="toggleRunMobile()" style="border-radius:12px;width:100%;grid-column:span 2;height:calc(var(--btn-size)*0.7);">
+            <span class="btn-icon">🏃</span><span class="btn-label" id="runBtnLabel">CORRER: OFF</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dialog -->
+      <div class="dialog-box" id="dialogBox">
+        <div class="dialog-name" id="dialogName">NPC</div>
+        <div class="dialog-text" id="dialogText"></div>
+        <div class="dialog-opts" id="dialogOpts"></div>
+      </div>
+
+      <div id="toastHud"></div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="character-system.js"></script>
+
+    <script>
+    "use strict";
+
+    // ══ MENÚ ══
+    let menuOpen = false;
+    function toggleMenu() {
+      menuOpen = !menuOpen;
+      document.getElementById("leftMenu").classList.toggle("open", menuOpen);
+      document.getElementById("menuToggleBtn").classList.toggle("open", menuOpen);
+      document.getElementById("menuBackdrop").classList.toggle("open", menuOpen);
+      if (menuOpen) renderMenuSlots();
     }
-
-    getFrameCoords(img = null) {
-      const m = this.meta;
-      let fw = FRAME_W, fh = FRAME_H;
-      if (img) { const sz = getFrameSize(img); fw = sz.fw; fh = sz.fh; }
-      return {
-        srcX: this.frame * fw, srcY: m.row * fh,
-        fw, fh,
-        action: this.currentView || this.action,
-        frame:  this.frame,
-        label:  m.label || "",
-      };
-    }
-
-    reset() { this.currentView = null; this.play("idle"); this._queue = []; }
-    is(...actions) { return actions.includes(this.currentView || this.action); }
-  }
-
-  // ═══════════════════════════════════════════════════════════════
-  //  PRELOADER
-  // ═══════════════════════════════════════════════════════════════
-
-  async function preloadAssets(basePath = "", options = {}) {
-    const quiet = !!options.quiet;
-    const entries = Object.entries(SPRITE_IMAGES);
-    const loadOne = ([key, filename]) => new Promise((resolve) => {
-      if (!filename) { resolve([key, null]); return; }
-      const img = new Image();
-      img.onload  = () => { _frameSizeCache.clear(); resolve([key, img]); };
-      img.onerror = () => {
-        if (!quiet) console.warn(`[CharacterSystem] No se pudo cargar: ${basePath}${filename}`);
-        resolve([key, null]);
-      };
-      img.src = basePath + filename;
+    window.toggleMenu = toggleMenu;
+    document.getElementById("menuBackdrop").addEventListener("click", () => closeMenu());
+    document.addEventListener("click", (e) => {
+      if (!menuOpen) return;
+      const menu = document.getElementById("leftMenu"), btn = document.getElementById("menuToggleBtn");
+      if (!menu.contains(e.target) && !btn.contains(e.target)) closeMenu();
     });
-    const results = await Promise.all(entries.map(loadOne));
-    return Object.fromEntries(results);
-  }
+    function closeMenu() {
+      menuOpen = false;
+      document.getElementById("leftMenu").classList.remove("open");
+      document.getElementById("menuToggleBtn").classList.remove("open");
+      document.getElementById("menuBackdrop").classList.remove("open");
+    }
+    window.closeMenu = closeMenu;
 
-  // ═══════════════════════════════════════════════════════════════
-  //  UTILIDADES DE COLOR
-  // ═══════════════════════════════════════════════════════════════
-
-  const _tintCache = new Map();
-
-  function _hexToRgb(hex) {
-    const n = parseInt(hex.replace("#", ""), 16);
-    return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
-  }
-
-  function _rgbToHsl(r, g, b) {
-    r /= 255; g /= 255; b /= 255;
-    const max = Math.max(r, g, b), min = Math.min(r, g, b);
-    const l = (max + min) / 2;
-    if (max === min) return { h: 0, s: 0, l };
-    const d = max - min;
-    const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-    let h;
-    if      (max === r) h = (g - b) / d + (g < b ? 6 : 0);
-    else if (max === g) h = (b - r) / d + 2;
-    else                h = (r - g) / d + 4;
-    return { h: h / 6, s, l };
-  }
-
-  function _hslToRgb(h, s, l) {
-    if (s === 0) { const v = Math.round(l * 255); return { r: v, g: v, b: v }; }
-    const hue2rgb = (p, q, t) => {
-      if (t < 0) t += 1; if (t > 1) t -= 1;
-      if (t < 1/6) return p + (q - p) * 6 * t;
-      if (t < 1/2) return q;
-      if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
-      return p;
-    };
-    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-    const p = 2 * l - q;
-    return {
-      r: Math.round(hue2rgb(p, q, h + 1/3) * 255),
-      g: Math.round(hue2rgb(p, q, h)       * 255),
-      b: Math.round(hue2rgb(p, q, h - 1/3) * 255),
-    };
-  }
-
-  // ═══════════════════════════════════════════════════════════════
-  //  tintLayer v4.3.1
-  //  Usado para MARCAS, TATUAJES y PINTURAS (tintable:true, eyeColor falsy).
-  //  Pixel-by-pixel: preserva degradados y matices múltiples.
-  // ═══════════════════════════════════════════════════════════════
-
-  function tintLayer(img, color, cacheKey, w = DISPLAY_W, h = DISPLAY_H, frameCoords = null) {
-    if (!color) return null;
-    const fc  = frameCoords ? `${frameCoords.srcX}_${frameCoords.srcY}_${frameCoords.fw}_${frameCoords.fh}` : "full";
-    const key = `tint2|${cacheKey}|${w}|${h}|${color}|${fc}`;
-
-    if (_tintCache.has(key)) return _tintCache.get(key);
-    if (_tintCache.size > 512) { const k = _tintCache.keys().next().value; _tintCache.delete(k); }
-
-    const off = document.createElement("canvas");
-    off.width = w; off.height = h;
-    const ctx = off.getContext("2d");
-    ctx.imageSmoothingEnabled = false;
-
-    if (!img || !img.complete || !img.naturalWidth) {
-      ctx.fillStyle = color;
-      ctx.fillRect(0, 0, w, h);
-      _tintCache.set(key, off);
-      return off;
+    function renderMenuSlots() {
+      const list = document.getElementById("menuSlotList");
+      if (!list) return;
+      let slots = [];
+      try { const raw = localStorage.getItem("dragonCreatorZ_slots"); if (raw) slots = JSON.parse(raw); } catch(e) {}
+      if (!Array.isArray(slots)) slots = [];
+      let activeSlot = 0;
+      try { activeSlot = parseInt(localStorage.getItem("dragonCreatorZ_activeSlot") || "0", 10); } catch(e) {}
+      const RACE_LABELS = { human:"Humano", saiyan:"Saiyan", namekian:"Namekiano", android:"Androide", kaioshin:"Kaioshin", frieza:"Frieza" };
+      const filled = slots.filter(s => s && s.name);
+      if (filled.length === 0) { list.innerHTML = '<div class="slot-empty-label">Sin personajes guardados</div>'; return; }
+      list.innerHTML = "";
+      slots.forEach((s, i) => {
+        if (!s || !s.name) return;
+        const div = document.createElement("div");
+        div.className = "slot-item" + (i === activeSlot ? " active" : "");
+        div.innerHTML = `<div class="slot-num">${i+1}</div><div class="slot-info"><div class="slot-name">${s.name}</div><div class="slot-race">LV ${s.level||1} · ${RACE_LABELS[s.race]||s.race||"?"}</div></div><span class="slot-load-lbl">▶</span>`;
+        div.addEventListener("click", () => { loadSlotInGame(i, s); });
+        list.appendChild(div);
+      });
     }
 
-    if (frameCoords) {
-      ctx.drawImage(img, frameCoords.srcX, frameCoords.srcY, frameCoords.fw, frameCoords.fh, 0, 0, w, h);
-    } else {
-      ctx.drawImage(img, 0, 0, w, h);
+    function loadSlotInGame(slotIndex, slotData) {
+      if (!slotData) return;
+      try { localStorage.setItem("dragonCreatorZ_activeSlot", String(slotIndex)); } catch(e) {}
+      const newRaceId = slotData.race || "human";
+      const raceS = RACE_BASE_STATS[newRaceId] || RACE_BASE_STATS.human;
+      const lv = slotData.level || 1;
+      player.name = slotData.name || "Guerrero Z";
+      player.race = newRaceId; player.level = lv; player.xp = 0;
+      player.xpToNext = Math.floor(100 * Math.pow(1.4, lv - 1));
+      player.maxHp = Math.floor(raceS.health * 10 * Math.pow(1.15, lv - 1));
+      player.maxKi = Math.floor(raceS.ki * 8 * Math.pow(1.12, lv - 1));
+      player.hp = player.maxHp; player.ki = player.maxKi;
+      player.strength = raceS.strength; player.defense = raceS.defense;
+      player.speed = 2.2 + (raceS.speed / 100) * 1.8;
+      player.auraColor = slotData.auraColor || "#fdd835";
+      player.charColor = BASE_RACE_COLORS[newRaceId] || "#f5c400";
+      const startPos = MAP_STARTS[currentMap] || MAP_STARTS.lobby;
+      player.x = startPos.x * TILE; player.y = startPos.y * TILE;
+      const CS = window.CharacterSystem;
+      if (CS && slotData) {
+        CS.player.appearance.raceId = slotData.race || "human";
+        CS.player.appearance.gender = slotData.gender || "male";
+        CS.player.appearance.faceId = slotData.faceId || "fm0";
+        CS.player.appearance.faceColor = slotData.faceColor || null;
+        CS.player.appearance.browColor = slotData.browColor || null;
+        CS.player.appearance.pupilColor = slotData.pupilColor || null;
+        CS.player.appearance.hairId = slotData.hair || "hm1";
+        CS.player.appearance.hairColor = slotData.hairColor || "#1a1a1a";
+        CS.player.appearance.topId = slotData.shirt || "sm1";
+        CS.player.appearance.bottomId = slotData.pants || "pm1";
+        CS.player.appearance.shoesId = slotData.shoes || "shm1";
+        CS.player.appearance.glovesId = slotData.gloves || "gm0";
+        CS.player.appearance.skinColor = slotData.skinColor || "#e8c898";
+        CS.player.appearance.eyeColor = slotData.eyeColor || "#3a2a1a";
+        CS.player.appearance.auraId = slotData.aura || "a0";
+        CS.player.appearance.auraColor = slotData.auraColor || "#fdd835";
+        CS.player.appearance.accessoryId = slotData.accessory || slotData.accessoryId || "ac_none";
+        CS.invalidateHairCache && CS.invalidateHairCache();
+        ensureAccessoryImageReady(CS, CS.player.appearance.accessoryId).then(() => publishMyAppearance(true));
+      }
+      updatePlayerHud();
+      if (!CS || !slotData) publishMyAppearance(true);
+      showHudToast(`✅ ${player.name} cargado`, "xp");
+      closeMenu();
     }
 
-    try {
-      const target = _hexToRgb(color);
-      const { h: targetH, s: targetS } = _rgbToHsl(target.r, target.g, target.b);
-      const imageData = ctx.getImageData(0, 0, w, h);
-      const data      = imageData.data;
+    // ══ SPRINT ══
+    let isRunning = false;
+    function setRunState(val) {
+      isRunning = val;
+      document.getElementById("skillRun")?.classList.toggle("run-active", isRunning);
+      document.getElementById("mobileRunBtn")?.classList.toggle("run-active", isRunning);
+      const lbl = document.getElementById("runBtnLabel");
+      if (lbl) lbl.textContent = isRunning ? "CORRER: ON" : "CORRER: OFF";
+    }
+    function toggleRunPC()     { setRunState(!isRunning); }
+    function toggleRunMobile() { setRunState(!isRunning); }
+    window.toggleRunPC = toggleRunPC; window.toggleRunMobile = toggleRunMobile;
 
-      for (let i = 0; i < data.length; i += 4) {
-        const alpha = data[i + 3];
-        if (alpha < 16) continue;
-        const pr = data[i], pg = data[i + 1], pb = data[i + 2];
-        const { h: origH, s: origS, l: origL } = _rgbToHsl(pr, pg, pb);
-        if (origL < 0.14) continue;
-        if (origL > 0.86) {
-          if (targetS < 0.05) continue;
-          const { r, g, b } = _hslToRgb(targetH, targetS * 0.18, origL * 0.97);
-          data[i] = r; data[i + 1] = g; data[i + 2] = b;
-          continue;
+    // ══ FIREBASE ══
+    const firebaseConfig = {
+      apiKey: "AIzaSyBYZwK41XAUkLeRlWQRms0oEyJ1QXMQVg8",
+      authDomain: "dragon-world-z.firebaseapp.com",
+      databaseURL: "https://dragon-world-z-default-rtdb.firebaseio.com",
+      projectId: "dragon-world-z",
+      storageBucket: "dragon-world-z.firebasestorage.app",
+      messagingSenderId: "994414993412",
+      appId: "1:994414993412:web:66813401c499f41e46d551"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // ══ CANVAS ══
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const minimapCanvas = document.getElementById("minimapCanvas");
+    const mmCtx = minimapCanvas.getContext("2d");
+    const trailerCanvas = document.getElementById("trailerCanvas");
+    const tCtx = trailerCanvas.getContext("2d");
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+      trailerCanvas.width = trailerCanvas.offsetWidth || window.innerWidth;
+      trailerCanvas.height = trailerCanvas.offsetHeight || window.innerHeight - 60;
+    }
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+
+    // ══ MULTIPLAYER ══
+    const otherPlayers = {}, otherPlayerAnimators = {}, otherPlayerAccessoryImages = {};
+    const otherPlayerPreviewImages = {};
+    const otherPlayerAccessoryLoading = new Set();
+    const otherPlayerPreviewLoading = new Set();
+    let myPlayerId = null, mpConnected = false, mpLastSend = 0, mpLastAppearance = 0;
+    const MP_SEND_RATE = 80;
+    const MP_APPEARANCE_RATE = 2500;
+    const chatMessages = [], CHAT_MAX = 8;
+
+    function compressDataURLForNetwork(dataURL, maxDim) {
+      if (!dataURL) return null;
+      if (dataURL.length < 90000) return dataURL;
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          try {
+            const max = maxDim || 128;
+            const ratio = Math.min(max / img.naturalWidth, max / img.naturalHeight, 1);
+            const w = Math.max(1, Math.round(img.naturalWidth * ratio));
+            const h = Math.max(1, Math.round(img.naturalHeight * ratio));
+            const c = document.createElement("canvas");
+            c.width = w; c.height = h;
+            c.getContext("2d").drawImage(img, 0, 0, w, h);
+            resolve(c.toDataURL("image/jpeg", 0.72));
+          } catch (e) { resolve(dataURL); }
+        };
+        img.onerror = () => resolve(dataURL.length < 120000 ? dataURL : null);
+        img.src = dataURL;
+      });
+    }
+
+    function compressAccessoryForNetwork(acc) {
+      if (!acc) return null;
+      if (acc.dataURL && acc.dataURL.length < 90000) return acc.dataURL;
+      const src = acc.userImage;
+      if (!src || !src.naturalWidth) return acc.dataURL || null;
+      try {
+        const max = 128;
+        const ratio = Math.min(max / src.naturalWidth, max / src.naturalHeight, 1);
+        const w = Math.max(1, Math.round(src.naturalWidth * ratio));
+        const h = Math.max(1, Math.round(src.naturalHeight * ratio));
+        const c = document.createElement("canvas");
+        c.width = w; c.height = h;
+        c.getContext("2d").drawImage(src, 0, 0, w, h);
+        return c.toDataURL("image/jpeg", 0.75);
+      } catch (e) { return acc.dataURL || null; }
+    }
+
+    async function ensureAccessoryImageReady(CS, accessoryId) {
+      if (!CS || !accessoryId || accessoryId === "ac_none") return;
+      const acc = CS.ACCESSORIES_CATALOG.find((a) => a.id === accessoryId);
+      if (!acc) return;
+      if (acc.userImage?.complete && acc.userImage.naturalWidth) return;
+      const url = acc.dataURL;
+      if (!url) return;
+      await new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => { acc.userImage = img; resolve(); };
+        img.onerror = resolve;
+        img.src = url;
+      });
+    }
+
+    async function restoreAllAccessoriesForGame(CS) {
+      if (!CS) return;
+      try {
+        const rawAcc = localStorage.getItem("dragonCreatorZ_accessories");
+        if (rawAcc) {
+          const accList = JSON.parse(rawAcc);
+          if (Array.isArray(accList)) await CS.restoreUserAccessories(accList);
         }
-        if (origS < 0.12) {
-          const { r, g, b } = _hslToRgb(targetH, targetS * 0.55, origL);
-          data[i] = r; data[i + 1] = g; data[i + 2] = b;
-          continue;
+      } catch (e) {}
+      try {
+        const rawFree = localStorage.getItem("dragonCreatorZ_freeCustomization");
+        if (rawFree) {
+          const list = JSON.parse(rawFree);
+          if (Array.isArray(list)) {
+            await Promise.all(list.map((item) => new Promise((resolve) => {
+              if (!item?.dataURL || CS.ACCESSORIES_CATALOG.find((a) => a.id === item.id)) { resolve(); return; }
+              const img = new Image();
+              img.onload = () => {
+                CS.ACCESSORIES_CATALOG.push({
+                  id: item.id, name: item.name || "Personalización", type: item.type || "other",
+                  slot: item.slot || "over_shirt", color: item.color || null,
+                  userImage: img, dataURL: item.dataURL, isFreeCustomization: true,
+                });
+                resolve();
+              };
+              img.onerror = resolve;
+              img.src = item.dataURL;
+            })));
+          }
         }
-        const { r, g, b } = _hslToRgb(targetH, Math.min(1, origS * 0.4 + targetS * 0.6), origL);
-        data[i] = r; data[i + 1] = g; data[i + 2] = b;
-      }
-
-      ctx.putImageData(imageData, 0, 0);
-    } catch (e) {
-      console.warn("[tintLayer] fallback:", e.message);
-      ctx.globalCompositeOperation = "source-atop";
-      ctx.globalAlpha = 0.5;
-      ctx.fillStyle   = color;
-      ctx.fillRect(0, 0, w, h);
-      ctx.globalAlpha = 1;
-      ctx.globalCompositeOperation = "source-over";
-    }
-
-    _tintCache.set(key, off);
-    return off;
-  }
-
-  function invalidateHairCache() { _tintCache.clear(); }
-
-  // ═══════════════════════════════════════════════════════════════
-  //  RENDER HELPERS
-  // ═══════════════════════════════════════════════════════════════
-
-  function _drawLayerSprite(ctx, img, destX, destY, dw, dh, animator) {
-    if (!img || !img.complete || !img.naturalWidth) return false;
-    const fullSheet = isCompatibleSheet(img);
-    const partialSheet = !fullSheet && hasSheetLayout(img);
-    const useSheet = fullSheet || partialSheet;
-    
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = "high";
-    
-    if (useSheet && animator) {
-      let srcX, srcY, fw, fh;
-      if (fullSheet) {
-        ({ srcX, srcY, fw, fh } = animator.getFrameCoords(img));
-      } else {
-        ({ srcX, srcY, fw, fh } = getIdleFrameCoords(img));
-      }
-      if (srcX + fw <= img.naturalWidth && srcY + fh <= img.naturalHeight) {
-        ctx.drawImage(img, srcX, srcY, fw, fh, destX, destY, dw, dh);
-        return true;
+      } catch (e) {}
+      const sc = savedChar || {};
+      const accId = sc.accessory || sc.accessoryId;
+      if (accId && accId !== "ac_none" && sc.accessoryDataURL && !CS.ACCESSORIES_CATALOG.find((a) => a.id === accId)) {
+        await new Promise((resolve) => {
+          const img = new Image();
+          img.onload = () => {
+            CS.ACCESSORIES_CATALOG.push({
+              id: accId, name: "Personalización", type: "other", slot: "over_shirt",
+              color: null, userImage: img, dataURL: sc.accessoryDataURL,
+            });
+            resolve();
+          };
+          img.onerror = resolve;
+          img.src = sc.accessoryDataURL;
+        });
       }
     }
-    // Imagen importada libre (accesorio, personalización): dibujar centrada y proporcional
-    const iw = img.naturalWidth, ih = img.naturalHeight;
-    const scale = Math.min(dw / iw, dh / ih);
-    const drawW = iw * scale, drawH = ih * scale;
-    const offsetX = destX + (dw - drawW) / 2;
-    const offsetY = destY + (dh - drawH) / 2;
-    ctx.drawImage(img, 0, 0, iw, ih, offsetX, offsetY, drawW, drawH);
-    return true;
-  }
 
-  function _drawProceduralAura(ctx, screenX, screenY, dw, dh, auraEntry, color, phase) {
-    if (!auraEntry || auraEntry.style === "none" || !color) return;
-    const rgba = (hex, a) => {
-      const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
-      return `rgba(${r},${g},${b},${a})`;
-    };
-    const cx = screenX, cy = screenY - dh * 0.55;
-    const grd = ctx.createRadialGradient(cx, cy, 4, cx, cy, dw * 0.9);
-    grd.addColorStop(0, rgba(color, 0.28));
-    grd.addColorStop(0.5, rgba(color, 0.10));
-    grd.addColorStop(1, rgba(color, 0));
-    ctx.fillStyle = grd;
-    ctx.beginPath();
-    ctx.ellipse(cx, cy, dw * 0.6, dh * 0.55, 0, 0, Math.PI * 2);
-    ctx.fill();
-    for (let i = 0; i < 10; i++) {
-      const ang = (i / 10) * Math.PI * 2 + phase * 0.05;
-      const rad = dw * 0.28 + Math.sin(phase * 0.08 + i) * 6;
-      const fx = cx + Math.cos(ang) * rad, fy = cy + Math.sin(ang) * rad * 0.5;
-      const fh2 = 10 + Math.sin(phase * 0.1 + i * 0.8) * 5;
-      ctx.fillStyle = rgba(color, 0.52);
+    function renderAppearancePreview(CS) {
+      if (!CS || !csImageMap || !csAnimator) return null;
+      try {
+        const dw = CS.DISPLAY_W, dh = CS.DISPLAY_H;
+        const full = document.createElement("canvas");
+        full.width = dw; full.height = dh;
+        const fctx = full.getContext("2d");
+        fctx.clearRect(0, 0, dw, dh);
+        const sx = dw / 2, sy = dh - 6;
+        CS.drawPlayer(fctx, sx, sy, CS.player, csImageMap, csAnimator, {
+          glovesId: CS.player.appearance.glovesId || "gm0",
+          auraId: CS.player.appearance.auraId || "a0",
+          auraColor: CS.player.appearance.auraColor || "#fdd835",
+          accessoryId: CS.player.appearance.accessoryId || "ac_none",
+          auraPhase: player.auraPhase || 0,
+          viewKey: null,
+        });
+        const outW = 96, outH = Math.round(dh * (outW / dw));
+        const out = document.createElement("canvas");
+        out.width = outW; out.height = outH;
+        const octx = out.getContext("2d");
+        octx.fillStyle = "#08090f";
+        octx.fillRect(0, 0, outW, outH);
+        octx.drawImage(full, 0, 0, dw, dh, 0, 0, outW, outH);
+        return { dataURL: out.toDataURL("image/jpeg", 0.82), w: outW, h: outH };
+      } catch (e) { return null; }
+    }
+
+    function buildMyAppearancePayload(includePreview) {
+      const CS = window.CharacterSystem;
+      const app = CS?.player?.appearance;
+      const sc = savedChar || {};
+      const raceId = app?.raceId || sc.race || player.race || "human";
+      const gender = app?.gender || sc.gender || "male";
+      const defs = CS ? CS.getDefaultIds(raceId, gender) : {};
+      const accessoryId = app?.accessoryId || sc.accessory || sc.accessoryId || "ac_none";
+      let accessoryDataURL = null;
+      if (CS && accessoryId !== "ac_none") {
+        const acc = CS.ACCESSORIES_CATALOG.find((a) => a.id === accessoryId);
+        if (acc) accessoryDataURL = compressAccessoryForNetwork(acc);
+      }
+      if (!accessoryDataURL && sc.accessoryDataURL && (sc.accessory === accessoryId || sc.accessoryId === accessoryId)) {
+        accessoryDataURL = sc.accessoryDataURL.length < 90000 ? sc.accessoryDataURL : compressAccessoryForNetwork({ dataURL: sc.accessoryDataURL, userImage: null });
+      }
+      const payload = {
+        raceId, gender,
+        faceId: app?.faceId || sc.faceId || defs.faceId || null,
+        faceColor: app?.faceColor ?? sc.faceColor ?? null,
+        eyeColor: app?.eyeColor || sc.eyeColor || "#3a2a1a",
+        browColor: app?.browColor ?? sc.browColor ?? null,
+        pupilColor: app?.pupilColor ?? sc.pupilColor ?? null,
+        hairId: app?.hairId || sc.hair || defs.hairId || null,
+        hairColor: app?.hairColor || sc.hairColor || "#1a1a1a",
+        topId: app?.topId || sc.shirt || defs.topId || null,
+        bottomId: app?.bottomId || sc.pants || defs.bottomId || null,
+        shoesId: app?.shoesId || sc.shoes || defs.shoesId || null,
+        glovesId: app?.glovesId || sc.gloves || defs.glovesId || "gm0",
+        skinColor: app?.skinColor || sc.skinColor || "#e8c898",
+        auraId: app?.auraId || sc.aura || "a0",
+        auraColor: app?.auraColor || sc.auraColor || player.auraColor || "#fdd835",
+        accessoryId,
+        accessoryDataURL,
+        clothColor: sc.clothColor || "#ff6a00",
+      };
+      if (includePreview) {
+        const snap = renderAppearancePreview(CS);
+        if (snap) {
+          payload.previewDataURL = snap.dataURL;
+          payload.previewW = snap.w;
+          payload.previewH = snap.h;
+          payload.previewVersion = 2;
+        }
+      }
+      return payload;
+    }
+
+    function normalizeRemoteAppearance(app, CS, p) {
+      const raceId = app?.raceId || p?.race || "human";
+      const gender = app?.gender || "male";
+      const defs = CS ? CS.getDefaultIds(raceId, gender) : {};
+      return {
+        raceId, gender,
+        faceId: app?.faceId || defs.faceId || null,
+        faceColor: app?.faceColor ?? null,
+        eyeColor: app?.eyeColor || "#3a2a1a",
+        browColor: app?.browColor ?? null,
+        pupilColor: app?.pupilColor ?? null,
+        hairId: app?.hairId || defs.hairId || null,
+        hairColor: app?.hairColor || "#1a1a1a",
+        topId: app?.topId || defs.topId || null,
+        bottomId: app?.bottomId || defs.bottomId || null,
+        shoesId: app?.shoesId || defs.shoesId || null,
+        glovesId: app?.glovesId || defs.glovesId || "gm0",
+        skinColor: app?.skinColor || "#e8c898",
+        auraId: app?.auraId || "a0",
+        auraColor: app?.auraColor || p?.auraColor || "#fdd835",
+        accessoryId: app?.accessoryId || "ac_none",
+        accessoryDataURL: app?.accessoryDataURL || null,
+        previewDataURL: app?.previewDataURL || null,
+        previewVersion: app?.previewVersion || 0,
+        clothColor: app?.clothColor || "#ff6a00",
+      };
+    }
+
+    let lastAppearanceSig = "";
+    async function publishMyAppearance(force) {
+      if (!mpConnected || !myPlayerId) return;
+      const base = buildMyAppearancePayload(false);
+      const sig = JSON.stringify(base);
+      if (!force && sig === lastAppearanceSig) return;
+      lastAppearanceSig = sig;
+      let appearance = buildMyAppearancePayload(true);
+      if (appearance.previewDataURL && appearance.previewDataURL.length > 90000) {
+        appearance.previewDataURL = await compressDataURLForNetwork(appearance.previewDataURL, 96);
+      }
+      if (appearance.accessoryDataURL && appearance.accessoryDataURL.length > 90000) {
+        appearance.accessoryDataURL = await compressDataURLForNetwork(appearance.accessoryDataURL, 128);
+      }
+      db.ref("players/" + myPlayerId).update({ appearance, t: Date.now() });
+    }
+
+    function initMultiplayer() {
+      myPlayerId = "player_" + Math.random().toString(36).substr(2, 9) + "_" + Date.now();
+      const myRef = db.ref("players/" + myPlayerId);
+      myRef.onDisconnect().remove();
+      mpConnected = true;
+      myRef.set({ name:player.name, x:Math.floor(player.x), y:Math.floor(player.y), facing:player.facing, animAction:"idle", race:player.race, auraColor:player.auraColor, charColor:player.charColor, level:player.level, hp:player.hp, maxHp:player.maxHp, appearance:buildMyAppearancePayload(false), map:currentMap, t:Date.now() });
+      db.ref("players").on("value", (snapshot) => {
+        const allPlayers = snapshot.val() || {};
+        for (const id in otherPlayers) {
+          if (!allPlayers[id]) {
+            delete otherPlayers[id];
+            delete otherPlayerAnimators[id];
+            delete otherPlayerAccessoryImages[id];
+            delete otherPlayerPreviewImages[id];
+            otherPlayerAccessoryLoading.delete(id);
+            otherPlayerPreviewLoading.delete(id);
+          }
+        }
+        for (const [id, data] of Object.entries(allPlayers)) {
+          if (id === myPlayerId) continue;
+          if (Date.now() - (data.t||0) > 15000) {
+            delete otherPlayers[id];
+            delete otherPlayerAnimators[id];
+            delete otherPlayerAccessoryImages[id];
+            delete otherPlayerPreviewImages[id];
+            otherPlayerAccessoryLoading.delete(id);
+            otherPlayerPreviewLoading.delete(id);
+            continue;
+          }
+          const prev = otherPlayers[id];
+          const prevAccURL = prev?.appearance?.accessoryDataURL || null;
+          const prevPreviewURL = prev?.appearance?.previewDataURL || null;
+          otherPlayers[id] = data;
+          if (!otherPlayerAnimators[id]) {
+            const CS = window.CharacterSystem;
+            if (CS) otherPlayerAnimators[id] = new CS.SpriteAnimator("idle");
+          }
+          if (otherPlayerAnimators[id] && data.animAction) otherPlayerAnimators[id].play(data.animAction);
+          const newAccURL = data.appearance?.accessoryDataURL || null;
+          if (newAccURL && newAccURL !== prevAccURL) {
+            const img = new Image();
+            img.onload = () => { otherPlayerAccessoryImages[id] = img; };
+            img.onerror = () => { otherPlayerAccessoryImages[id] = null; };
+            img.src = newAccURL;
+          } else if (!newAccURL) {
+            otherPlayerAccessoryImages[id] = null;
+          }
+          const newPreviewURL = data.appearance?.previewDataURL || null;
+          if (newPreviewURL && newPreviewURL !== prevPreviewURL) {
+            const pimg = new Image();
+            pimg.onload = () => { otherPlayerPreviewImages[id] = pimg; };
+            pimg.onerror = () => { delete otherPlayerPreviewImages[id]; };
+            pimg.src = newPreviewURL;
+          } else if (!newPreviewURL) {
+            delete otherPlayerPreviewImages[id];
+          }
+        }
+        updateMpHud();
+      });
+      db.ref("chat").limitToLast(1).on("child_added", (snap) => {
+        const msg = snap.val(); if (!msg || msg.id === myPlayerId) return;
+        addChatMsg(msg.name, msg.text, "#00e5ff");
+      });
+    }
+
+    function sendPlayerUpdate() {
+      if (!mpConnected || !myPlayerId) return;
+      const now = performance.now();
+      if (now - mpLastSend < MP_SEND_RATE) return;
+      mpLastSend = now;
+      let animAction = player.moving ? (isRunning ? "run" : "walk") : "idle";
+      db.ref("players/" + myPlayerId).update({ x:Math.floor(player.x), y:Math.floor(player.y), facing:player.facing, animAction, hp:player.hp, level:player.level, map:currentMap, t:Date.now() });
+      if (now - mpLastAppearance >= MP_APPEARANCE_RATE) {
+        mpLastAppearance = now;
+        publishMyAppearance(false);
+      }
+    }
+
+    function _isPreviewLikelyValid(img) {
+      if (!img || !img.complete || img.naturalWidth < 20 || img.naturalHeight < 20) return false;
+      const ar = img.naturalWidth / img.naturalHeight;
+      return ar >= 0.45 && ar <= 1.15;
+    }
+
+    // ══ ÚNICA definición de _prepareRemoteAccessory ══
+    function _prepareRemoteAccessory(CS, id, app) {
+      const remoteAccId = app.accessoryId || "ac_none";
+      if (remoteAccId === "ac_none" || !app.accessoryDataURL) return null;
+      const remoteAccImg = otherPlayerAccessoryImages[id] || null;
+      if (remoteAccId !== "ac_none" && !remoteAccImg && !otherPlayerAccessoryLoading.has(id)) {
+        otherPlayerAccessoryLoading.add(id);
+        const img = new Image();
+        img.onload = () => { otherPlayerAccessoryImages[id] = img; otherPlayerAccessoryLoading.delete(id); };
+        img.onerror = () => { otherPlayerAccessoryLoading.delete(id); };
+        img.src = app.accessoryDataURL;
+      }
+      if (!remoteAccImg) return null;
+      const ex = CS.ACCESSORIES_CATALOG.find((a) => a.id === remoteAccId);
+      if (!ex) {
+        const injected = {
+          id: remoteAccId, name: "Remoto", type: "other", slot: "over_shirt", color: null,
+          userImage: remoteAccImg, dataURL: app.accessoryDataURL || null,
+          isFreeCustomization: remoteAccId.startsWith("fc_"),
+        };
+        CS.ACCESSORIES_CATALOG.push(injected);
+        return injected;
+      }
+      if (!ex.userImage) ex.userImage = remoteAccImg;
+      return null;
+    }
+
+    // ══ ÚNICA definición de _drawRemoteWithCharacterSystem ══
+    function _drawRemoteWithCharacterSystem(CS, id, p, sx, sy, app, now) {
+      const anim = otherPlayerAnimators[id];
+      if (!anim) return false;
+      anim.update(now);
+      if (p.animAction) anim.play(p.animAction);
+      const injectedAcc = _prepareRemoteAccessory(CS, id, app);
+      const remoteAccId = app.accessoryId || "ac_none";
+      const remApp = Object.assign({}, app, { accessoryId: remoteAccId });
+      const remCSPlayer = { appearance: remApp, direction: p.facing || 1 };
+      const remState = {
+        glovesId: remApp.glovesId,
+        auraId: remApp.auraId,
+        auraColor: remApp.auraColor,
+        accessoryId: remoteAccId,
+        auraPhase: (now * 0.003) % (Math.PI * 2),
+        viewKey: null,
+      };
+      // Sombra
+      ctx.fillStyle = "rgba(0,0,0,0.3)";
       ctx.beginPath();
-      ctx.moveTo(fx - 2, fy + 3);
-      ctx.lineTo(fx, fy - fh2);
-      ctx.lineTo(fx + 2, fy + 3);
+      ctx.ellipse(sx, sy + 3, 16, 5, 0, 0, Math.PI * 2);
       ctx.fill();
-    }
-  }
-
-  /**
-   * _tintSprite — multiply blend + destination-in.
-   * Usado por tintHair y tintFaceColor.
-   * Negro (#000000) → negro perfecto. Rojo → solo canal R. Blanco → sin cambio.
-   */
-  function _tintSprite(sheetImg, color, w, h, coords, fullImg, iw, ih) {
-    const off = document.createElement("canvas"); off.width = w; off.height = h;
-    const c = off.getContext("2d");
-    c.imageSmoothingEnabled = false;
-
-    if (sheetImg && coords) {
-      c.drawImage(sheetImg, coords.srcX, coords.srcY, coords.fw || FRAME_W, coords.fh || FRAME_H, 0, 0, w, h);
-    } else if (fullImg) {
-      c.imageSmoothingEnabled = true;
-      c.drawImage(fullImg, 0, 0, iw, ih, 0, 0, w, h);
-    }
-
-    c.globalCompositeOperation = "multiply";
-    c.globalAlpha = 1;
-    c.fillStyle = color;
-    c.fillRect(0, 0, w, h);
-
-    c.globalCompositeOperation = "destination-in";
-    c.globalAlpha = 1;
-    if (sheetImg && coords) {
-      c.imageSmoothingEnabled = false;
-      c.drawImage(sheetImg, coords.srcX, coords.srcY, coords.fw || FRAME_W, coords.fh || FRAME_H, 0, 0, w, h);
-    } else if (fullImg) {
-      c.imageSmoothingEnabled = true;
-      c.drawImage(fullImg, 0, 0, iw, ih, 0, 0, w, h);
-    }
-
-    c.globalCompositeOperation = "source-over";
-    return off;
-  }
-
-  /**
-   * tintHair v4.3.2 — multiply igual que la piel.
-   */
-  function tintHair(hairImg, hairColor, hairDef, w, h, frameCoords) {
-    if (!hairImg || !hairImg.complete || !hairImg.naturalWidth) return null;
-    const color = hairColor || "#1a1a1a";
-    const fc    = frameCoords
-      ? `${frameCoords.srcX}_${frameCoords.srcY}_${frameCoords.fw}_${frameCoords.fh}`
-      : "full";
-    const key = `hair2|${hairDef ? hairDef.id : "hair"}|${hairImg.src || ""}|${w}|${h}|${color}|${fc}`;
-
-    if (_tintCache.has(key)) return _tintCache.get(key);
-    if (_tintCache.size > 512) { const k = _tintCache.keys().next().value; _tintCache.delete(k); }
-
-    const result = _tintSprite(
-      frameCoords ? hairImg : null, color, w, h,
-      frameCoords || null,
-      !frameCoords ? hairImg : null,
-      hairImg.naturalWidth, hairImg.naturalHeight
-    );
-    _tintCache.set(key, result);
-    return result;
-  }
-
-  /**
-   * tintFaceColor v4.3.3 — multiply para ojos con un solo color (eyeColor).
-   * Fallback cuando browColor y pupilColor son null.
-   */
-  function tintFaceColor(faceImg, color, faceDef, w, h, frameCoords) {
-    if (!faceImg || !faceImg.complete || !faceImg.naturalWidth) return null;
-    const fc  = frameCoords
-      ? `${frameCoords.srcX}_${frameCoords.srcY}_${frameCoords.fw}_${frameCoords.fh}`
-      : "full";
-    const key = `faceColor2|${faceDef ? faceDef.id : "face"}|${faceImg.src || ""}|${w}|${h}|${color}|${fc}`;
-
-    if (_tintCache.has(key)) return _tintCache.get(key);
-    if (_tintCache.size > 512) { const k = _tintCache.keys().next().value; _tintCache.delete(k); }
-
-    const result = _tintSprite(
-      frameCoords ? faceImg : null, color, w, h,
-      frameCoords || null,
-      !frameCoords ? faceImg : null,
-      faceImg.naturalWidth, faceImg.naturalHeight
-    );
-    _tintCache.set(key, result);
-    return result;
-  }
-
-  /**
-   * tintFaceDetailed v1.0.2
-   * Tiñe cejas y pupilas con DOS colores independientes en una sola pasada.
-   *
-   * REQUISITO DEL SPRITESHEET (faces con eyeColor:true):
-   *   · Cejas    → ROJO PURO   (#ff0000, hue 0°)   en el .png
-   *   · Pupilas  → AZUL PURO   (#0000ff, hue 240°) en el .png
-   *   · Contornos → negro      (#000000) → no se toca (l < 0.12)
-   *   · Esclerótica → blanco   (#ffffff) → no se toca (l > 0.88)
-   *   · Sombras de piel → grises de baja saturación (s < 0.25) → no se tocan
-   *
-   * Si browColor y pupilColor son iguales se comporta igual que tintFaceColor
-   * pero con detección por zona en lugar de multiply global.
-   *
-   * @param {HTMLImageElement} faceImg
-   * @param {string}      browColor    - hex color destino para cejas
-   * @param {string}      pupilColor   - hex color destino para pupilas
-   * @param {object}      faceDef
-   * @param {number}      w, h         - tamaño de salida
-   * @param {object|null} frameCoords  - { srcX, srcY, fw, fh }
-   */
-function tintFaceDetailed(faceImg, browColor, pupilColor, faceDef, w, h, frameCoords) {
-  if (!faceImg || !faceImg.complete || !faceImg.naturalWidth) return null;
-
-  const fc  = frameCoords
-    ? `${frameCoords.srcX}_${frameCoords.srcY}_${frameCoords.fw}_${frameCoords.fh}`
-    : "full";
-  const key = `faceDetail|${faceDef ? faceDef.id : "face"}|${faceImg.src || ""}|${w}|${h}|${browColor}|${pupilColor}|${fc}`;
-
-  if (_tintCache.has(key)) return _tintCache.get(key);
-  if (_tintCache.size > 512) { const k = _tintCache.keys().next().value; _tintCache.delete(k); }
-
-  const off = document.createElement("canvas");
-  off.width = w; off.height = h;
-  const ctx = off.getContext("2d");
-  ctx.imageSmoothingEnabled = false;
-
-  if (frameCoords) {
-    ctx.drawImage(faceImg, frameCoords.srcX, frameCoords.srcY, frameCoords.fw, frameCoords.fh, 0, 0, w, h);
-  } else {
-    ctx.drawImage(faceImg, 0, 0, faceImg.naturalWidth, faceImg.naturalHeight, 0, 0, w, h);
-  }
-
-  let imageData;
-  try { imageData = ctx.getImageData(0, 0, w, h); }
-  catch(e) { _tintCache.set(key, off); return off; }
-
-  const data = imageData.data;
-
-  // Pre-calcular HSL de los colores destino
-  const browRgb  = _hexToRgb(browColor);
-  const pupilRgb = _hexToRgb(pupilColor);
-  const { h: browH,  s: browS,  l: browL  } = _rgbToHsl(browRgb.r,  browRgb.g,  browRgb.b);
-  const { h: pupilH, s: pupilS, l: pupilL } = _rgbToHsl(pupilRgb.r, pupilRgb.g, pupilRgb.b);
-
-  for (let i = 0; i < data.length; i += 4) {
-    const a = data[i + 3];
-    if (a < 16) continue;
-
-    const r = data[i], g = data[i+1], b = data[i+2];
-
-    // Rojo puro del sprite = ceja (R dominante, G y B casi 0)
-    const isBrow = r > 10 && g < 20 && b < 20 && r > g * 3 && r > b * 3;
-
-    // Azul puro del sprite = iris (B dominante, R y G casi 0)
-    const isIris = b > 10 && r < 30 && g < 30 && b > r * 2 && b > g * 2;
-
-    if (!isBrow && !isIris) continue;
-
-    // Luminosidad del pixel original del sprite
-    // Para rojos: L = R/255/2 (ya que G=B=0, L=(R/255+0)/2)
-    // Para azules: L = B/255/2
-    const srcL = isBrow ? (r / 255 * 0.5) : (b / 255 * 0.5);
-
-    let finalH, finalS, finalL;
-
-    if (isBrow) {
-      finalH = browH;
-      finalS = browS;
-      // Escalar luminosidad del pixel al rango del color destino
-      // srcL va de 0 (borde oscuro) a ~0.43 (highlight)
-      // Lo mapeamos a [browL*0.3 ... browL*1.0 + (1-browL)*0.4]
-      if (browS < 0.05) {
-        // Destino acromático (negro, blanco, gris)
-        finalS = 0;
-        finalL = browL < 0.5
-          ? srcL * (browL * 2 + 0.1)           // negro/gris oscuro: escalar hacia abajo
-          : 0.5 + srcL * (browL - 0.5) * 2;    // blanco/gris claro: escalar hacia arriba
-      } else {
-        // Destino con color: conservar L del pixel, cambiar H+S
-        finalL = Math.max(srcL * 0.8, 0.03);
-      }
-} else {
-      // IRIS: píxel azul puro (0,0,B)
-      // srcL calculada de B da valores muy bajos — usar rango más amplio
-      // B va de ~10 (oscuro) a ~255 (claro), normalizar a 0–1
-      const srcLNorm = b / 255;  // 0=oscuro, 1=claro
-
-      finalH = pupilH;
-      finalS = pupilS;
-
-      if (pupilS < 0.05) {
-        // Destino acromático (negro, blanco, gris)
-        finalS = 0;
-        finalL = pupilL < 0.5
-          ? srcLNorm * pupilL * 1.5
-          : pupilL * 0.5 + srcLNorm * (1 - pupilL) * 0.5;
-      } else {
-        // Destino con color: mapear brillo del azul al rango del color destino
-        // oscuro (B bajo) → versión oscura del destino
-        // claro  (B alto) → versión clara del destino
-        const darkL  = Math.max(pupilL * 0.3, 0.04);
-        const lightL = Math.min(pupilL * 1.6, 0.85);
-        finalL = darkL + srcLNorm * (lightL - darkL);
-      }
-    }
-
-    const { r: nr, g: ng, b: nb } = _hslToRgb(finalH, finalS, finalL);
-    data[i] = nr; data[i+1] = ng; data[i+2] = nb;
-  }
-
-  ctx.putImageData(imageData, 0, 0);
-  _tintCache.set(key, off);
-  return off;
-}
-
-  // ═══════════════════════════════════════════════════════════════
-  //  drawPlayer — orden de capas v1.0.2
-  // ═══════════════════════════════════════════════════════════════
-
-  function drawPlayer(ctx, screenX, screenY, playerObj, imageMap, animator, charState) {
-    const p   = playerObj || player;
-    const app = p.appearance;
-    const dir = p.direction || 1;
-    const gender = app.gender || "male";
-    const raceId = app.raceId || "human";
-    const raceDef = RACE_CATALOG.find((r) => r.id === raceId) || RACE_CATALOG[0];
-
-    const viewKey = charState && charState.viewKey;
-    if (animator && viewKey && VIEW_META[viewKey]) animator.setView(viewKey);
-    else if (animator && !viewKey && animator.currentView) animator.clearView();
-
-    const faceCatalog = getCatalogFor("face",   raceId, gender);
-    const hairCatalog = getCatalogFor("hair",   raceId, gender);
-    const topCatalog  = getCatalogFor("shirt",  raceId, gender);
-    const btmCatalog  = getCatalogFor("pants",  raceId, gender);
-    const shoeCatalog = getCatalogFor("shoes",  raceId, gender);
-    const glvCatalog  = getCatalogFor("gloves", raceId, gender);
-
-    const faceDef   = faceCatalog.find((f) => f.id === app.faceId)   || faceCatalog[0];
-    const hairDef   = hairCatalog.find((h) => h.id === app.hairId)   || hairCatalog[0];
-    const topDef    = topCatalog.find((t)  => t.id === app.topId)    || topCatalog[0];
-    const btmDef    = btmCatalog.find((b)  => b.id === app.bottomId) || btmCatalog[0];
-    const shoesDef  = shoeCatalog.find((s) => s.id === app.shoesId)  || shoeCatalog[0];
-    const glovesId  = app.glovesId || (charState && charState.glovesId) || glvCatalog[0].id;
-    const glovesDef = glvCatalog.find((g) => g.id === glovesId) || glvCatalog[0];
-
-    const auraId    = app.auraId    || (charState && charState.auraId)    || "a0";
-    const auraColor = app.auraColor || (charState && charState.auraColor) || "#fdd835";
-    const auraPhase = (charState && charState.auraPhase) || 0;
-    const auraDef   = AURAS_CATALOG.find((a) => a.id === auraId) || AURAS_CATALOG[0];
-
-    const accessoryId = app.accessoryId || (charState && charState.accessoryId) || "ac_none";
-    const accDef      = ACCESSORIES_CATALOG.find((a) => a.id === accessoryId) || ACCESSORIES_CATALOG[0];
-    const accImg      = _getAccessoryImage(accDef);
-    const accSlot     = accDef ? accDef.slot : "over_shirt";
-    const freeCustom  = isFreeCustomizationEntry(accDef);
-
-    const bodyGender = raceDef.genderless ? "male" : gender;
-    const bodyImg    = imageMap ? imageMap[`${raceDef.id}_${bodyGender}`] || null : null;
-
-    const dw = DISPLAY_W, dh = DISPLAY_H;
-    const destX = screenX - dw / 2, destY = screenY - dh;
-
-    ctx.save();
-    if (dir === -1) { ctx.translate(screenX * 2, 0); ctx.scale(-1, 1); }
-
-    // 1. AURA
-    const auraImg = imageMap ? imageMap[auraDef.spriteKey] || null : null;
-    if (auraImg && auraImg.complete && auraImg.naturalWidth) {
-      const aw = dw * 1.8, ah = dh * 1.2;
-      const auraSheet = isCompatibleSheet(auraImg);
-      ctx.globalAlpha = 0.65;
-      if (auraSheet && animator) {
-        const { srcX, srcY, fw, fh } = animator.getFrameCoords(auraImg);
-        ctx.imageSmoothingEnabled = false;
-        if (srcX + fw <= auraImg.naturalWidth && srcY + fh <= auraImg.naturalHeight) {
-          ctx.drawImage(auraImg, srcX, srcY, fw, fh, screenX - aw / 2, destY - ah * 0.1, aw, ah);
-        } else {
-          ctx.drawImage(auraImg, 0, 0, auraImg.naturalWidth, auraImg.naturalHeight, screenX - aw / 2, destY - ah * 0.1, aw, ah);
-        }
-      } else {
-        ctx.imageSmoothingEnabled = true;
-        ctx.drawImage(auraImg, screenX - aw / 2, destY - ah * 0.1, aw, ah);
-      }
-      ctx.globalAlpha = 1;
-    } else {
-      _drawProceduralAura(ctx, screenX, screenY, dw, dh, auraDef, auraColor, auraPhase);
-    }
-
-    // Personalización libre (fc_*): reemplaza cuerpo/ropa del catálogo, no es un accesorio encima
-    if (freeCustom && accImg && accImg.complete && accImg.naturalWidth) {
-      _drawLayerSprite(ctx, accImg, destX, destY, dw, dh, animator);
+      // Escala y dibuja sprite
+      const scaleX = SPRITE_DRAW_W / CS.DISPLAY_W;
+      const scaleY = SPRITE_DRAW_H / CS.DISPLAY_H;
+      ctx.save();
+      ctx.translate(sx, sy);
+      ctx.scale(scaleX, scaleY);
+      ctx.translate(-sx, -sy);
+      ctx.imageSmoothingEnabled = true;
+      CS.drawPlayer(ctx, sx, sy, remCSPlayer, csImageMap, anim, remState);
       ctx.restore();
-      return;
+      // Limpiar accesorio inyectado temporalmente
+      if (injectedAcc) {
+        const idx = CS.ACCESSORIES_CATALOG.indexOf(injectedAcc);
+        if (idx !== -1) CS.ACCESSORIES_CATALOG.splice(idx, 1);
+      }
+      _drawRemotePlayerLabel(p, sx, sy);
+      return true;
     }
 
-    // 2. ACCESORIO under_shirt
-    if (accSlot === "under_shirt" && accImg && accImg.complete && accImg.naturalWidth) {
-      _drawLayerSprite(ctx, accImg, destX, destY, dw, dh, animator);
+    function _drawRemotePreviewSprite(sx, sy, previewImg, facing, p, app) {
+      const pw = SPRITE_DRAW_W, ph = SPRITE_DRAW_H;
+      const destX = sx - pw / 2, destY = sy - ph;
+      ctx.fillStyle = "rgba(0,0,0,0.3)";
+      ctx.beginPath();
+      ctx.ellipse(sx, sy + 3, 16, 5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.save();
+      if ((facing || 1) === -1) { ctx.translate(sx * 2, 0); ctx.scale(-1, 1); }
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(previewImg, destX, destY, pw, ph);
+      ctx.restore();
+      _drawRemotePlayerLabel(p, sx, sy);
     }
 
-    // 3. CUERPO con tinte de piel
-    if (bodyImg && bodyImg.complete && bodyImg.naturalWidth) {
-      const sheet = isCompatibleSheet(bodyImg);
-      ctx.imageSmoothingEnabled = !sheet;
-      if (app.skinColor) {
-        const coords = sheet && animator ? animator.getFrameCoords(bodyImg) : null;
-        const tinted = _tintSprite(
-          sheet ? bodyImg : null, app.skinColor, dw, dh,
-          coords, !sheet ? bodyImg : null, bodyImg.naturalWidth, bodyImg.naturalHeight
-        );
-        ctx.drawImage(tinted, destX, destY, dw, dh);
-      } else {
-        _drawLayerSprite(ctx, bodyImg, destX, destY, dw, dh, animator);
+    function drawOtherPlayers() {
+      const CS = window.CharacterSystem, now = performance.now();
+      for (const [id, p] of Object.entries(otherPlayers)) {
+        if (p.map && p.map !== currentMap) continue;
+        const sx = p.x - cam.x, sy = p.y - cam.y;
+        if (sx < -100 || sx > canvas.width+100 || sy < -120 || sy > canvas.height+120) continue;
+        const app = normalizeRemoteAppearance(p.appearance, CS, p);
+
+        if (app.previewDataURL && !otherPlayerPreviewImages[id] && !otherPlayerPreviewLoading.has(id)) {
+          otherPlayerPreviewLoading.add(id);
+          const pimg = new Image();
+          pimg.onload = () => { otherPlayerPreviewImages[id] = pimg; otherPlayerPreviewLoading.delete(id); };
+          pimg.onerror = () => { otherPlayerPreviewLoading.delete(id); };
+          pimg.src = app.previewDataURL;
+        }
+
+        if (CS && csImageMap && otherPlayerAnimators[id]) {
+          try {
+            if (_drawRemoteWithCharacterSystem(CS, id, p, sx, sy, app, now)) continue;
+          } catch (e) { console.warn("[game] remote draw:", e); }
+        }
+
+        const previewImg = otherPlayerPreviewImages[id];
+        if ((app.previewVersion || 0) >= 2 && _isPreviewLikelyValid(previewImg)) {
+          _drawRemotePreviewSprite(sx, sy, previewImg, p.facing, p, app);
+          continue;
+        }
+
+        _drawRemotePlayerFallback(p, sx, sy);
       }
     }
 
-    // 4. ROPA INFERIOR
-    _drawLayerSprite(ctx, imageMap?.[btmDef?.spriteKey]    || null, destX, destY, dw, dh, animator);
+    function _drawRemotePlayerLabel(p,sx,sy){ctx.save();ctx.font="bold 9px Orbitron,monospace";ctx.textAlign="center";const nm=(p.name||"?")+(p.level?` Lv.${p.level}`:"");const nw=ctx.measureText(nm).width+10;ctx.fillStyle="rgba(8,9,15,0.8)";ctx.fillRect(sx-nw/2,sy-SPRITE_DRAW_H-18,nw,16);ctx.fillStyle=(p.appearance?.auraColor)||(p.charColor)||"#00e5ff";ctx.fillText(nm,sx,sy-SPRITE_DRAW_H-6);ctx.restore();}
+    function _drawRemotePlayerFallback(p,sx,sy){const color=(p.appearance?.auraColor)||p.charColor||"#00e5ff";const sk=p.appearance?.skinColor||"#e8c898";ctx.fillStyle="rgba(0,0,0,0.3)";ctx.beginPath();ctx.ellipse(sx,sy+3,16,5,0,0,Math.PI*2);ctx.fill();ctx.save();if((p.facing||1)===-1){ctx.translate(sx*2,0);ctx.scale(-1,1);}ctx.fillStyle=color;ctx.fillRect(sx-10,sy-36,20,22);ctx.fillStyle=sk;ctx.beginPath();ctx.arc(sx,sy-44,10,0,Math.PI*2);ctx.fill();ctx.restore();_drawRemotePlayerLabel(p,sx,sy);}
 
-    // 5. CALZADO
-    _drawLayerSprite(ctx, imageMap?.[shoesDef?.spriteKey]  || null, destX, destY, dw, dh, animator);
+    function addChatMsg(name,text,color){chatMessages.push({name,text,color:color||"#e8eaf6",time:performance.now()});if(chatMessages.length>CHAT_MAX)chatMessages.shift();renderChatMessages();}
+    function renderChatMessages(){const box=document.getElementById("mpChatBox");if(!box)return;box.innerHTML=chatMessages.map(m=>`<div><span style="color:${m.color};font-weight:700">${m.name}:</span> ${m.text}</div>`).join("");box.scrollTop=box.scrollHeight;}
+    function sendChatMsg(){const inp=document.getElementById("mpChatInput");if(!inp)return;const text=inp.value.trim();if(!text)return;inp.value="";addChatMsg("Tú",text,"#f5c400");if(!mpConnected)return;const ref=db.ref("chat").push();ref.set({id:myPlayerId,name:player.name,text,t:Date.now()});}
+    window.sendChatMsg=sendChatMsg;
+    function updateMpHud(){const el=document.getElementById("mpPlayerCount");if(!el)return;const count=Object.keys(otherPlayers).length+1;el.textContent=mpConnected?`${count} jugador${count!==1?"es":""} online`:"⚠️ Offline";el.style.color=mpConnected?"#f5c400":"#ff1744";}
+    function buildMpHud(){const hud=document.getElementById("hud");if(!hud||document.getElementById("mpHudPanel"))return;const panel=document.createElement("div");panel.id="mpHudPanel";panel.style.cssText="position:absolute;top:64px;left:220px;width:200px;background:rgba(8,9,15,0.88);border:1px solid #2a3560;border-radius:8px;padding:10px 12px;backdrop-filter:blur(8px);z-index:9;pointer-events:auto;";panel.innerHTML=`<div style="font-family:'Orbitron',monospace;font-size:9px;letter-spacing:2px;color:#00e5ff;margin-bottom:8px;">🌐 JUGADORES</div><div id="mpPlayerCount" style="font-family:'Orbitron',monospace;font-size:13px;color:#f5c400;margin-bottom:8px;">Conectando...</div><div id="mpChatBox" style="height:70px;overflow-y:auto;font-size:11px;color:#c8cfe8;line-height:1.5;margin-bottom:6px;scrollbar-width:none;"></div><div style="display:flex;gap:4px;"><input id="mpChatInput" type="text" maxlength="60" placeholder="Mensaje..." style="flex:1;background:#12172e;border:1px solid #2a3560;border-radius:4px;padding:4px 7px;color:#e8eaf6;font-size:11px;outline:none;font-family:'Rajdhani',sans-serif;pointer-events:auto;" onkeydown="if(event.key==='Enter')sendChatMsg()"/><button onclick="sendChatMsg()" style="background:rgba(0,229,255,.15);border:1px solid #00e5ff;border-radius:4px;color:#00e5ff;font-size:10px;padding:4px 8px;cursor:pointer;font-family:'Orbitron',monospace;pointer-events:auto;">➤</button></div>`;hud.appendChild(panel);}
 
-    // 6. CINTURÓN belt_slot
-    if (accSlot === "belt_slot" && accImg && accImg.complete && accImg.naturalWidth) {
-      _drawLayerSprite(ctx, accImg, destX, destY, dw, dh, animator);
+    // ══ CONSTANTS ══
+    const TILE=48, CAM_LERP=0.12, SPRITE_DRAW_W=48, SPRITE_DRAW_H=70;
+
+    // ══ MAP DEFINITIONS ══
+    const MAPS = {
+      lobby:  { w:80, h:60, name:"BASE LOBBY",    bgColor:"#0a1020" },
+      earth:  { w:120, h:80, name:"PLANETA TIERRA", bgColor:"#0a1510" },
+      space:  { w:120, h:80, name:"ESPACIO",        bgColor:"#08090f" },
+    };
+
+    const MAP_STARTS = {
+      lobby: { x:40, y:30 },
+      earth: { x:60, y:40 },
+      space: { x:60, y:40 },
+    };
+
+    let currentMap = "lobby";
+    const worldMaps = {};
+
+    // ══ LOBBY MAP ══
+    function generateLobbyMap() {
+      const { w, h } = MAPS.lobby;
+      const map = [];
+      for (let y=0;y<h;y++){map[y]=[];for(let x=0;x<w;x++)map[y][x]=0;}
+      for (let y=22;y<38;y++) for (let x=28;x<52;x++) map[y][x]=2;
+      for (let y=28;y<32;y++) for (let x=37;x<43;x++) map[y][x]=1;
+      for (let y=14;y<22;y++) for (let x=32;x<48;x++) map[y][x]=5;
+      for (let y=24;y<36;y++) for (let x=14;x<22;x++) map[y][x]=5;
+      for (let y=24;y<36;y++) for (let x=58;x<66;x++) map[y][x]=5;
+      for (let y=38;y<42;y++) for (let x=37;x<43;x++) map[y][x]=3;
+      for (let y=44;y<54;y++) for (let x=20;x<60;x++) map[y][x]=6;
+      for (let y=0;y<h;y++) map[y][40]=2;
+      for (let x=0;x<w;x++) map[30][x]=2;
+      for (let i=0;i<20;i++){const tx=Math.floor(Math.random()*w),ty=Math.floor(Math.random()*h);if(map[ty][tx]===0)map[ty][tx]=7;}
+      return map;
     }
 
-    // 7. ROPA SUPERIOR
-    _drawLayerSprite(ctx, imageMap?.[topDef?.spriteKey]    || null, destX, destY, dw, dh, animator);
+    // ══ EARTH MAP ══
+    function generateEarthMap() {
+      const { w, h } = MAPS.earth;
+      const map = [];
+      for (let y=0;y<h;y++){map[y]=[];for(let x=0;x<w;x++)map[y][x]=0;}
+      for (let y=0;y<h;y++) for (let x=0;x<20;x++) map[y][x]=1;
+      for (let y=25;y<55;y++) for (let x=30;x<70;x++) map[y][x]=2;
+      for (let y=10;y<40;y++) for (let x=80;x<100;x++) if(Math.sin(x*.3)*Math.cos(y*.4)>.1) map[y][x]=7;
+      for (let y=50;y<h;y++) for (let x=70;x<w;x++) map[y][x]=8;
+      for (let y=35;y<45;y++) for (let x=20;x<30;x++) map[y][x]=1;
+      for (let y=5;y<20;y++) for (let x=25;x<60;x++) if(Math.sin(x*.4)*Math.cos(y*.5)>.2) map[y][x]=9;
+      for (let y=0;y<h;y++) map[y][40]=2;
+      for (let x=20;x<w;x++) map[40][x]=2;
+      return map;
+    }
 
-    // 8. GUANTES
-    _drawLayerSprite(ctx, imageMap?.[glovesDef?.spriteKey] || null, destX, destY, dw, dh, animator);
+    // ══ SPACE MAP ══
+    function generateSpaceMap() {
+      const { w, h } = MAPS.space;
+      const map = [];
+      for (let y=0;y<h;y++){map[y]=[];for(let x=0;x<w;x++)map[y][x]=10;}
+      for (let y=15;y<30;y++) for (let x=20;x<45;x++) map[y][x]=11;
+      for (let y=35;y<55;y++) for (let x=55;x<80;x++) { const cx=67,cy=45,r=12; if(Math.hypot(x-cx,y-cy)<r) map[y][x]=12; }
+      for (let y=10;y<25;y++) for (let x=75;x<100;x++) map[y][x]=11;
+      [[15,55,8],[40,20,7],[60,70,6],[90,50,9],[100,30,8]].forEach(([cx,cy,r])=>{
+        for(let y=cy-r;y<cy+r;y++) for(let x=cx-r;x<cx+r;x++) if(y>=0&&y<h&&x>=0&&x<w&&Math.hypot(x-cx,y-cy)<r) map[y][x]=13;
+      });
+      return map;
+    }
 
-    // 9. CARA
-    //
-    //  Árbol de decisión (v1.0.2):
-    //
-    //  tintable:false
-    //    └── dibujar sin tinte (_drawLayerSprite)
-    //
-    //  tintable:true, eyeColor:false
-    //    └── tintLayer (pixel-by-pixel, preserva degradados)
-    //        color = app.faceColor
-    //
-    //  tintable:true, eyeColor:true
-    //    ├── browColor o pupilColor definidos
-    //    │     └── tintFaceDetailed (cejas=browColor, pupilas=pupilColor)
-    //    │         REQUIERE spritesheet con cejas en rojo y pupilas en azul
-    //    └── solo eyeColor
-    //          └── tintFaceColor (multiply global, igual que cabello)
-    //              color = app.eyeColor
-    const faceImg = imageMap ? imageMap[faceDef?.spriteKey] || null : null;
-    if (faceImg && faceImg.complete && faceImg.naturalWidth) {
+    const TILE_COLORS = {
+      0:"#2d5a27", 1:"#1565c0", 2:"#5a5a6e", 3:"#8b1fff",
+      4:"#c9a84c", 5:"#08090f", 6:"#3a3040", 7:"#1a3a18",
+      8:"#c9a84c", 9:"#616161", 10:"#04080f", 11:"#2a2a3a",
+      12:"#3a1a0a", 13:"#1a1a3a",
+    };
 
-      if (faceDef && faceDef.tintable) {
+    function isWalkable(tx, ty, mapKey) {
+      const key = mapKey || currentMap;
+      const map = worldMaps[key];
+      if (!map) return false;
+      const mapDef = MAPS[key];
+      if (tx<0||ty<0||tx>=mapDef.w||ty>=mapDef.h) return false;
+      const t = map[ty]?.[tx];
+      return t !== 5 && t !== 11;
+    }
 
-        // Calcular frameCoords una sola vez
-        const faceSheet = isCompatibleSheet(faceImg);
-        let frameCoords = null;
-        if (faceSheet && animator) {
-          const { srcX, srcY, fw, fh } = animator.getFrameCoords(faceImg);
-          if (srcX + fw <= faceImg.naturalWidth && srcY + fh <= faceImg.naturalHeight) {
-            frameCoords = { srcX, srcY, fw, fh };
-          }
+    // ══ PERSONAJE ══
+    function loadCharacterData(){let slot=0;try{const qs=new URLSearchParams(window.location.search);const rs=qs.get("slot");if(rs!=null)slot=parseInt(rs,10);else{const ra=localStorage.getItem("dragonCreatorZ_activeSlot");if(ra!=null)slot=parseInt(ra,10);}}catch(e){}if(!Number.isFinite(slot))slot=0;slot=Math.max(0,Math.min(10,slot));try{const raw=localStorage.getItem("dragonCreatorZ_slots");if(raw){const slots=JSON.parse(raw);const d=Array.isArray(slots)?slots[slot]:null;if(d&&d.name)return d;if(Array.isArray(slots)){const any=slots.find(s=>s&&s.name);if(any)return any;}}}catch(e){}return null;}
+
+    const RACE_BASE_STATS={saiyan:{health:80,ki:90,strength:95,defense:70,speed:85},human:{health:85,ki:75,strength:80,defense:80,speed:80},namekian:{health:90,ki:85,strength:85,defense:90,speed:70},android:{health:95,ki:100,strength:90,defense:95,speed:75},kaioshin:{health:70,ki:100,strength:75,defense:80,speed:90},frieza:{health:85,ki:95,strength:88,defense:85,speed:95}};
+    const BASE_RACE_COLORS={saiyan:"#f5c400",human:"#00e5ff",namekian:"#00ff9d",android:"#00e5ff",kaioshin:"#9c88ff",frieza:"#e040fb"};
+    const savedChar = loadCharacterData();
+    const raceId = savedChar?.race || "human";
+    const raceStats = RACE_BASE_STATS[raceId] || RACE_BASE_STATS.human;
+    const auraColor = savedChar?.auraColor || "#fdd835";
+    const charColor = BASE_RACE_COLORS[raceId] || "#f5c400";
+
+    const player = {
+      name:savedChar?.name||"Guerrero Z", race:raceId, auraColor, charColor,
+      x:40*TILE, y:30*TILE, w:28, h:44, vx:0, vy:0,
+      speed:2.2+(raceStats.speed/100)*1.8,
+      facing:1, moving:false,
+      level:savedChar?.level||1, xp:0, xpToNext:100,
+      maxHp:Math.floor(raceStats.health*10*Math.pow(1.15,(savedChar?.level||1)-1)),
+      maxKi:Math.floor(raceStats.ki*8*Math.pow(1.12,(savedChar?.level||1)-1)),
+      hp:0, ki:0, strength:raceStats.strength, defense:raceStats.defense,
+      auraPhase:0, animFrame:0, animTimer:0,
+    };
+    player.hp = player.maxHp; player.ki = player.maxKi;
+
+    const cam = { x:0, y:0, tx:0, ty:0 };
+    const keys = {};
+    const joystick = { active:false, dx:0, dy:0, startX:0, startY:0 };
+    let csImageMap = null, csAnimator = null;
+
+    // ══ INPUT ══
+    window.addEventListener("keydown", (e) => {
+      const active = document.activeElement;
+      if (active && (active.tagName==="INPUT"||active.tagName==="TEXTAREA")) return;
+      keys[e.code] = true;
+      if (e.code==="KeyZ") { e.preventDefault(); interactNearby(); }
+      if (e.code==="KeyQ") { e.preventDefault(); openMyTrailer(); }
+      if (e.code==="KeyE") { e.preventDefault(); sendEmote("wave"); }
+      if (e.code==="KeyR") { e.preventDefault(); sendEmote("bow"); }
+      if (e.code==="ShiftLeft"||e.code==="ShiftRight") setRunState(true);
+    });
+    window.addEventListener("keyup", (e) => {
+      const active = document.activeElement;
+      if (active && (active.tagName==="INPUT"||active.tagName==="TEXTAREA")) return;
+      keys[e.code] = false;
+      if (e.code==="ShiftLeft"||e.code==="ShiftRight") setRunState(false);
+    });
+
+    const jw = document.getElementById("joystickWrap"), jk = document.getElementById("joystickKnob");
+    jw.addEventListener("touchstart", (e) => { e.preventDefault(); const r=jw.getBoundingClientRect(); joystick.active=true; joystick.startX=r.left+r.width/2; joystick.startY=r.top+r.height/2; }, {passive:false});
+    window.addEventListener("touchmove", (e) => { e.preventDefault(); if(!joystick.active)return; const t=e.touches[0]; const dx=t.clientX-joystick.startX,dy=t.clientY-joystick.startY; const maxR=40,dist=Math.sqrt(dx*dx+dy*dy); const nx=dist>maxR?(dx/dist)*maxR:dx,ny=dist>maxR?(dy/dist)*maxR:dy; joystick.dx=nx/maxR; joystick.dy=ny/maxR; jk.style.transform=`translate(${nx}px,${ny}px)`; }, {passive:false});
+    window.addEventListener("touchend", () => { if(!joystick.active)return; joystick.active=false; joystick.dx=0; joystick.dy=0; jk.style.transform="translate(0,0)"; });
+
+    // ══ NPCs POR MAPA ══
+    const NPC_DEFS = {
+      lobby: [
+        { id:"director",name:"DIRECTOR Z",x:40*TILE,y:20*TILE,color:"#f5c400",dialogs:[{text:"¡Bienvenido a la Base! Este es el punto de encuentro de todos los guerreros. Aquí planifican sus aventuras antes de viajar.",opts:[{label:"¿A dónde puedo viajar?",next:1},{label:"¡Gracias!",next:-1}]},{text:"Tenés dos destinos: la Tierra, con sus ciudades y zonas emblemáticas, y el Espacio, con naves y planetas. Usá el portal al sur.",opts:[{label:"Entendido.",next:-1}]}]},
+        { id:"mecanico",name:"MECÁNICO",x:18*TILE,y:30*TILE,color:"#9e9e9e",dialogs:[{text:"Eh, ¿tu casa rodante está bien? Las trailers son el espacio personal de cada guerrero. Podés decorarla e invitar gente.",opts:[{label:"¿Cómo la invoco?",next:1},{label:"Ok.",next:-1}]},{text:"Presioná Q (o el botón TRAILER) para invocarla. Va a aparecer en el mapa. ¡Nadie puede entrar sin que vos los invites!",opts:[{label:"Genial.",next:-1}]}]},
+        { id:"portero",name:"GUARDIÁN DEL PORTAL",x:40*TILE,y:40*TILE,color:"#8b1fff",dialogs:[{text:"Este portal conecta con los otros mundos. Tierra y Espacio. ¿Listo para partir?",opts:[{label:"Ir a la Tierra",next:-2},{label:"Ir al Espacio",next:-3},{label:"No, quedo acá.",next:-1}]}]},
+      ],
+      earth: [
+        { id:"bulma",name:"BULMA",x:45*TILE,y:38*TILE,color:"#2979ff",dialogs:[{text:"¡Estás en Ciudad Oeste! Capsule Corp está aquí cerca. Podés explorar el bosque al este o ir al desierto al sur.",opts:[{label:"¿Qué hay en el bosque?",next:1},{label:"Gracias.",next:-1}]},{text:"En el bosque encontrarás la Kame-House si cruzás el océano. También hay rumores de una torre muy alta...",opts:[{label:"Entendido.",next:-1}]}]},
+        { id:"krillin",name:"KRILLIN",x:38*TILE,y:42*TILE,color:"#ff9800",dialogs:[{text:"¡Oe! Este es el planeta Tierra. Acá no hay enemigos, es zona de rolplay. Podés explorar y encontrarte con otros guerreros.",opts:[{label:"¡Perfecto!",next:-1}]}]},
+      ],
+      space: [
+        { id:"ginyu",name:"CAP. GINYU",x:32*TILE,y:22*TILE,color:"#e040fb",dialogs:[{text:"Bienvenido a la nave de Frieza... o lo que queda de ella. Ahora es zona libre. El Planeta Central está al sureste.",opts:[{label:"¿Qué es el Planeta Central?",next:1},{label:"Gracias.",next:-1}]},{text:"Es la sede de la Patrulla Intergaláctica. Al norte están sus cuarteles. Y hay planetas desocupados que los usuarios pueden reclamar.",opts:[{label:"Interesante.",next:-1}]}]},
+        { id:"jaco",name:"JACO",x:82*TILE,y:17*TILE,color:"#00e5ff",dialogs:[{text:"¡Alto! Esta es la base de la Patrulla Intergaláctica. Los planetas del mapa están disponibles para que cada usuario los colonice en su roleplay.",opts:[{label:"¿Cómo los reclamo?",next:1},{label:"Ok.",next:-1}]},{text:"En el roleplay, simplemente declarás tu planeta. Coordiná con los demás jugadores en el chat.",opts:[{label:"Perfecto.",next:-1}]}]},
+      ],
+    };
+
+    let npcs = NPC_DEFS.lobby;
+    let activeNpc = null, dialogPage = 0;
+    let particles = [], combatEffects = [];
+
+    // ══ TRAILERS ══
+    const trailers = {};
+    let myTrailerSpawned = false;
+    let inTrailer = false;
+    let trailerOwner = null;
+    const TRAILER_W = 6*TILE, TRAILER_H = 4*TILE;
+    const trailerPanelTarget = { id:null, owner:null };
+
+    function spawnMyTrailer() {
+      if (!myPlayerId) return;
+      const tx = Math.floor(player.x/TILE), ty = Math.floor(player.y/TILE)+4;
+      const snapX = Math.max(5,Math.min(tx, (MAPS[currentMap].w||80)-8));
+      const snapY = Math.max(5,Math.min(ty, (MAPS[currentMap].h||60)-6));
+      trailers[myPlayerId] = {
+        x: snapX*TILE, y: snapY*TILE,
+        ownerId: myPlayerId, ownerName: player.name,
+        map: currentMap,
+        invited: new Set(),
+      };
+      myTrailerSpawned = true;
+      showHudToast("🚐 Casa rodante invocada","xp");
+      if (mpConnected) {
+        db.ref("trailers/" + myPlayerId).set({
+          x:snapX*TILE, y:snapY*TILE, ownerName:player.name,
+          map:currentMap, t:Date.now()
+        });
+        db.ref("trailers/" + myPlayerId).onDisconnect().remove();
+      }
+    }
+
+    function openMyTrailer() {
+      if (!myTrailerSpawned) { spawnMyTrailer(); return; }
+      trailerPanelTarget.id = myPlayerId;
+      trailerPanelTarget.owner = player.name;
+      document.getElementById("trailerPanelInfo").textContent = "Tu espacio privado";
+      document.getElementById("trailerEnterBtn").textContent = "🚪 ENTRAR";
+      document.getElementById("trailerInviteBtn").style.display = "inline-flex";
+      document.getElementById("trailerPanel").classList.add("visible");
+      gameState = "menu";
+    }
+    window.openMyTrailer = openMyTrailer;
+
+    function enterTrailerFromPanel() {
+      document.getElementById("trailerPanel").classList.remove("visible");
+      const tid = trailerPanelTarget.id;
+      if (!tid) return;
+      enterTrailer(tid);
+    }
+    window.enterTrailerFromPanel = enterTrailerFromPanel;
+
+    function enterTrailer(ownerId) {
+      inTrailer = true;
+      trailerOwner = ownerId;
+      document.getElementById("trailerInterior").classList.add("visible");
+      document.getElementById("trailerOwnerLabel").textContent = ownerId === myPlayerId ? "🏠 TU CASA RODANTE" : `🏠 CASA DE ${trailers[ownerId]?.ownerName||"?"}`;
+      resizeCanvas();
+      gameState = "trailer";
+      showHudToast("🚐 Dentro de la casa rodante","info");
+    }
+
+    function exitTrailer() {
+      inTrailer = false;
+      trailerOwner = null;
+      document.getElementById("trailerInterior").classList.remove("visible");
+      gameState = "playing";
+    }
+    window.exitTrailer = exitTrailer;
+
+    function inviteToTrailer() {
+      if (!myPlayerId || !trailers[myPlayerId]) return;
+      const msg = `💌 ${player.name} te invita a su casa rodante. Acercate y presioná Z para entrar.`;
+      if (mpConnected) {
+        const ref = db.ref("chat").push();
+        ref.set({id:myPlayerId,name:"SISTEMA",text:msg,t:Date.now()});
+        db.ref("trailerInvites/" + myPlayerId).set({ ownerName:player.name, t:Date.now() });
+      }
+      showHudToast("📨 Invitación enviada","info");
+      document.getElementById("trailerPanel").classList.remove("visible");
+      gameState = "playing";
+    }
+    window.inviteToTrailer = inviteToTrailer;
+
+    function closeTrailerPanel() {
+      document.getElementById("trailerPanel").classList.remove("visible");
+      gameState = "playing";
+    }
+    window.closeTrailerPanel = closeTrailerPanel;
+
+    function sendTrailerChat() {
+      const inp = document.getElementById("trailerChatInput");
+      if (!inp) return;
+      const text = inp.value.trim(); if (!text) return;
+      inp.value = "";
+      if (!mpConnected) return;
+      const prefix = trailerOwner===myPlayerId ? "[TRAILER]" : `[TRAILER DE ${trailers[trailerOwner]?.ownerName||"?"}]`;
+      db.ref("chat").push().set({id:myPlayerId,name:player.name,text:`${prefix} ${text}`,t:Date.now()});
+    }
+    window.sendTrailerChat = sendTrailerChat;
+
+    function drawTrailerInterior() {
+      const w = trailerCanvas.width || window.innerWidth;
+      const h = trailerCanvas.height || window.innerHeight - 60;
+      tCtx.fillStyle = "#1a0f2e";
+      tCtx.fillRect(0, 0, w, h);
+      tCtx.fillStyle = "#2a1a40";
+      for (let y=0;y<h;y+=48) for (let x=0;x<w;x+=48) {
+        tCtx.fillStyle = ((x/48+y/48)%2)===0 ? "#2a1a40" : "#231535";
+        tCtx.fillRect(x,y,48,48);
+      }
+      tCtx.fillStyle = "#3a2a55";
+      tCtx.fillRect(0,0,w,80); tCtx.fillRect(0,h-80,w,80);
+      tCtx.fillRect(0,0,80,h); tCtx.fillRect(w-80,0,80,h);
+      tCtx.fillStyle = "#0a2040";
+      tCtx.fillRect(120,20,140,50);
+      tCtx.strokeStyle = "#3a6090"; tCtx.lineWidth = 4;
+      tCtx.strokeRect(120,20,140,50);
+      tCtx.fillStyle = "#ffffff";
+      for (let i=0;i<20;i++) {
+        const sx=120+Math.sin(i*1.7)*50+70, sy=20+Math.sin(i*2.3)*15+25;
+        tCtx.beginPath(); tCtx.arc(sx,sy,1,0,Math.PI*2); tCtx.fill();
+      }
+      tCtx.fillStyle = "#5d3a1a";
+      tCtx.fillRect(w/2-80,h/2-20,160,40);
+      tCtx.fillStyle = "#6d4a2a";
+      tCtx.fillRect(w/2-80,h/2-30,160,10);
+      for (const ox of [-50,50]) {
+        tCtx.fillStyle = "#4a2a0a";
+        tCtx.fillRect(w/2+ox-15,h/2+18,30,30);
+      }
+      tCtx.fillStyle = "rgba(245,196,0,0.8)";
+      tCtx.font = "bold 14px Orbitron,monospace";
+      tCtx.textAlign = "center";
+      tCtx.fillText(trailerOwner===myPlayerId ? "TU CASA RODANTE" : `CASA DE ${trailers[trailerOwner]?.ownerName||"?"}`, w/2, h-100);
+      tCtx.textAlign = "left";
+      tCtx.fillStyle = "rgba(8,9,15,0.7)";
+      tCtx.beginPath();
+      if (tCtx.roundRect) tCtx.roundRect(w-240,h-200,230,100,8);
+      else tCtx.rect(w-240,h-200,230,100);
+      tCtx.fill();
+      tCtx.fillStyle = "#00e5ff";
+      tCtx.font = "bold 9px Orbitron,monospace";
+      tCtx.fillText("CHAT PRIVADO", w-230, h-182);
+      tCtx.font = "11px Rajdhani,sans-serif";
+      tCtx.fillStyle = "#c8cfe8";
+      const recentMsgs = chatMessages.slice(-3);
+      recentMsgs.forEach((msg,i) => { tCtx.fillText(`${msg.name}: ${msg.text}`, w-230, h-165+i*18); });
+    }
+
+    // ══ INTERACCIÓN ══
+    function interactNearby() {
+      if (activeNpc) { closeDialog(); return; }
+      const ptx = Math.floor(player.x/TILE), pty = Math.floor(player.y/TILE);
+      const tile = worldMaps[currentMap]?.[pty]?.[ptx];
+      if (tile === 3) { openPortalPanel(); return; }
+      for (const [tid, tr] of Object.entries(trailers)) {
+        if (tid === myPlayerId) continue;
+        if (Math.hypot(tr.x - player.x, tr.y - player.y) < 80 && tr.map === currentMap) {
+          trailerPanelTarget.id = tid;
+          trailerPanelTarget.owner = tr.ownerName;
+          document.getElementById("trailerPanelInfo").textContent = `Casa de ${tr.ownerName}`;
+          document.getElementById("trailerEnterBtn").textContent = "🚪 ENTRAR";
+          document.getElementById("trailerInviteBtn").style.display = "none";
+          document.getElementById("trailerPanel").classList.add("visible");
+          gameState = "menu";
+          return;
         }
+      }
+      if (myTrailerSpawned && trailers[myPlayerId] && trailers[myPlayerId].map === currentMap) {
+        if (Math.hypot(trailers[myPlayerId].x - player.x, trailers[myPlayerId].y - player.y) < 80) {
+          openMyTrailer(); return;
+        }
+      }
+      const npc = npcs.find(n => Math.hypot(n.x-player.x, n.y-player.y) < 65);
+      if (npc) openDialog(npc);
+    }
+    window.interactNearby = interactNearby;
 
-        if (faceDef.eyeColor) {
-          // --- Ojos ---
-          const browColor  = app.browColor  || null;
-          const pupilColor = app.pupilColor || null;
-          const eyeColor   = app.eyeColor   || null;
+    function openPortalPanel() {
+      document.getElementById("portalPanel").classList.add("visible");
+      gameState = "menu";
+    }
 
-          let tinted = null;
+    function openDialog(npc) {
+      activeNpc = npc; dialogPage = 0; gameState = "dialog";
+      showDialogPage(npc, 0);
+    }
 
-          if (browColor || pupilColor) {
-            // Modo detallado: cejas y pupilas con colores independientes
-            tinted = tintFaceDetailed(
-              faceImg,
-              browColor  || eyeColor || "#1a1a1a",
-              pupilColor || eyeColor || "#1a1a1a",
-              faceDef, dw, dh, frameCoords
-            );
-          } else if (eyeColor) {
-            // Modo simple: un solo color para toda la capa (multiply)
-            tinted = tintFaceColor(faceImg, eyeColor, faceDef, dw, dh, frameCoords);
+    function showDialogPage(npc, page) {
+      const d = npc.dialogs[page];
+      document.getElementById("dialogBox").classList.add("visible");
+      document.getElementById("dialogName").textContent = npc.name;
+      document.getElementById("dialogText").textContent = d.text;
+      const opts = document.getElementById("dialogOpts");
+      opts.innerHTML = "";
+      d.opts.forEach(o => {
+        const btn = document.createElement("div");
+        btn.className = "dialog-opt";
+        btn.textContent = o.label;
+        btn.onclick = () => {
+          if (o.next === -1) closeDialog();
+          else if (o.next === -2) { closeDialog(); travelTo("earth"); }
+          else if (o.next === -3) { closeDialog(); travelTo("space"); }
+          else showDialogPage(npc, o.next);
+        };
+        opts.appendChild(btn);
+      });
+    }
+
+    function closeDialog() {
+      activeNpc = null; gameState = "playing";
+      document.getElementById("dialogBox").classList.remove("visible");
+    }
+
+    // ══ EMOTES ══
+    function sendEmote(type) {
+      const emotes = { wave:"👋", bow:"🙇", laugh:"😄", power:"💥" };
+      const icon = emotes[type] || "✨";
+      showHudToast(icon + " " + (type==="wave"?"¡Saludando!":"¡Reverencia!"), "info");
+      combatEffects.push({x:player.x, y:player.y-50, text:icon, timer:1.5, color:"#f5c400"});
+      if (mpConnected && myPlayerId) {
+        db.ref("emotes/" + myPlayerId).set({ type, name:player.name, x:player.x, y:player.y, t:Date.now() });
+      }
+    }
+    window.sendEmote = sendEmote;
+
+    // ══ VIAJE ENTRE MAPAS ══
+    function travelTo(mapKey) {
+      if (!MAPS[mapKey]) return;
+      document.getElementById("portalPanel").classList.remove("visible");
+      gameState = "loading_map";
+      const loadScreen = document.getElementById("screenLoading");
+      loadScreen.style.display = "flex";
+      document.getElementById("loadLabel").textContent = `VIAJANDO A ${MAPS[mapKey].name}...`;
+      document.getElementById("loadBar").style.width = "0%";
+      setTimeout(() => {
+        currentMap = mapKey;
+        npcs = NPC_DEFS[mapKey] || [];
+        activeNpc = null;
+        document.getElementById("dialogBox").classList.remove("visible");
+        const start = MAP_STARTS[mapKey];
+        player.x = start.x * TILE; player.y = start.y * TILE;
+        document.getElementById("regionLabel").textContent = MAPS[mapKey].name;
+        document.getElementById("minimapLabel").textContent = mapKey.toUpperCase();
+        document.getElementById("loadBar").style.width = "100%";
+        if (mpConnected && myPlayerId) {
+          db.ref("players/" + myPlayerId).update({ map:currentMap, x:Math.floor(player.x), y:Math.floor(player.y) });
+        }
+        setTimeout(() => {
+          loadScreen.style.display = "none";
+          gameState = "playing";
+          showHudToast(`🌍 ${MAPS[mapKey].name}`, "info");
+        }, 400);
+      }, 800);
+    }
+    window.travelTo = travelTo;
+
+    // ══ HUD ══
+    function updatePlayerHud() {
+      document.getElementById("barHp").style.width = `${(player.hp/player.maxHp)*100}%`;
+      document.getElementById("valHp").textContent = `${player.hp}/${player.maxHp}`;
+      document.getElementById("barKi").style.width = `${(player.ki/player.maxKi)*100}%`;
+      document.getElementById("valKi").textContent = `${Math.floor(player.ki)}/${player.maxKi}`;
+      document.getElementById("hudLevel").textContent = `LV ${player.level}`;
+      document.getElementById("xpFill").style.width = `${(player.xp/player.xpToNext)*100}%`;
+      document.getElementById("hudPlayerName").textContent = player.name;
+    }
+
+    function showHudToast(msg, type="xp") {
+      const wrap = document.getElementById("toastHud");
+      const el = document.createElement("div");
+      el.className = `hud-toast ${type}`;
+      el.textContent = msg;
+      el.style.top = `${-50-Math.random()*30}px`;
+      el.style.left = `${-80+Math.random()*160}px`;
+      wrap.appendChild(el);
+      setTimeout(() => el.remove(), 2000);
+    }
+
+    // ══ PLAYER UPDATE ══
+    let gameState = "loading";
+
+    function updatePlayer(dt) {
+      if (gameState !== "playing") return;
+      let mx=0, my=0;
+      if (keys["ArrowLeft"]||keys["KeyA"]) mx-=1;
+      if (keys["ArrowRight"]||keys["KeyD"]) mx+=1;
+      if (keys["ArrowUp"]||keys["KeyW"]) my-=1;
+      if (keys["ArrowDown"]||keys["KeyS"]) my+=1;
+      if (joystick.active) { mx=joystick.dx; my=joystick.dy; }
+      if (mx!==0||my!==0) { const len=Math.sqrt(mx*mx+my*my); mx/=len; my/=len; }
+      player.moving = mx!==0||my!==0;
+      if (mx!==0) player.facing = mx>0?1:-1;
+      player.ki = Math.min(player.maxKi, player.ki + dt*3);
+
+      const speedMult = isRunning ? 2.0 : 1.0;
+      const vx = mx*player.speed*speedMult, vy = my*player.speed*speedMult;
+
+      const CS = window.CharacterSystem;
+      if (CS && csAnimator) {
+        CS.player.direction = player.facing;
+        if (player.moving && isRunning) csAnimator.play("run");
+        else if (player.moving) csAnimator.play("walk");
+        else csAnimator.play("idle");
+      }
+
+      const nx = player.x + vx, ny = player.y + vy;
+      const hw=player.w/2, hh=player.h/2;
+      const cx1=Math.floor((nx-hw)/TILE), cx2=Math.floor((nx+hw)/TILE);
+      const cy1=Math.floor((ny-hh*.3)/TILE), cy2=Math.floor((ny+hh*.5)/TILE);
+      if (isWalkable(cx1,cy1)&&isWalkable(cx2,cy1)&&isWalkable(cx1,cy2)&&isWalkable(cx2,cy2)) {
+        player.x=nx; player.y=ny;
+      } else {
+        if (isWalkable(Math.floor((nx-hw)/TILE),Math.floor((player.y-hh*.3)/TILE))&&isWalkable(Math.floor((nx+hw)/TILE),Math.floor((player.y+hh*.5)/TILE))) player.x=nx;
+        if (isWalkable(Math.floor((player.x-hw)/TILE),Math.floor((ny-hh*.3)/TILE))&&isWalkable(Math.floor((player.x+hw)/TILE),Math.floor((ny+hh*.5)/TILE))) player.y=ny;
+      }
+
+      const mapDef = MAPS[currentMap];
+      player.x = Math.max(TILE, Math.min(player.x, (mapDef.w-1)*TILE));
+      player.y = Math.max(TILE, Math.min(player.y, (mapDef.h-1)*TILE));
+      player.auraPhase += dt*3;
+      player.animTimer += dt;
+      if (player.animTimer >= 1/8) { player.animTimer=0; player.animFrame=(player.animFrame+1)%4; }
+
+      const ptx=Math.floor(player.x/TILE), pty=Math.floor(player.y/TILE);
+      const tile=worldMaps[currentMap]?.[pty]?.[ptx];
+      if (tile===3 && !document.getElementById("portalPanel").classList.contains("visible") && gameState==="playing") {
+        showHudToast("⭐ Portal — presioná Z","info");
+      }
+    }
+
+    function updateCamera() {
+      const mapDef = MAPS[currentMap];
+      cam.tx = player.x - canvas.width/2; cam.ty = player.y - canvas.height/2;
+      cam.tx = Math.max(0, Math.min(cam.tx, mapDef.w*TILE - canvas.width));
+      cam.ty = Math.max(0, Math.min(cam.ty, mapDef.h*TILE - canvas.height));
+      cam.x += (cam.tx-cam.x)*CAM_LERP; cam.y += (cam.ty-cam.y)*CAM_LERP;
+    }
+
+    // ══ DRAW WORLD ══
+    function drawWorld() {
+      const map = worldMaps[currentMap];
+      if (!map) return;
+      const mapDef = MAPS[currentMap];
+      const startX=Math.floor(cam.x/TILE), startY=Math.floor(cam.y/TILE);
+      const endX=Math.min(mapDef.w, startX+Math.ceil(canvas.width/TILE)+2);
+      const endY=Math.min(mapDef.h, startY+Math.ceil(canvas.height/TILE)+2);
+      for (let ty=startY;ty<endY;ty++) for (let tx=startX;tx<endX;tx++) {
+        const tile = map[ty]?.[tx]??0;
+        const color = TILE_COLORS[tile]||"#2d5a27";
+        const sx=tx*TILE-cam.x, sy=ty*TILE-cam.y;
+        ctx.fillStyle = color;
+        ctx.fillRect(sx,sy,TILE+1,TILE+1);
+        if (tile===0||tile===7) {
+          ctx.fillStyle = tile===7?"rgba(0,100,0,0.2)":"rgba(255,255,255,0.03)";
+          if ((tx+ty)%3===0) ctx.fillRect(sx+8,sy+8,4,4);
+        } else if (tile===2) {
+          ctx.fillStyle = "rgba(255,255,255,0.04)";
+          ctx.fillRect(sx,sy,TILE,1); ctx.fillRect(sx,sy,1,TILE);
+        } else if (tile===3) {
+          const phase = Date.now()*.002;
+          ctx.fillStyle = `rgba(139,31,255,${0.3+0.2*Math.sin(phase)})`;
+          ctx.fillRect(sx,sy,TILE,TILE);
+          ctx.strokeStyle = `rgba(180,100,255,${0.5+0.3*Math.sin(phase*2)})`;
+          ctx.lineWidth=2;
+          ctx.strokeRect(sx+4,sy+4,TILE-8,TILE-8);
+        } else if (tile===6) {
+          ctx.fillStyle = "rgba(255,255,255,0.06)";
+          if (tx%3===0) ctx.fillRect(sx,sy,2,TILE);
+        } else if (tile===10) {
+          ctx.fillStyle = "rgba(255,255,255,0.5)";
+          if ((tx*17+ty*13)%20===0) ctx.fillRect(sx+(tx*7)%40,sy+(ty*11)%40,1.5,1.5);
+          if ((tx*11+ty*19)%30===0) ctx.fillRect(sx+(tx*13)%40,sy+(ty*7)%40,1,1);
+        }
+      }
+      drawWorldObjects();
+      drawTrailers();
+      drawNpcs();
+    }
+
+    function drawWorldObjects() {
+      if (currentMap==="lobby") {
+        const bx=32*TILE-cam.x, by=14*TILE-cam.y;
+        ctx.fillStyle="rgba(0,0,0,.3)"; ctx.fillRect(bx+6,by+6,16*TILE,8*TILE);
+        ctx.fillStyle="#0d1525"; ctx.fillRect(bx,by,16*TILE,8*TILE);
+        ctx.fillStyle="#00e5ff"; ctx.fillRect(bx,by,16*TILE,4);
+        ctx.fillStyle="rgba(0,229,255,.15)"; ctx.fillRect(bx+4,by+10,24,20); ctx.fillRect(bx+40,by+10,24,20); ctx.fillRect(bx+76,by+10,24,20);
+        ctx.fillStyle="rgba(255,255,255,.7)"; ctx.font="bold 10px Orbitron,monospace"; ctx.textAlign="center";
+        ctx.fillText("SALA DE REUNIONES",bx+8*TILE,by-6);
+        const ex=14*TILE-cam.x, ey=24*TILE-cam.y;
+        ctx.fillStyle="#0d1020"; ctx.fillRect(ex,ey,8*TILE,12*TILE);
+        ctx.fillStyle="#ff6a00"; ctx.fillRect(ex,ey,8*TILE,4);
+        ctx.fillStyle="rgba(255,255,255,.7)"; ctx.font="bold 9px Orbitron,monospace"; ctx.textAlign="center";
+        ctx.fillText("ENTRENAMIENTO",ex+4*TILE,ey-6);
+        const fx=58*TILE-cam.x, fy=24*TILE-cam.y;
+        ctx.fillStyle="#0d1020"; ctx.fillRect(fx,fy,8*TILE,12*TILE);
+        ctx.fillStyle="#aa00ff"; ctx.fillRect(fx,fy,8*TILE,4);
+        ctx.fillStyle="rgba(255,255,255,.7)"; ctx.font="bold 9px Orbitron,monospace"; ctx.textAlign="center";
+        ctx.fillText("ESTRATEGIA",fx+4*TILE,fy-6);
+        const fx2=37*TILE-cam.x, fy2=28*TILE-cam.y;
+        ctx.fillStyle="#1565c0"; ctx.beginPath(); ctx.ellipse(fx2+2*TILE,fy2+2*TILE,2.5*TILE,2*TILE,0,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle=`rgba(100,180,255,${0.3+0.2*Math.sin(Date.now()*.002)})`; ctx.beginPath(); ctx.ellipse(fx2+2*TILE,fy2+2*TILE,1*TILE,.8*TILE,0,0,Math.PI*2); ctx.fill();
+      } else if (currentMap==="earth") {
+        const bx=40*TILE-cam.x, by=30*TILE-cam.y;
+        ctx.fillStyle="#1565c0"; ctx.fillRect(bx,by,8*TILE,5*TILE);
+        ctx.fillStyle="#00e5ff"; ctx.fillRect(bx,by,8*TILE,4);
+        ctx.fillStyle="rgba(255,255,255,.7)"; ctx.font="bold 9px Orbitron,monospace"; ctx.textAlign="center";
+        ctx.fillText("CAPSULE CORP",bx+4*TILE,by-6);
+        const tx2=75*TILE-cam.x, ty2=20*TILE-cam.y;
+        ctx.fillStyle="#8d6e63"; ctx.fillRect(tx2-2,ty2,4,10*TILE);
+        ctx.fillStyle="#795548"; ctx.beginPath(); ctx.arc(tx2,ty2,20,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle="rgba(255,255,255,.7)"; ctx.font="bold 8px Orbitron,monospace"; ctx.textAlign="center";
+        ctx.fillText("TORRE KARIN",tx2,ty2-8);
+        const kx=8*TILE-cam.x, ky=38*TILE-cam.y;
+        ctx.fillStyle="#e53935"; ctx.beginPath(); ctx.arc(kx,ky,22,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle="rgba(255,255,255,.7)"; ctx.font="bold 8px Orbitron,monospace"; ctx.textAlign="center";
+        ctx.fillText("KAME-HOUSE",kx,ky-28);
+        const ax=90*TILE-cam.x, ay=8*TILE-cam.y;
+        ctx.fillStyle="#9c88ff"; ctx.fillRect(ax-12,ay,24,8*TILE);
+        ctx.fillStyle="rgba(255,255,255,.7)"; ctx.font="bold 8px Orbitron,monospace"; ctx.textAlign="center";
+        ctx.fillText("ATALAYA",ax,ay-6);
+      } else if (currentMap==="space") {
+        const bx=20*TILE-cam.x, by=15*TILE-cam.y;
+        ctx.fillStyle="#1a1a3a"; ctx.fillRect(bx,by,25*TILE,15*TILE);
+        ctx.fillStyle="#e040fb"; ctx.fillRect(bx,by,25*TILE,4);
+        ctx.fillStyle="rgba(255,255,255,.7)"; ctx.font="bold 9px Orbitron,monospace"; ctx.textAlign="center";
+        ctx.fillText("NAVE DE FRIEZA",bx+12*TILE,by-6);
+        const px=75*TILE-cam.x, py=10*TILE-cam.y;
+        ctx.fillStyle="#1a2a3a"; ctx.fillRect(px,py,25*TILE,15*TILE);
+        ctx.fillStyle="#00e5ff"; ctx.fillRect(px,py,25*TILE,4);
+        ctx.fillStyle="rgba(255,255,255,.7)"; ctx.font="bold 9px Orbitron,monospace"; ctx.textAlign="center";
+        ctx.fillText("PATRULLA INTERGALÁCTICA",px+12*TILE,py-6);
+        const cx=67*TILE-cam.x, cy=45*TILE-cam.y;
+        const grd=ctx.createRadialGradient(cx,cy,2,cx,cy,12*TILE);
+        grd.addColorStop(0,"#4a2010"); grd.addColorStop(1,"#1a0808");
+        ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(cx,cy,12*TILE,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle="rgba(255,255,255,.7)"; ctx.font="bold 9px Orbitron,monospace"; ctx.textAlign="center";
+        ctx.fillText("PLANETA CENTRAL",cx,cy-13*TILE-6);
+        [[15,55,8],[40,20,7],[60,70,6],[90,50,9],[100,30,8]].forEach(([pcx,pcy,r],i)=>{
+          const colors=["#1a3a5a","#2a1a4a","#1a4a2a","#3a2a1a","#2a3a1a"];
+          const scx=pcx*TILE-cam.x, scy=pcy*TILE-cam.y;
+          ctx.fillStyle=colors[i%colors.length]; ctx.beginPath(); ctx.arc(scx,scy,r*TILE,0,Math.PI*2); ctx.fill();
+          ctx.strokeStyle="rgba(255,255,255,.15)"; ctx.lineWidth=2; ctx.stroke();
+          ctx.fillStyle="rgba(255,255,255,.5)"; ctx.font="bold 8px Orbitron,monospace"; ctx.textAlign="center";
+          ctx.fillText(`PLANETA ${i+1}`,scx,scy-r*TILE-6);
+        });
+      }
+      ctx.textAlign="left";
+    }
+
+    function drawTrailers() {
+      for (const [tid, tr] of Object.entries(trailers)) {
+        if (tr.map !== currentMap) continue;
+        const sx = tr.x - cam.x, sy = tr.y - cam.y;
+        if (sx<-200||sx>canvas.width+200||sy<-200||sy>canvas.height+200) continue;
+        ctx.fillStyle = "rgba(0,0,0,.25)"; ctx.fillRect(sx+8,sy+6,TRAILER_W,TRAILER_H);
+        ctx.fillStyle = tid===myPlayerId ? "#3a2a10" : "#1a2a3a";
+        ctx.fillRect(sx,sy,TRAILER_W,TRAILER_H);
+        ctx.fillStyle = tid===myPlayerId ? "#f5c400" : "#00e5ff";
+        ctx.fillRect(sx,sy,TRAILER_W,4);
+        ctx.fillStyle="#1a1a1a";
+        ctx.beginPath(); ctx.arc(sx+TILE*.8,sy+TRAILER_H+5,10,0,Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(sx+TRAILER_W-TILE*.8,sy+TRAILER_H+5,10,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle="rgba(100,180,255,.4)"; ctx.fillRect(sx+12,sy+14,24,18); ctx.fillRect(sx+TRAILER_W-36,sy+14,24,18);
+        ctx.fillStyle="rgba(255,255,255,.15)"; ctx.fillRect(sx+TRAILER_W/2-10,sy+TRAILER_H-30,20,30);
+        ctx.fillStyle="rgba(255,255,255,.8)"; ctx.font="bold 9px Orbitron,monospace"; ctx.textAlign="center";
+        ctx.fillText(tid===myPlayerId ? `🚐 ${tr.ownerName}` : `🚐 ${tr.ownerName}`, sx+TRAILER_W/2, sy-8);
+        if (Math.hypot(tr.x-player.x, tr.y-player.y) < 80) {
+          const phase=Date.now()*.003;
+          ctx.fillStyle=`rgba(245,196,0,${.5+.5*Math.sin(phase*4)})`;
+          ctx.font="bold 12px Orbitron,monospace"; ctx.textAlign="center";
+          ctx.fillText("[Z]",sx+TRAILER_W/2,sy-22+Math.sin(phase*3)*3);
+        }
+        ctx.textAlign="left";
+      }
+    }
+
+    function drawNpcs() {
+      const t = Date.now()*.003;
+      npcs.forEach(npc => {
+        const sx=npc.x-cam.x, sy=npc.y-cam.y;
+        if (sx<-40||sx>canvas.width+40||sy<-40||sy>canvas.height+40) return;
+        ctx.shadowColor=npc.color; ctx.shadowBlur=10;
+        ctx.fillStyle="rgba(0,0,0,.3)"; ctx.beginPath(); ctx.ellipse(sx,sy+4,12,4,0,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle=npc.color; ctx.fillRect(sx-8,sy-24,16,28);
+        ctx.beginPath(); ctx.arc(sx,sy-28,10,0,Math.PI*2); ctx.fill();
+        ctx.shadowBlur=0;
+        ctx.fillStyle="rgba(255,255,255,.8)"; ctx.font="bold 9px Orbitron,monospace"; ctx.textAlign="center";
+        ctx.fillText(npc.name, sx, sy-40);
+        if (Math.hypot(npc.x-player.x,npc.y-player.y)<80) {
+          ctx.fillStyle=`rgba(245,196,0,${.5+.5*Math.sin(t*4)})`;
+          ctx.font="bold 12px Orbitron,monospace"; ctx.textAlign="center";
+          ctx.fillText("[Z]",sx,sy-54+Math.sin(t*3)*3);
+        }
+        ctx.textAlign="left";
+      });
+    }
+
+    function drawPlayerChar() {
+      const sx=player.x-cam.x, sy=player.y-cam.y;
+      const CS=window.CharacterSystem;
+      const useCS=CS&&csImageMap&&csAnimator&&Object.values(csImageMap).some(img=>img&&img.complete&&img.naturalWidth>0);
+      if (useCS) {
+        const csState={glovesId:CS.player.appearance.glovesId||"gm0",auraId:CS.player.appearance.auraId||"a0",auraColor:CS.player.appearance.auraColor||"#fdd835",accessoryId:CS.player.appearance.accessoryId||"ac_none",auraPhase:player.auraPhase||0,viewKey:null};
+        ctx.fillStyle="rgba(0,0,0,0.3)"; ctx.beginPath(); ctx.ellipse(sx,sy+3,16,5,0,0,Math.PI*2); ctx.fill();
+        const scaleX=SPRITE_DRAW_W/CS.DISPLAY_W, scaleY=SPRITE_DRAW_H/CS.DISPLAY_H;
+        ctx.save(); ctx.translate(sx,sy); ctx.scale(scaleX,scaleY); ctx.translate(-sx,-sy); ctx.imageSmoothingEnabled=true;
+        CS.drawPlayer(ctx,sx,sy,CS.player,csImageMap,csAnimator,csState); ctx.restore();
+        return;
+      }
+      // Fallback procedural
+      ctx.fillStyle="rgba(0,0,0,.35)"; ctx.beginPath(); ctx.ellipse(sx,sy+2,16,5,0,0,Math.PI*2); ctx.fill();
+      if (player.facing===-1){ctx.save();ctx.scale(-1,1);ctx.translate(-sx*2,0);}
+      const skinColor=savedChar?.skinColor||"#d4a574";
+      ctx.fillStyle=savedChar?.clothColor||"#ff6a00"; ctx.fillRect(sx-7,sy-16,7,18); ctx.fillRect(sx+1,sy-16,7,18);
+      ctx.fillStyle="#1a1a1a"; ctx.fillRect(sx-8,sy+2,8,6); ctx.fillRect(sx+1,sy+2,8,6);
+      ctx.fillStyle=charColor; ctx.fillRect(sx-10,sy-36,20,22);
+      ctx.fillStyle=skinColor; ctx.fillRect(sx-16,sy-36,7,16); ctx.fillRect(sx+9,sy-36,7,16);
+      ctx.beginPath(); ctx.arc(sx,sy-44,10,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle=savedChar?.hairColor||"#1a1a1a"; ctx.beginPath(); ctx.arc(sx,sy-50,9,Math.PI,Math.PI*2); ctx.fill();
+      if (player.facing===-1) ctx.restore();
+    }
+
+    function drawCombatEffects(dt) {
+      combatEffects = combatEffects.filter(e => {
+        e.timer -= dt;
+        if (e.timer<=0) return false;
+        const sx=e.x-cam.x, sy=e.y-cam.y-(1-e.timer)*30;
+        ctx.globalAlpha=Math.min(1,e.timer*2);
+        ctx.fillStyle=e.color; ctx.font="bold 16px Orbitron,monospace"; ctx.textAlign="center"; ctx.textBaseline="middle";
+        ctx.fillText(e.text,sx,sy);
+        ctx.globalAlpha=1; ctx.textAlign="left"; ctx.textBaseline="alphabetic";
+        return true;
+      });
+    }
+
+    function drawMinimap() {
+      const mw=minimapCanvas.width, mh=minimapCanvas.height;
+      const mapDef=MAPS[currentMap];
+      const scaleX=mw/mapDef.w, scaleY=mh/mapDef.h;
+      const map=worldMaps[currentMap];
+      mmCtx.fillStyle="#08090f"; mmCtx.fillRect(0,0,mw,mh);
+      if (map) {
+        for(let ty=0;ty<mapDef.h;ty+=2) for(let tx=0;tx<mapDef.w;tx+=2){
+          const tile=map[ty]?.[tx]??0;
+          mmCtx.fillStyle=TILE_COLORS[tile]||"#2d5a27";
+          mmCtx.fillRect(tx*scaleX,ty*scaleY,scaleX*2+1,scaleY*2+1);
+        }
+      }
+      mmCtx.fillStyle="#00e5ff";
+      for (const p of Object.values(otherPlayers)) {
+        if (p.map && p.map!==currentMap) continue;
+        mmCtx.beginPath(); mmCtx.arc((p.x/TILE)*scaleX,(p.y/TILE)*scaleY,2,0,Math.PI*2); mmCtx.fill();
+      }
+      mmCtx.fillStyle="#f5c400";
+      for (const tr of Object.values(trailers)) {
+        if (tr.map!==currentMap) continue;
+        mmCtx.fillRect((tr.x/TILE)*scaleX,(tr.y/TILE)*scaleY,4,3);
+      }
+      const px=(player.x/TILE)*scaleX, py=(player.y/TILE)*scaleY;
+      mmCtx.fillStyle=charColor; mmCtx.shadowColor=charColor; mmCtx.shadowBlur=4;
+      mmCtx.beginPath(); mmCtx.arc(px,py,2.5,0,Math.PI*2); mmCtx.fill(); mmCtx.shadowBlur=0;
+    }
+
+    function drawAmbient() {
+      if (currentMap==="space") {
+        const grd=ctx.createRadialGradient(canvas.width*.5,canvas.height*.3,10,canvas.width*.5,canvas.height*.3,canvas.width*.8);
+        grd.addColorStop(0,"rgba(20,0,40,0.2)"); grd.addColorStop(1,"transparent");
+        ctx.fillStyle=grd; ctx.fillRect(0,0,canvas.width,canvas.height*.6);
+      }
+    }
+
+    // ══ RESPAWN ══
+    window.respawn = function() {
+      const start=MAP_STARTS[currentMap];
+      player.x=start.x*TILE; player.y=start.y*TILE;
+      gameState="playing";
+      document.getElementById("screenDead").style.display="none";
+    };
+
+    function playerDied() { gameState="dead"; document.getElementById("screenDead").style.display="flex"; }
+
+    function goBack() { window.location.href="index.html"; }
+    window.goBack=goBack;
+
+    // ══ LOAD GAME ══
+    async function loadGame() {
+      const steps=[
+        ["GENERANDO LOBBY...", ()=>{
+          worldMaps.lobby = generateLobbyMap();
+          worldMaps.earth = generateEarthMap();
+          worldMaps.space = generateSpaceMap();
+        }],
+        ["CARGANDO PERSONAJE...", async()=>{
+          const CS=window.CharacterSystem;
+          if (CS) {
+            try {
+              await restoreAllAccessoriesForGame(CS);
+              csImageMap=await CS.preloadAssets("", { quiet: true });
+              CS.initPlayer();
+              if(savedChar){
+                const rid=savedChar.race||"human",gen=savedChar.gender||"male";
+                const defs=CS.getDefaultIds(rid,gen);
+                CS.player.appearance.raceId=rid; CS.player.appearance.gender=gen;
+                CS.player.appearance.faceId=savedChar.faceId||defs.faceId;
+                CS.player.appearance.faceColor=savedChar.faceColor||null;
+                CS.player.appearance.eyeColor=savedChar.eyeColor||"#3a2a1a";
+                CS.player.appearance.browColor=savedChar.browColor||null;
+                CS.player.appearance.pupilColor=savedChar.pupilColor||null;
+                CS.player.appearance.hairId=savedChar.hair||defs.hairId;
+                CS.player.appearance.hairColor=savedChar.hairColor||"#1a1a1a";
+                CS.player.appearance.topId=savedChar.shirt||defs.topId;
+                CS.player.appearance.bottomId=savedChar.pants||defs.bottomId;
+                CS.player.appearance.shoesId=savedChar.shoes||defs.shoesId;
+                CS.player.appearance.glovesId=savedChar.gloves||defs.glovesId;
+                CS.player.appearance.skinColor=savedChar.skinColor||"#e8c898";
+                CS.player.appearance.auraId=savedChar.aura||"a0";
+                CS.player.appearance.auraColor=savedChar.auraColor||"#fdd835";
+                CS.player.appearance.accessoryId=savedChar.accessory||savedChar.accessoryId||"ac_none";
+              }
+              await ensureAccessoryImageReady(CS, CS.player.appearance.accessoryId);
+              CS.player.direction=player.facing;
+              csAnimator=new CS.SpriteAnimator("idle");
+            } catch(err){ console.warn("[game]",err); csImageMap=null; csAnimator=null; }
           }
-
-          if (tinted) {
-            ctx.imageSmoothingEnabled = false;
-            ctx.drawImage(tinted, destX, destY, dw, dh);
-          } else {
-            _drawLayerSprite(ctx, faceImg, destX, destY, dw, dh, animator);
-          }
-
-        } else {
-          // --- Marcas, tatuajes, pinturas, barbas ---
-          const faceColor = app.faceColor || null;
-          if (faceColor) {
-            const cacheKey = (faceDef.id || "face") + "|" + (faceImg.src || "");
-            const tinted = tintLayer(faceImg, faceColor, cacheKey, dw, dh, frameCoords);
-            if (tinted) {
-              ctx.imageSmoothingEnabled = false;
-              ctx.drawImage(tinted, destX, destY, dw, dh);
-            } else {
-              _drawLayerSprite(ctx, faceImg, destX, destY, dw, dh, animator);
+          document.getElementById("hudPlayerName").textContent=player.name;
+          updatePlayerHud();
+        }],
+        ["CONECTANDO AL SERVIDOR...", async()=>{
+          buildMpHud();
+          initMultiplayer();
+          publishMyAppearance(true);
+          db.ref("trailers").on("value", snap => {
+            const all=snap.val()||{};
+            for (const [tid,tr] of Object.entries(all)) {
+              if (tid===myPlayerId) continue;
+              if (!trailers[tid]) trailers[tid]={};
+              Object.assign(trailers[tid],tr,{ownerId:tid,ownerName:tr.ownerName||"?",map:tr.map||"lobby",invited:trailers[tid].invited||new Set()});
             }
-          } else {
-            _drawLayerSprite(ctx, faceImg, destX, destY, dw, dh, animator);
-          }
-        }
+            for (const tid in trailers) { if (!all[tid] && tid!==myPlayerId) delete trailers[tid]; }
+          });
+          await new Promise(r=>setTimeout(r,500));
+        }],
+        ["¡LISTO!", ()=>{}],
+      ];
 
-      } else {
-        // tintable:false → dibujar sin tinte
-        _drawLayerSprite(ctx, faceImg, destX, destY, dw, dh, animator);
+      const bar=document.getElementById("loadBar"), label=document.getElementById("loadLabel");
+      for (let i=0;i<steps.length;i++) {
+        label.textContent=steps[i][0];
+        bar.style.width=`${((i+1)/steps.length)*100}%`;
+        await Promise.resolve(steps[i][1]());
+        await new Promise(r=>setTimeout(r,250));
       }
+      await new Promise(r=>setTimeout(r,300));
+      document.getElementById("screenLoading").style.display="none";
+      gameState="playing";
+      updatePlayerHud();
     }
 
-    // 10. CABELLO — tintHair v4.3.2 (multiply)
-    const hairImg = imageMap ? imageMap[hairDef?.spriteKey] || null : null;
-    if (hairImg && hairImg.complete && hairImg.naturalWidth) {
-      const sheet = isCompatibleSheet(hairImg) && animator;
-      const coords = sheet ? (() => {
-        const { srcX, srcY, fw, fh } = animator.getFrameCoords(hairImg);
-        if (srcX + fw <= hairImg.naturalWidth && srcY + fh <= hairImg.naturalHeight)
-          return { srcX, srcY, fw, fh };
-        return null;
-      })() : null;
+    // ══ GAME LOOP ══
+    let lastTime=0;
+    function gameLoop(timestamp) {
+      const dt=Math.min((timestamp-lastTime)/1000,.05);
+      lastTime=timestamp;
 
-      const tinted = tintHair(hairImg, app.hairColor || "#1a1a1a", hairDef, dw, dh, coords);
-      if (tinted) {
-        ctx.imageSmoothingEnabled = false;
-        ctx.drawImage(tinted, destX, destY, dw, dh);
+      const CS=window.CharacterSystem;
+
+      if (gameState==="playing") {
+        updatePlayer(dt);
+        updateCamera();
       }
+
+      if (gameState==="trailer") {
+        drawTrailerInterior();
+        requestAnimationFrame(gameLoop);
+        return;
+      }
+
+      ctx.fillStyle=MAPS[currentMap]?.bgColor||"#08090f";
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+
+      if (gameState==="playing"&&CS&&csAnimator) csAnimator.update(timestamp);
+      drawAmbient();
+      drawWorld();
+      sendPlayerUpdate();
+      drawOtherPlayers();
+      drawPlayerChar();
+      drawCombatEffects(dt);
+      drawMinimap();
+
+      requestAnimationFrame(gameLoop);
     }
 
-    // 11. ACCESORIO over_shirt
-    if (accSlot === "over_shirt" && accImg && accImg.complete && accImg.naturalWidth) {
-      _drawLayerSprite(ctx, accImg, destX, destY, dw, dh, animator);
-    }
-
-    ctx.restore();
-  }
-
-  // ═══════════════════════════════════════════════════════════════
-  //  UTILIDADES
-  // ═══════════════════════════════════════════════════════════════
-
-  function getById(catalog, id)           { return catalog.find((e) => e.id === id) || catalog[0]; }
-
-  function cycleId(catalog, currentId, delta = 1) {
-    const idx  = catalog.findIndex((e) => e.id === currentId);
-    const next = ((idx === -1 ? 0 : idx) + delta + catalog.length) % catalog.length;
-    return catalog[next].id;
-  }
-
-  function initPlayer(overrides = {}) {
-    Object.assign(player, overrides);
-    player._animator = new SpriteAnimator("idle");
-  }
-
-  // ═══════════════════════════════════════════════════════════════
-  //  EXPORT
-  // ═══════════════════════════════════════════════════════════════
-
-  const CharacterSystem = {
-    player,
-    RACE_CATALOG,
-    AURAS_CATALOG,
-    ACCESSORIES_CATALOG,
-    ACCESSORY_TYPES,
-    addUserAccessory,
-    removeUserAccessory,
-    restoreUserAccessories,
-
-    FACE_CATALOG_MALE, FACE_CATALOG_FEMALE, FACE_CATALOG_NAMEKIAN, FACE_CATALOG_FRIEZA,
-    FACE_CATALOG,
-
-    HAIR_CATALOG_MALE,   HAIR_CATALOG_FEMALE,   HAIR_CATALOG_NAMEKIAN,   HAIR_CATALOG_FRIEZA,
-    TOP_CATALOG_MALE,    TOP_CATALOG_FEMALE,    TOP_CATALOG_NAMEKIAN,    TOP_CATALOG_FRIEZA,
-    BOTTOM_CATALOG_MALE, BOTTOM_CATALOG_FEMALE, BOTTOM_CATALOG_NAMEKIAN, BOTTOM_CATALOG_FRIEZA,
-    SHOES_CATALOG_MALE,  SHOES_CATALOG_FEMALE,  SHOES_CATALOG_NAMEKIAN,  SHOES_CATALOG_FRIEZA,
-    GLOVES_CATALOG_MALE, GLOVES_CATALOG_FEMALE, GLOVES_CATALOG_NAMEKIAN, GLOVES_CATALOG_FRIEZA,
-
-    HAIR_CATALOG, TOP_CATALOG, BOTTOM_CATALOG, SHOES_CATALOG, GLOVES_CATALOG,
-
-    getCatalogFor, getDefaultIds, GENDERLESS_RACES,
-    isFreeCustomizationEntry, _getAccessoryImage, hasSheetLayout,
-
-    SPRITE_IMAGES,
-
-    ACTIONS_META, ACTIONS_META_MALE, ACTIONS_META_FEMALE, VIEW_META,
-
-    HAIR_VIEW_META,    HAIR_ACTIONS_META,
-    FACE_VIEW_META,    FACE_ACTIONS_META,
-    TOP_VIEW_META,     TOP_ACTIONS_META,
-    BOTTOM_VIEW_META,  BOTTOM_ACTIONS_META,
-    SHOES_VIEW_META,   SHOES_ACTIONS_META,
-    GLOVES_VIEW_META,  GLOVES_ACTIONS_META,
-    AURA_VIEW_META,    AURA_ACTIONS_META,
-
-    FRAME_W, FRAME_H, DISPLAY_W, DISPLAY_H, MAX_COLS, TOTAL_ROWS, IDLE_ROW,
-
-    SpriteAnimator, initPlayer, preloadAssets, drawPlayer,
-
-    tintHair, tintLayer, tintFaceColor, tintFaceDetailed, invalidateHairCache,
-    _hexToRgb, _rgbToHsl, _hslToRgb,
-    _tintSprite,
-
-    detectFrameSize, getFrameSize, isCompatibleSheet, getIdleFrameCoords,
-
-    getById, cycleId,
-
-    getActionsMeta, getViewMeta,
-    getHairViewMeta,   getHairActionsMeta,
-    getFaceViewMeta,   getFaceActionsMeta,
-    getTopViewMeta,    getTopActionsMeta,
-    getBottomViewMeta, getBottomActionsMeta,
-    getShoesViewMeta,  getShoesActionsMeta,
-    getGlovesViewMeta, getGlovesActionsMeta,
-    getAuraViewMeta,   getAuraActionsMeta,
-  };
-
-  if (typeof module !== "undefined" && module.exports) module.exports = CharacterSystem;
-  else if (typeof window !== "undefined") window.CharacterSystem = CharacterSystem;
-
-})();
+    loadGame().then(()=>{ lastTime=performance.now(); requestAnimationFrame(gameLoop); });
+    </script>
+  </body>
+</html>
