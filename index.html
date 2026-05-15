@@ -640,7 +640,7 @@
           if (!raw) return;
           const list = JSON.parse(raw);
           list.forEach(item => {
-            // Evitar duplicados si ya existe en el catálogo
+            // Evitar duplicados
             if (ACCESSORIES_CATALOG.find(a => a.id === item.id)) return;
             const img = new Image();
             img.src = item.dataURL;
@@ -653,12 +653,14 @@
               userImage:           img,
               dataURL:             item.dataURL,
               raceName:            item.raceName || null,
-              isFreeCustomization: true,
+              isFreeCustomization: true,  // ← siempre true al restaurar libre
             };
             FREE_CUSTOMIZATION_CATALOG.push(entry);
-            ACCESSORIES_CATALOG.push(entry);  // ← misma referencia, mismo ID
+            ACCESSORIES_CATALOG.push(entry);  // misma referencia
           });
-        } catch(e) {}
+        } catch(e) {
+          console.warn("Error restaurando free customization:", e);
+        }
       }
 
       /* ══════════════════════════════════════════════════════════════
@@ -804,8 +806,20 @@ const img = (cat === "accessory" || cat === "free")
         pants:     { label:"SELECCIONA LA ROPA INFERIOR",                              prop:"bottomId"},
         gloves:    { label:"SELECCIONA LOS GUANTES",                                   prop:"glovesId",     isExtra:true },
         shoes:     { label:"SELECCIONA EL CALZADO",                                    prop:"shoesId" },
-        accessory: { label:"ACCESORIOS IMPORTADOS",       catalog: () => ACCESSORIES_CATALOG.filter(a => !a.isFreeCustomization), prop:"accessoryId", isExtra:true, isAccImport:true },
-        free:      { label:"PERSONALIZACIÓN LIBRE",    catalog: FREE_CUSTOMIZATION_CATALOG, prop:"accessoryId", isExtra:true, isAccImport:true },
+        accessory: {
+          label: "ACCESORIOS IMPORTADOS",
+          catalog: () => ACCESSORIES_CATALOG.filter(a =>
+            !a.isFreeCustomization && !a.id.startsWith("fc_")
+          ),
+          prop:"accessoryId", isExtra:true, isAccImport:true
+        },
+        free: {
+          label: "PERSONALIZACIÓN LIBRE",
+          catalog: () => ACCESSORIES_CATALOG.filter(a =>
+            a.isFreeCustomization || a.id.startsWith("fc_")
+          ),
+          prop:"accessoryId", isExtra:true, isAccImport:true
+        },
         aura:      { label:"SELECCIONA EL AURA",          catalog: AURAS_CATALOG,      prop:"auraId",       isExtra:true, needsColor:true, colorProp:"auraColor", colorLabel:"COLOR AURA", palette:AURA_PALETTE },
         color:     { label:"COLORES", special:"color" },
       };
@@ -1276,11 +1290,12 @@ const img = (cat === "accessory" || cat === "free")
             showToast("Primero seleccioná un archivo PNG", "warning");
             return;
           }
-          const name     = nameInput.value.trim() || (isFreeCat ? "Personalización" : "Accesorio");
-          const type     = isFreeCat ? "other" : typeSelect.value;
-          const typeDef  = ACCESSORY_TYPES.find(td => td.id === type) || ACCESSORY_TYPES[ACCESSORY_TYPES.length - 1];
+          const name    = nameInput.value.trim() || (isFreeCat ? "Personalización" : "Accesorio");
+          const type    = isFreeCat ? "other" : typeSelect.value;
+          const typeDef = ACCESSORY_TYPES.find(td => td.id === type)
+                       || ACCESSORY_TYPES[ACCESSORY_TYPES.length - 1];
 
-          // ID único con prefijo diferenciado
+          // Prefijo diferente según categoría
           const newId = isFreeCat
             ? `fc_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`
             : `user_acc_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
@@ -1294,20 +1309,26 @@ const img = (cat === "accessory" || cat === "free")
             userImage:           _importPendingImg,
             dataURL:             _importPendingDataURL,
             raceName:            isFreeCat ? (raceInput.value.trim() || null) : null,
-            isFreeCustomization: isFreeCat,
+            isFreeCustomization: isFreeCat,  // ← flag siempre correcto
           };
 
-          // Agregar a ACCESSORIES_CATALOG (para que drawPlayer lo encuentre)
-          ACCESSORIES_CATALOG.push(entry);
+          // Agregar UNA sola vez a ACCESSORIES_CATALOG
+          // El filtro en CAT_CONFIG se encarga de mostrarlo en el panel correcto
+          if (!ACCESSORIES_CATALOG.find(a => a.id === entry.id)) {
+            ACCESSORIES_CATALOG.push(entry);
+          }
 
+          // También al catálogo de libre para persistencia
           if (isFreeCat) {
-            FREE_CUSTOMIZATION_CATALOG.push(entry);
+            if (!FREE_CUSTOMIZATION_CATALOG.find(a => a.id === entry.id)) {
+              FREE_CUSTOMIZATION_CATALOG.push(entry);
+            }
             _saveFreeCustomizationToLS();
           } else {
             _saveAccessoriesToLS();
           }
 
-          // Seleccionar automáticamente el accesorio recién añadido
+          // Seleccionar automáticamente
           charState.accessoryId         = entry.id;
           player.appearance.accessoryId = entry.id;
 
