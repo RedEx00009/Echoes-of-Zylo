@@ -26,6 +26,7 @@
   const FRAME_H   = 96;
   const DISPLAY_W = 180;
   const DISPLAY_H = 220;
+  const IMPORTED_LAYER_SCALE = 1.22;
 
   // ═══════════════════════════════════════════════════════════════
   //  META COMPARTIDA
@@ -761,11 +762,25 @@
   const TOTAL_ROWS = 14;
   const IDLE_ROW   = ACTIONS_META.idle.row;
 
+  function hasFullGridLayout(img) {
+    if (!img || !img.naturalWidth || !img.naturalHeight) return false;
+    const byDefaultGrid = img.naturalWidth >= FRAME_W * MAX_COLS && img.naturalHeight >= FRAME_H * TOTAL_ROWS;
+    const gridAspect = MAX_COLS / TOTAL_ROWS;
+    const imgAspect = img.naturalWidth / img.naturalHeight;
+    const byScaledGrid = img.naturalWidth >= MAX_COLS * 8
+      && img.naturalHeight >= TOTAL_ROWS * 8
+      && Math.abs(imgAspect - gridAspect) < 0.04;
+    return byDefaultGrid || byScaledGrid;
+  }
+
   function detectFrameSize(img) {
     if (!img || !img.naturalWidth) return { fw: FRAME_W, fh: FRAME_H };
-    const fw = Math.floor(img.naturalWidth  / MAX_COLS);
-    const fh = Math.floor(img.naturalHeight / TOTAL_ROWS);
-    return { fw: fw > 0 ? fw : FRAME_W, fh: fh > 0 ? fh : FRAME_H };
+    if (hasFullGridLayout(img)) {
+      const fw = Math.floor(img.naturalWidth  / MAX_COLS);
+      const fh = Math.floor(img.naturalHeight / TOTAL_ROWS);
+      return { fw: fw > 0 ? fw : FRAME_W, fh: fh > 0 ? fh : FRAME_H };
+    }
+    return { fw: FRAME_W, fh: FRAME_H };
   }
 
   const _frameSizeCache = new Map();
@@ -780,13 +795,13 @@
   function isCompatibleSheet(img) {
     if (!img || !img.naturalWidth || !img.naturalHeight) return false;
     const { fw, fh } = getFrameSize(img);
-    return img.naturalWidth >= fw && img.naturalHeight >= fh * TOTAL_ROWS;
+    return hasFullGridLayout(img) && img.naturalWidth >= fw * MAX_COLS && img.naturalHeight >= fh * TOTAL_ROWS;
   }
 
   function hasSheetLayout(img) {
     if (!img || !img.naturalWidth || !img.naturalHeight) return false;
     const { fw, fh } = getFrameSize(img);
-    return img.naturalWidth >= fw && img.naturalHeight >= fh;
+    return hasFullGridLayout(img) && img.naturalWidth >= fw && img.naturalHeight >= fh;
   }
 
   function isFreeCustomizationEntry(accDef) {
@@ -796,12 +811,16 @@
   function _getAccessoryImage(accDef) {
     if (!accDef || accDef.id === "ac_none") return null;
     const img = accDef.userImage;
+    const isImported = !!(accDef.dataURL || accDef.isFreeCustomization || String(accDef.id).startsWith("fc_") || String(accDef.id).startsWith("user_acc_"));
+    if (img) img._dcImportedLayer = isImported;
     if (img && img.complete && img.naturalWidth) return img;
     if (!accDef.dataURL) return img || null;
     if (!accDef._pendingImage) {
       const pending = new Image();
+      pending._dcImportedLayer = isImported;
       accDef._pendingImage = pending;
       pending.onload = () => {
+        pending._dcImportedLayer = isImported;
         accDef.userImage = pending;
         accDef._pendingImage = null;
       };
@@ -1077,7 +1096,7 @@
    *   proporcionalmente para encajar en dw×dh, centradas, con
    *   imageSmoothingQuality "high" para máxima calidad.
    */
-  function _drawLayerSprite(ctx, img, destX, destY, dw, dh, animator) {
+  function _drawLayerSprite(ctx, img, destX, destY, dw, dh, animator, importedScale = 1) {
     if (!img || !img.complete || !img.naturalWidth) return false;
     const fullSheet   = isCompatibleSheet(img);
     const partialSheet = !fullSheet && hasSheetLayout(img);
@@ -1101,7 +1120,7 @@
     // Imagen importada libre (accesorio, personalización):
     // escalar proporcionalmente y centrar con alta calidad
     const iw = img.naturalWidth, ih = img.naturalHeight;
-    const scale = Math.min(dw / iw, dh / ih);
+    const scale = Math.min(dw / iw, dh / ih) * importedScale;
     const drawW = iw * scale, drawH = ih * scale;
     const offsetX = destX + (dw - drawW) / 2;
     const offsetY = destY + (dh - drawH) / 2;
@@ -1376,14 +1395,14 @@
 
     // Personalización libre: reemplaza todo el sprite
     if (freeCustom && accImg && accImg.complete && accImg.naturalWidth) {
-      _drawLayerSprite(ctx, accImg, destX, destY, dw, dh, animator);
+      _drawLayerSprite(ctx, accImg, destX, destY, dw, dh, animator, IMPORTED_LAYER_SCALE);
       ctx.restore();
       return;
     }
 
     // 2. ACCESORIO under_shirt
     if (accSlot === "under_shirt" && accImg && accImg.complete && accImg.naturalWidth) {
-      _drawLayerSprite(ctx, accImg, destX, destY, dw, dh, animator);
+      _drawLayerSprite(ctx, accImg, destX, destY, dw, dh, animator, IMPORTED_LAYER_SCALE);
     }
 
     // 3. CUERPO con tinte de piel
@@ -1410,7 +1429,7 @@
 
     // 6. CINTURÓN
     if (accSlot === "belt_slot" && accImg && accImg.complete && accImg.naturalWidth) {
-      _drawLayerSprite(ctx, accImg, destX, destY, dw, dh, animator);
+      _drawLayerSprite(ctx, accImg, destX, destY, dw, dh, animator, IMPORTED_LAYER_SCALE);
     }
 
     // 7. ROPA SUPERIOR
@@ -1495,7 +1514,7 @@
 
     // 11. ACCESORIO over_shirt
     if (accSlot === "over_shirt" && accImg && accImg.complete && accImg.naturalWidth) {
-      _drawLayerSprite(ctx, accImg, destX, destY, dw, dh, animator);
+      _drawLayerSprite(ctx, accImg, destX, destY, dw, dh, animator, IMPORTED_LAYER_SCALE);
     }
 
     ctx.restore();
@@ -1558,7 +1577,7 @@
     GLOVES_VIEW_META,  GLOVES_ACTIONS_META,
     AURA_VIEW_META,    AURA_ACTIONS_META,
 
-    FRAME_W, FRAME_H, DISPLAY_W, DISPLAY_H, MAX_COLS, TOTAL_ROWS, IDLE_ROW,
+    FRAME_W, FRAME_H, DISPLAY_W, DISPLAY_H, IMPORTED_LAYER_SCALE, MAX_COLS, TOTAL_ROWS, IDLE_ROW,
 
     SpriteAnimator, initPlayer, preloadAssets, drawPlayer,
 
