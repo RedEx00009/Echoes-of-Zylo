@@ -454,6 +454,8 @@
           <button class="cat-btn" data-cat="free">           <span class="cat-icon">🧩</span><span class="cat-label">LIBRE</span></button>
           <button class="cat-btn" data-cat="aura">           <span class="cat-icon">✨</span><span class="cat-label">AURA</span></button>
           <button class="cat-btn" data-cat="color">          <span class="cat-icon">🎨</span><span class="cat-label">COLOR</span></button>
+          <button class="cat-btn" data-cat="combat">         <span class="cat-icon">⚔️</span><span class="cat-label">COMBATE</span></button>
+          <button class="cat-btn" data-cat="forms">          <span class="cat-icon">⚡</span><span class="cat-label">FORMAS</span></button>
         </nav>
         <div class="items-panel" id="itemsPanel"></div>
       </div>
@@ -821,6 +823,8 @@ const img = (cat === "accessory" || cat === "free")
           prop:"accessoryId", isExtra:true, isAccImport:true
         },
         aura:      { label:"SELECCIONA EL AURA",          catalog: AURAS_CATALOG,      prop:"auraId",       isExtra:true, needsColor:true, colorProp:"auraColor", colorLabel:"COLOR AURA", palette:AURA_PALETTE },
+        combat:    { label:"PLANTILLA DE COMBATE", special:"combat" },
+        forms:     { label:"FORMAS CUSTOMIZABLES", special:"forms" },
         color:     { label:"COLORES", special:"color" },
       };
 
@@ -845,6 +849,8 @@ const img = (cat === "accessory" || cat === "free")
         panel.appendChild(titleEl);
 
         if (cfg.special === "color") { renderColorPanel(panel); return; }
+        if (cfg.special === "combat") { renderCombatPanel(panel); return; }
+        if (cfg.special === "forms") { renderFormsPanel(panel); return; }
 
         const catalog = typeof cfg.catalog === "function"
           ? cfg.catalog()
@@ -952,6 +958,8 @@ const img = (cat === "accessory" || cat === "free")
                   player.appearance.eyeColor  = race.eyeColor;
                 }
                 if (GENDERLESS_RACES.includes(item.id)) player.appearance.gender = "male";
+                const variants = getActiveVariants();
+                if (!variants.some(v => v.id === player.appearance.variantId)) player.appearance.variantId = "base";
                 _resetEquipmentForCurrentRaceGender();
               }
               if (cat === "hair") invalidateHairCache();
@@ -1192,6 +1200,380 @@ const img = (cat === "accessory" || cat === "free")
         pickerRow.appendChild(picker);
         cs.appendChild(pickerRow);
         panel.appendChild(cs);
+      }
+
+      function getActiveVariants() {
+        const race = RACE_CATALOG.find(r => r.id === player.appearance.raceId);
+        const catalogVariants = race?.variants?.length ? race.variants : [{ id: "base", label: "Base", suffix: "" }];
+        const customVariants = Object.entries(player.appearance.variantCustomizations || {})
+          .filter(([id]) => !catalogVariants.some(v => v.id === id))
+          .map(([id, cfg]) => ({ id, label: cfg.label || cfg.name || id, suffix: "" }));
+        return catalogVariants.concat(customVariants);
+      }
+
+      function serializableVariantCustomizations(customs) {
+        const out = {};
+        Object.entries(customs || {}).forEach(([id, cfg]) => {
+          out[id] = Object.assign({}, cfg);
+          delete out[id].spriteImage;
+          delete out[id].userImage;
+        });
+        return out;
+      }
+
+      function hydrateVariantCustomizations(customs) {
+        player.appearance.variantCustomizations = customs || {};
+        Object.values(player.appearance.variantCustomizations).forEach(cfg => {
+          if (!cfg?.spriteDataURL) return;
+          const img = new Image();
+          img.onload = () => { cfg.spriteImage = img; invalidateHairCache(); };
+          img.src = cfg.spriteDataURL;
+        });
+      }
+
+      function serializableCombatCustomization(cfg) {
+        const out = Object.assign({}, cfg || {});
+        delete out.spriteImage;
+        delete out.userImage;
+        return out;
+      }
+
+      function hydrateCombatCustomization(cfg) {
+        player.appearance.combatCustomization = cfg || {};
+        if (!cfg?.spriteDataURL) return;
+        const img = new Image();
+        img.onload = () => {
+          player.appearance.combatCustomization.spriteImage = img;
+          invalidateHairCache();
+        };
+        img.src = cfg.spriteDataURL;
+      }
+
+      function captureCurrentFormConfig() {
+        const app = player.appearance;
+        return {
+          faceId: app.faceId, faceColor: app.faceColor, browColor: app.browColor, pupilColor: app.pupilColor,
+          eyeColor: app.eyeColor, hairId: app.hairId, hairColor: app.hairColor,
+          topId: app.topId, bottomId: app.bottomId, shoesId: app.shoesId, glovesId: app.glovesId,
+          skinColor: app.skinColor, auraId: app.auraId, auraColor: app.auraColor, accessoryId: app.accessoryId,
+          scale: 1,
+          animFrames: 6,
+        };
+      }
+
+      function renderCombatPanel(panel) {
+        const wrap = document.createElement("div");
+        wrap.className = "items-scroll";
+        wrap.style.padding = "10px";
+        panel.appendChild(wrap);
+
+        const cfg = player.appearance.combatCustomization || {};
+        const info = document.createElement("div");
+        info.style.cssText = "font-size:11px;color:var(--td);line-height:1.35;margin-bottom:10px";
+        info.textContent = "Esta plantilla se usa solo al entrar a modo combate. Mantiene las 14 filas de la plantilla; vos elegis cuantas columnas/frames tiene cada fila.";
+        wrap.appendChild(info);
+
+        const status = document.createElement("div");
+        status.style.cssText = "font-family:var(--fh);font-size:8px;letter-spacing:1px;color:var(--cyan);margin-bottom:8px";
+        status.textContent = cfg.spriteDataURL ? "PLANTILLA CUSTOM DE COMBATE" : "USANDO PLANTILLA NORMAL _FIGHT";
+        wrap.appendChild(status);
+
+        const metaPanel = document.createElement("div");
+        metaPanel.className = "import-panel";
+        metaPanel.style.marginBottom = "10px";
+        metaPanel.innerHTML = `<div class="import-title">TAMANO Y ANIMACION</div>`;
+        const metaRow = document.createElement("div");
+        metaRow.className = "import-row";
+
+        const scaleLabel = document.createElement("span");
+        scaleLabel.style.cssText = "font-size:10px;color:var(--td);width:100%";
+        scaleLabel.textContent = "Tamano";
+        const scaleInput = document.createElement("input");
+        scaleInput.className = "import-input-text";
+        scaleInput.type = "number";
+        scaleInput.min = "0.25";
+        scaleInput.max = "8";
+        scaleInput.step = "0.05";
+        scaleInput.value = String(cfg.scale || 1);
+
+        const framesLabel = document.createElement("span");
+        framesLabel.style.cssText = "font-size:10px;color:var(--td);width:100%";
+        framesLabel.textContent = "Frames por fila";
+        const framesInput = document.createElement("input");
+        framesInput.className = "import-input-text";
+        framesInput.type = "number";
+        framesInput.min = "1";
+        framesInput.max = "48";
+        framesInput.step = "1";
+        framesInput.value = String(cfg.animFrames || 6);
+
+        const saveMeta = () => {
+          player.appearance.combatCustomization ||= {};
+          player.appearance.combatCustomization.scale = Math.max(0.25, Math.min(8, Number(scaleInput.value) || 1));
+          player.appearance.combatCustomization.animFrames = Math.max(1, Math.min(48, parseInt(framesInput.value, 10) || 6));
+          invalidateHairCache();
+        };
+        scaleInput.addEventListener("input", saveMeta);
+        framesInput.addEventListener("input", saveMeta);
+
+        metaRow.appendChild(scaleLabel);
+        metaRow.appendChild(scaleInput);
+        metaRow.appendChild(framesLabel);
+        metaRow.appendChild(framesInput);
+        metaPanel.appendChild(metaRow);
+        wrap.appendChild(metaPanel);
+
+        const importBox = document.createElement("div");
+        importBox.className = "import-panel";
+        importBox.innerHTML = `<div class="import-title">IMPORTAR SPRITESHEET DE COMBATE</div>`;
+        const imgPreview = document.createElement("img");
+        imgPreview.className = "import-preview";
+        if (cfg.spriteDataURL) { imgPreview.src = cfg.spriteDataURL; imgPreview.classList.add("visible"); }
+        importBox.appendChild(imgPreview);
+
+        const fileLabel = document.createElement("label");
+        fileLabel.className = "import-file-label";
+        const fileInput = document.createElement("input");
+        fileInput.type = "file";
+        fileInput.accept = "image/*";
+        fileInput.addEventListener("change", e => {
+          const file = e.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = ev => {
+            const dataURL = ev.target.result;
+            const img = new Image();
+            img.onload = () => {
+              player.appearance.combatCustomization = Object.assign({}, player.appearance.combatCustomization || {}, {
+                spriteDataURL: dataURL,
+                spriteImage: img,
+                scale: Math.max(0.25, Math.min(8, Number(scaleInput.value) || 1)),
+                animFrames: Math.max(1, Math.min(48, parseInt(framesInput.value, 10) || 6)),
+              });
+              imgPreview.src = dataURL;
+              imgPreview.classList.add("visible");
+              invalidateHairCache();
+              showToast("Spritesheet de combate importado", "success");
+              renderItemsPanel("combat");
+            };
+            img.onerror = () => showToast("No se pudo cargar la imagen", "error");
+            img.src = dataURL;
+          };
+          reader.readAsDataURL(file);
+        });
+        fileLabel.appendChild(fileInput);
+        fileLabel.appendChild(document.createTextNode("ARCHIVO PNG"));
+        importBox.appendChild(fileLabel);
+        wrap.appendChild(importBox);
+
+        const resetBtn = document.createElement("button");
+        resetBtn.className = "import-add-btn";
+        resetBtn.style.marginTop = "10px";
+        resetBtn.textContent = "BORRAR PLANTILLA DE COMBATE";
+        resetBtn.disabled = !cfg.spriteDataURL && !cfg.scale && !cfg.animFrames;
+        resetBtn.addEventListener("click", () => {
+          player.appearance.combatCustomization = {};
+          invalidateHairCache();
+          showToast("Plantilla de combate reseteada", "warning");
+          renderItemsPanel("combat");
+        });
+        wrap.appendChild(resetBtn);
+      }
+
+      function renderFormsPanel(panel) {
+        const wrap = document.createElement("div");
+        wrap.className = "items-scroll";
+        wrap.style.padding = "10px";
+        panel.appendChild(wrap);
+
+        const variants = getActiveVariants();
+        const active = player.appearance.variantId || "base";
+        const createRow = document.createElement("div");
+        createRow.className = "import-row";
+        createRow.style.marginBottom = "10px";
+        const nameInput = document.createElement("input");
+        nameInput.className = "import-input-text";
+        nameInput.type = "text";
+        nameInput.maxLength = 18;
+        nameInput.placeholder = "Nueva forma";
+        const addFormBtn = document.createElement("button");
+        addFormBtn.className = "import-add-btn";
+        addFormBtn.textContent = "AÑADIR";
+        addFormBtn.addEventListener("click", () => {
+          const label = nameInput.value.trim() || `Forma ${variants.length}`;
+          const id = `custom_${Date.now()}_${Math.random().toString(36).slice(2, 5)}`;
+          player.appearance.variantCustomizations ||= {};
+          player.appearance.variantCustomizations[id] = Object.assign(captureCurrentFormConfig(), { label });
+          player.appearance.variantId = id;
+          invalidateHairCache();
+          showToast(`"${label}" creada`, "success");
+          renderItemsPanel("forms");
+        });
+        createRow.appendChild(nameInput);
+        createRow.appendChild(addFormBtn);
+        wrap.appendChild(createRow);
+
+        const row = document.createElement("div");
+        row.style.cssText = "display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px";
+        variants.forEach(v => {
+          const btn = document.createElement("button");
+          btn.className = "gender-btn" + (active === v.id ? " active" : "");
+          btn.textContent = v.label;
+          btn.addEventListener("click", () => {
+            player.appearance.variantId = v.id;
+            invalidateHairCache();
+            renderItemsPanel("forms");
+          });
+          row.appendChild(btn);
+        });
+        wrap.appendChild(row);
+
+        const custom = player.appearance.variantCustomizations?.[active] || null;
+        const info = document.createElement("div");
+        info.style.cssText = "font-size:11px;color:var(--td);line-height:1.35;margin-bottom:10px";
+        info.textContent = active === "base"
+          ? "Base usa el personaje normal. Elegi otra forma o crea una nueva para personalizarla."
+          : "La sheet importada mantiene las 14 filas de la plantilla; vos elegis cuantas columnas/frames tiene cada fila.";
+        wrap.appendChild(info);
+
+        const status = document.createElement("div");
+        status.style.cssText = "font-family:var(--fh);font-size:8px;letter-spacing:1px;color:var(--cyan);margin-bottom:8px";
+        status.textContent = active === "base" ? "FORMA BASE" : custom ? "FORMA CUSTOM ACTIVA" : "FORMA SIN CUSTOM";
+        wrap.appendChild(status);
+
+        const metaPanel = document.createElement("div");
+        metaPanel.className = "import-panel";
+        metaPanel.style.marginBottom = "10px";
+        metaPanel.innerHTML = `<div class="import-title">TAMAÑO Y ANIMACIÓN</div>`;
+        const metaRow = document.createElement("div");
+        metaRow.className = "import-row";
+
+        const scaleInput = document.createElement("input");
+        scaleInput.className = "import-input-text";
+        scaleInput.type = "number";
+        scaleInput.min = "0.25";
+        scaleInput.max = "5";
+        scaleInput.step = "0.05";
+        scaleInput.value = String(custom?.scale || 1);
+        scaleInput.disabled = active === "base";
+        scaleInput.title = "Tamaño de la forma";
+
+        const framesInput = document.createElement("input");
+        framesInput.className = "import-input-text";
+        framesInput.type = "number";
+        framesInput.min = "1";
+        framesInput.max = "24";
+        framesInput.step = "1";
+        framesInput.value = String(custom?.animFrames || 6);
+        framesInput.disabled = active === "base";
+        framesInput.title = "Frames por fila del spritesheet";
+
+        const saveMeta = () => {
+          if (active === "base") return;
+          player.appearance.variantCustomizations ||= {};
+          player.appearance.variantCustomizations[active] ||= { label: variants.find(v => v.id === active)?.label || active };
+          const cfg = player.appearance.variantCustomizations[active];
+          cfg.scale = Math.max(0.25, Math.min(5, Number(scaleInput.value) || 1));
+          cfg.animFrames = Math.max(1, Math.min(24, parseInt(framesInput.value, 10) || 6));
+          invalidateHairCache();
+        };
+        scaleInput.addEventListener("input", saveMeta);
+        framesInput.addEventListener("input", saveMeta);
+
+        const scaleLabel = document.createElement("span");
+        scaleLabel.style.cssText = "font-size:10px;color:var(--td);width:100%";
+        scaleLabel.textContent = "Tamaño";
+        const framesLabel = document.createElement("span");
+        framesLabel.style.cssText = "font-size:10px;color:var(--td);width:100%";
+        framesLabel.textContent = "Frames por fila";
+        metaRow.appendChild(scaleLabel);
+        metaRow.appendChild(scaleInput);
+        metaRow.appendChild(framesLabel);
+        metaRow.appendChild(framesInput);
+        metaPanel.appendChild(metaRow);
+        wrap.appendChild(metaPanel);
+
+        const actions = document.createElement("div");
+        actions.style.cssText = "display:grid;gap:6px";
+        const saveBtn = document.createElement("button");
+        saveBtn.className = "import-add-btn";
+        saveBtn.textContent = "GUARDAR LOOK ACTUAL EN ESTA FORMA";
+        saveBtn.disabled = active === "base";
+        saveBtn.addEventListener("click", () => {
+          player.appearance.variantCustomizations ||= {};
+          player.appearance.variantCustomizations[active] = Object.assign(
+            {},
+            player.appearance.variantCustomizations[active] || {},
+            captureCurrentFormConfig(),
+            {
+              scale: Math.max(0.25, Math.min(5, Number(scaleInput.value) || 1)),
+              animFrames: Math.max(1, Math.min(24, parseInt(framesInput.value, 10) || 6)),
+            }
+          );
+          invalidateHairCache();
+          showToast("Forma guardada", "success");
+          renderItemsPanel("forms");
+        });
+        actions.appendChild(saveBtn);
+
+        const resetBtn = document.createElement("button");
+        resetBtn.className = "import-add-btn";
+        resetBtn.textContent = active.startsWith("custom_") ? "BORRAR ESTA FORMA" : "RESETEAR ESTA FORMA";
+        resetBtn.disabled = active === "base" || !custom;
+        resetBtn.addEventListener("click", () => {
+          delete player.appearance.variantCustomizations?.[active];
+          if (player.appearance.variantId === active) player.appearance.variantId = "base";
+          invalidateHairCache();
+          showToast(active.startsWith("custom_") ? "Forma borrada" : "Forma reseteada", "warning");
+          renderItemsPanel("forms");
+        });
+        actions.appendChild(resetBtn);
+        wrap.appendChild(actions);
+
+        const importBox = document.createElement("div");
+        importBox.className = "import-panel";
+        importBox.style.marginTop = "10px";
+        importBox.innerHTML = `<div class="import-title">IMPORTAR SPRITESHEET DE ESTA FORMA</div>`;
+        const imgPreview = document.createElement("img");
+        imgPreview.className = "import-preview";
+        if (custom?.spriteDataURL) { imgPreview.src = custom.spriteDataURL; imgPreview.classList.add("visible"); }
+        importBox.appendChild(imgPreview);
+        const fileLabel = document.createElement("label");
+        fileLabel.className = "import-file-label";
+        const fileInput = document.createElement("input");
+        fileInput.type = "file";
+        fileInput.accept = "image/*";
+        fileInput.disabled = active === "base";
+        fileInput.addEventListener("change", e => {
+          const file = e.target.files[0];
+          if (!file || active === "base") return;
+          const reader = new FileReader();
+          reader.onload = ev => {
+            const dataURL = ev.target.result;
+            const img = new Image();
+            img.onload = () => {
+              player.appearance.variantCustomizations ||= {};
+              player.appearance.variantCustomizations[active] ||= {};
+              Object.assign(player.appearance.variantCustomizations[active], {
+                spriteDataURL: dataURL,
+                spriteImage: img,
+                scale: Math.max(0.25, Math.min(5, Number(scaleInput.value) || 1)),
+                animFrames: Math.max(1, Math.min(24, parseInt(framesInput.value, 10) || 6)),
+              });
+              imgPreview.src = dataURL;
+              imgPreview.classList.add("visible");
+              invalidateHairCache();
+              showToast("Spritesheet de forma importado", "success");
+            };
+            img.onerror = () => showToast("No se pudo cargar la imagen", "error");
+            img.src = dataURL;
+          };
+          reader.readAsDataURL(file);
+        });
+        fileLabel.appendChild(fileInput);
+        fileLabel.appendChild(document.createTextNode("ARCHIVO PNG"));
+        importBox.appendChild(fileLabel);
+        wrap.appendChild(importBox);
       }
 
       /* ── Panel de importación — reemplazá renderImportPanel completo ── */
@@ -1468,6 +1850,7 @@ const img = (cat === "accessory" || cat === "free")
           accessoryId: charState.accessoryId || player.appearance.accessoryId || "ac_none",
           auraPhase:   _auraPhase,
           viewKey:     activeViewKey,
+          spriteVariantId: activeCategory === "combat" ? "fight" : null,
         };
       }
 
@@ -1529,6 +1912,9 @@ const img = (cat === "accessory" || cat === "free")
           level:            1,
           race:             player.appearance.raceId,
           gender:           player.appearance.gender,
+          variantId:        player.appearance.variantId || "base",
+          variantCustomizations: serializableVariantCustomizations(player.appearance.variantCustomizations),
+          combatCustomization: serializableCombatCustomization(player.appearance.combatCustomization),
           faceId:           player.appearance.faceId,
           faceColor:        player.appearance.faceColor,
           browColor:        player.appearance.browColor  || null,
@@ -1564,6 +1950,9 @@ const img = (cat === "accessory" || cat === "free")
 
         player.appearance.raceId      = d.race       || "human";
         player.appearance.gender      = d.gender     || "male";
+        player.appearance.variantId   = d.variantId  || "base";
+        hydrateVariantCustomizations(d.variantCustomizations || {});
+        hydrateCombatCustomization(d.combatCustomization || {});
         player.appearance.faceId      = d.faceId     || "fm0";
         player.appearance.faceColor   = d.faceColor  || null;
         player.appearance.browColor   = d.browColor  || null;
@@ -1652,6 +2041,9 @@ const img = (cat === "accessory" || cat === "free")
               appearance: {
                 raceId:      slotRace,
                 gender:      slotGender,
+                variantId:   d.variantId || "base",
+                variantCustomizations: d.variantCustomizations || {},
+                combatCustomization: d.combatCustomization || {},
                 faceId:      d.faceId  || getDefaultIds(slotRace, slotGender).faceId,
                 faceColor:   d.faceColor || null,
                 hairId:      d.hair    || getDefaultIds(slotRace, slotGender).hairId,

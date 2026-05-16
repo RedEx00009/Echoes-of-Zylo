@@ -92,14 +92,78 @@
   // ═══════════════════════════════════════════════════════════════
 
   const RACE_CATALOG = [
-    { id: "human",    name: "HUMANO",    spriteKey: "human_male",    skinColor: "#e8c898", eyeColor: "#3a2a1a" },
-    { id: "saiyan",   name: "SAIYAN",    spriteKey: "saiyan_male",   skinColor: "#d4a574", eyeColor: "#1a1a1a" },
-    { id: "namekian", name: "NAMEKIANO", spriteKey: "namekian_male", skinColor: "#4caf50", eyeColor: "#ff0000", genderless: true },
-    { id: "android",  name: "ANDROIDE",  spriteKey: "android_male",  skinColor: "#c0c0c0", eyeColor: "#00e5ff" },
-    { id: "kaioshin", name: "KAIOSHIN",  spriteKey: "kaioshin_male", skinColor: "#9c88ff", eyeColor: "#ffd700" },
-    { id: "frieza",   name: "FRIEZA",    spriteKey: "frieza_male",   skinColor: "#f0e0f0", eyeColor: "#ff0000", genderless: true },
-    { id: "Custom",   name: "CUSTOM",    spriteKey: "null",   skinColor: "#f0e0f0", eyeColor: "#ffffff", genderless: true },
+    { id: "human",    name: "HUMANO",    spriteKey: "human_male",    skinColor: "#e8c898", eyeColor: "#3a2a1a", variants: [
+      { id: "base",  label: "Base",    suffix: "" },
+    ] },
+    { id: "saiyan",   name: "SAIYAN",    spriteKey: "saiyan_male",   skinColor: "#d4a574", eyeColor: "#1a1a1a", variants: [
+      { id: "base", label: "Base", suffix: "" },
+    ] },
+    { id: "namekian", name: "NAMEKIANO", spriteKey: "namekian_male", skinColor: "#4caf50", eyeColor: "#ff0000", genderless: true, variants: [
+      { id: "base", label: "Base", suffix: "" },
+    ] },
+    { id: "android",  name: "ANDROIDE",  spriteKey: "android_male",  skinColor: "#c0c0c0", eyeColor: "#00e5ff", variants: [
+      { id: "base", label: "Base", suffix: "" },
+    ] },
+    { id: "kaioshin", name: "KAIOSHIN",  spriteKey: "kaioshin_male", skinColor: "#9c88ff", eyeColor: "#ffd700", variants: [
+      { id: "base", label: "Base", suffix: "" },
+    ] },
+    { id: "frieza",   name: "FRIEZA",    spriteKey: "frieza_male",   skinColor: "#f0e0f0", eyeColor: "#ff0000", genderless: true, variants: [
+      { id: "base", label: "Base", suffix: "" },
+    ] },
+    { id: "Custom",   name: "CUSTOM",    spriteKey: "null",   skinColor: "#f0e0f0", eyeColor: "#ffffff", genderless: true, variants: [
+      { id: "base", label: "Base", suffix: "" },
+    ] },
   ];
+
+  function getVariantDef(variantId) {
+    if (!variantId || variantId === "base") return null;
+    if (variantId === "fight") return { id: "fight", label: "Combate", suffix: "_fight" };
+    for (const race of RACE_CATALOG) {
+      const found = race.variants?.find((v) => v.id === variantId);
+      if (found) return found;
+    }
+    return null;
+  }
+
+  function getSpriteKey(baseKey, variantId) {
+    if (!baseKey || !variantId || variantId === "base") return baseKey;
+    const variant = getVariantDef(variantId);
+    if (!variant?.suffix) return baseKey;
+    const variantKey = `${baseKey}${variant.suffix}`;
+    return Object.prototype.hasOwnProperty.call(SPRITE_IMAGES, variantKey) ? variantKey : baseKey;
+  }
+
+  function getVariantSuffixes() {
+    const suffixes = new Set();
+    RACE_CATALOG.forEach((race) => {
+      (race.variants || []).forEach((variant) => {
+        if (variant.suffix) suffixes.add(variant.suffix);
+      });
+    });
+    return suffixes;
+  }
+
+  function getVariantCustomization(app, variantId) {
+    if (!app || !variantId || variantId === "base") return null;
+    return app.variantCustomizations?.[variantId] || null;
+  }
+
+  function getVariantAppearance(app, variantId) {
+    const custom = getVariantCustomization(app, variantId);
+    if (!custom) return app;
+    const overrides = {};
+    [
+      "faceId", "faceColor", "browColor", "pupilColor", "eyeColor",
+      "hairId", "hairColor", "topId", "bottomId", "shoesId",
+      "glovesId", "skinColor", "auraId", "auraColor", "accessoryId",
+    ].forEach((key) => {
+      if (custom[key] !== undefined) overrides[key] = custom[key];
+    });
+    return Object.assign({}, app, overrides, {
+      variantId,
+      variantCustomizations: app.variantCustomizations,
+    });
+  }
 
   // ═══════════════════════════════════════════════════════════════
   //  CATÁLOGOS DE CARA
@@ -847,6 +911,7 @@
     appearance: {
       raceId:      "human",
       gender:      "male",
+      variantId:   "base",
       faceId:      "fm0",
       faceColor:   null,
       hairId:      "hm1",
@@ -951,7 +1016,17 @@
 
   async function preloadAssets(basePath = "", options = {}) {
     const quiet = !!options.quiet;
-    const entries = Object.entries(SPRITE_IMAGES);
+    const variantSuffixes = getVariantSuffixes();
+    const entryMap = new Map(Object.entries(SPRITE_IMAGES));
+    for (const [key] of Object.entries(SPRITE_IMAGES)) {
+      for (const suffix of variantSuffixes) {
+        const variantKey = `${key}${suffix}`;
+        if (Object.prototype.hasOwnProperty.call(SPRITE_IMAGES, variantKey)) {
+          entryMap.set(variantKey, SPRITE_IMAGES[variantKey]);
+        }
+      }
+    }
+    const entries = Array.from(entryMap.entries());
     const loadOne = ([key, filename]) => new Promise((resolve) => {
       if (!filename) { resolve([key, null]); return; }
       const img = new Image();
@@ -1127,6 +1202,24 @@
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
     ctx.drawImage(img, 0, 0, iw, ih, offsetX, offsetY, drawW, drawH);
+    return true;
+  }
+
+  function _drawVariantSheet(ctx, img, screenX, screenY, dw, dh, animator, custom) {
+    if (!img || !img.complete || !img.naturalWidth) return false;
+    const scale = Math.max(0.25, Math.min(5, Number(custom?.scale) || 1));
+    const frameCount = Math.max(1, Math.min(24, parseInt(custom?.animFrames || MAX_COLS, 10) || MAX_COLS));
+    const fw = Math.max(1, Math.floor(img.naturalWidth / frameCount));
+    const fh = Math.max(1, Math.floor(img.naturalHeight / TOTAL_ROWS));
+    const meta = animator?.meta || ACTIONS_META.idle;
+    const row = Math.max(0, Math.min(TOTAL_ROWS - 1, meta?.row || 0));
+    const frame = animator ? animator.frame % frameCount : 0;
+    const drawW = dw * scale;
+    const drawH = dh * scale;
+    const destX = screenX - drawW / 2;
+    const destY = screenY - drawH + (Number(custom?.yOffset) || 0);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(img, frame * fw, row * fh, fw, fh, destX, destY, drawW, drawH);
     return true;
   }
 
@@ -1325,11 +1418,25 @@
 
   function drawPlayer(ctx, screenX, screenY, playerObj, imageMap, animator, charState) {
     const p   = playerObj || player;
-    const app = p.appearance;
+    const baseApp = p.appearance || player.appearance;
     const dir = p.direction || 1;
-    const gender = app.gender || "male";
-    const raceId = app.raceId || "human";
+    const gender = baseApp.gender || "male";
+    const raceId = baseApp.raceId || "human";
     const raceDef = RACE_CATALOG.find((r) => r.id === raceId) || RACE_CATALOG[0];
+    const raceVariants = raceDef.variants || [{ id: "base", label: "Base", suffix: "" }];
+    const customVariants = baseApp.variantCustomizations || {};
+    const hasCatalogVariant = raceVariants.some((v) => v.id === baseApp.variantId);
+    const hasCustomVariant = !!customVariants[baseApp.variantId];
+    const variantId = (hasCatalogVariant || hasCustomVariant) ? baseApp.variantId : "base";
+    const variantCustom = getVariantCustomization(baseApp, variantId);
+    const app = getVariantAppearance(baseApp, variantId);
+    const spriteVariantId = (charState && charState.spriteVariantId) || variantId;
+    const combatCustom = spriteVariantId === "fight" ? baseApp.combatCustomization : null;
+    const getVariantImg = (baseKey) => {
+      if (!imageMap || !baseKey) return null;
+      const spriteKey = getSpriteKey(baseKey, spriteVariantId);
+      return imageMap[spriteKey] || imageMap[baseKey] || null;
+    };
 
     const viewKey = charState && charState.viewKey;
     if (animator && viewKey && VIEW_META[viewKey]) animator.setView(viewKey);
@@ -1362,7 +1469,7 @@
     const freeCustom  = isFreeCustomizationEntry(accDef);
 
     const bodyGender = raceDef.genderless ? "male" : gender;
-    const bodyImg    = imageMap ? imageMap[`${raceDef.id}_${bodyGender}`] || null : null;
+    const bodyImg    = getVariantImg(`${raceDef.id}_${bodyGender}`);
 
     const dw = DISPLAY_W, dh = DISPLAY_H;
     const destX = screenX - dw / 2, destY = screenY - dh;
@@ -1371,7 +1478,7 @@
     if (dir === -1) { ctx.translate(screenX * 2, 0); ctx.scale(-1, 1); }
 
     // 1. AURA
-    const auraImg = imageMap ? imageMap[auraDef.spriteKey] || null : null;
+    const auraImg = getVariantImg(auraDef.spriteKey);
     if (auraImg && auraImg.complete && auraImg.naturalWidth) {
       const aw = dw * 1.8, ah = dh * 1.2;
       const auraSheet = isCompatibleSheet(auraImg);
@@ -1394,6 +1501,20 @@
     }
 
     // Personalización libre: reemplaza todo el sprite
+    const customCombatImg = combatCustom?.spriteImage || combatCustom?.userImage || null;
+    if (spriteVariantId === "fight" && customCombatImg && customCombatImg.complete && customCombatImg.naturalWidth) {
+      _drawVariantSheet(ctx, customCombatImg, screenX, screenY, dw, dh, animator, combatCustom);
+      ctx.restore();
+      return;
+    }
+
+    const customVariantImg = variantCustom?.spriteImage || variantCustom?.userImage || null;
+    if (variantId !== "base" && customVariantImg && customVariantImg.complete && customVariantImg.naturalWidth) {
+      _drawVariantSheet(ctx, customVariantImg, screenX, screenY, dw, dh, animator, variantCustom);
+      ctx.restore();
+      return;
+    }
+
     if (freeCustom && accImg && accImg.complete && accImg.naturalWidth) {
       _drawLayerSprite(ctx, accImg, destX, destY, dw, dh, animator, IMPORTED_LAYER_SCALE);
       ctx.restore();
@@ -1422,10 +1543,10 @@
     }
 
     // 4. ROPA INFERIOR
-    _drawLayerSprite(ctx, imageMap?.[btmDef?.spriteKey]    || null, destX, destY, dw, dh, animator);
+    _drawLayerSprite(ctx, getVariantImg(btmDef?.spriteKey), destX, destY, dw, dh, animator);
 
     // 5. CALZADO
-    _drawLayerSprite(ctx, imageMap?.[shoesDef?.spriteKey]  || null, destX, destY, dw, dh, animator);
+    _drawLayerSprite(ctx, getVariantImg(shoesDef?.spriteKey), destX, destY, dw, dh, animator);
 
     // 6. CINTURÓN
     if (accSlot === "belt_slot" && accImg && accImg.complete && accImg.naturalWidth) {
@@ -1433,13 +1554,13 @@
     }
 
     // 7. ROPA SUPERIOR
-    _drawLayerSprite(ctx, imageMap?.[topDef?.spriteKey]    || null, destX, destY, dw, dh, animator);
+    _drawLayerSprite(ctx, getVariantImg(topDef?.spriteKey), destX, destY, dw, dh, animator);
 
     // 8. GUANTES
-    _drawLayerSprite(ctx, imageMap?.[glovesDef?.spriteKey] || null, destX, destY, dw, dh, animator);
+    _drawLayerSprite(ctx, getVariantImg(glovesDef?.spriteKey), destX, destY, dw, dh, animator);
 
     // 9. CARA
-    const faceImg = imageMap ? imageMap[faceDef?.spriteKey] || null : null;
+    const faceImg = getVariantImg(faceDef?.spriteKey);
     if (faceImg && faceImg.complete && faceImg.naturalWidth) {
       if (faceDef && faceDef.tintable) {
         const faceSheet = isCompatibleSheet(faceImg);
@@ -1495,7 +1616,7 @@
     }
 
     // 10. CABELLO
-    const hairImg = imageMap ? imageMap[hairDef?.spriteKey] || null : null;
+    const hairImg = getVariantImg(hairDef?.spriteKey);
     if (hairImg && hairImg.complete && hairImg.naturalWidth) {
       const sheet = isCompatibleSheet(hairImg) && animator;
       const coords = sheet ? (() => {
@@ -1562,7 +1683,7 @@
 
     HAIR_CATALOG, TOP_CATALOG, BOTTOM_CATALOG, SHOES_CATALOG, GLOVES_CATALOG,
 
-    getCatalogFor, getDefaultIds, GENDERLESS_RACES,
+    getCatalogFor, getDefaultIds, getSpriteKey, getVariantAppearance, GENDERLESS_RACES,
     isFreeCustomizationEntry, _getAccessoryImage, hasSheetLayout,
 
     SPRITE_IMAGES,

@@ -101,6 +101,9 @@
       .level-num { font-family:var(--font-head); font-size:9px; letter-spacing:1px; color:var(--accent); background:rgba(245,196,0,.1); border:1px solid rgba(245,196,0,.3); border-radius:3px; padding:1px 5px; }
       .xp-track { flex:1; height:4px; background:rgba(255,255,255,.07); border-radius:2px; overflow:hidden; }
       .xp-fill { height:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); border-radius:2px; transition:width .4s ease; }
+      .variant-panel { display:none; align-items:center; gap:7px; background:var(--ui-bg); border:1px solid #2a3560; border-radius:8px; padding:8px 10px; backdrop-filter:blur(8px); pointer-events:auto; }
+      .variant-label { font-family:var(--font-head); font-size:8px; letter-spacing:2px; color:#3d4a6b; white-space:nowrap; }
+      .variant-select { min-width:110px; background:#12172e; border:1px solid rgba(245,196,0,.35); border-radius:6px; color:var(--accent); font-family:var(--font-head); font-size:9px; letter-spacing:1px; padding:6px 8px; outline:none; cursor:pointer; }
 
       /* ── MINIMAP ── */
       .minimap-wrap { position:absolute; top:12px; right:12px; width:90px; height:90px; background:var(--ui-bg); border:1px solid #2a3560; border-radius:6px; overflow:hidden; backdrop-filter:blur(8px); }
@@ -150,6 +153,24 @@
       .trailer-btn-invite { background:rgba(0,229,255,.1); border-color:#00e5ff; color:#00e5ff; }
       .trailer-btn-close { background:rgba(255,255,255,.05); border-color:rgba(255,255,255,.2); color:#8892b0; }
       .trailer-btn-enter:hover { background:rgba(245,196,0,.3); box-shadow:0 0 10px rgba(245,196,0,.3); }
+      #partyPanel {
+        position:absolute; display:none; min-width:190px; max-width:230px; background:var(--ui-bg);
+        border:1px solid #2a3560; border-radius:8px; padding:10px; z-index:30;
+        pointer-events:auto; backdrop-filter:blur(12px); box-shadow:0 10px 28px rgba(0,0,0,.35);
+      }
+      #partyPanel.visible { display:block; }
+      .party-title { font-family:var(--font-head); font-size:9px; letter-spacing:2px; color:#00e5ff; margin-bottom:7px; }
+      .party-info { font-size:11px; color:#c8cfe8; line-height:1.35; margin-bottom:9px; }
+      .party-btns { display:grid; grid-template-columns:1fr; gap:6px; }
+      .party-btn { background:rgba(0,229,255,.1); border:1px solid rgba(0,229,255,.35); border-radius:5px; color:#e8eaf6; font-family:var(--font-head); font-size:8px; letter-spacing:1px; padding:8px 9px; cursor:pointer; pointer-events:auto; }
+      .party-btn.invite { background:rgba(245,196,0,.12); border-color:rgba(245,196,0,.55); color:var(--accent); }
+      .party-btn.close { background:rgba(255,255,255,.05); border-color:rgba(255,255,255,.18); color:#8892b0; }
+      #partyInvitePanel {
+        position:absolute; top:142px; left:64px; width:min(260px,calc(100vw - 88px)); display:none;
+        background:rgba(8,9,15,.92); border:1px solid rgba(245,196,0,.45); border-radius:8px;
+        padding:10px 12px; z-index:31; pointer-events:auto; backdrop-filter:blur(12px);
+      }
+      #partyInvitePanel.visible { display:block; }
 
       /* ── INTERIOR TRAILER ── */
       #trailerInterior {
@@ -188,11 +209,11 @@
       .skill-key { font-family:var(--font-head); font-size:8px; letter-spacing:1px; color:#3d4a6b; }
 
       /* ── MOBILE CONTROLS ── */
-      .mobile-controls { position:absolute; bottom:0; left:0; right:0; height:170px; display:none; align-items:flex-end; justify-content:space-between; padding:0 16px 16px; pointer-events:auto; }
+      .mobile-controls { position:absolute; bottom:0; left:0; right:0; height:230px; display:none; align-items:flex-end; justify-content:space-between; padding:0 16px 16px; pointer-events:auto; }
       .joystick-wrap { position:relative; width:120px; height:120px; flex-shrink:0; }
       #joystickBase { position:absolute; inset:0; background:rgba(255,255,255,.06); border:2px solid rgba(255,255,255,.15); border-radius:50%; backdrop-filter:blur(4px); }
       #joystickKnob { position:absolute; width:52px; height:52px; background:radial-gradient(circle,rgba(245,196,0,.85),rgba(245,196,0,.45)); border:2px solid rgba(245,196,0,.7); border-radius:50%; top:34px; left:34px; box-shadow:0 0 14px rgba(245,196,0,.5); }
-      .action-grid { display:grid; grid-template-columns:repeat(2,var(--btn-size)); grid-template-rows:repeat(3,var(--btn-size)); gap:8px; align-items:center; justify-items:center; }
+      .action-grid { display:grid; grid-template-columns:repeat(2,var(--btn-size)); grid-auto-rows:var(--btn-size); gap:8px; align-items:center; justify-items:center; }
       .action-btn { width:var(--btn-size); height:var(--btn-size); border-radius:50%; border:2px solid; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; cursor:pointer; backdrop-filter:blur(8px); transition:all .12s; touch-action:manipulation; pointer-events:auto; }
       .action-btn:active { transform:scale(.88); }
       .btn-interact { background:rgba(0,229,255,.2); border-color:rgba(0,229,255,.7); }
@@ -223,13 +244,17 @@
 
       /* ── RESPONSIVE ── */
       @media (pointer:coarse), (max-width:768px) {
+        :root { --btn-size:52px; --btn-icon:19px; }
         #menuBackdrop { display:block; }
-        .mobile-controls { display:flex; }
+        .mobile-controls { display:flex; height:286px; }
         .skills-bar { display:none; }
         .region-label { position:absolute; bottom:182px; left:50%; transform:translateX(-50%); }
         .dialog-box { bottom:190px; }
         .minimap-wrap { top:12px; right:12px; width:80px; height:80px; }
         .hud-top { left:64px; right:100px; }
+        .variant-panel { padding:7px 8px; }
+        .variant-label { display:none; }
+        .variant-select { min-width:88px; max-width:96px; font-size:8px; padding:5px 6px; }
       }
       @media (pointer:fine) and (min-width:769px) {
         .mobile-controls { display:none !important; }
@@ -238,10 +263,11 @@
         .dialog-box { bottom:120px; }
         .hud-top { left:64px; }
       }
-      @media (max-width:400px) { :root { --btn-size:50px; --btn-icon:18px; } .joystick-wrap { width:100px; height:100px; } #joystickKnob { width:40px; height:40px; top:30px; left:30px; } }
+      @media (max-width:400px) { :root { --btn-size:44px; --btn-icon:17px; } .mobile-controls { height:250px; } .joystick-wrap { width:100px; height:100px; } #joystickKnob { width:40px; height:40px; top:30px; left:30px; } }
       @media (max-height:460px) and (orientation:landscape) {
-        :root { --btn-size:48px; --btn-icon:17px; }
+        :root { --btn-size:44px; --btn-icon:16px; }
         .mobile-controls { height:130px; padding:0 10px 8px; }
+        .action-grid { grid-template-columns:repeat(5,var(--btn-size)); }
         .joystick-wrap { width:90px; height:90px; }
         #joystickKnob { width:36px; height:36px; top:27px; left:27px; }
         .minimap-wrap { width:68px; height:68px; top:8px; right:8px; }
@@ -319,6 +345,10 @@
           <div class="bar-row"><span class="bar-icon">💧</span><div class="bar-track"><div class="bar-fill" id="barKi" style="width:100%"></div></div><span class="bar-val" id="valKi">100/100</span></div>
           <div class="level-badge"><span class="level-num" id="hudLevel">LV 1</span><div class="xp-track"><div class="xp-fill" id="xpFill" style="width:0%"></div></div></div>
         </div>
+        <div class="variant-panel" id="variantPanel">
+          <span class="variant-label">FORMA</span>
+          <select class="variant-select" id="variantSelect" onchange="setPlayerVariant(this.value)"></select>
+        </div>
       </div>
 
       <div class="minimap-wrap">
@@ -349,6 +379,25 @@
         </div>
       </div>
 
+      <div id="partyPanel">
+        <div class="party-title" id="partyPanelTitle">JUGADOR</div>
+        <div class="party-info" id="partyPanelInfo"></div>
+        <div class="party-btns">
+          <button class="party-btn" onclick="inspectSelectedPlayer()">INSPECCIONAR</button>
+          <button class="party-btn invite" id="partyInviteBtn" onclick="inviteSelectedToParty()">INVITAR A PARTY</button>
+          <button class="party-btn close" onclick="closePartyPanel()">CERRAR</button>
+        </div>
+      </div>
+
+      <div id="partyInvitePanel">
+        <div class="party-title">INVITACION A PARTY</div>
+        <div class="party-info" id="partyInviteInfo"></div>
+        <div class="party-btns">
+          <button class="party-btn invite" onclick="acceptPartyInvite()">ACEPTAR</button>
+          <button class="party-btn close" onclick="declinePartyInvite()">RECHAZAR</button>
+        </div>
+      </div>
+
       <!-- Skills bar PC -->
       <div class="skills-bar" id="skillsBar">
         <div class="skill-btn" onclick="interactNearby()" title="Interactuar [Z]"><span class="skill-icon">💬</span><span class="skill-key">Z</span></div>
@@ -364,7 +413,7 @@
           <div id="joystickBase"></div>
           <div id="joystickKnob"></div>
         </div>
-        <div class="action-grid">
+        <div class="action-grid" id="actionGrid">
           <div class="action-btn btn-interact" onclick="interactNearby()"><span class="btn-icon">💬</span><span class="btn-label">HABLAR</span></div>
           <div class="action-btn btn-trailer" onclick="openMyTrailer()"><span class="btn-icon">🚐</span><span class="btn-label">TRAILER</span></div>
           <div class="action-btn btn-emote" onclick="sendEmote('wave')"><span class="btn-icon">👋</span><span class="btn-label">SALUDAR</span></div>
@@ -416,6 +465,45 @@
     }
     window.closeMenu = closeMenu;
 
+    function getActiveRaceVariants(CS) {
+      const app = CS?.player?.appearance;
+      const raceId = app?.raceId || "human";
+      const race = CS?.RACE_CATALOG?.find(r => r.id === raceId);
+      const catalogVariants = race?.variants?.length ? race.variants : [{ id: "base", label: "Base", suffix: "" }];
+      const customVariants = Object.entries(app?.variantCustomizations || {})
+        .filter(([id]) => !catalogVariants.some(v => v.id === id))
+        .map(([id, cfg]) => ({ id, label: cfg.label || cfg.name || id, suffix: "" }));
+      return catalogVariants.concat(customVariants);
+    }
+
+    function renderVariantSelector() {
+      const CS = window.CharacterSystem;
+      const panel = document.getElementById("variantPanel");
+      const select = document.getElementById("variantSelect");
+      if (!CS || !panel || !select) return;
+      const app = CS.player.appearance;
+      const variants = getActiveRaceVariants(CS);
+      const current = variants.some(v => v.id === app.variantId) ? app.variantId : "base";
+      app.variantId = current;
+      if (variants.length <= 1) {
+        panel.style.display = "none";
+        return;
+      }
+      select.innerHTML = variants.map(v => `<option value="${v.id}">${v.label}</option>`).join("");
+      select.value = current;
+      panel.style.display = "flex";
+    }
+
+    function setPlayerVariant(variantId) {
+      const CS = window.CharacterSystem;
+      if (!CS?.player?.appearance) return;
+      const variants = getActiveRaceVariants(CS);
+      CS.player.appearance.variantId = variants.some(v => v.id === variantId) ? variantId : "base";
+      CS.invalidateHairCache && CS.invalidateHairCache();
+      publishMyAppearance(true);
+    }
+    window.setPlayerVariant = setPlayerVariant;
+
     function renderMenuSlots() {
       const list = document.getElementById("menuSlotList");
       if (!list) return;
@@ -460,6 +548,9 @@
       if (CS && slotData) {
         CS.player.appearance.raceId = slotData.race || "human";
         CS.player.appearance.gender = slotData.gender || "male";
+        CS.player.appearance.variantId = slotData.variantId || "base";
+        hydrateVariantCustomizations(CS.player.appearance, slotData.variantCustomizations || {});
+        hydrateCombatCustomization(CS.player.appearance, slotData.combatCustomization || {});
         CS.player.appearance.faceId = slotData.faceId || "fm0";
         CS.player.appearance.faceColor = slotData.faceColor || null;
         CS.player.appearance.browColor = slotData.browColor || null;
@@ -476,6 +567,7 @@
         CS.player.appearance.auraColor = slotData.auraColor || "#fdd835";
         CS.player.appearance.accessoryId = slotData.accessory || slotData.accessoryId || "ac_none";
         CS.invalidateHairCache && CS.invalidateHairCache();
+        renderVariantSelector();
       }
       updatePlayerHud();
       publishMyAppearance(true);
@@ -491,10 +583,122 @@
       document.getElementById("mobileRunBtn")?.classList.toggle("run-active", isRunning);
       const lbl = document.getElementById("runBtnLabel");
       if (lbl) lbl.textContent = isRunning ? "CORRER: ON" : "CORRER: OFF";
+      renderActionBars();
     }
     function toggleRunPC()     { setRunState(!isRunning); }
     function toggleRunMobile() { setRunState(!isRunning); }
     window.toggleRunPC = toggleRunPC; window.toggleRunMobile = toggleRunMobile;
+
+    function makePcSkill({ icon, key, title, action, id, cls }) {
+      return `<div class="skill-btn ${cls || ""}" ${id ? `id="${id}"` : ""} onclick="${action}" title="${title}"><span class="skill-icon">${icon}</span><span class="skill-key">${key}</span></div>`;
+    }
+
+    function makeMobileAction({ icon, label, action, cls }) {
+      return `<div class="action-btn ${cls || "btn-emote"}" onclick="${action}"><span class="btn-icon">${icon}</span><span class="btn-label">${label}</span></div>`;
+    }
+
+    const RP_ACTIONS = [
+      { id:"wave",     icon:"👋", key:"Z", label:"SALUDAR",  title:"Saludar",  anim:"jump",      text:"SALUDO",   color:"#f5c400" },
+      { id:"train",    icon:"🥋", key:"Q", label:"ENTRENAR", title:"Entrenar", anim:"attack_1",  text:"ENTRENA",  color:"#ff7043" },
+      { id:"meditate", icon:"🧘", key:"E", label:"MEDITAR",  title:"Meditar",  anim:"ki_charge", text:"MEDITA",   color:"#00e5ff", hold:2200 },
+      { id:"sit",      icon:"🪑", key:"R", label:"SENTARSE", title:"Sentarse", anim:"idle",      text:"SENTADO",  color:"#c8cfe8", hold:1800 },
+      { id:"warmup",   icon:"🔥", key:"F", label:"CALENTAR", title:"Calentar", anim:"run",       text:"CALIENTA", color:"#ffca28", hold:1600 },
+      { id:"emote",    icon:"✨", key:"C", label:"EMOTE",    title:"Emote",    anim:"jump",      text:"EMOTE",    color:"#aa00ff" },
+      { id:"eat",      icon:"🍙", key:"V", label:"COMER",    title:"Comer",    anim:"idle",      text:"COME",     color:"#66bb6a", objectIcon:"🍙", hold:1300 },
+      { id:"object",   icon:"🎒", key:"B", label:"OBJETO",   title:"Objeto",   anim:"idle",      text:"OBJETO",   color:"#90caf9", objectIcon:"🎒", hold:1300 },
+    ];
+
+    const PARTY_FRIENDLY_ACTIONS = [
+      { id:"hands",    icon:"🤝", key:"Z", label:"MANOS",    title:"Tomarse de las manos", anim:"idle",      text:"MANOS",   color:"#f5c400" },
+      { id:"hug",      icon:"🫂", key:"Q", label:"ABRAZAR",  title:"Abrazar",              anim:"idle",      text:"ABRAZO",  color:"#ff8a80" },
+      { id:"carry",    icon:"💪", key:"E", label:"CARGAR",   title:"Cargar",               anim:"ki_charge", text:"CARGA",   color:"#90caf9" },
+      { id:"metamoru", icon:"🌀", key:"R", label:"METAMORU", title:"Fusion Metamoru",      anim:"ki_charge", text:"FUSION",  color:"#00e5ff" },
+      { id:"pothara",  icon:"💍", key:"F", label:"POTHARA",  title:"Fusion Pothara",       anim:"ki_charge", text:"POTHARA", color:"#ce93d8" },
+    ];
+
+    const PARTY_COMBAT_ACTIONS = [
+      { id:"sparring",     icon:"🥊", key:"Z", label:"SPARRING", title:"Sparring",              anim:"attack_1", text:"SPARRING", color:"#f5c400" },
+      { id:"ki_clash",     icon:"🔵", key:"Q", label:"KI CLASH", title:"Clash de ataques de ki", anim:"ki_charge", text:"CLASH",    color:"#00e5ff" },
+      { id:"gut_hit",      icon:"👊", key:"E", label:"ESTOM.",   title:"Golpe al estomago",     anim:"attack_1", text:"ESTOMAGO", color:"#ff7043" },
+      { id:"face_hit",     icon:"💢", key:"R", label:"CARA",     title:"Golpe a la cara",       anim:"attack_2", text:"CARA",     color:"#ff5252" },
+      { id:"take_gut",     icon:"😵", key:"F", label:"REC. EST", title:"Recibir estomago",      anim:"hurt",     text:"RECIBE",   color:"#ffab91", selfHit:true },
+      { id:"take_face",    icon:"😣", key:"C", label:"REC. CARA",title:"Recibir cara",          anim:"hurt",     text:"RECIBE",   color:"#ffcdd2", selfHit:true },
+      { id:"win",          icon:"🏆", key:"V", label:"GANAR",    title:"Ganar",                 anim:"attack_2", text:"GANA",     color:"#f5c400", pushTarget:true },
+      { id:"lose",         icon:"💫", key:"B", label:"PERDER",   title:"Perder",                anim:"hurt",     text:"PIERDE",   color:"#90a4ae", pushSelf:true },
+    ];
+
+    function renderActionBars() {
+      const skills = document.getElementById("skillsBar");
+      const grid = document.getElementById("actionGrid");
+      const partyMode = controlMode === "partyFriendly" || controlMode === "partyCombat";
+      const partyActions = controlMode === "partyCombat" ? PARTY_COMBAT_ACTIONS : PARTY_FRIENDLY_ACTIONS;
+      if (skills) {
+        if (partyMode) {
+          skills.innerHTML = partyActions.map(a =>
+            makePcSkill({ icon:a.icon, key:a.key, title:`${a.title} [${a.key}]`, action:`performPartyAction('${a.id}')` })
+          ).concat([
+            makePcSkill({ icon:"🤝", key:"AMIGO", title:"Interacciones amistosas", action:"setControlMode('partyFriendly')" }),
+            makePcSkill({ icon:"🥊", key:"SPAR", title:"Interacciones de combate", action:"setControlMode('partyCombat')" }),
+            makePcSkill({ icon:"💬", key:"RP", title:"Volver a rol", action:"setControlMode('rp')" }),
+          ]).join("");
+        } else if (controlMode === "combat") {
+          skills.innerHTML = [
+            makePcSkill({ icon:"🥊", key:"Z", title:"Combo 1", action:"performCombatAction('combo1')" }),
+            makePcSkill({ icon:"💥", key:"Q", title:"Combo 2", action:"performCombatAction('combo2')" }),
+            makePcSkill({ icon:"🔵", key:"E", title:"Ataque especial 1", action:"performCombatAction('special1')" }),
+            makePcSkill({ icon:"🟣", key:"R", title:"Ataque especial 2", action:"performCombatAction('special2')" }),
+            makePcSkill({ icon:"🪽", key:"F", title:"Volar", action:"performCombatAction('fly')", id:"skillFly", cls:isFlying?"run-active":"" }),
+            makePcSkill({ icon:"✨", key:"C", title:"Z-Vanish", action:"performCombatAction('vanish')" }),
+            makePcSkill({ icon:"💬", key:"RP", title:"Volver a rol", action:"setControlMode('rp')" }),
+          ].join("");
+        } else {
+          skills.innerHTML = RP_ACTIONS.map(a =>
+            makePcSkill({ icon:a.icon, key:a.key, title:`${a.title} [${a.key}]`, action:`performRpAction('${a.id}')` })
+          ).concat([
+            makePcSkill({ icon:"⚔️", key:"X", title:"Modo combate [X]", action:"setControlMode('combat')" }),
+            makePcSkill({ icon:"🏃", key:"SHIFT", title:"Correr", action:"toggleRunPC()", id:"skillRun", cls:isRunning?"run-active":"" }),
+          ]).join("");
+        }
+      }
+      if (grid) {
+        if (partyMode) {
+          grid.innerHTML = partyActions.map((a, idx) =>
+            makeMobileAction({ icon:a.icon, label:a.label, action:`performPartyAction('${a.id}')`, cls:idx % 2 ? "btn-trailer" : "btn-emote" })
+          ).concat([
+            makeMobileAction({ icon:"🤝", label:"AMISTAD", action:"setControlMode('partyFriendly')", cls:"btn-interact" }),
+            makeMobileAction({ icon:"🥊", label:"SPAR", action:"setControlMode('partyCombat')", cls:"btn-interact" }),
+            `<div class="action-btn btn-run" onclick="setControlMode('rp')" style="border-radius:12px;width:100%;grid-column:span 2;height:calc(var(--btn-size)*0.7);"><span class="btn-icon">💬</span><span class="btn-label">VOLVER A RP</span></div>`,
+          ]).join("");
+        } else if (controlMode === "combat") {
+          grid.innerHTML = [
+            makeMobileAction({ icon:"🥊", label:"COMBO 1", action:"performCombatAction('combo1')", cls:"btn-emote" }),
+            makeMobileAction({ icon:"💥", label:"COMBO 2", action:"performCombatAction('combo2')", cls:"btn-emote" }),
+            makeMobileAction({ icon:"🔵", label:"ESP. 1", action:"performCombatAction('special1')", cls:"btn-interact" }),
+            makeMobileAction({ icon:"🟣", label:"ESP. 2", action:"performCombatAction('special2')", cls:"btn-interact" }),
+            makeMobileAction({ icon:"🪽", label:isFlying?"VUELO ON":"VOLAR", action:"performCombatAction('fly')", cls:"btn-run" + (isFlying ? " run-active" : "") }),
+            makeMobileAction({ icon:"✨", label:"Z-VANISH", action:"performCombatAction('vanish')", cls:"btn-trailer" }),
+            `<div class="action-btn btn-run" onclick="setControlMode('rp')" style="border-radius:12px;width:100%;grid-column:span 2;height:calc(var(--btn-size)*0.7);"><span class="btn-icon">💬</span><span class="btn-label">VOLVER A RP</span></div>`,
+          ].join("");
+        } else {
+          grid.innerHTML = RP_ACTIONS.map((a, idx) =>
+            makeMobileAction({ icon:a.icon, label:a.label, action:`performRpAction('${a.id}')`, cls:idx % 2 ? "btn-trailer" : "btn-emote" })
+          ).concat([
+            makeMobileAction({ icon:"⚔️", label:"COMBATE", action:"setControlMode('combat')", cls:"btn-interact" }),
+            `<div class="action-btn btn-run ${isRunning ? "run-active" : ""}" id="mobileRunBtn" onclick="toggleRunMobile()" style="border-radius:12px;width:100%;height:calc(var(--btn-size)*0.7);"><span class="btn-icon">🏃</span><span class="btn-label" id="runBtnLabel">CORRER: ${isRunning ? "ON" : "OFF"}</span></div>`,
+          ]).join("");
+        }
+      }
+    }
+
+    function setControlMode(mode) {
+      controlMode = ["combat", "partyFriendly", "partyCombat"].includes(mode) ? mode : "rp";
+      isCombatMode = controlMode === "combat";
+      renderActionBars();
+      const modeLabel = controlMode === "partyFriendly" ? "Party amistad" : controlMode === "partyCombat" ? "Party sparring" : isCombatMode ? "Modo combate" : "Modo rol";
+      showHudToast(modeLabel, "info");
+      publishMyAppearance(true);
+    }
+    window.setControlMode = setControlMode;
 
     // ══ FIREBASE ══
     const firebaseConfig = {
@@ -517,6 +721,22 @@
     const trailerCanvas = document.getElementById("trailerCanvas");
     const tCtx = trailerCanvas.getContext("2d");
 
+    canvas.addEventListener("click", (e) => {
+      if (menuOpen || gameState !== "playing") return;
+      const r = canvas.getBoundingClientRect();
+      const x = e.clientX - r.left;
+      const y = e.clientY - r.top;
+      for (const [id, p] of Object.entries(otherPlayers)) {
+        if (p.map && p.map !== currentMap) continue;
+        const sx = (p.x || 0) - cam.x;
+        const sy = (p.y || 0) - cam.y;
+        if (Math.abs(x - sx) <= 42 && y >= sy - SPRITE_DRAW_H - 24 && y <= sy + 16) {
+          openPlayerPanel(id);
+          return;
+        }
+      }
+    });
+
     function resizeCanvas() {
       canvas.width = window.innerWidth; canvas.height = window.innerHeight;
       trailerCanvas.width = trailerCanvas.offsetWidth || window.innerWidth;
@@ -527,6 +747,7 @@
 
     // ══ MULTIPLAYER ══
     const otherPlayers = {}, otherPlayerAnimators = {}, otherPlayerAccessoryImages = {};
+    const otherPlayerVariantImages = {};
     const otherPlayerPreviewImages = {};
     const otherPlayerAccessoryLoading = new Set();
     const otherPlayerPreviewLoading = new Set();
@@ -542,6 +763,19 @@
 
     function getNetworkGridTarget(img, maxDim) {
       const cols = window.CharacterSystem?.MAX_COLS || 6;
+      const rows = window.CharacterSystem?.TOTAL_ROWS || 14;
+      const aspect = cols / rows;
+      const imgAspect = img.naturalWidth / img.naturalHeight;
+      const isGrid = img.naturalWidth >= cols * 8 && img.naturalHeight >= rows * 8 && Math.abs(imgAspect - aspect) < 0.04;
+      if (!isGrid) return null;
+      const maxFrame = Math.max(32, Math.min(96, Math.floor((maxDim || 384) / cols)));
+      const originalFrame = Math.floor(Math.min(img.naturalWidth / cols, img.naturalHeight / rows));
+      const frame = Math.max(8, Math.min(originalFrame, maxFrame));
+      return { w: cols * frame, h: rows * frame };
+    }
+
+    function getNetworkVariantGridTarget(img, frameCount, maxDim) {
+      const cols = Math.max(1, Math.min(24, parseInt(frameCount || 6, 10) || 6));
       const rows = window.CharacterSystem?.TOTAL_ROWS || 14;
       const aspect = cols / rows;
       const imgAspect = img.naturalWidth / img.naturalHeight;
@@ -579,6 +813,32 @@
       });
     }
 
+    function compressVariantSheetForNetwork(dataURL, frameCount, maxDim) {
+      if (!dataURL) return null;
+      if (dataURL.length < 90000) return dataURL;
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          try {
+            const max = maxDim || 384;
+            const gridTarget = getNetworkVariantGridTarget(img, frameCount, max);
+            const ratio = gridTarget ? 1 : Math.min(max / img.naturalWidth, max / img.naturalHeight, 1);
+            const w = gridTarget ? gridTarget.w : Math.max(1, Math.round(img.naturalWidth * ratio));
+            const h = gridTarget ? gridTarget.h : Math.max(1, Math.round(img.naturalHeight * ratio));
+            const c = document.createElement("canvas");
+            c.width = w;
+            c.height = h;
+            c.getContext("2d").drawImage(img, 0, 0, w, h);
+            resolve(canvasToBestDataURL(c, dataURL, 0.86));
+          } catch (e) {
+            resolve(dataURL);
+          }
+        };
+        img.onerror = () => resolve(dataURL.length < 120000 ? dataURL : null);
+        img.src = dataURL;
+      });
+    }
+
     function compressAccessoryForNetwork(acc) {
       if (!acc) return null;
       if (acc.dataURL && acc.dataURL.length < 180000) return acc.dataURL;
@@ -598,6 +858,44 @@
       } catch (e) {
         return acc.dataURL || null;
       }
+    }
+
+    function serializeVariantCustomizations(customs) {
+      const out = {};
+      Object.entries(customs || {}).forEach(([id, cfg]) => {
+        out[id] = Object.assign({}, cfg);
+        delete out[id].spriteImage;
+        delete out[id].userImage;
+      });
+      return out;
+    }
+
+    function serializeCombatCustomization(cfg) {
+      const out = Object.assign({}, cfg || {});
+      delete out.spriteImage;
+      delete out.userImage;
+      return out;
+    }
+
+    function hydrateVariantCustomizations(app, customizations) {
+      app.variantCustomizations = customizations || {};
+      Object.values(app.variantCustomizations).forEach((cfg) => {
+        if (!cfg?.spriteDataURL) return;
+        const img = new Image();
+        img.onload = () => { cfg.spriteImage = img; window.CharacterSystem?.invalidateHairCache?.(); };
+        img.src = cfg.spriteDataURL;
+      });
+    }
+
+    function hydrateCombatCustomization(app, cfg) {
+      app.combatCustomization = cfg || {};
+      if (!cfg?.spriteDataURL) return;
+      const img = new Image();
+      img.onload = () => {
+        app.combatCustomization.spriteImage = img;
+        window.CharacterSystem?.invalidateHairCache?.();
+      };
+      img.src = cfg.spriteDataURL;
     }
 
     async function restoreAllAccessoriesForGame(CS) {
@@ -673,6 +971,7 @@
           accessoryId: CS.player.appearance.accessoryId || "ac_none",
           auraPhase: 0,
           viewKey: null,
+          spriteVariantId: isCombatMode ? "fight" : null,
         });
         cctx.restore();
         return c.toDataURL("image/png");
@@ -687,6 +986,9 @@
       const sc = savedChar || {};
       const raceId = app?.raceId || sc.race || player.race || "human";
       const gender = app?.gender || sc.gender || "male";
+      const variantId = app?.variantId || sc.variantId || "base";
+      const variantCustomizations = serializeVariantCustomizations(app?.variantCustomizations || sc.variantCustomizations || {});
+      const combatCustomization = serializeCombatCustomization(app?.combatCustomization || sc.combatCustomization || {});
       const defs = CS ? CS.getDefaultIds(raceId, gender) : {};
       const accessoryId = app?.accessoryId || sc.accessory || sc.accessoryId || "ac_none";
       let accessoryDataURL = null;
@@ -704,7 +1006,7 @@
         accessoryDataURL = sc.accessoryDataURL.length < 180000 ? sc.accessoryDataURL : compressAccessoryForNetwork({ dataURL: sc.accessoryDataURL, userImage: null });
       }
       const payload = {
-        raceId, gender,
+        raceId, gender, variantId, variantCustomizations, combatCustomization,
         faceId: app?.faceId || sc.faceId || defs.faceId || null,
         faceColor: app?.faceColor ?? sc.faceColor ?? null,
         eyeColor: app?.eyeColor || sc.eyeColor || "#3a2a1a",
@@ -732,9 +1034,12 @@
     function normalizeRemoteAppearance(app, CS, p) {
       const raceId = app?.raceId || p?.race || "human";
       const gender = app?.gender || "male";
+      const variantId = app?.variantId || "base";
+      const variantCustomizations = app?.variantCustomizations || {};
+      const combatCustomization = app?.combatCustomization || {};
       const defs = CS ? CS.getDefaultIds(raceId, gender) : {};
       return {
-        raceId, gender,
+        raceId, gender, variantId, variantCustomizations, combatCustomization,
         faceId: app?.faceId || defs.faceId || null,
         faceColor: app?.faceColor ?? null,
         eyeColor: app?.eyeColor || "#3a2a1a",
@@ -772,6 +1077,20 @@
       if (appearance.accessoryDataURL && appearance.accessoryDataURL.length > 90000) {
         appearance.accessoryDataURL = await compressDataURLForNetwork(appearance.accessoryDataURL, 384);
       }
+      if (appearance.variantCustomizations) {
+        for (const cfg of Object.values(appearance.variantCustomizations)) {
+          if (cfg?.spriteDataURL && cfg.spriteDataURL.length > 90000) {
+            cfg.spriteDataURL = await compressVariantSheetForNetwork(cfg.spriteDataURL, cfg.animFrames || 6, 384);
+          }
+        }
+      }
+      if (appearance.combatCustomization?.spriteDataURL && appearance.combatCustomization.spriteDataURL.length > 90000) {
+        appearance.combatCustomization.spriteDataURL = await compressVariantSheetForNetwork(
+          appearance.combatCustomization.spriteDataURL,
+          appearance.combatCustomization.animFrames || 6,
+          384
+        );
+      }
       db.ref("players/" + myPlayerId).update({ appearance, t: Date.now() });
     }
 
@@ -780,7 +1099,7 @@
       const myRef = db.ref("players/" + myPlayerId);
       myRef.onDisconnect().remove();
       mpConnected = true;
-      myRef.set({ name:player.name, x:Math.floor(player.x), y:Math.floor(player.y), facing:player.facing, animAction:"idle", race:player.race, auraColor:player.auraColor, charColor:player.charColor, level:player.level, hp:player.hp, maxHp:player.maxHp, appearance:buildMyAppearancePayload(false), map:currentMap, t:Date.now() });
+      myRef.set({ name:player.name, x:Math.floor(player.x), y:Math.floor(player.y), facing:player.facing, animAction:"idle", combatMode:isCombatMode, flying:isFlying, partyId:currentPartyId, race:player.race, auraColor:player.auraColor, charColor:player.charColor, level:player.level, hp:player.hp, maxHp:player.maxHp, ki:Math.floor(player.ki), maxKi:player.maxKi, strength:player.strength, defense:player.defense, speed:player.speed, appearance:buildMyAppearancePayload(false), map:currentMap, t:Date.now() });
       db.ref("players").on("value", (snapshot) => {
         const allPlayers = snapshot.val() || {};
         for (const id in otherPlayers) {
@@ -835,6 +1154,27 @@
         const msg = snap.val(); if (!msg || msg.id === myPlayerId) return;
         addChatMsg(msg.name, msg.text, "#00e5ff");
       });
+      db.ref("partyInvites/" + myPlayerId).on("value", (snap) => {
+        const inv = snap.val();
+        if (!inv) { pendingPartyInvite = null; document.getElementById("partyInvitePanel")?.classList.remove("visible"); return; }
+        pendingPartyInvite = inv;
+        const info = document.getElementById("partyInviteInfo");
+        if (info) info.textContent = `${inv.fromName || "Un jugador"} quiere invitarte a su party.`;
+        document.getElementById("partyInvitePanel")?.classList.add("visible");
+      });
+      db.ref("partyActions/" + myPlayerId).on("value", (snap) => {
+        const act = snap.val();
+        if (!act || act.fromId === myPlayerId) return;
+        if (act.type === "pushBack") {
+          player.x += Number(act.dx) || 0;
+          combatEffects.push({ x:player.x, y:player.y - 44, text:act.text || "PIERDE", timer:1.3, color:"#ff5252" });
+        } else {
+          combatEffects.push({ x:player.x, y:player.y - 50, text:act.icon || "✨", timer:1.2, color:"#f5c400" });
+          combatEffects.push({ x:player.x, y:player.y - 32, text:act.text || "PARTY", timer:1.0, color:"#00e5ff" });
+        }
+        if (csAnimator) csAnimator.play(act.anim || "hurt", () => csAnimator.play(isFlying ? "fly" : "idle"));
+        db.ref("partyActions/" + myPlayerId).remove();
+      });
     }
 
     function sendPlayerUpdate() {
@@ -843,7 +1183,8 @@
       if (now - mpLastSend < MP_SEND_RATE) return;
       mpLastSend = now;
       let animAction = player.moving ? (isRunning ? "run" : "walk") : "idle";
-      db.ref("players/" + myPlayerId).update({ x:Math.floor(player.x), y:Math.floor(player.y), facing:player.facing, animAction, hp:player.hp, level:player.level, map:currentMap, t:Date.now() });
+      if (performance.now() < rpActionUntil && csAnimator) animAction = csAnimator.action || animAction;
+      db.ref("players/" + myPlayerId).update({ x:Math.floor(player.x), y:Math.floor(player.y), facing:player.facing, animAction, combatMode:isCombatMode, flying:isFlying, partyId:currentPartyId, hp:player.hp, ki:Math.floor(player.ki), level:player.level, map:currentMap, t:Date.now() });
       if (now - mpLastAppearance >= MP_APPEARANCE_RATE) {
         mpLastAppearance = now;
         publishMyAppearance(false);
@@ -916,16 +1257,40 @@
                 if (app.accessorySlot) ex.slot = app.accessorySlot;
               }
             }
+            const remoteVariantId = app.variantId || "base";
+            const remoteVariantCfg = app.variantCustomizations?.[remoteVariantId];
+            if (remoteVariantCfg?.spriteDataURL) {
+              const cacheKey = `${id}:${remoteVariantId}`;
+              if (!otherPlayerVariantImages[cacheKey]) {
+                const vimg = new Image();
+                vimg.onload = () => { otherPlayerVariantImages[cacheKey] = vimg; };
+                vimg.src = remoteVariantCfg.spriteDataURL;
+              } else {
+                remoteVariantCfg.spriteImage = otherPlayerVariantImages[cacheKey];
+              }
+            }
+            const remoteCombatCfg = app.combatCustomization;
+            if (remoteCombatCfg?.spriteDataURL) {
+              const cacheKey = `${id}:combat`;
+              if (!otherPlayerVariantImages[cacheKey]) {
+                const cimg = new Image();
+                cimg.onload = () => { otherPlayerVariantImages[cacheKey] = cimg; };
+                cimg.src = remoteCombatCfg.spriteDataURL;
+              } else {
+                remoteCombatCfg.spriteImage = otherPlayerVariantImages[cacheKey];
+              }
+            }
             const remApp = Object.assign({}, app, { accessoryId: remoteAccId });
             const remCSPlayer = { appearance: remApp, direction: p.facing || 1 };
-            const remState = { glovesId: remApp.glovesId, auraId: remApp.auraId, auraColor: remApp.auraColor, accessoryId: remoteAccId, auraPhase: (now * 0.003) % (Math.PI * 2), viewKey: null };
+            const remState = { glovesId: remApp.glovesId, auraId: remApp.auraId, auraColor: remApp.auraColor, accessoryId: remoteAccId, auraPhase: (now * 0.003) % (Math.PI * 2), viewKey: null, spriteVariantId: p.combatMode ? "fight" : null };
             ctx.fillStyle = "rgba(0,0,0,0.3)";
             ctx.beginPath();
             ctx.ellipse(sx, sy + 3, 16, 5, 0, 0, Math.PI * 2);
             ctx.fill();
             ctx.save();
+            const remoteMobileScale = (window.matchMedia?.("(pointer:coarse)").matches && window.innerHeight < 520) ? 0.84 : 1;
             ctx.translate(sx, sy);
-            ctx.scale(SPRITE_DRAW_W / CS.FRAME_W, SPRITE_DRAW_H / CS.FRAME_H);
+            ctx.scale((SPRITE_DRAW_W * remoteMobileScale) / CS.FRAME_W, (SPRITE_DRAW_H * remoteMobileScale) / CS.FRAME_H);
             ctx.translate(-sx, -sy);
             ctx.imageSmoothingEnabled = true;
             CS.drawPlayer(ctx, sx, sy, remCSPlayer, csImageMap, anim, remState);
@@ -942,6 +1307,68 @@
     function _drawRemotePlayerLabel(p,sx,sy){ctx.save();ctx.font="bold 9px Orbitron,monospace";ctx.textAlign="center";const nm=(p.name||"?")+(p.level?` Lv.${p.level}`:"");const nw=ctx.measureText(nm).width+10;ctx.fillStyle="rgba(8,9,15,0.8)";ctx.fillRect(sx-nw/2,sy-SPRITE_DRAW_H-18,nw,16);ctx.fillStyle=(p.appearance?.auraColor)||(p.charColor)||"#00e5ff";ctx.fillText(nm,sx,sy-SPRITE_DRAW_H-6);ctx.restore();}
     function _drawRemotePlayerFallback(p,sx,sy){const color=(p.appearance?.auraColor)||p.charColor||"#00e5ff";const sk=p.appearance?.skinColor||"#e8c898";ctx.fillStyle="rgba(0,0,0,0.3)";ctx.beginPath();ctx.ellipse(sx,sy+3,16,5,0,0,Math.PI*2);ctx.fill();ctx.save();if((p.facing||1)===-1){ctx.translate(sx*2,0);ctx.scale(-1,1);}ctx.fillStyle=color;ctx.fillRect(sx-10,sy-36,20,22);ctx.fillStyle=sk;ctx.beginPath();ctx.arc(sx,sy-44,10,0,Math.PI*2);ctx.fill();ctx.restore();_drawRemotePlayerLabel(p,sx,sy);}
 
+    function getNearestPlayer(maxDist = 92) {
+      let best = null;
+      for (const [id, p] of Object.entries(otherPlayers)) {
+        if (p.map && p.map !== currentMap) continue;
+        const d = Math.hypot((p.x || 0) - player.x, (p.y || 0) - player.y);
+        if (d <= maxDist && (!best || d < best.dist)) best = { id, player:p, dist:d };
+      }
+      return best;
+    }
+
+    function openPlayerPanel(id) {
+      const target = id ? { id, player:otherPlayers[id], dist:0 } : getNearestPlayer();
+      if (!target || !target.player) { showHudToast("No hay jugadores cerca", "info"); return; }
+      selectedPlayerId = target.id;
+      const sx = Math.max(10, Math.min(canvas.width - 240, (target.player.x || player.x) - cam.x + 24));
+      const sy = Math.max(70, Math.min(canvas.height - 190, (target.player.y || player.y) - cam.y - 145));
+      const panel = document.getElementById("partyPanel");
+      const info = document.getElementById("partyPanelInfo");
+      const title = document.getElementById("partyPanelTitle");
+      const inviteBtn = document.getElementById("partyInviteBtn");
+      if (!panel || !info || !title) return;
+      title.textContent = target.player.name || "JUGADOR";
+      const sameParty = isPartyMember(target.id);
+      info.innerHTML = `Nivel ${target.player.level || 1}<br>HP ${target.player.hp || "?"}/${target.player.maxHp || "?"}<br>KI ${target.player.ki || "?"}/${target.player.maxKi || "?"}<br>Raza ${target.player.race || "?"}<br>Fuerza ${target.player.strength || "?"} · Defensa ${target.player.defense || "?"}<br>${sameParty ? "En tu party" : "Fuera de party"}`;
+      if (inviteBtn) inviteBtn.textContent = sameParty ? "INTERACCIONES PARTY" : "INVITAR A PARTY";
+      panel.style.left = sx + "px";
+      panel.style.top = sy + "px";
+      panel.classList.add("visible");
+    }
+    function openNearestPlayerPanel() { openPlayerPanel(); }
+    function closePartyPanel() { document.getElementById("partyPanel")?.classList.remove("visible"); }
+    function inspectSelectedPlayer() { if (selectedPlayerId) openPlayerPanel(selectedPlayerId); }
+    function isPartyMember(id) { return !!id && !!currentPartyId && otherPlayers[id]?.partyId === currentPartyId; }
+    function ensurePartyId() { if (!currentPartyId) currentPartyId = myPlayerId; return currentPartyId; }
+    function inviteSelectedToParty() {
+      if (!selectedPlayerId || !otherPlayers[selectedPlayerId]) { openNearestPlayerPanel(); return; }
+      if (isPartyMember(selectedPlayerId)) { setControlMode("partyFriendly"); closePartyPanel(); return; }
+      const partyId = ensurePartyId();
+      db.ref("players/" + myPlayerId).update({ partyId });
+      db.ref("partyInvites/" + selectedPlayerId).set({ fromId:myPlayerId, fromName:player.name, partyId, t:Date.now() });
+      showHudToast("Invitacion enviada", "info");
+    }
+    function acceptPartyInvite() {
+      if (!pendingPartyInvite) return;
+      currentPartyId = pendingPartyInvite.partyId || pendingPartyInvite.fromId;
+      db.ref("players/" + myPlayerId).update({ partyId:currentPartyId });
+      db.ref("partyInvites/" + myPlayerId).remove();
+      document.getElementById("partyInvitePanel")?.classList.remove("visible");
+      showHudToast("Entraste a la party", "xp");
+      setControlMode("partyFriendly");
+    }
+    function declinePartyInvite() {
+      db.ref("partyInvites/" + myPlayerId).remove();
+      document.getElementById("partyInvitePanel")?.classList.remove("visible");
+    }
+    window.openNearestPlayerPanel = openNearestPlayerPanel;
+    window.closePartyPanel = closePartyPanel;
+    window.inspectSelectedPlayer = inspectSelectedPlayer;
+    window.inviteSelectedToParty = inviteSelectedToParty;
+    window.acceptPartyInvite = acceptPartyInvite;
+    window.declinePartyInvite = declinePartyInvite;
+
     function addChatMsg(name,text,color){chatMessages.push({name,text,color:color||"#e8eaf6",time:performance.now()});if(chatMessages.length>CHAT_MAX)chatMessages.shift();renderChatMessages();}
     function renderChatMessages(){const box=document.getElementById("mpChatBox");if(!box)return;box.innerHTML=chatMessages.map(m=>`<div><span style="color:${m.color};font-weight:700">${m.name}:</span> ${m.text}</div>`).join("");box.scrollTop=box.scrollHeight;}
     function sendChatMsg(){const inp=document.getElementById("mpChatInput");if(!inp)return;const text=inp.value.trim();if(!text)return;inp.value="";addChatMsg("Tú",text,"#f5c400");if(!mpConnected)return;const ref=db.ref("chat").push();ref.set({id:myPlayerId,name:player.name,text,t:Date.now()});}
@@ -950,6 +1377,21 @@
     function buildMpHud(){const hud=document.getElementById("hud");if(!hud||document.getElementById("mpHudPanel"))return;const panel=document.createElement("div");panel.id="mpHudPanel";panel.style.cssText="position:absolute;top:64px;left:220px;width:200px;background:rgba(8,9,15,0.88);border:1px solid #2a3560;border-radius:8px;padding:10px 12px;backdrop-filter:blur(8px);z-index:9;pointer-events:auto;";panel.innerHTML=`<div style="font-family:'Orbitron',monospace;font-size:9px;letter-spacing:2px;color:#00e5ff;margin-bottom:8px;">🌐 JUGADORES</div><div id="mpPlayerCount" style="font-family:'Orbitron',monospace;font-size:13px;color:#f5c400;margin-bottom:8px;">Conectando...</div><div id="mpChatBox" style="height:70px;overflow-y:auto;font-size:11px;color:#c8cfe8;line-height:1.5;margin-bottom:6px;scrollbar-width:none;"></div><div style="display:flex;gap:4px;"><input id="mpChatInput" type="text" maxlength="60" placeholder="Mensaje..." style="flex:1;background:#12172e;border:1px solid #2a3560;border-radius:4px;padding:4px 7px;color:#e8eaf6;font-size:11px;outline:none;font-family:'Rajdhani',sans-serif;pointer-events:auto;" onkeydown="if(event.key==='Enter')sendChatMsg()"/><button onclick="sendChatMsg()" style="background:rgba(0,229,255,.15);border:1px solid #00e5ff;border-radius:4px;color:#00e5ff;font-size:10px;padding:4px 8px;cursor:pointer;font-family:'Orbitron',monospace;pointer-events:auto;">➤</button></div>`;hud.appendChild(panel);}
 
     // ══ CONSTANTS ══
+    function updateMpHud(){const el=document.getElementById("mpPlayerCount");if(!el)return;const count=Object.keys(otherPlayers).length+1;el.textContent=mpConnected?`${count} online`:"Offline";el.style.color=mpConnected?"#f5c400":"#ff1744";}
+    function toggleMpChat(){const panel=document.getElementById("mpHudPanel");if(!panel)return;panel.classList.toggle("chat-open");}
+    window.toggleMpChat=toggleMpChat;
+    function buildMpHud(){
+      const hud=document.getElementById("hud");
+      if(!hud||document.getElementById("mpHudPanel"))return;
+      const style=document.createElement("style");
+      style.textContent=`#mpHudPanel{position:absolute;top:12px;left:260px;width:150px;background:rgba(8,9,15,.88);border:1px solid #2a3560;border-radius:8px;backdrop-filter:blur(8px);z-index:11;pointer-events:auto;overflow:hidden}#mpHudHead{height:34px;display:flex;align-items:center;gap:7px;padding:0 8px;font-family:'Orbitron',monospace;font-size:8px;letter-spacing:1.5px;color:#00e5ff;cursor:pointer}#mpPlayerCount{margin-left:auto;font-size:8px;color:#f5c400;letter-spacing:1px;white-space:nowrap}#mpChatBody{display:none;padding:0 8px 8px}#mpHudPanel.chat-open #mpChatBody{display:block}#mpChatBox{height:44px;overflow-y:auto;font-size:10px;color:#c8cfe8;line-height:1.25;margin-bottom:5px;scrollbar-width:none}#mpChatInput{flex:1;min-width:0;background:#12172e;border:1px solid #2a3560;border-radius:4px;padding:3px 6px;color:#e8eaf6;font-size:10px;outline:none;font-family:'Rajdhani',sans-serif;pointer-events:auto}#mpChatSend{background:rgba(0,229,255,.15);border:1px solid #00e5ff;border-radius:4px;color:#00e5ff;font-size:9px;padding:3px 7px;cursor:pointer;font-family:'Orbitron',monospace;pointer-events:auto}@media (pointer:coarse),(max-width:768px){#mpHudPanel{top:12px;left:clamp(252px,34vw,calc(100vw - 260px));width:132px}#mpHudPanel.chat-open{width:min(200px,calc(100vw - 360px))}#mpChatBox{height:38px;font-size:9px}#mpHudHead{height:30px;font-size:7px;padding:0 7px}}@media (max-width:560px){#mpHudPanel{left:64px;top:96px;width:126px}#mpHudPanel.chat-open{width:min(188px,calc(100vw - 184px))}}`;
+      document.head.appendChild(style);
+      const panel=document.createElement("div");
+      panel.id="mpHudPanel";
+      panel.innerHTML=`<div id="mpHudHead" onclick="toggleMpChat()"><span>CHAT</span><span id="mpPlayerCount">...</span><span>▾</span></div><div id="mpChatBody"><div id="mpChatBox"></div><div style="display:flex;gap:4px;"><input id="mpChatInput" type="text" maxlength="60" placeholder="Mensaje..." onkeydown="if(event.key==='Enter')sendChatMsg()"/><button id="mpChatSend" onclick="sendChatMsg()">➤</button></div></div>`;
+      hud.appendChild(panel);
+    }
+
     const TILE=48, CAM_LERP=0.12, SPRITE_DRAW_W=56, SPRITE_DRAW_H=82;
 
     // ══ MAP DEFINITIONS ══
@@ -1094,16 +1536,45 @@
     const keys = {};
     const joystick = { active:false, dx:0, dy:0, startX:0, startY:0 };
     let csImageMap = null, csAnimator = null;
+    let controlMode = "rp";
+    let isCombatMode = false;
+    let isFlying = false;
+    let rpActionUntil = 0;
+    let selectedPlayerId = null;
+    let currentPartyId = null;
+    let pendingPartyInvite = null;
 
     // ══ INPUT ══
+    function runActionSlot(slot) {
+      if (controlMode === "combat") {
+        const actions = ["combo1", "combo2", "special1", "special2", "fly", "vanish"];
+        performCombatAction(actions[slot] || "combo1");
+        return;
+      }
+      if (controlMode === "partyFriendly" || controlMode === "partyCombat") {
+        const actions = controlMode === "partyCombat" ? PARTY_COMBAT_ACTIONS : PARTY_FRIENDLY_ACTIONS;
+        const action = actions[slot];
+        if (action) performPartyAction(action.id);
+        return;
+      }
+      const action = RP_ACTIONS[slot];
+      if (action) performRpAction(action.id);
+    }
+
     window.addEventListener("keydown", (e) => {
       const active = document.activeElement;
       if (active && (active.tagName==="INPUT"||active.tagName==="TEXTAREA")) return;
       keys[e.code] = true;
-      if (e.code==="KeyZ") { e.preventDefault(); interactNearby(); }
-      if (e.code==="KeyQ") { e.preventDefault(); openMyTrailer(); }
-      if (e.code==="KeyE") { e.preventDefault(); sendEmote("wave"); }
-      if (e.code==="KeyR") { e.preventDefault(); sendEmote("bow"); }
+      if (e.code==="KeyZ") { e.preventDefault(); runActionSlot(0); }
+      if (e.code==="KeyQ") { e.preventDefault(); runActionSlot(1); }
+      if (e.code==="KeyE") { e.preventDefault(); runActionSlot(2); }
+      if (e.code==="KeyR") { e.preventDefault(); runActionSlot(3); }
+      if (e.code==="KeyF") { e.preventDefault(); runActionSlot(4); }
+      if (e.code==="KeyC") { e.preventDefault(); runActionSlot(5); }
+      if (e.code==="KeyV") { e.preventDefault(); runActionSlot(6); }
+      if (e.code==="KeyB") { e.preventDefault(); runActionSlot(7); }
+      if (e.code==="KeyX") { e.preventDefault(); setControlMode("combat"); }
+      if (e.code==="KeyP") { e.preventDefault(); openNearestPlayerPanel(); }
       if (e.code==="ShiftLeft"||e.code==="ShiftRight") setRunState(true);
     });
     window.addEventListener("keyup", (e) => {
@@ -1364,19 +1835,93 @@
 
     // ══ EMOTES ══
     const emoteParticles = [];
-    function sendEmote(type) {
-      const emotes = { wave:"👋", bow:"🙇", laugh:"😄", power:"💥" };
-      const icon = emotes[type] || "✨";
-      showHudToast(icon + " " + (type==="wave"?"¡Saludando!":"¡Reverencia!"), "info");
-      // Partícula de emote flotando
-      combatEffects.push({x:player.x, y:player.y-50, text:icon, timer:1.5, color:"#f5c400"});
-      if (mpConnected && myPlayerId) {
-        db.ref("emotes/" + myPlayerId).set({ type, name:player.name, x:player.x, y:player.y, t:Date.now() });
+    function performRpAction(actionId) {
+      const action = RP_ACTIONS.find(a => a.id === actionId) || RP_ACTIONS[0];
+      const hold = action.hold || 900;
+      rpActionUntil = performance.now() + hold;
+      if (csAnimator) {
+        if (action.anim === "attack_1" || action.anim === "attack_2" || action.anim === "jump") {
+          csAnimator.play(action.anim, () => csAnimator.play(isFlying ? "fly" : "idle"));
+        } else {
+          csAnimator.play(action.anim || "idle");
+          setTimeout(() => {
+            if (performance.now() >= rpActionUntil && csAnimator && !player.moving) csAnimator.play(isFlying ? "fly" : "idle");
+          }, hold);
+        }
       }
+      const fx = player.x + player.facing * 18;
+      combatEffects.push({ x: fx, y: player.y - 52, text: action.icon, timer: 1.4, color: action.color || "#f5c400" });
+      if (action.objectIcon) {
+        combatEffects.push({ x: player.x + player.facing * 28, y: player.y - 30, text: action.objectIcon, timer: 1.2, color: "#ffffff" });
+      }
+      showHudToast(`${action.icon} ${action.title}`, "info");
+      if (mpConnected && myPlayerId) {
+        db.ref("players/" + myPlayerId).update({ animAction: action.anim || "idle", t: Date.now() });
+        db.ref("emotes/" + myPlayerId).set({ type:action.id, icon:action.icon, name:player.name, x:player.x, y:player.y, t:Date.now() });
+      }
+    }
+    window.performRpAction = performRpAction;
+
+    function sendEmote(type) {
+      const map = { wave:"wave", bow:"emote", laugh:"emote", power:"warmup" };
+      performRpAction(map[type] || type || "emote");
     }
     window.sendEmote = sendEmote;
 
+    function performPartyAction(actionId) {
+      const targetId = selectedPlayerId && otherPlayers[selectedPlayerId] ? selectedPlayerId : getNearestPlayer(140)?.id;
+      if (!targetId || !otherPlayers[targetId]) { showHudToast("Selecciona un miembro de party", "info"); return; }
+      if (!isPartyMember(targetId)) { showHudToast("Solo puedes hacer esto en party", "dmg"); return; }
+      selectedPlayerId = targetId;
+      const action = PARTY_FRIENDLY_ACTIONS.concat(PARTY_COMBAT_ACTIONS).find(a => a.id === actionId) || PARTY_FRIENDLY_ACTIONS[0];
+      const target = otherPlayers[targetId];
+      const midX = (player.x + (target.x || player.x)) / 2;
+      const midY = (player.y + (target.y || player.y)) / 2;
+      combatEffects.push({ x:midX, y:midY - 56, text:action.icon, timer:1.35, color:action.color || "#f5c400" });
+      combatEffects.push({ x:midX, y:midY - 34, text:action.text || action.title, timer:1.05, color:action.color || "#f5c400" });
+      if (csAnimator) csAnimator.play(action.anim || "idle", () => csAnimator.play(isFlying ? "fly" : "idle"));
+      if (action.pushSelf) {
+        player.x -= player.facing * TILE * 5;
+        combatEffects.push({ x:player.x, y:player.y - 42, text:"-5 PASOS", timer:1.2, color:"#ff5252" });
+      }
+      if (action.pushTarget) {
+        const dir = (target.x || player.x) >= player.x ? 1 : -1;
+        db.ref("partyActions/" + targetId).set({ fromId:myPlayerId, type:"pushBack", anim:"hurt", dx:dir * TILE * 5, text:"PIERDE", t:Date.now() });
+      } else {
+        db.ref("partyActions/" + targetId).set({ fromId:myPlayerId, type:"effect", anim:action.selfHit ? "attack_1" : "hurt", icon:action.icon, text:action.text || action.title, t:Date.now() });
+      }
+      showHudToast(action.title, controlMode === "partyCombat" ? "xp" : "info");
+    }
+    window.performPartyAction = performPartyAction;
+
     // ══ VIAJE ENTRE MAPAS ══
+    function performCombatAction(action) {
+      if (controlMode !== "combat" && action !== "fly") setControlMode("combat");
+      const labels = { combo1:"COMBO 1", combo2:"COMBO 2", special1:"ESPECIAL 1", special2:"ESPECIAL 2", fly:"VOLAR", vanish:"Z-VANISH" };
+      if (action === "fly") {
+        isFlying = !isFlying;
+        if (csAnimator) csAnimator.play(isFlying ? "fly" : "idle");
+        showHudToast(isFlying ? "Vuelo activado" : "Vuelo desactivado", "info");
+        renderActionBars();
+        publishMyAppearance(true);
+        return;
+      }
+      if (action === "vanish") {
+        const dist = 84;
+        player.x += player.facing * dist;
+        combatEffects.push({ x: player.x - player.facing * 30, y: player.y - 35, text: "Z-VANISH", timer: 0.9, color: "#00e5ff" });
+        showHudToast("Z-Vanish", "info");
+        if (csAnimator) csAnimator.play("run");
+        return;
+      }
+      const anim = action === "combo2" || action === "special2" ? "attack_2" : "attack_1";
+      const color = action.startsWith("special") ? "#00e5ff" : "#f5c400";
+      combatEffects.push({ x: player.x + player.facing * 24, y: player.y - 44, text: labels[action] || "ATAQUE", timer: 0.9, color });
+      if (csAnimator) csAnimator.play(anim, () => csAnimator.play(isFlying ? "fly" : "idle"));
+      showHudToast(labels[action] || "Ataque", action.startsWith("special") ? "info" : "xp");
+    }
+    window.performCombatAction = performCombatAction;
+
     function travelTo(mapKey) {
       if (!MAPS[mapKey]) return;
       document.getElementById("portalPanel").classList.remove("visible");
@@ -1452,9 +1997,13 @@
       const CS = window.CharacterSystem;
       if (CS && csAnimator) {
         CS.player.direction = player.facing;
-        if (player.moving && isRunning) csAnimator.play("run");
-        else if (player.moving) csAnimator.play("walk");
-        else csAnimator.play("idle");
+        const rpLocked = performance.now() < rpActionUntil;
+        if (!rpLocked && !csAnimator.is("attack_1", "attack_2")) {
+          if (isFlying) csAnimator.play("fly");
+          else if (player.moving && isRunning) csAnimator.play("run");
+          else if (player.moving) csAnimator.play("walk");
+          else csAnimator.play("idle");
+        }
       }
 
       const nx = player.x + vx, ny = player.y + vy;
@@ -1679,9 +2228,10 @@
       const CS=window.CharacterSystem;
       const useCS=CS&&csImageMap&&csAnimator&&Object.values(csImageMap).some(img=>img&&img.complete&&img.naturalWidth>0);
       if (useCS) {
-        const csState={glovesId:CS.player.appearance.glovesId||"gm0",auraId:CS.player.appearance.auraId||"a0",auraColor:CS.player.appearance.auraColor||"#fdd835",accessoryId:CS.player.appearance.accessoryId||"ac_none",auraPhase:player.auraPhase||0,viewKey:null};
+        const csState={glovesId:CS.player.appearance.glovesId||"gm0",auraId:CS.player.appearance.auraId||"a0",auraColor:CS.player.appearance.auraColor||"#fdd835",accessoryId:CS.player.appearance.accessoryId||"ac_none",auraPhase:player.auraPhase||0,viewKey:null,spriteVariantId:isCombatMode?"fight":null};
         ctx.fillStyle="rgba(0,0,0,0.3)"; ctx.beginPath(); ctx.ellipse(sx,sy+3,16,5,0,0,Math.PI*2); ctx.fill();
-        ctx.save(); ctx.translate(sx,sy); ctx.scale(SPRITE_DRAW_W/CS.FRAME_W,SPRITE_DRAW_H/CS.FRAME_H); ctx.translate(-sx,-sy); ctx.imageSmoothingEnabled=true;
+        const mobileSpriteScale = (window.matchMedia?.("(pointer:coarse)").matches && window.innerHeight < 520) ? 0.84 : 1;
+        ctx.save(); ctx.translate(sx,sy); ctx.scale((SPRITE_DRAW_W*mobileSpriteScale)/CS.FRAME_W,(SPRITE_DRAW_H*mobileSpriteScale)/CS.FRAME_H); ctx.translate(-sx,-sy); ctx.imageSmoothingEnabled=true;
         CS.drawPlayer(ctx,sx,sy,CS.player,csImageMap,csAnimator,csState); ctx.restore();
         return;
       }
@@ -1782,6 +2332,9 @@
                 const rid=savedChar.race||"human",gen=savedChar.gender||"male";
                 const defs=CS.getDefaultIds(rid,gen);
                 CS.player.appearance.raceId=rid; CS.player.appearance.gender=gen;
+                CS.player.appearance.variantId=savedChar.variantId||"base";
+                hydrateVariantCustomizations(CS.player.appearance, savedChar.variantCustomizations || {});
+                hydrateCombatCustomization(CS.player.appearance, savedChar.combatCustomization || {});
                 CS.player.appearance.faceId=savedChar.faceId||defs.faceId;
                 CS.player.appearance.faceColor=savedChar.faceColor||null;
                 CS.player.appearance.eyeColor=savedChar.eyeColor||"#3a2a1a";
@@ -1800,6 +2353,7 @@
               }
               CS.player.direction=player.facing;
               csAnimator=new CS.SpriteAnimator("idle");
+              renderVariantSelector();
             } catch(err){ console.warn("[game]",err); csImageMap=null; csAnimator=null; }
           }
           document.getElementById("hudPlayerName").textContent=player.name;
@@ -1872,6 +2426,7 @@
     }
 
     loadGame().then(()=>{ lastTime=performance.now(); requestAnimationFrame(gameLoop); });
+    renderActionBars();
     </script>
   </body>
 </html>
