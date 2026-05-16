@@ -637,9 +637,11 @@
         await new Promise((resolve) => {
           const img = new Image();
           img.onload = () => {
+            const isFree = !!(sc.accessoryIsFreeCustomization || sc.race === "Custom" || String(accId).startsWith("fc_"));
             CS.ACCESSORIES_CATALOG.push({
               id: accId, name: "Personalización", type: "other", slot: "over_shirt",
               color: null, userImage: img, dataURL: sc.accessoryDataURL,
+              isFreeCustomization: isFree,
             });
             resolve();
           };
@@ -688,9 +690,15 @@
       const defs = CS ? CS.getDefaultIds(raceId, gender) : {};
       const accessoryId = app?.accessoryId || sc.accessory || sc.accessoryId || "ac_none";
       let accessoryDataURL = null;
+      let accessoryIsFreeCustomization = !!(sc.accessoryIsFreeCustomization || raceId === "Custom" || String(accessoryId).startsWith("fc_"));
+      let accessorySlot = "over_shirt";
       if (CS && accessoryId !== "ac_none") {
         const acc = CS.ACCESSORIES_CATALOG.find((a) => a.id === accessoryId);
-        if (acc) accessoryDataURL = compressAccessoryForNetwork(acc);
+        if (acc) {
+          accessoryDataURL = compressAccessoryForNetwork(acc);
+          accessoryIsFreeCustomization = accessoryIsFreeCustomization || !!(acc.isFreeCustomization || CS.isFreeCustomizationEntry?.(acc));
+          accessorySlot = acc.slot || accessorySlot;
+        }
       }
       if (!accessoryDataURL && sc.accessoryDataURL && (sc.accessory === accessoryId || sc.accessoryId === accessoryId)) {
         accessoryDataURL = sc.accessoryDataURL.length < 180000 ? sc.accessoryDataURL : compressAccessoryForNetwork({ dataURL: sc.accessoryDataURL, userImage: null });
@@ -713,6 +721,8 @@
         auraColor: app?.auraColor || sc.auraColor || player.auraColor || "#fdd835",
         accessoryId,
         accessoryDataURL,
+        accessoryIsFreeCustomization,
+        accessorySlot,
         clothColor: sc.clothColor || "#ff6a00",
       };
       if (includePreview) payload.previewDataURL = renderAppearancePreview(CS);
@@ -741,6 +751,8 @@
         auraColor: app?.auraColor || p?.auraColor || "#fdd835",
         accessoryId: app?.accessoryId || "ac_none",
         accessoryDataURL: app?.accessoryDataURL || null,
+        accessoryIsFreeCustomization: !!(app?.accessoryIsFreeCustomization || raceId === "Custom" || String(app?.accessoryId || "").startsWith("fc_")),
+        accessorySlot: app?.accessorySlot || "over_shirt",
         previewDataURL: app?.previewDataURL || null,
         clothColor: app?.clothColor || "#ff6a00",
       };
@@ -890,11 +902,18 @@
             if (remoteAccId !== "ac_none" && remoteAccImg) {
               const ex = CS.ACCESSORIES_CATALOG.find((a) => a.id === remoteAccId);
               if (!ex) {
-                injectedAcc = { id: remoteAccId, name: "Remoto", type: "other", slot: "over_shirt", color: null, userImage: remoteAccImg, dataURL: app.accessoryDataURL || null };
+                injectedAcc = {
+                  id: remoteAccId, name: "Remoto", type: "other",
+                  slot: app.accessorySlot || "over_shirt", color: null,
+                  userImage: remoteAccImg, dataURL: app.accessoryDataURL || null,
+                  isFreeCustomization: !!app.accessoryIsFreeCustomization,
+                };
                 CS.ACCESSORIES_CATALOG.push(injectedAcc);
               } else if (!ex.userImage) {
                 ex.userImage = remoteAccImg;
                 if (!ex.dataURL && app.accessoryDataURL) ex.dataURL = app.accessoryDataURL;
+                if (app.accessoryIsFreeCustomization) ex.isFreeCustomization = true;
+                if (app.accessorySlot) ex.slot = app.accessorySlot;
               }
             }
             const remApp = Object.assign({}, app, { accessoryId: remoteAccId });
