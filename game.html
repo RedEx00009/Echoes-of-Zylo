@@ -549,14 +549,15 @@
       let activeSlot = 0;
       try { activeSlot = parseInt(localStorage.getItem("dragonCreatorZ_activeSlot") || "0", 10); } catch(e) {}
       const RACE_LABELS = { human:"Humano", saiyan:"Saiyan", namekian:"Namekiano", android:"Androide", kaioshin:"Kaioshin", frieza:"Frieza" };
-      const filled = slots.filter(s => s && s.name);
+      const filled = slots.filter(s => s);
       if (filled.length === 0) { list.innerHTML = '<div class="slot-empty-label">Sin personajes guardados</div>'; return; }
       list.innerHTML = "";
       slots.forEach((s, i) => {
-        if (!s || !s.name) return;
+        if (!s) return;
+        const displayName = s.name || "Sin nombre";
         const div = document.createElement("div");
         div.className = "slot-item" + (i === activeSlot ? " active" : "");
-        div.innerHTML = `<div class="slot-num">${i+1}</div><div class="slot-info"><div class="slot-name">${s.name}</div><div class="slot-race">LV ${s.level||1} · ${RACE_LABELS[s.race]||s.race||"?"}</div></div><span class="slot-load-lbl">▶</span>`;
+        div.innerHTML = `<div class="slot-num">${i+1}</div><div class="slot-info"><div class="slot-name">${displayName}</div><div class="slot-race">LV ${s.level||1} · ${RACE_LABELS[s.race]||s.race||"?"}</div></div><span class="slot-load-lbl">▶</span>`;
         div.addEventListener("click", () => { loadSlotInGame(i, s); });
         list.appendChild(div);
       });
