@@ -544,7 +544,7 @@
     { id: "other",   label: "Otro",      slot: "over_shirt",  icon: "✨" },
   ];
 
-  function addUserAccessory({ name, type, color, userImage, dataURL, combatDataURL, combatUserImage, scale, animFrames, rowCount, combatScale, combatAnimFrames, combatRowCount }) {
+  function addUserAccessory({ name, type, color, userImage, dataURL, combatDataURL, combatUserImage, scale, animFrames, combatScale, combatAnimFrames }) {
     const typeDef = ACCESSORY_TYPES.find(t => t.id === type) || ACCESSORY_TYPES[ACCESSORY_TYPES.length - 1];
     const entry = {
       id:         "user_acc_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
@@ -556,12 +556,10 @@
       dataURL:    dataURL   || null,
       combatDataURL: combatDataURL || null,
       combatUserImage: combatUserImage || null,
-      scale:           scale           ?? 1,
-      animFrames:      animFrames      ?? 6,
-      rowCount:        rowCount        ?? 0,
-      combatScale:     combatScale     ?? 1,
+      scale: scale ?? 1,
+      animFrames: animFrames ?? 6,
+      combatScale: combatScale ?? 1,
       combatAnimFrames: combatAnimFrames ?? 6,
-      combatRowCount:  combatRowCount  ?? 0,
     };
     ACCESSORIES_CATALOG.push(entry);
     return entry;
@@ -589,13 +587,11 @@
           color:     entry.color,
           userImage: img,
           dataURL:   entry.dataURL,
-          combatDataURL:    entry.combatDataURL    || null,
-          scale:            entry.scale            ?? 1,
-          animFrames:       entry.animFrames       ?? 6,
-          rowCount:         entry.rowCount         ?? 0,
-          combatScale:      entry.combatScale      ?? 1,
+          combatDataURL: entry.combatDataURL || null,
+          scale: entry.scale ?? 1,
+          animFrames: entry.animFrames ?? 6,
+          combatScale: entry.combatScale ?? 1,
           combatAnimFrames: entry.combatAnimFrames ?? 6,
-          combatRowCount:   entry.combatRowCount   ?? 0,
         };
         if (entry.combatDataURL) {
           const cimg = new Image();
@@ -1462,21 +1458,17 @@
   function _drawVariantSheet(ctx, img, screenX, screenY, dw, dh, animator, custom) {
     if (!img || !img.complete || !img.naturalWidth) return false;
     const scale = Math.max(0.25, Math.min(8, Number(custom?.scale) || 1));
-    // sheetMode del custom tiene prioridad sobre auto-detección por aspect ratio
-    const useCombat = custom?.sheetMode === "combat"
-      || (custom?.sheetMode !== "explore" && isBattleSheet(img));
-    const defaultColCount = useCombat ? COMBAT_MAX_COLS : MAX_COLS;
-    const defaultRowCount = useCombat ? COMBAT_TOTAL_ROWS : TOTAL_ROWS;
+    const useCombat = custom?.sheetMode === "combat" || isBattleSheet(img);
+    const rowCount = useCombat ? COMBAT_TOTAL_ROWS : TOTAL_ROWS;
+    const colCount = useCombat ? COMBAT_MAX_COLS : MAX_COLS;
     const metaMap = useCombat ? COMBAT_ACTIONS_META : ACTIONS_META;
     const defaultAction = useCombat ? "combat_idle" : "idle";
-    // animFrames del usuario siempre tiene prioridad; si no está seteado usa el default
     const userFrames = parseInt(custom?.animFrames, 10);
-    const frameCount = Math.max(1, Math.min(48, userFrames > 0 ? userFrames : defaultColCount));
-    // rowCount: si el usuario definió filas explícitamente las usamos, si no usamos el default
-    const userRows = parseInt(custom?.rowCount, 10);
-    const rowCount = Math.max(1, Math.min(64, userRows > 0 ? userRows : defaultRowCount));
-    const fw = Math.max(1, Math.floor(img.naturalWidth / frameCount));
-    const fh = Math.max(1, Math.floor(img.naturalHeight / rowCount));
+    const userRows   = parseInt(custom?.rowCount,   10);
+    const frameCount = Math.max(1, Math.min(48, userFrames > 0 ? userFrames : colCount));
+    const effectiveRows = Math.max(1, Math.min(64, userRows > 0 ? userRows : rowCount));
+    const fw = Math.max(1, Math.floor(img.naturalWidth  / frameCount));
+    const fh = Math.max(1, Math.floor(img.naturalHeight / effectiveRows));
     let meta = animator?.meta || metaMap[defaultAction];
     if (useCombat && animator && !metaMap[animator.action]) {
       const mapped = COMBAT_TO_IDLE_MAP[animator.action]
@@ -1486,7 +1478,7 @@
     } else if (!useCombat && animator && !metaMap[animator.action]) {
       meta = metaMap.idle;
     }
-    const row = Math.max(0, Math.min(rowCount - 1, meta?.row || 0));
+    const row = Math.max(0, Math.min(effectiveRows - 1, meta?.row || 0));
     const frame = animator ? (animator.frame % frameCount) : 0;
     const drawW = dw * scale;
     const drawH = dh * scale;
