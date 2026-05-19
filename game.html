@@ -986,6 +986,12 @@
                   cimg.onerror = () => {};
                   cimg.src = item.combatDataURL;
                 }
+                if (item.specialDataURL && !existing.specialUserImage) {
+                  const simg = new Image();
+                  simg.onload = () => { existing.specialUserImage = simg; CS.invalidateHairCache?.(); };
+                  simg.onerror = () => {};
+                  simg.src = item.specialDataURL;
+                }
                 if (!existing.userImage || !existing.userImage.complete || !existing.userImage.naturalWidth) {
                   const img = new Image();
                   img.onload = () => { existing.userImage = img; existing.isFreeCustomization = true; CS.invalidateHairCache?.(); resolve(); };
@@ -1000,9 +1006,10 @@
                   id: item.id, name: item.name || "Personalización",
                   type: item.type || "other", slot: item.slot || "over_shirt",
                   color: item.color || null, userImage: img, dataURL: item.dataURL,
-                  combatDataURL: item.combatDataURL || null,
+                  combatDataURL: item.combatDataURL || null, specialDataURL: item.specialDataURL || null,
                   scale: item.scale ?? 1, animFrames: item.animFrames ?? 6,
                   combatScale: item.combatScale ?? 1, combatAnimFrames: item.combatAnimFrames ?? 6,
+                  specialScale: item.specialScale ?? 1, specialAnimFrames: item.specialAnimFrames ?? 6,
                   raceName: item.raceName || null, isFreeCustomization: true,
                 };
                 if (item.combatDataURL) {
@@ -1010,6 +1017,12 @@
                   cimg.onload = () => { entry.combatUserImage = cimg; CS.invalidateHairCache?.(); };
                   cimg.onerror = () => {};
                   cimg.src = item.combatDataURL;
+                }
+                if (item.specialDataURL) {
+                  const simg = new Image();
+                  simg.onload = () => { entry.specialUserImage = simg; CS.invalidateHairCache?.(); };
+                  simg.onerror = () => {};
+                  simg.src = item.specialDataURL;
                 }
                 CS.ACCESSORIES_CATALOG.push(entry);
                 resolve();

@@ -2110,9 +2110,29 @@
         });
         document.getElementById("btnStart").addEventListener("click",()=>{
           try {
-            saveToSlot(activeSlotIndex);
-            showToast(`Iniciando con slot ${activeSlotIndex+1}...`,"success");
-            setTimeout(()=>{window.location.href=`game.html?slot=${activeSlotIndex}`;},600);
+            const slotIndex = activeSlotIndex;
+            saveToSlot(slotIndex);
+            showToast(`Iniciando con slot ${slotIndex+1}...`,"success");
+            let attempts = 0;
+            const confirmAndRedirect = () => {
+              try {
+                const raw = localStorage.getItem(LS_KEY);
+                if (raw) {
+                  const parsed = JSON.parse(raw);
+                  if (Array.isArray(parsed) && parsed[slotIndex] && parsed[slotIndex].name) {
+                    window.location.href = `game.html?slot=${slotIndex}`;
+                    return;
+                  }
+                }
+              } catch (e) {}
+              attempts++;
+              if (attempts < 6) setTimeout(confirmAndRedirect, 150);
+              else {
+                showToast('No se pudo confirmar guardado — intentando de todos modos','warning');
+                window.location.href = `game.html?slot=${slotIndex}`;
+              }
+            };
+            setTimeout(confirmAndRedirect, 100);
           } catch(e) {
             console.error("[DC] Error en btnStart:",e);
             showToast("Error al iniciar — revisá la consola","error");
