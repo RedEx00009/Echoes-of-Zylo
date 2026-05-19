@@ -268,7 +268,7 @@
         background: radial-gradient(ellipse, rgba(74,106,255,.3) 0%, transparent 70%);
         border-radius: 50%; pointer-events: none;
       }
-      #previewCanvas { image-rendering: pixelated; image-rendering: crisp-edges; position: relative; z-index: 1; width: 180px; height: 260px; }
+      #previewCanvas { image-rendering: pixelated; image-rendering: crisp-edges; position: relative; z-index: 1; width: 180px; height: 220px; }
 
       .name-section { padding: 10px 16px 8px; flex-shrink: 0; border-top: 1px solid var(--border); }
       .name-label { display: block; font-family: var(--fh); font-size: 8px; letter-spacing: 2px; color: var(--td); margin-bottom: 5px; text-align: center; }
@@ -310,7 +310,7 @@
         background: radial-gradient(ellipse 70% 60% at 50% 80%, rgba(74,106,255,.1) 0%, transparent 70%);
         pointer-events: none;
       }
-      #finalCanvas { image-rendering: pixelated; image-rendering: crisp-edges; border-radius: 8px; width: 200px; height: 240px; position: relative; z-index: 1; }
+      #finalCanvas { image-rendering: pixelated; image-rendering: crisp-edges; border-radius: 8px; width: 200px; height: 220px; position: relative; z-index: 1; }
 
       .final-controls { display: flex; gap: 8px; justify-content: center; padding: 0 14px 10px; flex-shrink: 0; }
       .ctrl-btn {
@@ -403,10 +403,10 @@
         .items-grid { grid-template-columns: repeat(4,1fr); }
         .center-col { height:auto; border-right:none; border-bottom:1px solid var(--border); }
         .preview-canvas-wrap { min-height:220px; padding:12px 0; }
-        #previewCanvas { width:140px; height:200px; }
+        #previewCanvas { width:140px; height:180px; }
         .right-col { height: auto; }
         .final-canvas-wrap { padding: 8px; }
-        #finalCanvas { width:160px; height:200px; }
+        #finalCanvas { width:160px; height:180px; }
         .save-section { overflow-y: visible; }
         .start-btn { margin:0 12px 16px; font-size:12px; padding:14px 12px; letter-spacing:2px; }
         #toastContainer { bottom:12px; right:50%; transform:translateX(50%); align-items:center; }
@@ -481,7 +481,7 @@
         </div>
         <div class="preview-canvas-wrap">
           <div class="preview-shadow"></div>
-          <canvas id="previewCanvas" width="180" height="260"></canvas>
+          <canvas id="previewCanvas" width="180" height="220"></canvas>
         </div>
         <div class="name-section">
           <label class="name-label">NOMBRE DEL PERSONAJE</label>
@@ -503,7 +503,7 @@
       <div class="right-col">
         <div class="right-header"><span class="right-title">VISTA FINAL</span></div>
         <div class="final-canvas-wrap">
-          <canvas id="finalCanvas" width="220" height="260"></canvas>
+          <canvas id="finalCanvas" width="200" height="220"></canvas>
         </div>
         <div class="final-controls">
           <button class="ctrl-btn" id="btnRotate" title="Rotar">🔄</button>
@@ -1649,7 +1649,7 @@
         const ps = buildCharState();
 
         previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
-        drawPlayer(previewCtx, previewCanvas.width / 2, previewCanvas.height - 16, player, imageMap, animator, ps);
+        drawPlayer(previewCtx, previewCanvas.width / 2, previewCanvas.height - 8, player, imageMap, animator, ps);
 
         finalCtx.clearRect(0, 0, finalCanvas.width, finalCanvas.height);
         finalCtx.save();
@@ -1659,7 +1659,7 @@
         else           finalCtx.scale(uiZoom, uiZoom);
         finalCtx.translate(-fw / 2, -fh / 2);
         const fp = Object.assign({}, player, { direction: 1, appearance: Object.assign({}, player.appearance) });
-        drawPlayer(finalCtx, fw / 2, fh - 16, fp, imageMap, finalAnim, ps);
+        drawPlayer(finalCtx, fw / 2, fh - 8, fp, imageMap, finalAnim, ps);
         finalCtx.restore();
       }
 
