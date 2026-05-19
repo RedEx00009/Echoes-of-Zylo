@@ -55,65 +55,6 @@
   const ACTIONS_META_MALE   = ACTIONS_META;
   const ACTIONS_META_FEMALE = ACTIONS_META;
 
-  /** humanBattle.png — 11 filas PvP (cuerpo); capas siguen en HumanIdle.png */
-  const COMBAT_ACTIONS_META = {
-    combat_idle: { row: 0,  frames: 3, fps: 2,  loop: true,  label: "Combat Idle" },
-    dash_rush:   { row: 1,  frames: 4, fps: 12, loop: true,  label: "Dash Rush"   },
-    light_combo: { row: 2,  frames: 6, fps: 10, loop: false, label: "Light Combo" },
-    heavy_combo: { row: 3,  frames: 5, fps: 9,  loop: false, label: "Heavy Combo" },
-    special:     { row: 4,  frames: 6, fps: 8,  loop: false, label: "Special"     },
-    block:       { row: 5,  frames: 2, fps: 6,  loop: false, label: "Block"       },
-    hit:         { row: 6,  frames: 2, fps: 8,  loop: false, label: "Hit"         },
-    recovery:    { row: 7,  frames: 3, fps: 6,  loop: false, label: "Recovery"    },
-    charge:      { row: 8,  frames: 4, fps: 6,  loop: true,  label: "Charge"      },
-    knockback:   { row: 9,  frames: 4, fps: 8,  loop: false, label: "Knockback"   },
-    fly_combat:  { row: 10, frames: 3, fps: 2,  loop: true,  label: "Fly Combat"  },
-  };
-
-  const COMBAT_MAX_COLS   = 6;
-  const COMBAT_TOTAL_ROWS = 11;
-  const COMBAT_IDLE_ROW   = COMBAT_ACTIONS_META.combat_idle.row;
-
-  /** Mapeo animación combate → fila del sheet de exploración (capas) */
-  const COMBAT_TO_IDLE_MAP = {
-    combat_idle: "idle",
-    dash_rush:   "run",
-    light_combo: "attack_1",
-    heavy_combo: "attack_2",
-    special:     "attack_2",
-    block:       "idle",
-    hit:         "hurt",
-    recovery:    "idle",
-    charge:      "ki_charge",
-    knockback:   "hurt",
-    fly_combat:  "fly",
-  };
-
-  const LEGACY_TO_COMBAT_MAP = {
-    idle:      "combat_idle",
-    walk:      "combat_idle",
-    run:       "dash_rush",
-    attack_1:  "light_combo",
-    attack_2:  "heavy_combo",
-    hurt:      "hit",
-    death:     "knockback",
-    ki_charge: "charge",
-    fly:       "fly_combat",
-    jump:      "dash_rush",
-    fly_map:   "fly_combat",
-  };
-
-  function resolveCombatAction(action, battleMode) {
-    if (!action) return battleMode ? "combat_idle" : "idle";
-    if (battleMode) {
-      if (COMBAT_ACTIONS_META[action]) return action;
-      return LEGACY_TO_COMBAT_MAP[action] || "combat_idle";
-    }
-    if (ACTIONS_META[action]) return action;
-    const rev = Object.entries(LEGACY_TO_COMBAT_MAP).find(([, v]) => v === action);
-    return rev ? rev[0] : action;
-  }
-
   const HAIR_VIEW_META       = VIEW_META;
   const HAIR_ACTIONS_META    = ACTIONS_META;
   const FACE_VIEW_META       = VIEW_META;
@@ -544,7 +485,7 @@
     { id: "other",   label: "Otro",      slot: "over_shirt",  icon: "✨" },
   ];
 
-  function addUserAccessory({ name, type, color, userImage, dataURL, combatDataURL, combatUserImage, scale, animFrames, combatScale, combatAnimFrames }) {
+  function addUserAccessory({ name, type, color, userImage, dataURL }) {
     const typeDef = ACCESSORY_TYPES.find(t => t.id === type) || ACCESSORY_TYPES[ACCESSORY_TYPES.length - 1];
     const entry = {
       id:         "user_acc_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
@@ -554,12 +495,6 @@
       color:      color || "#888888",
       userImage:  userImage || null,
       dataURL:    dataURL   || null,
-      combatDataURL: combatDataURL || null,
-      combatUserImage: combatUserImage || null,
-      scale: scale ?? 1,
-      animFrames: animFrames ?? 6,
-      combatScale: combatScale ?? 1,
-      combatAnimFrames: combatAnimFrames ?? 6,
     };
     ACCESSORIES_CATALOG.push(entry);
     return entry;
@@ -579,7 +514,7 @@
       if (!entry.dataURL) { resolve(); return; }
       const img = new Image();
       img.onload = () => {
-        const accEntry = {
+        ACCESSORIES_CATALOG.push({
           id:        entry.id,
           name:      entry.name,
           type:      entry.type,
@@ -587,18 +522,7 @@
           color:     entry.color,
           userImage: img,
           dataURL:   entry.dataURL,
-          combatDataURL: entry.combatDataURL || null,
-          scale: entry.scale ?? 1,
-          animFrames: entry.animFrames ?? 6,
-          combatScale: entry.combatScale ?? 1,
-          combatAnimFrames: entry.combatAnimFrames ?? 6,
-        };
-        if (entry.combatDataURL) {
-          const cimg = new Image();
-          cimg.onload = () => { accEntry.combatUserImage = cimg; };
-          cimg.src = entry.combatDataURL;
-        }
-        ACCESSORIES_CATALOG.push(accEntry);
+        });
         resolve();
       };
       img.onerror = () => resolve();
@@ -679,14 +603,11 @@
 
   const SPRITE_IMAGES = {
     human_male:      "Skins/HumanIdle.png",
-    human_male_fight: "Skins/HumanBattle.png",
     human_female:    "Skins/MujerIdle.png",
     saiyan_male:     "Skins/HumanIdle.png",
-    saiyan_male_fight: "Skins/HumanBattle.png",
     saiyan_female:   "Skins/MujerIdle.png",
     namekian_male:   "Skins/NamekianIdle.png",
     android_male:    "Skins/HumanIdle.png",
-    android_male_fight: "Skins/HumanBattle.png",
     android_female:  "Skins/MujerIdle.png",
     kaioshin_male:   "Skins/Kaioshin.png",
     kaioshin_female: "Skins/KaioshinF.png",
@@ -905,36 +826,6 @@
   const TOTAL_ROWS = 14;
   const IDLE_ROW   = ACTIONS_META.idle.row;
 
-  function hasBattleGridLayout(img) {
-    if (!img || !img.naturalWidth || !img.naturalHeight) return false;
-    const byDefault = img.naturalWidth >= FRAME_W * COMBAT_MAX_COLS
-      && img.naturalHeight >= FRAME_H * COMBAT_TOTAL_ROWS;
-    const gridAspect = COMBAT_MAX_COLS / COMBAT_TOTAL_ROWS;
-    const imgAspect = img.naturalWidth / img.naturalHeight;
-    const byScaled = img.naturalWidth >= COMBAT_MAX_COLS * 8
-      && img.naturalHeight >= COMBAT_TOTAL_ROWS * 8
-      && Math.abs(imgAspect - gridAspect) < 0.06;
-    return byDefault || byScaled;
-  }
-
-  function getBattleFrameSize(img) {
-    if (!img || !img.naturalWidth) return { fw: FRAME_W, fh: FRAME_H };
-    if (hasBattleGridLayout(img)) {
-      const fw = Math.floor(img.naturalWidth / COMBAT_MAX_COLS);
-      const fh = Math.floor(img.naturalHeight / COMBAT_TOTAL_ROWS);
-      return { fw: fw > 0 ? fw : FRAME_W, fh: fh > 0 ? fh : FRAME_H };
-    }
-    return { fw: FRAME_W, fh: FRAME_H };
-  }
-
-  function isBattleSheet(img) {
-    if (!img || !img.naturalWidth || !img.naturalHeight) return false;
-    const { fw, fh } = getBattleFrameSize(img);
-    return hasBattleGridLayout(img)
-      && img.naturalWidth >= fw * COMBAT_MAX_COLS
-      && img.naturalHeight >= fh * COMBAT_TOTAL_ROWS;
-  }
-
   function hasFullGridLayout(img) {
     if (!img || !img.naturalWidth || !img.naturalHeight) return false;
     const byDefaultGrid = img.naturalWidth >= FRAME_W * MAX_COLS && img.naturalHeight >= FRAME_H * TOTAL_ROWS;
@@ -1045,9 +936,8 @@
   // ═══════════════════════════════════════════════════════════════
 
   class SpriteAnimator {
-    constructor(action = "idle", options = {}) {
-      this.battleMode  = !!options.battleMode;
-      this.action      = resolveCombatAction(action, this.battleMode);
+    constructor(action = "idle") {
+      this.action      = action;
       this.frame       = 0;
       this.elapsed     = 0;
       this._lastTime   = performance.now();
@@ -1056,32 +946,13 @@
       this.currentView = null;
     }
 
-    _actionsMeta() {
-      return this.battleMode ? COMBAT_ACTIONS_META : ACTIONS_META;
-    }
-
     get meta() {
-      if (!this.battleMode && this.currentView && VIEW_META[this.currentView]) {
-        return VIEW_META[this.currentView];
-      }
-      const map = this._actionsMeta();
-      return map[this.action] || map[this.battleMode ? "combat_idle" : "idle"];
-    }
-
-    setBattleMode(on) {
-      const next = !!on;
-      if (this.battleMode === next) return this;
-      this.battleMode = next;
-      this.currentView = null;
-      this._queue = [];
-      this.action = resolveCombatAction(this.action, this.battleMode);
-      this.frame = 0;
-      this.elapsed = 0;
-      return this;
+      if (this.currentView && VIEW_META[this.currentView]) return VIEW_META[this.currentView];
+      return ACTIONS_META[this.action] || ACTIONS_META.idle;
     }
 
     setView(viewKey) {
-      if (this.battleMode || !VIEW_META[viewKey]) return this;
+      if (!VIEW_META[viewKey]) return this;
       this.currentView = viewKey; this.frame = 0; this.elapsed = 0;
       return this;
     }
@@ -1089,13 +960,11 @@
     clearView() { this.currentView = null; return this; }
 
     play(action, onComplete = null) {
-      const resolved = resolveCombatAction(action, this.battleMode);
-      const map = this._actionsMeta();
-      const m = map[resolved];
+      const m = ACTIONS_META[action];
       if (!m) return this;
       this.currentView = null;
-      if (this.action === resolved && m.loop && !onComplete) return this;
-      this.action = resolved; this.frame = 0; this.elapsed = 0;
+      if (this.action === action && m.loop && !onComplete) return this;
+      this.action = action; this.frame = 0; this.elapsed = 0;
       this._onComplete = onComplete;
       return this;
     }
@@ -1127,52 +996,18 @@
     getFrameCoords(img = null) {
       const m = this.meta;
       let fw = FRAME_W, fh = FRAME_H;
-      if (img) {
-        const sz = isBattleSheet(img) ? getBattleFrameSize(img) : getFrameSize(img);
-        fw = sz.fw; fh = sz.fh;
-      }
-      const frame = Math.min(this.frame, Math.max(0, m.frames - 1));
+      if (img) { const sz = getFrameSize(img); fw = sz.fw; fh = sz.fh; }
       return {
-        srcX: frame * fw, srcY: m.row * fh,
+        srcX: this.frame * fw, srcY: m.row * fh,
         fw, fh,
         action: this.currentView || this.action,
-        frame,
+        frame:  this.frame,
         label:  m.label || "",
       };
     }
 
-    /** Coordenadas para capas (ropa, pelo, etc.) — siempre sheet de exploración */
-    getLayerFrameCoords(img = null) {
-      const layerKey = this.battleMode
-        ? (COMBAT_TO_IDLE_MAP[this.currentView || this.action] || "idle")
-        : (this.currentView || this.action);
-      const m = ACTIONS_META[layerKey] || ACTIONS_META.idle;
-      let fw = FRAME_W, fh = FRAME_H;
-      if (img) { const sz = getFrameSize(img); fw = sz.fw; fh = sz.fh; }
-      const frame = Math.min(this.frame, Math.max(0, m.frames - 1));
-      return {
-        srcX: frame * fw, srcY: m.row * fh,
-        fw, fh,
-        action: layerKey,
-        frame,
-        label: m.label || "",
-      };
-    }
-
-    reset() {
-      this.currentView = null;
-      this.play(this.battleMode ? "combat_idle" : "idle");
-      this._queue = [];
-    }
-
-    is(...actions) {
-      const current = this.currentView || this.action;
-      if (actions.includes(current)) return true;
-      if (this.battleMode) {
-        return actions.some((a) => resolveCombatAction(a, true) === current);
-      }
-      return false;
-    }
+    reset() { this.currentView = null; this.play("idle"); this._queue = []; }
+    is(...actions) { return actions.includes(this.currentView || this.action); }
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -1347,10 +1182,7 @@
       ctx.imageSmoothingEnabled = false;
       let srcX, srcY, fw, fh;
       if (fullSheet) {
-        const coordsFn = (animator.battleMode && !isBattleSheet(img) && animator.getLayerFrameCoords)
-          ? () => animator.getLayerFrameCoords(img)
-          : () => animator.getFrameCoords(img);
-        ({ srcX, srcY, fw, fh } = coordsFn());
+        ({ srcX, srcY, fw, fh } = animator.getFrameCoords(img));
       } else {
         ({ srcX, srcY, fw, fh } = getIdleFrameCoords(img));
       }
@@ -1373,109 +1205,15 @@
     return true;
   }
 
-  function _pickSheetImage(cfg, mode) {
-    if (!cfg) return null;
-    if (mode === "combat") {
-      return cfg.combatSpriteImage || cfg.combatUserImage
-        || (cfg.combatSheet && (cfg.combatSheet.spriteImage || cfg.combatSheet.userImage))
-        || null;
-    }
-    return cfg.spriteImage || cfg.userImage
-      || (cfg.exploreSheet && (cfg.exploreSheet.spriteImage || cfg.exploreSheet.userImage))
-      || null;
-  }
-
-  function _pickSheetMeta(cfg, mode) {
-    const isCombat = mode === "combat";
-    return {
-      scale: Number(isCombat ? (cfg.combatScale ?? cfg.scale) : cfg.scale) || 1,
-      animFrames: parseInt(isCombat ? (cfg.combatAnimFrames ?? cfg.animFrames) : cfg.animFrames, 10) || (isCombat ? 6 : 6),
-      yOffset: Number(cfg.yOffset) || 0,
-      sheetMode: isCombat ? "combat" : "explore",
-    };
-  }
-
-  /**
-   * Elige spritesheet importado según modo (exploración / combate PvP).
-   * variantCustomizations, combatCustomization y free customization (accesorio fc_*).
-   */
-  function resolveCustomSheetBundle(cfg, battleMode) {
-    if (!cfg) return null;
-    if (battleMode) {
-      const hasCombat = !!(cfg.combatSpriteDataURL || cfg.combatDataURL
-        || cfg.combatSpriteImage || cfg.combatUserImage
-        || cfg.combatSheet?.spriteDataURL || cfg.combatSheet?.dataURL);
-      if (!hasCombat) return null;
-      const img = _pickSheetImage(cfg, "combat");
-      if (!img || !img.complete || !img.naturalWidth) return null;
-      return { img, custom: _pickSheetMeta(cfg, "combat") };
-    }
-    const hasExplore = !!(cfg.spriteDataURL || cfg.dataURL
-      || cfg.spriteImage || cfg.userImage
-      || cfg.exploreSheet?.spriteDataURL || cfg.exploreSheet?.dataURL);
-    if (!hasExplore) return null;
-    const img = _pickSheetImage(cfg, "explore");
-    if (!img || !img.complete || !img.naturalWidth) return null;
-    return { img, custom: _pickSheetMeta(cfg, "explore") };
-  }
-
-  function resolveFreeCustomizationBundle(accDef, battleMode) {
-    if (!accDef || !accDef.isFreeCustomization && !String(accDef.id || "").startsWith("fc_")) return null;
-    return resolveCustomSheetBundle(accDef, battleMode);
-  }
-
-  function _drawAccessoryLayer(ctx, accDef, screenX, screenY, dw, dh, animator, inCombatSheet) {
-    if (!accDef || accDef.id === "ac_none") return;
-    const bundle = resolveCustomSheetBundle(accDef, !!inCombatSheet);
-    if (bundle?.img?.complete && bundle.img.naturalWidth) {
-      _drawVariantSheet(ctx, bundle.img, screenX, screenY, dw, dh, animator, bundle.custom);
-      return;
-    }
-    const img = _getAccessoryImage(accDef);
-    if (img && img.complete && img.naturalWidth) {
-      const destX = screenX - dw / 2;
-      const destY = screenY - dh;
-      _drawLayerSprite(ctx, img, destX, destY, dw, dh, animator, IMPORTED_LAYER_SCALE);
-      return;
-    }
-    if (accDef.id === "ac_scouter" || accDef.type === "scouter") {
-      const destX = screenX - dw / 2;
-      const destY = screenY - dh;
-      const hx = destX + dw * 0.55;
-      const hy = destY + dh * 0.22;
-      ctx.save();
-      ctx.fillStyle = "#43a047";
-      ctx.fillRect(hx - dw * 0.18, hy - dh * 0.04, dw * 0.36, dh * 0.08);
-      ctx.fillStyle = "#e040fb";
-      ctx.beginPath();
-      ctx.arc(hx + dw * 0.12, hy, dw * 0.07, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-    }
-  }
-
   function _drawVariantSheet(ctx, img, screenX, screenY, dw, dh, animator, custom) {
     if (!img || !img.complete || !img.naturalWidth) return false;
-    const scale = Math.max(0.25, Math.min(8, Number(custom?.scale) || 1));
-    const useCombat = custom?.sheetMode === "combat" || isBattleSheet(img);
-    const rowCount = useCombat ? COMBAT_TOTAL_ROWS : TOTAL_ROWS;
-    const colCount = useCombat ? COMBAT_MAX_COLS : MAX_COLS;
-    const metaMap = useCombat ? COMBAT_ACTIONS_META : ACTIONS_META;
-    const defaultAction = useCombat ? "combat_idle" : "idle";
-    const frameCount = Math.max(1, Math.min(48, parseInt(custom?.animFrames || colCount, 10) || colCount));
+    const scale = Math.max(0.25, Math.min(5, Number(custom?.scale) || 1));
+    const frameCount = Math.max(1, Math.min(24, parseInt(custom?.animFrames || MAX_COLS, 10) || MAX_COLS));
     const fw = Math.max(1, Math.floor(img.naturalWidth / frameCount));
-    const fh = Math.max(1, Math.floor(img.naturalHeight / rowCount));
-    let meta = animator?.meta || metaMap[defaultAction];
-    if (useCombat && animator && !metaMap[animator.action]) {
-      const mapped = COMBAT_TO_IDLE_MAP[animator.action]
-        ? resolveCombatAction(animator.action, true)
-        : (LEGACY_TO_COMBAT_MAP[animator.action] || animator.action);
-      meta = metaMap[mapped] || metaMap.combat_idle;
-    } else if (!useCombat && animator && !metaMap[animator.action]) {
-      meta = metaMap.idle;
-    }
-    const row = Math.max(0, Math.min(rowCount - 1, meta?.row || 0));
-    const frame = animator ? (animator.frame % frameCount) : 0;
+    const fh = Math.max(1, Math.floor(img.naturalHeight / TOTAL_ROWS));
+    const meta = animator?.meta || ACTIONS_META.idle;
+    const row = Math.max(0, Math.min(TOTAL_ROWS - 1, meta?.row || 0));
+    const frame = animator ? animator.frame % frameCount : 0;
     const drawW = dw * scale;
     const drawH = dh * scale;
     const destX = screenX - drawW / 2;
@@ -1693,12 +1431,7 @@
     const variantCustom = getVariantCustomization(baseApp, variantId);
     const app = getVariantAppearance(baseApp, variantId);
     const spriteVariantId = (charState && charState.spriteVariantId) || variantId;
-    const inCombatSheet = spriteVariantId === "fight";
-    if (animator && animator.setBattleMode) {
-      if (inCombatSheet && !animator.battleMode) animator.setBattleMode(true);
-      else if (!inCombatSheet && animator.battleMode) animator.setBattleMode(false);
-    }
-    const combatCustom = inCombatSheet ? baseApp.combatCustomization : null;
+    const combatCustom = spriteVariantId === "fight" ? baseApp.combatCustomization : null;
     const getVariantImg = (baseKey) => {
       if (!imageMap || !baseKey) return null;
       const spriteKey = getSpriteKey(baseKey, spriteVariantId);
@@ -1751,9 +1484,7 @@
       const auraSheet = isCompatibleSheet(auraImg);
       ctx.globalAlpha = 0.65;
       if (auraSheet && animator) {
-        const { srcX, srcY, fw, fh } = (animator.battleMode && animator.getLayerFrameCoords)
-          ? animator.getLayerFrameCoords(auraImg)
-          : animator.getFrameCoords(auraImg);
+        const { srcX, srcY, fw, fh } = animator.getFrameCoords(auraImg);
         ctx.imageSmoothingEnabled = false;
         if (srcX + fw <= auraImg.naturalWidth && srcY + fh <= auraImg.naturalHeight) {
           ctx.drawImage(auraImg, srcX, srcY, fw, fh, screenX - aw / 2, destY - ah * 0.1, aw, ah);
@@ -1769,49 +1500,35 @@
       _drawProceduralAura(ctx, screenX, screenY, dw, dh, auraDef, auraColor, auraPhase);
     }
 
-    // Plantilla global de combate (importada)
-    if (inCombatSheet) {
-      const globalCombat = resolveCustomSheetBundle(combatCustom, true);
-      if (globalCombat) {
-        _drawVariantSheet(ctx, globalCombat.img, screenX, screenY, dw, dh, animator, globalCombat.custom);
-        ctx.restore();
-        return;
-      }
+    // Personalización libre: reemplaza todo el sprite
+    const customCombatImg = combatCustom?.spriteImage || combatCustom?.userImage || null;
+    if (spriteVariantId === "fight" && customCombatImg && customCombatImg.complete && customCombatImg.naturalWidth) {
+      _drawVariantSheet(ctx, customCombatImg, screenX, screenY, dw, dh, animator, combatCustom);
+      ctx.restore();
+      return;
     }
 
-    // Forma / transformación con sheet propio (exploración o combate según modo)
-    if (variantId !== "base") {
-      const variantBundle = resolveCustomSheetBundle(variantCustom, inCombatSheet);
-      if (variantBundle) {
-        _drawVariantSheet(ctx, variantBundle.img, screenX, screenY, dw, dh, animator, variantBundle.custom);
-        ctx.restore();
-        return;
-      }
+    const customVariantImg = variantCustom?.spriteImage || variantCustom?.userImage || null;
+    if (variantId !== "base" && customVariantImg && customVariantImg.complete && customVariantImg.naturalWidth) {
+      _drawVariantSheet(ctx, customVariantImg, screenX, screenY, dw, dh, animator, variantCustom);
+      ctx.restore();
+      return;
     }
 
-    // Personalización libre (raza por spritesheet importado)
-    if (freeCustom) {
-      const freeBundle = resolveFreeCustomizationBundle(accDef, inCombatSheet);
-      if (freeBundle) {
-        _drawVariantSheet(ctx, freeBundle.img, screenX, screenY, dw, dh, animator, freeBundle.custom);
-        ctx.restore();
-        return;
-      }
-      if (accImg && accImg.complete && accImg.naturalWidth) {
-        _drawAccessoryLayer(ctx, accDef, screenX, screenY, dw, dh, animator, inCombatSheet);
-        ctx.restore();
-        return;
-      }
+    if (freeCustom && accImg && accImg.complete && accImg.naturalWidth) {
+      _drawLayerSprite(ctx, accImg, destX, destY, dw, dh, animator, IMPORTED_LAYER_SCALE);
+      ctx.restore();
+      return;
     }
 
     // 2. ACCESORIO under_shirt
-    if (accSlot === "under_shirt") {
-      _drawAccessoryLayer(ctx, accDef, screenX, screenY, dw, dh, animator, inCombatSheet);
+    if (accSlot === "under_shirt" && accImg && accImg.complete && accImg.naturalWidth) {
+      _drawLayerSprite(ctx, accImg, destX, destY, dw, dh, animator, IMPORTED_LAYER_SCALE);
     }
 
-    // 3. CUERPO con tinte de piel (HumanBattle.png en modo combate)
+    // 3. CUERPO con tinte de piel
     if (bodyImg && bodyImg.complete && bodyImg.naturalWidth) {
-      const sheet = isBattleSheet(bodyImg) || isCompatibleSheet(bodyImg);
+      const sheet = isCompatibleSheet(bodyImg);
       ctx.imageSmoothingEnabled = !sheet;
       if (app.skinColor) {
         const coords = sheet && animator ? animator.getFrameCoords(bodyImg) : null;
@@ -1832,8 +1549,8 @@
     _drawLayerSprite(ctx, getVariantImg(shoesDef?.spriteKey), destX, destY, dw, dh, animator);
 
     // 6. CINTURÓN
-    if (accSlot === "belt_slot") {
-      _drawAccessoryLayer(ctx, accDef, screenX, screenY, dw, dh, animator, inCombatSheet);
+    if (accSlot === "belt_slot" && accImg && accImg.complete && accImg.naturalWidth) {
+      _drawLayerSprite(ctx, accImg, destX, destY, dw, dh, animator, IMPORTED_LAYER_SCALE);
     }
 
     // 7. ROPA SUPERIOR
@@ -1849,9 +1566,7 @@
         const faceSheet = isCompatibleSheet(faceImg);
         let frameCoords = null;
         if (faceSheet && animator) {
-          const { srcX, srcY, fw, fh } = (animator.battleMode && animator.getLayerFrameCoords)
-            ? animator.getLayerFrameCoords(faceImg)
-            : animator.getFrameCoords(faceImg);
+          const { srcX, srcY, fw, fh } = animator.getFrameCoords(faceImg);
           if (srcX + fw <= faceImg.naturalWidth && srcY + fh <= faceImg.naturalHeight) {
             frameCoords = { srcX, srcY, fw, fh };
           }
@@ -1905,9 +1620,7 @@
     if (hairImg && hairImg.complete && hairImg.naturalWidth) {
       const sheet = isCompatibleSheet(hairImg) && animator;
       const coords = sheet ? (() => {
-        const { srcX, srcY, fw, fh } = (animator.battleMode && animator.getLayerFrameCoords)
-          ? animator.getLayerFrameCoords(hairImg)
-          : animator.getFrameCoords(hairImg);
+        const { srcX, srcY, fw, fh } = animator.getFrameCoords(hairImg);
         if (srcX + fw <= hairImg.naturalWidth && srcY + fh <= hairImg.naturalHeight)
           return { srcX, srcY, fw, fh };
         return null;
@@ -1921,8 +1634,8 @@
     }
 
     // 11. ACCESORIO over_shirt
-    if (accSlot === "over_shirt") {
-      _drawAccessoryLayer(ctx, accDef, screenX, screenY, dw, dh, animator, inCombatSheet);
+    if (accSlot === "over_shirt" && accImg && accImg.complete && accImg.naturalWidth) {
+      _drawLayerSprite(ctx, accImg, destX, destY, dw, dh, animator, IMPORTED_LAYER_SCALE);
     }
 
     ctx.restore();
@@ -1976,9 +1689,6 @@
     SPRITE_IMAGES,
 
     ACTIONS_META, ACTIONS_META_MALE, ACTIONS_META_FEMALE, VIEW_META,
-    COMBAT_ACTIONS_META, COMBAT_TO_IDLE_MAP, LEGACY_TO_COMBAT_MAP,
-    COMBAT_MAX_COLS, COMBAT_TOTAL_ROWS, COMBAT_IDLE_ROW,
-    resolveCombatAction, resolveCustomSheetBundle, resolveFreeCustomizationBundle,
 
     HAIR_VIEW_META,    HAIR_ACTIONS_META,
     FACE_VIEW_META,    FACE_ACTIONS_META,
@@ -1996,7 +1706,7 @@
     _hexToRgb, _rgbToHsl, _hslToRgb,
     _tintSprite,
 
-    detectFrameSize, getFrameSize, getBattleFrameSize, isCompatibleSheet, isBattleSheet, getIdleFrameCoords,
+    detectFrameSize, getFrameSize, isCompatibleSheet, getIdleFrameCoords,
 
     getById, cycleId,
 
