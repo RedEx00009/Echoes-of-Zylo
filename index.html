@@ -268,7 +268,7 @@
         background: radial-gradient(ellipse, rgba(74,106,255,.3) 0%, transparent 70%);
         border-radius: 50%; pointer-events: none;
       }
-      #previewCanvas { image-rendering: pixelated; image-rendering: crisp-edges; position: relative; z-index: 1; width: 180px; height: 220px; }
+      #previewCanvas { image-rendering: pixelated; image-rendering: crisp-edges; position: relative; z-index: 1; width: 180px; height: 260px; }
 
       .name-section { padding: 10px 16px 8px; flex-shrink: 0; border-top: 1px solid var(--border); }
       .name-label { display: block; font-family: var(--fh); font-size: 8px; letter-spacing: 2px; color: var(--td); margin-bottom: 5px; text-align: center; }
@@ -310,7 +310,7 @@
         background: radial-gradient(ellipse 70% 60% at 50% 80%, rgba(74,106,255,.1) 0%, transparent 70%);
         pointer-events: none;
       }
-      #finalCanvas { image-rendering: pixelated; image-rendering: crisp-edges; border-radius: 8px; width: 200px; height: 220px; position: relative; z-index: 1; }
+      #finalCanvas { image-rendering: pixelated; image-rendering: crisp-edges; border-radius: 8px; width: 200px; height: 240px; position: relative; z-index: 1; }
 
       .final-controls { display: flex; gap: 8px; justify-content: center; padding: 0 14px 10px; flex-shrink: 0; }
       .ctrl-btn {
@@ -403,10 +403,10 @@
         .items-grid { grid-template-columns: repeat(4,1fr); }
         .center-col { height:auto; border-right:none; border-bottom:1px solid var(--border); }
         .preview-canvas-wrap { min-height:220px; padding:12px 0; }
-        #previewCanvas { width:140px; height:180px; }
+        #previewCanvas { width:140px; height:200px; }
         .right-col { height: auto; }
         .final-canvas-wrap { padding: 8px; }
-        #finalCanvas { width:160px; height:180px; }
+        #finalCanvas { width:160px; height:200px; }
         .save-section { overflow-y: visible; }
         .start-btn { margin:0 12px 16px; font-size:12px; padding:14px 12px; letter-spacing:2px; }
         #toastContainer { bottom:12px; right:50%; transform:translateX(50%); align-items:center; }
@@ -481,7 +481,7 @@
         </div>
         <div class="preview-canvas-wrap">
           <div class="preview-shadow"></div>
-          <canvas id="previewCanvas" width="180" height="220"></canvas>
+          <canvas id="previewCanvas" width="180" height="260"></canvas>
         </div>
         <div class="name-section">
           <label class="name-label">NOMBRE DEL PERSONAJE</label>
@@ -503,7 +503,7 @@
       <div class="right-col">
         <div class="right-header"><span class="right-title">VISTA FINAL</span></div>
         <div class="final-canvas-wrap">
-          <canvas id="finalCanvas" width="200" height="220"></canvas>
+          <canvas id="finalCanvas" width="220" height="260"></canvas>
         </div>
         <div class="final-controls">
           <button class="ctrl-btn" id="btnRotate" title="Rotar">🔄</button>
@@ -604,7 +604,9 @@
             id: a.id, name: a.name, type: a.type, color: a.color, dataURL: a.dataURL,
             combatDataURL: a.combatDataURL || null,
             scale: a.scale ?? 1, animFrames: a.animFrames ?? 6,
+            rowCount: a.rowCount ?? 0,
             combatScale: a.combatScale ?? 1, combatAnimFrames: a.combatAnimFrames ?? 6,
+            combatRowCount: a.combatRowCount ?? 0,
           }));
         try { localStorage.setItem(LS_ACC_KEY, JSON.stringify(toStore)); } catch(e) {
           console.warn("[DC] No se pudo guardar accesorios en LS:", e);
@@ -632,8 +634,10 @@
           combatDataURL: a.combatDataURL || null,
           scale: a.scale ?? 1,
           animFrames: a.animFrames ?? 6,
+          rowCount: a.rowCount ?? 0,
           combatScale: a.combatScale ?? 1,
           combatAnimFrames: a.combatAnimFrames ?? 6,
+          combatRowCount: a.combatRowCount ?? 0,
           raceName: a.raceName || null,
         }));
         try { localStorage.setItem(LS_FREE_KEY, JSON.stringify(toStore)); } catch(e) {
@@ -661,8 +665,10 @@
               combatDataURL:       item.combatDataURL || null,
               scale:               item.scale ?? 1,
               animFrames:          item.animFrames ?? 6,
+              rowCount:            item.rowCount ?? 0,
               combatScale:         item.combatScale ?? 1,
               combatAnimFrames:    item.combatAnimFrames ?? 6,
+              combatRowCount:      item.combatRowCount ?? 0,
               raceName:            item.raceName || null,
               isFreeCustomization: true,
             };
@@ -1222,43 +1228,93 @@
           box.appendChild(block);
         }
 
+        // ── Fila 1: escala + frames (columnas) + filas para EXPLORACIÓN ──
         const metaRow = document.createElement("div");
         metaRow.className = "import-row";
+        metaRow.style.flexWrap = "wrap";
+
+        function makeLabel(text) {
+          const s = document.createElement("span");
+          s.style.cssText = "font-size:8px;color:var(--td);letter-spacing:.5px;width:100%;margin-top:4px;display:block";
+          s.textContent = text;
+          return s;
+        }
+
+        const grpExpl = document.createElement("div");
+        grpExpl.style.cssText = "display:flex;flex-direction:column;gap:3px;flex:1;min-width:80px";
+        grpExpl.appendChild(makeLabel("▸ EXPLORACIÓN"));
+
         const scaleExplore = document.createElement("input");
         scaleExplore.className = "import-input-text";
         scaleExplore.type = "number"; scaleExplore.min = "0.25"; scaleExplore.max = "8"; scaleExplore.step = "0.05";
-        scaleExplore.placeholder = "Tamaño expl.";
+        scaleExplore.placeholder = "Escala"; scaleExplore.title = "Escala de tamaño";
         scaleExplore.value = String(exploreCfg?.scale ?? 1);
         scaleExplore.disabled = !!exploreDisabled;
+        grpExpl.appendChild(scaleExplore);
+
         const framesExplore = document.createElement("input");
         framesExplore.className = "import-input-text";
         framesExplore.type = "number"; framesExplore.min = "1"; framesExplore.max = "48"; framesExplore.step = "1";
-        framesExplore.placeholder = "Frames expl.";
+        framesExplore.placeholder = "Cols (frames)"; framesExplore.title = "Cantidad de frames por fila (columnas)";
         framesExplore.value = String(exploreCfg?.animFrames ?? 6);
         framesExplore.disabled = !!exploreDisabled;
+        grpExpl.appendChild(framesExplore);
+
+        const rowsExplore = document.createElement("input");
+        rowsExplore.className = "import-input-text";
+        rowsExplore.type = "number"; rowsExplore.min = "1"; rowsExplore.max = "64"; rowsExplore.step = "1";
+        rowsExplore.placeholder = "Filas (auto)"; rowsExplore.title = "Cantidad de filas del spritesheet (dejar en 0 o vacío para auto: 14 expl / 11 combate)";
+        rowsExplore.value = String(exploreCfg?.rowCount ?? "");
+        rowsExplore.disabled = !!exploreDisabled;
+        grpExpl.appendChild(rowsExplore);
+
+        metaRow.appendChild(grpExpl);
+
+        // ── Grupo COMBATE ──
+        const grpComb = document.createElement("div");
+        grpComb.style.cssText = "display:flex;flex-direction:column;gap:3px;flex:1;min-width:80px";
+        grpComb.appendChild(makeLabel("▸ COMBATE"));
+
         const scaleCombat = document.createElement("input");
         scaleCombat.className = "import-input-text";
         scaleCombat.type = "number"; scaleCombat.min = "0.25"; scaleCombat.max = "8"; scaleCombat.step = "0.05";
-        scaleCombat.placeholder = "Tamaño comb.";
+        scaleCombat.placeholder = "Escala"; scaleCombat.title = "Escala de tamaño";
         scaleCombat.value = String(combatCfg?.combatScale ?? combatCfg?.scale ?? 1);
         scaleCombat.disabled = !!combatDisabled;
+        grpComb.appendChild(scaleCombat);
+
         const framesCombat = document.createElement("input");
         framesCombat.className = "import-input-text";
         framesCombat.type = "number"; framesCombat.min = "1"; framesCombat.max = "48"; framesCombat.step = "1";
-        framesCombat.placeholder = "Frames comb.";
+        framesCombat.placeholder = "Cols (frames)"; framesCombat.title = "Cantidad de frames por fila (columnas)";
         framesCombat.value = String(combatCfg?.combatAnimFrames ?? combatCfg?.animFrames ?? 6);
         framesCombat.disabled = !!combatDisabled;
-        const saveMeta = () => onMetaChange({
-          scale: Number(scaleExplore.value) || 1,
-          animFrames: parseInt(framesExplore.value, 10) || 6,
-          combatScale: Number(scaleCombat.value) || 1,
-          combatAnimFrames: parseInt(framesCombat.value, 10) || 6,
-        });
-        [scaleExplore, framesExplore, scaleCombat, framesCombat].forEach(el => el.addEventListener("input", saveMeta));
-        metaRow.appendChild(scaleExplore);
-        metaRow.appendChild(framesExplore);
-        metaRow.appendChild(scaleCombat);
-        metaRow.appendChild(framesCombat);
+        grpComb.appendChild(framesCombat);
+
+        const rowsCombat = document.createElement("input");
+        rowsCombat.className = "import-input-text";
+        rowsCombat.type = "number"; rowsCombat.min = "1"; rowsCombat.max = "64"; rowsCombat.step = "1";
+        rowsCombat.placeholder = "Filas (auto)"; rowsCombat.title = "Cantidad de filas del spritesheet (dejar vacío para auto: 11)";
+        rowsCombat.value = String(combatCfg?.combatRowCount ?? combatCfg?.rowCount ?? "");
+        rowsCombat.disabled = !!combatDisabled;
+        grpComb.appendChild(rowsCombat);
+
+        metaRow.appendChild(grpComb);
+
+        const saveMeta = () => {
+          const rExpl = parseInt(rowsExplore.value, 10);
+          const rComb = parseInt(rowsCombat.value, 10);
+          onMetaChange({
+            scale:           Number(scaleExplore.value) || 1,
+            animFrames:      parseInt(framesExplore.value, 10) || 6,
+            rowCount:        rExpl > 0 ? rExpl : 0,
+            combatScale:     Number(scaleCombat.value) || 1,
+            combatAnimFrames: parseInt(framesCombat.value, 10) || 6,
+            combatRowCount:  rComb > 0 ? rComb : 0,
+          });
+        };
+        [scaleExplore, framesExplore, rowsExplore, scaleCombat, framesCombat, rowsCombat]
+          .forEach(el => el.addEventListener("input", saveMeta));
         box.appendChild(metaRow);
 
         addSheetBlock(
@@ -1287,20 +1343,17 @@
         const wrap = document.createElement("div"); wrap.className = "items-scroll"; wrap.style.padding = "10px";
         panel.appendChild(wrap);
         const cfg = player.appearance.combatCustomization || {};
-        const spCfg = player.appearance.specialCustomization || {};
-
         const info = document.createElement("div");
         info.style.cssText = "font-size:11px;color:var(--td);line-height:1.35;margin-bottom:10px";
         info.textContent = "Sheet de combate global (11 filas PvP). Si no importás uno, se usa HumanBattle.png.";
         wrap.appendChild(info);
         const status = document.createElement("div");
         status.style.cssText = "font-family:var(--fh);font-size:8px;letter-spacing:1px;color:var(--cyan);margin-bottom:8px";
-        status.textContent = cfg.spriteDataURL ? "✅ PLANTILLA CUSTOM DE COMBATE" : "USANDO PLANTILLA NORMAL _FIGHT";
+        status.textContent = cfg.spriteDataURL ? "PLANTILLA CUSTOM DE COMBATE" : "USANDO PLANTILLA NORMAL _FIGHT";
         wrap.appendChild(status);
 
-        // ── BLOQUE COMBATE ──
         const importBox = document.createElement("div"); importBox.className = "import-panel";
-        importBox.innerHTML = `<div class="import-title">⚔️ COMBATE PvP (11 filas)</div>`;
+        importBox.innerHTML = `<div class="import-title">IMPORTAR SPRITESHEET DE COMBATE</div>`;
         const imgPreview = document.createElement("img"); imgPreview.className = "import-preview";
         if (cfg.spriteDataURL) { imgPreview.src = cfg.spriteDataURL; imgPreview.classList.add("visible"); }
         importBox.appendChild(imgPreview);
@@ -1308,18 +1361,23 @@
         const metaRow = document.createElement("div"); metaRow.className = "import-row";
         const scaleInput = document.createElement("input"); scaleInput.className = "import-input-text";
         scaleInput.type = "number"; scaleInput.min = "0.25"; scaleInput.max = "8"; scaleInput.step = "0.05";
-        scaleInput.value = String(cfg.scale || 0.72); scaleInput.placeholder = "Tamaño";
+        scaleInput.value = String(cfg.scale || 1); scaleInput.placeholder = "Tamaño";
         const framesInput = document.createElement("input"); framesInput.className = "import-input-text";
         framesInput.type = "number"; framesInput.min = "1"; framesInput.max = "48"; framesInput.step = "1";
-        framesInput.value = String(cfg.animFrames || 6); framesInput.placeholder = "Frames/fila";
+        framesInput.value = String(cfg.animFrames || 6); framesInput.placeholder = "Cols (frames)"; framesInput.title = "Cantidad de frames por fila";
+        const rowsInput = document.createElement("input"); rowsInput.className = "import-input-text";
+        rowsInput.type = "number"; rowsInput.min = "1"; rowsInput.max = "64"; rowsInput.step = "1";
+        rowsInput.value = String(cfg.rowCount || ""); rowsInput.placeholder = "Filas (auto)"; rowsInput.title = "Filas del sheet (vacío = auto 11)";
         const saveMeta = () => {
+          const rc = parseInt(rowsInput.value, 10);
           player.appearance.combatCustomization ||= {};
-          player.appearance.combatCustomization.scale = Math.max(0.25, Math.min(8, Number(scaleInput.value) || 0.72));
+          player.appearance.combatCustomization.scale = Math.max(0.25, Math.min(8, Number(scaleInput.value) || 1));
           player.appearance.combatCustomization.animFrames = Math.max(1, Math.min(48, parseInt(framesInput.value, 10) || 6));
+          player.appearance.combatCustomization.rowCount = rc > 0 ? rc : 0;
           invalidateHairCache();
         };
-        scaleInput.addEventListener("input", saveMeta); framesInput.addEventListener("input", saveMeta);
-        metaRow.appendChild(scaleInput); metaRow.appendChild(framesInput);
+        scaleInput.addEventListener("input", saveMeta); framesInput.addEventListener("input", saveMeta); rowsInput.addEventListener("input", saveMeta);
+        metaRow.appendChild(scaleInput); metaRow.appendChild(framesInput); metaRow.appendChild(rowsInput);
         importBox.appendChild(metaRow);
 
         const fileLabel = document.createElement("label"); fileLabel.className = "import-file-label";
@@ -1331,10 +1389,12 @@
             const dataURL = ev.target.result;
             const img = new Image();
             img.onload = () => {
+              const rc = parseInt(rowsInput.value, 10);
               player.appearance.combatCustomization = Object.assign({}, player.appearance.combatCustomization || {}, {
                 spriteDataURL: dataURL, spriteImage: img,
-                scale: Math.max(0.25, Math.min(8, Number(scaleInput.value) || 0.72)),
+                scale: Math.max(0.25, Math.min(8, Number(scaleInput.value) || 1)),
                 animFrames: Math.max(1, Math.min(48, parseInt(framesInput.value, 10) || 6)),
+                rowCount: rc > 0 ? rc : 0,
               });
               imgPreview.src = dataURL; imgPreview.classList.add("visible");
               invalidateHairCache(); showToast("Spritesheet de combate importado", "success");
@@ -1356,80 +1416,6 @@
           showToast("Plantilla de combate reseteada", "warning"); renderItemsPanel("combat");
         });
         wrap.appendChild(resetBtn);
-
-        // ── SEPARADOR ──
-        const sep = document.createElement("hr");
-        sep.style.cssText = "border:none;border-top:1px solid var(--border);margin:14px 0";
-        wrap.appendChild(sep);
-
-        // ── BLOQUE ESPECIALES ──
-        const spStatus = document.createElement("div");
-        spStatus.style.cssText = "font-family:var(--fh);font-size:8px;letter-spacing:1px;color:var(--magenta);margin-bottom:8px";
-        spStatus.textContent = spCfg.spriteDataURL ? "✅ SHEET ESPECIAL CARGADO" : "SIN SHEET DE ESPECIALES";
-        wrap.appendChild(spStatus);
-
-        const spBox = document.createElement("div"); spBox.className = "import-panel";
-        spBox.innerHTML = `<div class="import-title" style="color:var(--magenta)">✨ ANIMACIONES ESPECIALES</div>
-          <div style="font-size:10px;color:var(--td);margin-bottom:6px;line-height:1.4">
-            Fusión, Carry Player, Items, Emotes, etc.<br>Se activan desde acciones especiales del juego.
-          </div>`;
-
-        const spPreview = document.createElement("img"); spPreview.className = "import-preview";
-        if (spCfg.spriteDataURL) { spPreview.src = spCfg.spriteDataURL; spPreview.classList.add("visible"); }
-        spBox.appendChild(spPreview);
-
-        const spMetaRow = document.createElement("div"); spMetaRow.className = "import-row";
-        const spScale = document.createElement("input"); spScale.className = "import-input-text";
-        spScale.type = "number"; spScale.min = "0.25"; spScale.max = "8"; spScale.step = "0.05";
-        spScale.value = String(spCfg.scale || 0.72); spScale.placeholder = "Tamaño";
-        const spFrames = document.createElement("input"); spFrames.className = "import-input-text";
-        spFrames.type = "number"; spFrames.min = "1"; spFrames.max = "48"; spFrames.step = "1";
-        spFrames.value = String(spCfg.animFrames || 4); spFrames.placeholder = "Frames/fila";
-        const saveSpMeta = () => {
-          player.appearance.specialCustomization ||= {};
-          player.appearance.specialCustomization.scale = Math.max(0.25, Math.min(8, Number(spScale.value) || 0.72));
-          player.appearance.specialCustomization.animFrames = Math.max(1, Math.min(48, parseInt(spFrames.value, 10) || 4));
-          invalidateHairCache();
-        };
-        spScale.addEventListener("input", saveSpMeta); spFrames.addEventListener("input", saveSpMeta);
-        spMetaRow.appendChild(spScale); spMetaRow.appendChild(spFrames);
-        spBox.appendChild(spMetaRow);
-
-        const spFileLabel = document.createElement("label"); spFileLabel.className = "import-file-label";
-        const spFileInput = document.createElement("input"); spFileInput.type = "file"; spFileInput.accept = "image/*";
-        spFileInput.addEventListener("change", e => {
-          const file = e.target.files[0]; if (!file) return;
-          const reader = new FileReader();
-          reader.onload = ev => {
-            const dataURL = ev.target.result;
-            const img = new Image();
-            img.onload = () => {
-              player.appearance.specialCustomization = Object.assign({}, player.appearance.specialCustomization || {}, {
-                spriteDataURL: dataURL, spriteImage: img,
-                scale: Math.max(0.25, Math.min(8, Number(spScale.value) || 0.72)),
-                animFrames: Math.max(1, Math.min(48, parseInt(spFrames.value, 10) || 4)),
-              });
-              spPreview.src = dataURL; spPreview.classList.add("visible");
-              invalidateHairCache(); showToast("Sheet de especiales importado", "success");
-              renderItemsPanel("combat");
-            };
-            img.onerror = () => showToast("No se pudo cargar la imagen", "error");
-            img.src = dataURL;
-          };
-          reader.readAsDataURL(file);
-        });
-        spFileLabel.appendChild(spFileInput); spFileLabel.appendChild(document.createTextNode("ARCHIVO PNG"));
-        spBox.appendChild(spFileLabel);
-
-        const spResetBtn = document.createElement("button"); spResetBtn.className = "import-add-btn";
-        spResetBtn.style.marginTop = "10px"; spResetBtn.textContent = "BORRAR SHEET ESPECIAL";
-        spResetBtn.disabled = !spCfg.spriteDataURL;
-        spResetBtn.addEventListener("click", () => {
-          player.appearance.specialCustomization = {}; invalidateHairCache();
-          showToast("Sheet especial eliminado", "warning"); renderItemsPanel("combat");
-        });
-        spBox.appendChild(spResetBtn);
-        wrap.appendChild(spBox);
       }
 
       function renderFormsPanel(panel) {
@@ -1726,7 +1712,7 @@
         const ps = buildCharState();
 
         previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
-        drawPlayer(previewCtx, previewCanvas.width / 2, previewCanvas.height - 4, player, imageMap, animator, ps);
+        drawPlayer(previewCtx, previewCanvas.width / 2, previewCanvas.height - 16, player, imageMap, animator, ps);
 
         finalCtx.clearRect(0, 0, finalCanvas.width, finalCanvas.height);
         finalCtx.save();
@@ -1736,7 +1722,7 @@
         else           finalCtx.scale(uiZoom, uiZoom);
         finalCtx.translate(-fw / 2, -fh / 2);
         const fp = Object.assign({}, player, { direction: 1, appearance: Object.assign({}, player.appearance) });
-        drawPlayer(finalCtx, fw / 2, fh - 4, fp, imageMap, finalAnim, ps);
+        drawPlayer(finalCtx, fw / 2, fh - 16, fp, imageMap, finalAnim, ps);
         finalCtx.restore();
       }
 
@@ -1806,7 +1792,6 @@
             variantId:        player.appearance.variantId || "base",
             variantCustomizations: serializableVariantCustomizations(player.appearance.variantCustomizations),
             combatCustomization: serializableCombatCustomization(player.appearance.combatCustomization),
-            specialCustomization: serializableCombatCustomization(player.appearance.specialCustomization || {}),
             faceId:           player.appearance.faceId,
             faceColor:        player.appearance.faceColor,
             browColor:        player.appearance.browColor  || null,
@@ -1849,15 +1834,6 @@
         player.appearance.variantId   = d.variantId  || "base";
         hydrateVariantCustomizations(d.variantCustomizations || {});
         hydrateCombatCustomization(d.combatCustomization || {});
-        // Cargar sheet especial
-        if (d.specialCustomization) {
-          player.appearance.specialCustomization = d.specialCustomization || {};
-          if (d.specialCustomization.spriteDataURL) {
-            const img = new Image();
-            img.onload = () => { player.appearance.specialCustomization.spriteImage = img; invalidateHairCache(); };
-            img.src = d.specialCustomization.spriteDataURL;
-          }
-        }
         player.appearance.faceId      = d.faceId     || "fm0";
         player.appearance.faceColor   = d.faceColor  || null;
         player.appearance.browColor   = d.browColor  || null;
