@@ -1,2053 +1,2028 @@
-<!DOCTYPE html>
-<html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Dragon Creator Z</title>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <style>
-      :root {
-        --bg-deep: #08090f;
-        --bg-panel: #0d1020;
-        --bg-card: #12172e;
-        --bg-hover: #1a2040;
-        --border: #2a3560;
-        --glow: #4a6aff;
-        --accent: #f5c400;
-        --accent2: #ff6a00;
-        --cyan: #00e5ff;
-        --green: #00ff9d;
-        --red: #ff1744;
-        --orange: #ff6a00;
-        --magenta: #e040fb;
-        --tp: #e8eaf6;
-        --td: #8892b0;
-        --tm: #3d4a6b;
-        --fh: "Orbitron", monospace;
-        --fb: "Rajdhani", sans-serif;
-        --r: 6px;
-        --tr: 0.15s ease;
-      }
-      *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
-      html, body { height: 100%; overflow: hidden; }
-      @media (max-width: 768px) { html, body { height: auto; overflow: auto; -webkit-overflow-scrolling: touch; } }
-      body { background: var(--bg-deep); color: var(--tp); font-family: var(--fb); font-size: 14px; }
+// @ts-nocheck
+/**
+ * DRAGON CREATOR Z — Character System v1.0.2
+ * Spritesheet de 14 filas (igual para body, hair, face, tops, bottoms, shoes, gloves, auras):
+ *   Row 0  → base_view   (vista base, 3 frames)
+ *   Row 1  → idle        (3 frames)
+ *   Row 2  → walk        (4 frames)
+ *   Row 3  → run         (4 frames)
+ *   Row 4  → attack_1    (6 frames)
+ *   Row 5  → attack_2    (3 frames)
+ *   Row 6  → jump        (3 frames)
+ *   Row 7  → hurt        (1 frame)
+ *   Row 8  → death       (3 frames)
+ *   Row 9  → ki_charge   (3 frames)
+ *   Row 10 → fly         (3 frames)
+ *   Row 11 → fly_map     (3 frames)
+ *   Row 12 → trans1_view (transformación 1, 3 frames)
+ *   Row 13 → trans2_view (transformación 2, 3 frames)
+ */
 
-      .app-header {
-        display: flex; align-items: center; justify-content: space-between;
-        padding: 10px 20px; height: 52px;
-        background: linear-gradient(90deg, #0d1020, #111830, #0d1020);
-        border-bottom: 2px solid var(--border);
-        box-shadow: 0 2px 20px rgba(74,106,255,.25);
-        position: relative; z-index: 10;
-      }
-      .app-header::after {
-        content: ""; position: absolute; bottom: -4px; left: 0; right: 0; height: 2px;
-        background: linear-gradient(90deg, transparent, var(--accent), var(--glow), var(--accent), transparent);
-        opacity: .6;
-      }
-      .header-logo { font-size: 24px; filter: drop-shadow(0 0 8px var(--accent)); animation: pulseLogo 2s ease-in-out infinite; }
-      @keyframes pulseLogo {
-        0%,100% { filter: drop-shadow(0 0 8px var(--accent)); }
-        50%      { filter: drop-shadow(0 0 20px var(--accent)) drop-shadow(0 0 36px var(--accent2)); }
-      }
-      .header-title { font-family: var(--fh); font-size: 20px; font-weight: 900; letter-spacing: 3px; margin-left: 10px; }
-      .header-title .acc { color: var(--accent); text-shadow: 0 0 12px var(--accent); }
-      .header-sub { font-family: var(--fh); font-size: 9px; letter-spacing: 2px; color: var(--tm); }
+"use strict";
 
-      .creator-layout { display: grid; grid-template-columns: 200px 1fr 300px; height: calc(100vh - 52px); overflow: hidden; }
+(function () {
 
-      .left-col { display: flex; flex-direction: row; border-right: 1px solid var(--border); overflow: hidden; height: 100%; }
-      .cat-nav {
-        width: 68px; flex-shrink: 0; background: var(--bg-panel);
-        border-right: 1px solid var(--border);
-        display: flex; flex-direction: column; align-items: center; gap: 4px;
-        padding: 10px 4px; overflow-y: auto; scrollbar-width: none; height: 100%;
-      }
-      .cat-nav::-webkit-scrollbar { display: none; }
-      .cat-btn {
-        width: 56px; height: 52px;
-        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
-        background: transparent; border: 1px solid transparent; border-radius: var(--r);
-        color: var(--td); cursor: pointer; transition: all var(--tr);
-        font-family: var(--fb); font-size: 9px; font-weight: 600; letter-spacing: 1px;
-        text-align: center; line-height: 1.1;
-        touch-action: manipulation; -webkit-tap-highlight-color: transparent;
-      }
-      .cat-btn:hover { background: var(--bg-hover); border-color: var(--border); color: var(--tp); }
-      .cat-btn.active {
-        background: linear-gradient(135deg, rgba(245,196,0,.15), rgba(74,106,255,.1));
-        border-color: var(--accent); color: var(--accent);
-        box-shadow: 0 0 10px rgba(245,196,0,.2), inset 0 0 8px rgba(245,196,0,.05);
-      }
-      .cat-icon  { font-size: 18px; line-height: 1; }
-      .cat-label { font-size: 8px; letter-spacing: 1px; margin-top: 1px; }
+  const FRAME_W   = 96;
+  const FRAME_H   = 96;
+  const DISPLAY_W = 180;
+  const DISPLAY_H = 220;
+  const IMPORTED_LAYER_SCALE = 1.22;
 
-      .items-panel { flex: 1; background: var(--bg-panel); display: flex; flex-direction: column; overflow: hidden; min-width: 0; height: 100%; }
-      .items-section-title {
-        font-family: var(--fh); font-size: 9px; letter-spacing: 2px; color: var(--td);
-        padding: 10px 10px 6px; border-bottom: 1px solid var(--border); flex-shrink: 0;
-      }
-      .items-scroll {
-        flex: 1; overflow-y: auto; padding: 8px;
-        scrollbar-width: thin; scrollbar-color: var(--border) transparent; min-height: 0;
-      }
-      .items-scroll::-webkit-scrollbar { width: 3px; }
-      .items-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-      .items-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 8px; }
+  // ═══════════════════════════════════════════════════════════════
+  //  META COMPARTIDA
+  // ═══════════════════════════════════════════════════════════════
 
-      .item-thumb {
-        aspect-ratio: 1; background: var(--bg-card); border: 2px solid var(--border);
-        border-radius: var(--r); cursor: pointer; overflow: hidden; transition: all var(--tr);
-        display: flex; align-items: center; justify-content: center; position: relative;
-        touch-action: manipulation; -webkit-tap-highlight-color: transparent;
-      }
-      .item-thumb:hover { border-color: var(--td); transform: scale(1.04); background: var(--bg-hover); }
-      .item-thumb.selected { border-color: var(--accent); box-shadow: 0 0 12px rgba(245,196,0,.4); background: rgba(245,196,0,.08); }
-      .item-thumb canvas { width: 100%; height: 100%; image-rendering: pixelated; }
-      .item-thumb .item-label {
-        position: absolute; bottom: 0; left: 0; right: 0;
-        background: rgba(8,9,15,.85); font-family: var(--fh); font-size: 6px;
-        letter-spacing: .5px; color: var(--td); text-align: center; padding: 2px 1px; line-height: 1.2;
-      }
-      .item-thumb.selected .item-label { color: var(--accent); }
+  const VIEW_META = {
+    base_view:   { row: 0,  frames: 3, fps: 2,  loop: true,  label: "Base"             },
+    trans1_view: { row: 12, frames: 3, fps: 2,  loop: true,  label: "Transformación 1"  },
+    trans2_view: { row: 13, frames: 3, fps: 2,  loop: true,  label: "Transformación 2"  },
+  };
 
-      .acc-delete-btn {
-        position: absolute; top: 2px; right: 2px; width: 14px; height: 14px;
-        background: rgba(255,23,68,.8); border: none; border-radius: 2px;
-        color: white; font-size: 9px; cursor: pointer; display: flex;
-        align-items: center; justify-content: center; line-height: 1;
-        opacity: 0; transition: opacity .15s;
-        touch-action: manipulation;
-      }
-      .item-thumb:hover .acc-delete-btn { opacity: 1; }
-      .item-thumb.selected .acc-delete-btn { opacity: .7; }
-      .item-thumb.selected .acc-delete-btn:hover { opacity: 1; }
+  const ACTIONS_META = {
+    idle:      { row: 1,  frames: 3, fps: 2,  loop: true,  label: "Idle"      },
+    walk:      { row: 2,  frames: 4, fps: 5,  loop: true,  label: "Walk"      },
+    run:       { row: 3,  frames: 4, fps: 12, loop: true,  label: "Run"       },
+    attack_1:  { row: 4,  frames: 6, fps: 8,  loop: false, label: "Attack 1"  },
+    attack_2:  { row: 5,  frames: 3, fps: 8,  loop: false, label: "Attack 2"  },
+    jump:      { row: 6,  frames: 3, fps: 8,  loop: false, label: "Jump"      },
+    hurt:      { row: 7,  frames: 1, fps: 6,  loop: false, label: "Hurt"      },
+    death:     { row: 8,  frames: 3, fps: 4,  loop: false, label: "Death"     },
+    ki_charge: { row: 9,  frames: 3, fps: 6,  loop: true,  label: "Ki Charge" },
+    fly:       { row: 10, frames: 3, fps: 2,  loop: true,  label: "Fly"       },
+    fly_map:   { row: 11, frames: 3, fps: 1,  loop: true,  label: "Fly Map"   },
+  };
 
-      .acc-type-badge {
-        display: inline-block; padding: 1px 4px; border-radius: 2px;
-        font-family: var(--fh); font-size: 6px; letter-spacing: .5px;
-        background: rgba(0,229,255,.12); border: 1px solid var(--cyan);
-        color: var(--cyan); position: absolute; top: 2px; left: 2px; line-height: 1.4;
-        pointer-events: none;
-      }
+  const ACTIONS_META_MALE   = ACTIONS_META;
+  const ACTIONS_META_FEMALE = ACTIONS_META;
 
-      .import-panel {
-        flex-shrink: 0; padding: 8px; border-top: 1px solid var(--border);
-        background: rgba(0,229,255,.03);
-      }
-      .import-title { font-family: var(--fh); font-size: 8px; letter-spacing: 2px; color: var(--cyan); margin-bottom: 6px; }
-      .import-row { display: flex; gap: 4px; margin-bottom: 5px; flex-wrap: wrap; }
-      .import-input-text {
-        flex: 1; min-width: 0; background: var(--bg-card); border: 1px solid var(--border);
-        border-radius: 4px; padding: 4px 7px; color: var(--tp); font-family: var(--fb);
-        font-size: 11px; outline: none; transition: border-color var(--tr);
-      }
-      .import-input-text:focus { border-color: var(--cyan); }
-      .import-input-text::placeholder { color: var(--tm); }
-      .import-select {
-        background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px;
-        padding: 4px 5px; color: var(--tp); font-family: var(--fb); font-size: 11px;
-        outline: none; cursor: pointer; transition: border-color var(--tr);
-        -webkit-appearance: none; appearance: none; min-width: 70px;
-      }
-      .import-select:focus { border-color: var(--cyan); }
-      .import-file-label {
-        display: flex; align-items: center; gap: 4px; cursor: pointer;
-        background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px;
-        padding: 4px 8px; color: var(--td); font-family: var(--fh); font-size: 8px;
-        letter-spacing: 1px; transition: all var(--tr); flex-shrink: 0;
-      }
-      .import-file-label:hover { border-color: var(--cyan); color: var(--cyan); }
-      .import-file-label input { display: none; }
-      .import-add-btn {
-        background: linear-gradient(135deg, rgba(0,229,255,.15), rgba(74,106,255,.15));
-        border: 1px solid var(--cyan); border-radius: 4px;
-        padding: 4px 10px; color: var(--cyan); font-family: var(--fh); font-size: 8px;
-        letter-spacing: 1px; cursor: pointer; transition: all var(--tr); flex-shrink: 0;
-        display: flex; align-items: center; gap: 4px;
-      }
-      .import-add-btn:hover { background: rgba(0,229,255,.25); box-shadow: 0 0 8px rgba(0,229,255,.3); }
-      .import-add-btn:disabled { opacity: .4; cursor: not-allowed; }
-      .import-preview {
-        width: 100%; height: 40px; object-fit: contain; border-radius: 4px;
-        border: 1px dashed var(--border); background: var(--bg-card);
-        display: none; image-rendering: pixelated; margin-bottom: 4px;
-      }
-      .import-preview.visible { display: block; }
+  /** humanBattle.png — 11 filas PvP (cuerpo); capas siguen en HumanIdle.png */
+  const COMBAT_ACTIONS_META = {
+    combat_idle: { row: 0,  frames: 3, fps: 2,  loop: true,  label: "Combat Idle" },
+    dash_rush:   { row: 1,  frames: 4, fps: 12, loop: true,  label: "Dash Rush"   },
+    light_combo: { row: 2,  frames: 6, fps: 10, loop: false, label: "Light Combo" },
+    heavy_combo: { row: 3,  frames: 5, fps: 9,  loop: false, label: "Heavy Combo" },
+    special:     { row: 4,  frames: 6, fps: 8,  loop: false, label: "Special"     },
+    block:       { row: 5,  frames: 2, fps: 6,  loop: false, label: "Block"       },
+    hit:         { row: 6,  frames: 2, fps: 8,  loop: false, label: "Hit"         },
+    recovery:    { row: 7,  frames: 3, fps: 6,  loop: false, label: "Recovery"    },
+    charge:      { row: 8,  frames: 4, fps: 6,  loop: true,  label: "Charge"      },
+    knockback:   { row: 9,  frames: 4, fps: 8,  loop: false, label: "Knockback"   },
+    fly_combat:  { row: 10, frames: 3, fps: 2,  loop: true,  label: "Fly Combat"  },
+  };
 
-      .face-color-row { display: flex; gap: 4px; padding: 6px 8px 4px; flex-shrink: 0; flex-wrap: wrap; }
-      .face-color-chip {
-        width: 18px; height: 18px; border-radius: 3px; border: 2px solid transparent;
-        cursor: pointer; transition: transform .1s, border-color .1s; flex-shrink: 0;
-      }
-      .face-color-chip:hover { transform: scale(1.15); }
-      .face-color-chip.active { border-color: white; }
-      .face-color-picker { width: 18px; height: 18px; padding: 0; border: 1px solid var(--border); border-radius: 3px; background: transparent; cursor: pointer; }
-      .face-color-picker::-webkit-color-swatch-wrapper { padding: 2px; }
-      .face-color-picker::-webkit-color-swatch { border: none; border-radius: 2px; }
-      .face-color-label { font-size: 9px; color: var(--td); letter-spacing: .5px; width: 100%; margin-top: 2px; }
+  const COMBAT_MAX_COLS   = 6;
+  const COMBAT_TOTAL_ROWS = 11;
+  const COMBAT_IDLE_ROW   = COMBAT_ACTIONS_META.combat_idle.row;
 
-      .pagination {
-        display: flex; align-items: center; justify-content: center; gap: 8px;
-        padding: 6px 8px; border-top: 1px solid var(--border); flex-shrink: 0;
-      }
-      .page-btn {
-        width: 24px; height: 24px; background: var(--bg-card); border: 1px solid var(--border);
-        color: var(--td); border-radius: 4px; cursor: pointer; font-size: 11px;
-        transition: all var(--tr); display: flex; align-items: center; justify-content: center;
-      }
-      .page-btn:hover { border-color: var(--accent); color: var(--accent); }
-      .page-btn:disabled { opacity: .3; cursor: default; }
-      .page-info { font-family: var(--fh); font-size: 9px; color: var(--td); letter-spacing: 1px; }
+  /** Mapeo animación combate → fila del sheet de exploración (capas) */
+  const COMBAT_TO_IDLE_MAP = {
+    combat_idle: "idle",
+    dash_rush:   "run",
+    light_combo: "attack_1",
+    heavy_combo: "attack_2",
+    special:     "attack_2",
+    block:       "idle",
+    hit:         "hurt",
+    recovery:    "idle",
+    charge:      "ki_charge",
+    knockback:   "hurt",
+    fly_combat:  "fly",
+  };
 
-      .gender-row { display: flex; gap: 6px; padding: 8px 8px 4px; flex-shrink: 0; }
-      .gender-btn {
-        flex: 1; padding: 5px 0; background: var(--bg-card); border: 2px solid var(--border);
-        border-radius: var(--r); color: var(--td); font-family: var(--fh); font-size: 9px;
-        letter-spacing: 1px; cursor: pointer; transition: all var(--tr);
-        display: flex; align-items: center; justify-content: center; gap: 4px;
-      }
-      .gender-btn:hover { background: var(--bg-hover); border-color: var(--td); }
-      .gender-btn.active { border-color: var(--cyan); color: var(--cyan); background: rgba(0,229,255,.08); }
-      .gender-btn:disabled { opacity: .3; cursor: not-allowed; }
+  const LEGACY_TO_COMBAT_MAP = {
+    idle:      "combat_idle",
+    walk:      "combat_idle",
+    run:       "dash_rush",
+    attack_1:  "light_combo",
+    attack_2:  "heavy_combo",
+    hurt:      "hit",
+    death:     "knockback",
+    ki_charge: "charge",
+    fly:       "fly_combat",
+    jump:      "dash_rush",
+    fly_map:   "fly_combat",
+  };
 
-      .color-section { padding: 6px 8px 8px; flex-shrink: 0; border-top: 1px solid var(--border); }
-      .color-section-title { font-family: var(--fh); font-size: 8px; letter-spacing: 2px; color: var(--cyan); margin-bottom: 6px; }
-      .color-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
-      .color-row-label { font-size: 10px; font-weight: 600; color: var(--td); width: 44px; flex-shrink: 0; letter-spacing: .5px; }
-      .color-gradient-wrap { flex: 1; display: flex; align-items: center; gap: 4px; }
-      .color-result { width: 20px; height: 20px; border-radius: 3px; border: 1px solid var(--border); flex-shrink: 0; cursor: pointer; transition: transform var(--tr); }
-      .color-result:hover { transform: scale(1.1); }
-      input[type="color"] { width: 20px; height: 20px; padding: 0; border: 1px solid var(--border); border-radius: 3px; background: transparent; cursor: pointer; }
-      input[type="color"]::-webkit-color-swatch-wrapper { padding: 2px; }
-      input[type="color"]::-webkit-color-swatch { border: none; border-radius: 2px; }
+  function resolveCombatAction(action, battleMode) {
+    if (!action) return battleMode ? "combat_idle" : "idle";
+    if (battleMode) {
+      if (COMBAT_ACTIONS_META[action]) return action;
+      return LEGACY_TO_COMBAT_MAP[action] || "combat_idle";
+    }
+    if (ACTIONS_META[action]) return action;
+    const rev = Object.entries(LEGACY_TO_COMBAT_MAP).find(([, v]) => v === action);
+    return rev ? rev[0] : action;
+  }
 
-      .race-badge {
-        display: inline-block; padding: 2px 6px; border-radius: 3px;
-        font-family: var(--fh); font-size: 7px; letter-spacing: 1px;
-        background: rgba(74,106,255,.15); border: 1px solid var(--glow); color: var(--cyan);
-        margin-left: 6px; vertical-align: middle;
-      }
+  const HAIR_VIEW_META       = VIEW_META;
+  const HAIR_ACTIONS_META    = ACTIONS_META;
+  const FACE_VIEW_META       = VIEW_META;
+  const FACE_ACTIONS_META    = ACTIONS_META;
+  const TOP_VIEW_META        = VIEW_META;
+  const TOP_ACTIONS_META     = ACTIONS_META;
+  const BOTTOM_VIEW_META     = VIEW_META;
+  const BOTTOM_ACTIONS_META  = ACTIONS_META;
+  const SHOES_VIEW_META      = VIEW_META;
+  const SHOES_ACTIONS_META   = ACTIONS_META;
+  const GLOVES_VIEW_META     = VIEW_META;
+  const GLOVES_ACTIONS_META  = ACTIONS_META;
+  const AURA_VIEW_META       = VIEW_META;
+  const AURA_ACTIONS_META    = ACTIONS_META;
 
-      .center-col { display: flex; flex-direction: column; background: #0a0d1a; border-right: 1px solid var(--border); overflow: hidden; height: 100%; }
-      .preview-header { padding: 8px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0; background: linear-gradient(90deg, rgba(74,106,255,.08), transparent); }
-      .preview-title { font-family: var(--fh); font-size: 10px; letter-spacing: 3px; color: var(--cyan); text-shadow: 0 0 6px var(--cyan); }
+  function getActionsMeta()       { return ACTIONS_META; }
+  function getViewMeta()          { return VIEW_META; }
+  function getHairViewMeta()      { return HAIR_VIEW_META; }
+  function getHairActionsMeta()   { return HAIR_ACTIONS_META; }
+  function getFaceViewMeta()      { return FACE_VIEW_META; }
+  function getFaceActionsMeta()   { return FACE_ACTIONS_META; }
+  function getTopViewMeta()       { return TOP_VIEW_META; }
+  function getTopActionsMeta()    { return TOP_ACTIONS_META; }
+  function getBottomViewMeta()    { return BOTTOM_VIEW_META; }
+  function getBottomActionsMeta() { return BOTTOM_ACTIONS_META; }
+  function getShoesViewMeta()     { return SHOES_VIEW_META; }
+  function getShoesActionsMeta()  { return SHOES_ACTIONS_META; }
+  function getGlovesViewMeta()    { return GLOVES_VIEW_META; }
+  function getGlovesActionsMeta() { return GLOVES_ACTIONS_META; }
+  function getAuraViewMeta()      { return AURA_VIEW_META; }
+  function getAuraActionsMeta()   { return AURA_ACTIONS_META; }
 
-      .view-anim-bar { display: flex; flex-direction: column; gap: 4px; padding: 8px 12px 6px; border-bottom: 1px solid var(--border); flex-shrink: 0; background: rgba(74,106,255,.03); }
-      .view-anim-row { display: flex; align-items: center; gap: 4px; }
-      .view-anim-label { font-family: var(--fh); font-size: 7px; letter-spacing: 2px; color: var(--tm); min-width: 42px; }
-      .view-btns { display: flex; gap: 3px; flex-wrap: wrap; flex: 1; }
-      .view-btn {
-        padding: 3px 7px; background: var(--bg-card); border: 1px solid var(--border);
-        border-radius: 4px; color: var(--td); font-family: var(--fh); font-size: 7px;
-        letter-spacing: 1px; cursor: pointer; transition: all var(--tr); white-space: nowrap;
-      }
-      .view-btn:hover { border-color: var(--td); color: var(--tp); }
-      .view-btn.active-view  { border-color: var(--orange); color: var(--orange); background: rgba(255,106,0,.1); box-shadow: 0 0 6px rgba(255,106,0,.25); }
-      .view-btn.active-anim  { border-color: var(--accent); color: var(--accent); background: rgba(245,196,0,.1); box-shadow: 0 0 6px rgba(245,196,0,.25); }
+  // ═══════════════════════════════════════════════════════════════
+  //  RAZAS
+  // ═══════════════════════════════════════════════════════════════
 
-      .preview-canvas-wrap {
-        flex: 1; display: flex; align-items: center; justify-content: center;
-        position: relative; overflow: hidden;
-      }
-      .preview-canvas-wrap::before {
-        content: ""; position: absolute; inset: 0;
-        background:
-          radial-gradient(ellipse 60% 50% at 50% 90%, rgba(74,106,255,.1) 0%, transparent 70%),
-          repeating-linear-gradient(0deg,   transparent, transparent 31px, rgba(42,53,96,.12) 32px),
-          repeating-linear-gradient(90deg,  transparent, transparent 31px, rgba(42,53,96,.12) 32px);
-        pointer-events: none;
-      }
-      .preview-shadow {
-        position: absolute; width: 90px; height: 16px; bottom: 18px; left: 50%;
-        transform: translateX(-50%);
-        background: radial-gradient(ellipse, rgba(74,106,255,.3) 0%, transparent 70%);
-        border-radius: 50%; pointer-events: none;
-      }
-      #previewCanvas { image-rendering: pixelated; image-rendering: crisp-edges; position: relative; z-index: 1; width: 180px; height: 260px; }
+  const RACE_CATALOG = [
+    { id: "human",    name: "HUMANO",    spriteKey: "human_male",    skinColor: "#e8c898", eyeColor: "#3a2a1a", variants: [
+      { id: "base",  label: "Base",    suffix: "" },
+    ] },
+    { id: "saiyan",   name: "SAIYAN",    spriteKey: "saiyan_male",   skinColor: "#d4a574", eyeColor: "#1a1a1a", variants: [
+      { id: "base", label: "Base", suffix: "" },
+    ] },
+    { id: "namekian", name: "NAMEKIANO", spriteKey: "namekian_male", skinColor: "#4caf50", eyeColor: "#ff0000", genderless: true, variants: [
+      { id: "base", label: "Base", suffix: "" },
+    ] },
+    { id: "android",  name: "ANDROIDE",  spriteKey: "android_male",  skinColor: "#c0c0c0", eyeColor: "#00e5ff", variants: [
+      { id: "base", label: "Base", suffix: "" },
+    ] },
+    { id: "kaioshin", name: "KAIOSHIN",  spriteKey: "kaioshin_male", skinColor: "#9c88ff", eyeColor: "#ffd700", variants: [
+      { id: "base", label: "Base", suffix: "" },
+    ] },
+    { id: "frieza",   name: "FRIEZA",    spriteKey: "frieza_male",   skinColor: "#f0e0f0", eyeColor: "#ff0000", genderless: true, variants: [
+      { id: "base", label: "Base", suffix: "" },
+    ] },
+    { id: "Custom",   name: "CUSTOM",    spriteKey: "null",   skinColor: "#f0e0f0", eyeColor: "#ffffff", genderless: true, variants: [
+      { id: "base", label: "Base", suffix: "" },
+    ] },
+  ];
 
-      .name-section { padding: 10px 16px 8px; flex-shrink: 0; border-top: 1px solid var(--border); }
-      .name-label { display: block; font-family: var(--fh); font-size: 8px; letter-spacing: 2px; color: var(--td); margin-bottom: 5px; text-align: center; }
-      .name-input-wrap { position: relative; display: flex; align-items: center; }
-      .name-input {
-        width: 100%; background: var(--bg-card); border: 1px solid var(--border);
-        border-radius: var(--r); padding: 7px 32px 7px 12px; color: var(--tp);
-        font-family: var(--fh); font-size: 13px; letter-spacing: 1px; outline: none;
-        transition: border-color var(--tr); text-align: center;
-      }
-      .name-input:focus { border-color: var(--cyan); box-shadow: 0 0 8px rgba(0,229,255,.15); }
-      .name-edit-icon { position: absolute; right: 10px; font-size: 13px; pointer-events: none; color: var(--td); }
+  function getVariantDef(variantId) {
+    if (!variantId || variantId === "base") return null;
+    if (variantId === "fight") return { id: "fight", label: "Combate", suffix: "_fight" };
+    for (const race of RACE_CATALOG) {
+      const found = race.variants?.find((v) => v.id === variantId);
+      if (found) return found;
+    }
+    return null;
+  }
 
-      .stats-section { padding: 0 16px 10px; flex-shrink: 0; }
-      .stats-title { font-family: var(--fh); font-size: 8px; letter-spacing: 3px; color: var(--td); margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
-      .stat-row { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
-      .stat-icon { font-size: 12px; width: 16px; text-align: center; }
-      .stat-name { width: 72px; font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--td); }
-      .stat-bar-wrap { flex: 1; height: 7px; background: rgba(255,255,255,.06); border-radius: 3px; overflow: hidden; border: 1px solid rgba(255,255,255,.06); }
-      .stat-bar { height: 100%; border-radius: 2px; transition: width .4s ease; position: relative; }
-      .stat-bar::after { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 50%; background: rgba(255,255,255,.2); border-radius: 2px; }
-      .health-bar { background: linear-gradient(90deg,#00c853,var(--green)); box-shadow: 0 0 5px rgba(0,230,118,.5); }
-      .ki-bar     { background: linear-gradient(90deg,#1565c0,#2979ff); box-shadow: 0 0 5px rgba(41,121,255,.5); }
-      .str-bar    { background: linear-gradient(90deg,#c62828,var(--red)); box-shadow: 0 0 5px rgba(255,23,68,.5); }
-      .def-bar    { background: linear-gradient(90deg,#e65100,#ff9800); box-shadow: 0 0 5px rgba(255,152,0,.5); }
-      .spd-bar    { background: linear-gradient(90deg,#6a1b9a,#aa00ff); box-shadow: 0 0 5px rgba(170,0,255,.5); }
-      .stat-val { font-family: var(--fh); font-size: 9px; color: var(--td); min-width: 24px; text-align: right; }
+  function getSpriteKey(baseKey, variantId) {
+    if (!baseKey || !variantId || variantId === "base") return baseKey;
+    const variant = getVariantDef(variantId);
+    if (!variant?.suffix) return baseKey;
+    const variantKey = `${baseKey}${variant.suffix}`;
+    return Object.prototype.hasOwnProperty.call(SPRITE_IMAGES, variantKey) ? variantKey : baseKey;
+  }
 
-      .right-col { display: flex; flex-direction: column; background: var(--bg-panel); overflow: hidden; height: 100%; }
-      .right-header { padding: 8px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0; background: linear-gradient(90deg, rgba(74,106,255,.08), transparent); }
-      .right-title { font-family: var(--fh); font-size: 10px; letter-spacing: 3px; color: var(--cyan); text-shadow: 0 0 6px var(--cyan); }
-      .final-canvas-wrap {
-        flex-shrink: 0; display: flex; align-items: center; justify-content: center;
-        padding: 12px; position: relative; overflow: hidden;
-        background: linear-gradient(180deg,#0a0d1a 0%,var(--bg-panel) 100%);
-      }
-      .final-canvas-wrap::before {
-        content: ""; position: absolute; inset: 0;
-        background: radial-gradient(ellipse 70% 60% at 50% 80%, rgba(74,106,255,.1) 0%, transparent 70%);
-        pointer-events: none;
-      }
-      #finalCanvas { image-rendering: pixelated; image-rendering: crisp-edges; border-radius: 8px; width: 200px; height: 240px; position: relative; z-index: 1; }
+  function getVariantSuffixes() {
+    const suffixes = new Set();
+    RACE_CATALOG.forEach((race) => {
+      (race.variants || []).forEach((variant) => {
+        if (variant.suffix) suffixes.add(variant.suffix);
+      });
+    });
+    return suffixes;
+  }
 
-      .final-controls { display: flex; gap: 8px; justify-content: center; padding: 0 14px 10px; flex-shrink: 0; }
-      .ctrl-btn {
-        background: var(--bg-card); border: 1px solid var(--border); color: var(--td);
-        width: 40px; height: 40px; border-radius: var(--r); cursor: pointer; font-size: 16px;
-        transition: all var(--tr); display: flex; align-items: center; justify-content: center;
-        touch-action: manipulation; -webkit-tap-highlight-color: transparent;
-      }
-      .ctrl-btn:hover { border-color: var(--cyan); color: var(--cyan); box-shadow: 0 0 8px rgba(0,229,255,.2); transform: scale(1.05); }
-      .ctrl-btn:active { transform: scale(.95); }
+  function getVariantCustomization(app, variantId) {
+    if (!app || !variantId || variantId === "base") return null;
+    return app.variantCustomizations?.[variantId] || null;
+  }
 
-      .save-section { flex: 1; overflow-y: auto; padding: 0 12px 10px; scrollbar-width: none; }
-      .save-section::-webkit-scrollbar { display: none; }
-      .save-title { font-family: var(--fh); font-size: 8px; letter-spacing: 3px; color: var(--td); margin-bottom: 8px; padding: 0 0 5px; border-bottom: 1px solid var(--border); }
-      .slots-list { display: flex; flex-direction: column; gap: 6px; }
+  function getVariantAppearance(app, variantId) {
+    const custom = getVariantCustomization(app, variantId);
+    if (!custom) return app;
+    const overrides = {};
+    [
+      "faceId", "faceColor", "browColor", "pupilColor", "eyeColor",
+      "hairId", "hairColor", "topId", "bottomId", "shoesId",
+      "glovesId", "skinColor", "auraId", "auraColor", "accessoryId",
+    ].forEach((key) => {
+      if (custom[key] !== undefined) overrides[key] = custom[key];
+    });
+    return Object.assign({}, app, overrides, {
+      variantId,
+      variantCustomizations: app.variantCustomizations,
+    });
+  }
 
-      .slot-card {
-        display: flex; align-items: center; gap: 8px;
-        background: var(--bg-card); border: 1px solid var(--border);
-        border-radius: var(--r); padding: 7px 8px; cursor: pointer;
-        transition: all var(--tr); position: relative;
-      }
-      .slot-card:hover { border-color: var(--accent); background: var(--bg-hover); }
-      .slot-card.active-slot { border-color: var(--accent); box-shadow: 0 0 10px rgba(245,196,0,.2); }
-      .slot-card.empty { opacity: .5; }
-      .slot-card.empty:hover { border-color: var(--border); background: var(--bg-card); }
-      .slot-num { font-family: var(--fh); font-size: 16px; font-weight: 900; color: var(--tm); width: 22px; text-align: center; flex-shrink: 0; }
-      .slot-card.active-slot .slot-num { color: var(--accent); }
-      .slot-mini { width: 34px; height: 44px; flex-shrink: 0; position: relative; }
-      .slot-mini canvas { image-rendering: pixelated; border-radius: 3px; width: 100%; height: 100%; }
-      .slot-info { flex: 1; min-width: 0; }
-      .slot-name { font-family: var(--fh); font-size: 10px; letter-spacing: 1px; color: var(--tp); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-      .slot-level { font-size: 10px; color: var(--td); letter-spacing: 1px; }
-      .slot-save-btn {
-        background: transparent; border: 1px solid var(--border); color: var(--td);
-        padding: 3px 7px; border-radius: 4px; font-size: 9px; font-family: var(--fh);
-        cursor: pointer; letter-spacing: 1px; transition: all var(--tr); flex-shrink: 0;
-      }
-      .slot-save-btn:hover { border-color: var(--accent); color: var(--accent); }
-      .slot-delete-btn {
-        background: transparent; border: none; color: var(--tm); font-size: 13px;
-        cursor: pointer; padding: 2px; transition: color var(--tr); flex-shrink: 0; line-height: 1;
-      }
-      .slot-delete-btn:hover { color: var(--red); }
+  // ═══════════════════════════════════════════════════════════════
+  //  CATÁLOGOS DE CARA
+  // ═══════════════════════════════════════════════════════════════
 
-      .start-btn {
-        flex-shrink: 0; margin: 0 12px 12px; padding: 12px;
-        background: linear-gradient(135deg,#1b5e20,#2e7d32,#388e3c);
-        border: 2px solid #4caf50; border-radius: var(--r); color: white;
-        font-family: var(--fh); font-size: 13px; font-weight: 700; letter-spacing: 3px;
-        cursor: pointer; transition: all var(--tr);
-        text-shadow: 0 1px 3px rgba(0,0,0,.5); position: relative; overflow: hidden;
-        touch-action: manipulation; -webkit-tap-highlight-color: transparent;
-      }
-      .start-btn::before {
-        content: ""; position: absolute; top: 0; left: -100%; right: 0; bottom: 0;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,.15), transparent);
-        transition: left .4s ease;
-      }
-      .start-btn:hover { background: linear-gradient(135deg,#2e7d32,#388e3c,#4caf50); box-shadow: 0 0 18px rgba(76,175,80,.5); transform: translateY(-2px); }
-      .start-btn:hover::before { left: 100%; }
-      .start-btn:active { transform: translateY(0); }
+  const FACE_CATALOG_MALE = [
+    { id: "fm0", name: "Sin cara",   spriteKey: null,          tintable: false },
+    { id: "fm1", name: "Ojos Nor",   spriteKey: "face_fm1",    tintable: true,  eyeColor: true  },
+    { id: "fm2", name: "Ojos Fri",   spriteKey: "face_fm2",    tintable: true,  eyeColor: true  },
+    { id: "fm3", name: "Cicatriz 1", spriteKey: "face_fm3",    tintable: false },
+    { id: "fm4", name: "Cicatriz 2", spriteKey: "face_fm4",    tintable: false },
+    { id: "fm5", name: "Marcas War", spriteKey: "face_fm5",    tintable: true  },
+    { id: "fm6", name: "Pinturas",   spriteKey: "face_fm6",    tintable: true  },
+    { id: "fm7", name: "Tatuaje",    spriteKey: "face_fm7",    tintable: true  },
+    { id: "fm8", name: "Barba",      spriteKey: "face_fm8",    tintable: true  },
+  ];
 
-      #toastContainer {
-        position: fixed; bottom: 20px; right: 20px;
-        display: flex; flex-direction: column; gap: 6px; z-index: 1000; pointer-events: none;
-      }
-      .toast {
-        background: var(--bg-card); border: 1px solid var(--glow); border-radius: var(--r);
-        padding: 8px 14px; font-family: var(--fh); font-size: 10px; letter-spacing: 1px;
-        color: var(--tp); max-width: 250px;
-        animation: toastIn .25s ease, toastOut .3s ease 2.3s forwards;
-      }
-      .toast.success { border-color: var(--green); color: var(--green); }
-      .toast.warning { border-color: var(--accent); color: var(--accent); }
-      .toast.error   { border-color: var(--red);   color: var(--red); }
-      @keyframes toastIn  { from { opacity:0; transform: translateX(20px); } to { opacity:1; transform: none; } }
-      @keyframes toastOut { from { opacity:1; } to { opacity:0; transform: translateX(20px); } }
+  const FACE_CATALOG_FEMALE = [
+    { id: "ff0", name: "Sin cara",   spriteKey: null,          tintable: false },
+    { id: "ff1", name: "Ojos Nor F", spriteKey: "face_ff1",    tintable: true,  eyeColor: true  },
+    { id: "ff2", name: "Ojos Cat F", spriteKey: "face_ff2",    tintable: true,  eyeColor: true  },
+    { id: "ff3", name: "Rubor",      spriteKey: "face_ff3",    tintable: true  },
+    { id: "ff4", name: "Pintura F",  spriteKey: "face_ff4",    tintable: true  },
+    { id: "ff5", name: "Marcas F",   spriteKey: "face_ff5",    tintable: true  },
+    { id: "ff6", name: "Cicatriz F", spriteKey: "face_ff6",    tintable: false },
+    { id: "ff7", name: "Tatuaje F",  spriteKey: "face_ff7",    tintable: true  },
+    { id: "ff8", name: "Pecas",      spriteKey: "face_ff8",    tintable: false },
+  ];
 
-      @media (max-width: 768px) {
-        .app-header { padding: 8px 12px; height: 48px; }
-        .header-title { font-size: 15px; letter-spacing: 1px; }
-        .header-sub { display: none; }
-        .creator-layout { display: flex; flex-direction: column; height: auto; overflow: visible; }
-        .left-col { flex-direction: column; border-right: none; border-bottom: 1px solid var(--border); height: auto; }
-        .cat-nav { width:100%; height:auto; flex-direction:row; flex-shrink:0; border-right:none; border-bottom:1px solid var(--border); padding:6px 8px; overflow-x:auto; overflow-y:hidden; gap:6px; }
-        .cat-btn { width:52px; height:48px; flex-shrink:0; }
-        .items-panel { height: auto; }
-        .items-scroll { max-height: 240px; }
-        .items-grid { grid-template-columns: repeat(4,1fr); }
-        .center-col { height:auto; border-right:none; border-bottom:1px solid var(--border); }
-        .preview-canvas-wrap { min-height:220px; padding:12px 0; }
-        #previewCanvas { width:140px; height:200px; }
-        .right-col { height: auto; }
-        .final-canvas-wrap { padding: 8px; }
-        #finalCanvas { width:160px; height:200px; }
-        .save-section { overflow-y: visible; }
-        .start-btn { margin:0 12px 16px; font-size:12px; padding:14px 12px; letter-spacing:2px; }
-        #toastContainer { bottom:12px; right:50%; transform:translateX(50%); align-items:center; }
-        .toast { text-align:center; max-width:90vw; }
-      }
-      @media (min-width:769px) and (max-width:1024px) {
-        .creator-layout { grid-template-columns: 220px 1fr; grid-template-rows: 1fr auto; height: calc(100vh - 52px); }
-        .left-col { grid-row: 1 / 3; }
-        .center-col { border-right:none; border-bottom:1px solid var(--border); }
-        .right-col { grid-column: 2; }
-      }
-    </style>
-  </head>
-  <body>
-    <header class="app-header">
-      <div style="display:flex;align-items:center">
-        <span class="header-logo">⚡</span>
-        <div style="margin-left:10px">
-          <h1 class="header-title">DRAGON CREATOR <span class="acc">Z</span></h1>
-        </div>
-      </div>
-      <span class="header-sub">CHARACTER BUILDER v4.3.1</span>
-    </header>
+  const FACE_CATALOG_NAMEKIAN = [
+    { id: "fn0", name: "Sin cara",    spriteKey: null,          tintable: false },
+    { id: "fn1", name: "Ojos Nam",    spriteKey: "face_fn1",    tintable: true,  eyeColor: true  },
+    { id: "fn2", name: "Marcas Nam",  spriteKey: "face_fn2",    tintable: true  },
+    { id: "fn3", name: "Ira Nam",     spriteKey: "face_fn3",    tintable: false },
+    { id: "fn4", name: "Puntitos",    spriteKey: "face_fn4",    tintable: true  },
+  ];
 
-    <main class="creator-layout">
-      <div class="left-col">
-        <nav class="cat-nav" id="categoryNav">
-          <button class="cat-btn active" data-cat="race">    <span class="cat-icon">👾</span><span class="cat-label">RAZA</span></button>
-          <button class="cat-btn" data-cat="face">           <span class="cat-icon">😶</span><span class="cat-label">CARA</span></button>
-          <button class="cat-btn" data-cat="hair">           <span class="cat-icon">💇</span><span class="cat-label">CABELLO</span></button>
-          <button class="cat-btn" data-cat="shirt">          <span class="cat-icon">👕</span><span class="cat-label">ROPA SUP.</span></button>
-          <button class="cat-btn" data-cat="pants">          <span class="cat-icon">👖</span><span class="cat-label">ROPA INF.</span></button>
-          <button class="cat-btn" data-cat="gloves">         <span class="cat-icon">🥊</span><span class="cat-label">GUANTES</span></button>
-          <button class="cat-btn" data-cat="shoes">          <span class="cat-icon">👟</span><span class="cat-label">CALZADO</span></button>
-          <button class="cat-btn" data-cat="accessory">      <span class="cat-icon">🎽</span><span class="cat-label">ACCESOR.</span></button>
-          <button class="cat-btn" data-cat="free">           <span class="cat-icon">🧩</span><span class="cat-label">LIBRE</span></button>
-          <button class="cat-btn" data-cat="aura">           <span class="cat-icon">✨</span><span class="cat-label">AURA</span></button>
-          <button class="cat-btn" data-cat="color">          <span class="cat-icon">🎨</span><span class="cat-label">COLOR</span></button>
-          <button class="cat-btn" data-cat="combat">         <span class="cat-icon">⚔️</span><span class="cat-label">COMBATE</span></button>
-          <button class="cat-btn" data-cat="forms">          <span class="cat-icon">⚡</span><span class="cat-label">FORMAS</span></button>
-        </nav>
-        <div class="items-panel" id="itemsPanel"></div>
-      </div>
+  const FACE_CATALOG_FRIEZA = [
+    { id: "fr0", name: "Sin cara",    spriteKey: null,          tintable: false },
+    { id: "fr1", name: "Ojos Arc",    spriteKey: "face_fr1",    tintable: true,  eyeColor: true  },
+    { id: "fr2", name: "Marca Arc",   spriteKey: "face_fr2",    tintable: true  },
+    { id: "fr3", name: "Lineas Arc",  spriteKey: "face_fr3",    tintable: true  },
+    { id: "fr4", name: "Máscara",     spriteKey: "face_fr4",    tintable: false },
+  ];
 
-      <div class="center-col">
-        <div class="preview-header"><span class="preview-title">VISTA PREVIA</span></div>
-        <div class="view-anim-bar">
-          <div class="view-anim-row">
-            <span class="view-anim-label">VISTA</span>
-            <div class="view-btns" id="viewBtns">
-              <button class="view-btn" data-view="base_view">BASE</button>
-              <button class="view-btn" data-view="trans1_view">TRANS 1</button>
-              <button class="view-btn" data-view="trans2_view">TRANS 2</button>
-            </div>
-          </div>
-          <div class="view-anim-row">
-            <span class="view-anim-label">ANIM</span>
-            <div class="view-btns" id="animBtns">
-              <button class="view-btn active-anim" data-anim="idle">IDLE</button>
-              <button class="view-btn" data-anim="walk">WALK</button>
-              <button class="view-btn" data-anim="run">RUN</button>
-              <button class="view-btn" data-anim="attack_1">ATK1</button>
-              <button class="view-btn" data-anim="attack_2">ATK2</button>
-              <button class="view-btn" data-anim="jump">JUMP</button>
-              <button class="view-btn" data-anim="hurt">HURT</button>
-              <button class="view-btn" data-anim="death">DEATH</button>
-              <button class="view-btn" data-anim="ki_charge">KI</button>
-              <button class="view-btn" data-anim="fly">FLY</button>
-              <button class="view-btn" data-anim="fly_map">MAP</button>
-            </div>
-          </div>
-        </div>
-        <div class="preview-canvas-wrap">
-          <div class="preview-shadow"></div>
-          <canvas id="previewCanvas" width="180" height="260"></canvas>
-        </div>
-        <div class="name-section">
-          <label class="name-label">NOMBRE DEL PERSONAJE</label>
-          <div class="name-input-wrap">
-            <input class="name-input" type="text" id="charName" value="Guerrero Z" maxlength="24" autocomplete="off" />
-            <span class="name-edit-icon">✏️</span>
-          </div>
-        </div>
-        <div class="stats-section">
-          <div class="stats-title">ESTADÍSTICAS</div>
-          <div class="stat-row"><span class="stat-icon">❤️</span><span class="stat-name">SALUD</span>    <div class="stat-bar-wrap"><div class="stat-bar health-bar" id="barHealth" style="width:75%"></div></div><span class="stat-val" id="valHealth">75</span></div>
-          <div class="stat-row"><span class="stat-icon">💙</span><span class="stat-name">KI</span>       <div class="stat-bar-wrap"><div class="stat-bar ki-bar"     id="barKi"     style="width:85%"></div></div><span class="stat-val" id="valKi">85</span></div>
-          <div class="stat-row"><span class="stat-icon">💥</span><span class="stat-name">FUERZA</span>   <div class="stat-bar-wrap"><div class="stat-bar str-bar"    id="barStr"    style="width:80%"></div></div><span class="stat-val" id="valStr">80</span></div>
-          <div class="stat-row"><span class="stat-icon">🛡️</span><span class="stat-name">DEFENSA</span>  <div class="stat-bar-wrap"><div class="stat-bar def-bar"    id="barDef"    style="width:70%"></div></div><span class="stat-val" id="valDef">70</span></div>
-          <div class="stat-row"><span class="stat-icon">⚡</span><span class="stat-name">VELOCIDAD</span><div class="stat-bar-wrap"><div class="stat-bar spd-bar"    id="barSpd"    style="width:90%"></div></div><span class="stat-val" id="valSpd">90</span></div>
-        </div>
-      </div>
+  // ═══════════════════════════════════════════════════════════════
+  //  CATÁLOGOS DE CABELLO
+  // ═══════════════════════════════════════════════════════════════
 
-      <div class="right-col">
-        <div class="right-header"><span class="right-title">VISTA FINAL</span></div>
-        <div class="final-canvas-wrap">
-          <canvas id="finalCanvas" width="220" height="260"></canvas>
-        </div>
-        <div class="final-controls">
-          <button class="ctrl-btn" id="btnRotate" title="Rotar">🔄</button>
-          <button class="ctrl-btn" id="btnZoom"   title="Zoom">🔍</button>
-          <button class="ctrl-btn" id="btnFlip"   title="Espejo">↔️</button>
-        </div>
-        <div class="save-section">
-          <div class="save-title">GUARDAR PERSONAJE</div>
-          <div class="slots-list" id="slotsList"></div>
-        </div>
-        <button class="start-btn" id="btnStart">⚔️ COMENZAR A JUGAR</button>
-      </div>
-    </main>
+  const HAIR_CATALOG_MALE = [
+    { id: "hm1", name: "Calvo",  spriteKey: "hair_hm1", tintable: true },
+    { id: "hm2", name: "Vegeta", spriteKey: "hair_hm2", tintable: true },
+    { id: "hm3", name: "SSJ",    spriteKey: "hair_hm3", tintable: true },
+    { id: "hm4", name: "Blue",   spriteKey: "hair_hm4", tintable: true },
+    { id: "hm5", name: "Trunks", spriteKey: "hair_hm5", tintable: true },
+    { id: "hm6", name: "Corto",  spriteKey: "hair_hm6", tintable: true },
+    { id: "hm7", name: "Largo",  spriteKey: "hair_hm7", tintable: true },
+    { id: "hm8", name: "Goku",   spriteKey: "hair_hm8", tintable: true },
+  ];
 
-    <div id="toastContainer"></div>
+  const HAIR_CATALOG_FEMALE = [
+    { id: "hf1", name: "Largo 1", spriteKey: "hair_hf1", tintable: true },
+    { id: "hf2", name: "Coleta",  spriteKey: "hair_hf2", tintable: true },
+    { id: "hf3", name: "Kefla",   spriteKey: "hair_hf3", tintable: true },
+    { id: "hf4", name: "Corto F", spriteKey: "hair_hf4", tintable: true },
+    { id: "hf5", name: "Trenzas", spriteKey: "hair_hf5", tintable: true },
+    { id: "hf6", name: "Rizos",   spriteKey: "hair_hf6", tintable: true },
+    { id: "hf7", name: "SSJ-F",   spriteKey: "hair_hf7", tintable: true },
+    { id: "hf8", name: "Calva",   spriteKey: "hair_hf8", tintable: true },
+  ];
 
-    <script src="character-system.js"></script>
-    <script>
-      "use strict";
+  const HAIR_CATALOG_NAMEKIAN = [
+    { id: "hn1", name: "Antenas 1", spriteKey: "hair_hn1", tintable: true },
+    { id: "hn2", name: "Antenas 2", spriteKey: "hair_hn2", tintable: true },
+    { id: "hn3", name: "Cresta",    spriteKey: "hair_hn3", tintable: true },
+    { id: "hn4", name: "Cuernos",   spriteKey: "hair_hn4", tintable: true },
+    { id: "hn5", name: "Sin crest", spriteKey: "hair_hn5", tintable: true },
+    { id: "hn6", name: "Picos Nam", spriteKey: "hair_hn6", tintable: true },
+    { id: "hn7", name: "Aletas",    spriteKey: "hair_hn7", tintable: true },
+    { id: "hn8", name: "Dientes",   spriteKey: "hair_hn8", tintable: true },
+  ];
 
-      if (!window.CharacterSystem) {
-        document.body.innerHTML = '<p style="color:#f44;padding:40px;font-family:monospace">ERROR: character-system.js no encontrado.</p>';
-        throw new Error("CharacterSystem no cargado");
-      }
+  const HAIR_CATALOG_FRIEZA = [
+    { id: "hr1", name: "Cuernos 1",  spriteKey: "hair_hr1", tintable: true },
+    { id: "hr2", name: "Cuernos 2",  spriteKey: "hair_hr2", tintable: true },
+    { id: "hr3", name: "Cresta Arc", spriteKey: "hair_hr3", tintable: true },
+    { id: "hr4", name: "Picos Arc",  spriteKey: "hair_hr4", tintable: true },
+    { id: "hr5", name: "Sin head",   spriteKey: "hair_hr5", tintable: true },
+    { id: "hr6", name: "Armadura",   spriteKey: "hair_hr6", tintable: true },
+    { id: "hr7", name: "Máscara",    spriteKey: "hair_hr7", tintable: true },
+    { id: "hr8", name: "Corona",     spriteKey: "hair_hr8", tintable: true },
+  ];
 
-      const {
-        player, RACE_CATALOG, AURAS_CATALOG,
-        ACCESSORIES_CATALOG, ACCESSORY_TYPES,
-        addUserAccessory, removeUserAccessory, restoreUserAccessories,
-        VIEW_META, ACTIONS_META,
-        SpriteAnimator, initPlayer, preloadAssets, drawPlayer,
-        tintHair, tintLayer, invalidateHairCache, getById, cycleId,
-        getCatalogFor, getDefaultIds, GENDERLESS_RACES,
-        isCompatibleSheet, getIdleFrameCoords,
-      } = window.CharacterSystem;
+  // ═══════════════════════════════════════════════════════════════
+  //  CATÁLOGOS DE ROPA SUPERIOR
+  // ═══════════════════════════════════════════════════════════════
 
-      /* ══ Paletas ══ */
-      const SKIN_PALETTE  = ["#f5d5a8","#e8c898","#d4a574","#c07840","#8d5524","#4caf50","#9c88ff","#c0c0c0","#f0e0f0"];
-      const EYE_PALETTE   = ["#1a1a1a","#f5f5f5","#00e676","#2979ff","#b71c1c","#aa00ff","#ffd600","#ff6a00","#00e5ff","#ff69b4"];
-      const HAIR_PALETTE  = ["#1a1a1a","#8B4513","#c0840a","#ffd700","#ff4400","#00e5ff","#aa00ff","#e8eaf6","#ff69b4","#00e676"];
-      const FACE_PALETTE  = ["#b71c1c","#1565c0","#2e7d32","#6a1b9a","#ffd700","#00e5ff","#ff69b4","#1a1a1a","#e040fb","#00e676"];
-      const CLOTH_PALETTE = ["#ff6a00","#1565c0","#b71c1c","#2e7d32","#6a1b9a","#ffd700","#1a1a1a","#e0e0e0"];
-      const AURA_PALETTE  = ["#fdd835","#00b0ff","#ff1744","#aa00ff","#00e676","#e8eaf6","#90a4ae","#ff6a00"];
+  const TOP_CATALOG_MALE = [
+    { id: "sm1", name: "Gi Naranja", spriteKey: "top_sm1", color1: "#ff6a00", color2: "#1565c0", style: "gi"    },
+    { id: "sm2", name: "Gi Azul",    spriteKey: "top_sm2", color1: "#1565c0", color2: "#ffffff", style: "gi"    },
+    { id: "sm3", name: "Armadura",   spriteKey: "top_sm3", color1: "#c0c0c0", color2: "#333333", style: "armor" },
+    { id: "sm4", name: "Gi Verde",   spriteKey: "top_sm4", color1: "#2e7d32", color2: "#ffffff", style: "gi"    },
+    { id: "sm5", name: "Gi Morado",  spriteKey: "top_sm5", color1: "#6a1b9a", color2: "#ffd700", style: "gi"    },
+    { id: "sm6", name: "Gi Rojo",    spriteKey: "top_sm6", color1: "#b71c1c", color2: "#ffffff", style: "gi"    },
+    { id: "sm7", name: "Manga Neg",  spriteKey: "top_sm7", color1: "#1a1a1a", color2: "#444444", style: "plain" },
+    { id: "sm8", name: "Sin ropa",   spriteKey: null,       color1: null,      color2: null,      style: "bare"  },
+  ];
 
-      /* ══ Estado global ══ */
-      const LS_KEY      = "dragonCreatorZ_slots";
-      const LS_SLOT     = "dragonCreatorZ_activeSlot";
-      const LS_ACC_KEY  = "dragonCreatorZ_accessories";
-      const LS_FREE_KEY = "dragonCreatorZ_freeCustomization";
-      const PAGE_SIZE   = 8;
-      // Límite de tamaño para dataURL en localStorage (~1.5 MB en base64)
-      const MAX_DATAURL_BYTES = 1500 * 1024;
+  const TOP_CATALOG_FEMALE = [
+    { id: "sf1", name: "Gi Rosa",      spriteKey: "top_sf1", color1: "#e91e8c", color2: "#ffffff", style: "gi"    },
+    { id: "sf2", name: "Gi Azul F",    spriteKey: "top_sf2", color1: "#1565c0", color2: "#ffffff", style: "gi"    },
+    { id: "sf3", name: "Armadura F",   spriteKey: "top_sf3", color1: "#c0c0c0", color2: "#333333", style: "armor" },
+    { id: "sf4", name: "Gi Verde F",   spriteKey: "top_sf4", color1: "#2e7d32", color2: "#ffffff", style: "gi"    },
+    { id: "sf5", name: "Gi Naranja F", spriteKey: "top_sf5", color1: "#ff6a00", color2: "#1565c0", style: "gi"    },
+    { id: "sf6", name: "Top Negro",    spriteKey: "top_sf6", color1: "#1a1a1a", color2: "#555555", style: "plain" },
+    { id: "sf7", name: "Gi Morado F",  spriteKey: "top_sf7", color1: "#6a1b9a", color2: "#ffd700", style: "gi"    },
+    { id: "sf8", name: "Sin ropa F",   spriteKey: null,       color1: null,      color2: null,      style: "bare"  },
+  ];
 
-      const FREE_CUSTOMIZATION_CATALOG = [];
-      let imageMap    = {};
-      let animator    = null, finalAnim = null;
-      let activeCategory = "race";
-      let pageState   = {};
-      let savedSlots  = Array(11).fill(null);
-      let activeSlotIndex = 0;
-      let uiFlipped   = false, uiZoom = 1;
-      let _auraPhase  = 0;
+  const TOP_CATALOG_NAMEKIAN = [
+    { id: "sn1", name: "Manto Nam",  spriteKey: "top_sn1", color1: "#4caf50", color2: "#1b5e20", style: "gi"    },
+    { id: "sn2", name: "Gi Nam 1",   spriteKey: "top_sn2", color1: "#388e3c", color2: "#ffffff", style: "gi"    },
+    { id: "sn3", name: "Armad Nam",  spriteKey: "top_sn3", color1: "#2e7d32", color2: "#a5d6a7", style: "armor" },
+    { id: "sn4", name: "Gi Nam 2",   spriteKey: "top_sn4", color1: "#1b5e20", color2: "#69f0ae", style: "gi"    },
+    { id: "sn5", name: "Gi Nam 3",   spriteKey: "top_sn5", color1: "#00695c", color2: "#ffffff", style: "gi"    },
+    { id: "sn6", name: "Gi Nam 4",   spriteKey: "top_sn6", color1: "#558b2f", color2: "#ccff90", style: "gi"    },
+    { id: "sn7", name: "Mant Osc",   spriteKey: "top_sn7", color1: "#1a2a1a", color2: "#4caf50", style: "plain" },
+    { id: "sn8", name: "Sin ropa N", spriteKey: null,       color1: null,      color2: null,      style: "bare"  },
+  ];
 
-      let activeViewKey  = null;
-      let activeAnimKey  = "idle";
+  const TOP_CATALOG_FRIEZA = [
+    { id: "sr1", name: "Armad Arc 1", spriteKey: "top_sr1", color1: "#7c4dff", color2: "#1a1a1a", style: "armor" },
+    { id: "sr2", name: "Armad Arc 2", spriteKey: "top_sr2", color1: "#e040fb", color2: "#ffffff", style: "armor" },
+    { id: "sr3", name: "Manto Arc",   spriteKey: "top_sr3", color1: "#f0e0f0", color2: "#9e9e9e", style: "gi"    },
+    { id: "sr4", name: "Armad Arc 3", spriteKey: "top_sr4", color1: "#c0c0c0", color2: "#7c4dff", style: "armor" },
+    { id: "sr5", name: "Gi Arc 1",    spriteKey: "top_sr5", color1: "#1a1a1a", color2: "#7c4dff", style: "gi"    },
+    { id: "sr6", name: "Gi Arc 2",    spriteKey: "top_sr6", color1: "#f0e0f0", color2: "#e040fb", style: "gi"    },
+    { id: "sr7", name: "Armad Dor",   spriteKey: "top_sr7", color1: "#ffd700", color2: "#1a1a1a", style: "armor" },
+    { id: "sr8", name: "Sin ropa A",  spriteKey: null,       color1: null,      color2: null,      style: "bare"  },
+  ];
 
-      let _importPendingImg    = null;
-      let _importPendingDataURL = null;
-      let _importPendingCombatImg = null;
-      let _importPendingCombatDataURL = null;
+  // ═══════════════════════════════════════════════════════════════
+  //  CATÁLOGOS DE ROPA INFERIOR
+  // ═══════════════════════════════════════════════════════════════
 
-      const charState = {
-        name:        "Guerrero Z",
-        level:       1,
-        glovesId:    "gm0",
-        auraId:      "a1",
-        auraColor:   "#fdd835",
-        clothColor:  "#ff6a00",
-        accessoryId: "ac_none",
-        get viewKey()   { return activeViewKey; },
-        get auraPhase() { return _auraPhase; },
+  const BOTTOM_CATALOG_MALE = [
+    { id: "pm1", name: "Naranja", spriteKey: "bottom_pm1", color: "#ff6a00" },
+    { id: "pm2", name: "Azul",    spriteKey: "bottom_pm2", color: "#1565c0" },
+    { id: "pm3", name: "Blanco",  spriteKey: "bottom_pm3", color: "#e0e0e0" },
+    { id: "pm4", name: "Morado",  spriteKey: "bottom_pm4", color: "#7b1fa2" },
+    { id: "pm5", name: "Negro",   spriteKey: "bottom_pm5", color: "#1a1a1a" },
+    { id: "pm6", name: "Verde",   spriteKey: "bottom_pm6", color: "#2e7d32" },
+    { id: "pm7", name: "Rojo",    spriteKey: "bottom_pm7", color: "#b71c1c" },
+    { id: "pm8", name: "Marrón",  spriteKey: "bottom_pm8", color: "#5d4037" },
+  ];
+
+  const BOTTOM_CATALOG_FEMALE = [
+    { id: "pf1", name: "Falda Nar",  spriteKey: "bottom_pf1", color: "#ff6a00" },
+    { id: "pf2", name: "Pantalon F", spriteKey: "bottom_pf2", color: "#1565c0" },
+    { id: "pf3", name: "Falda Bla",  spriteKey: "bottom_pf3", color: "#e0e0e0" },
+    { id: "pf4", name: "Leggings",   spriteKey: "bottom_pf4", color: "#1a1a1a" },
+    { id: "pf5", name: "Falda Mor",  spriteKey: "bottom_pf5", color: "#7b1fa2" },
+    { id: "pf6", name: "Short Ver",  spriteKey: "bottom_pf6", color: "#2e7d32" },
+    { id: "pf7", name: "Falda Roj",  spriteKey: "bottom_pf7", color: "#b71c1c" },
+    { id: "pf8", name: "Short Neg",  spriteKey: "bottom_pf8", color: "#1a1a1a" },
+  ];
+
+  const BOTTOM_CATALOG_NAMEKIAN = [
+    { id: "pn1", name: "Pantam Nam", spriteKey: "bottom_pn1", color: "#4caf50" },
+    { id: "pn2", name: "Manto Inf",  spriteKey: "bottom_pn2", color: "#1b5e20" },
+    { id: "pn3", name: "Faja Nam",   spriteKey: "bottom_pn3", color: "#388e3c" },
+    { id: "pn4", name: "Short Nam",  spriteKey: "bottom_pn4", color: "#2e7d32" },
+    { id: "pn5", name: "Pant Osc",   spriteKey: "bottom_pn5", color: "#1a2a1a" },
+    { id: "pn6", name: "Pant Cla",   spriteKey: "bottom_pn6", color: "#a5d6a7" },
+    { id: "pn7", name: "Pant Amar",  spriteKey: "bottom_pn7", color: "#f9a825" },
+    { id: "pn8", name: "Pant Azul",  spriteKey: "bottom_pn8", color: "#0d47a1" },
+  ];
+
+  const BOTTOM_CATALOG_FRIEZA = [
+    { id: "pr1", name: "Arm Inf 1",  spriteKey: "bottom_pr1", color: "#7c4dff" },
+    { id: "pr2", name: "Arm Inf 2",  spriteKey: "bottom_pr2", color: "#e040fb" },
+    { id: "pr3", name: "Manto Arc",  spriteKey: "bottom_pr3", color: "#f0e0f0" },
+    { id: "pr4", name: "Escam Neg",  spriteKey: "bottom_pr4", color: "#1a1a1a" },
+    { id: "pr5", name: "Escam Bla",  spriteKey: "bottom_pr5", color: "#f5f5f5" },
+    { id: "pr6", name: "Pant Arc",   spriteKey: "bottom_pr6", color: "#9e9e9e" },
+    { id: "pr7", name: "Pant Dor",   spriteKey: "bottom_pr7", color: "#ffd700" },
+    { id: "pr8", name: "Arm Inf 3",  spriteKey: "bottom_pr8", color: "#311b92" },
+  ];
+
+  // ═══════════════════════════════════════════════════════════════
+  //  CATÁLOGOS DE CALZADO
+  // ═══════════════════════════════════════════════════════════════
+
+  const SHOES_CATALOG_MALE = [
+    { id: "shm1", name: "Botas Azul", spriteKey: "shoes_shm1", color1: "#1565c0", color2: "#f5f5f5", style: "boots"   },
+    { id: "shm2", name: "Botas Neg",  spriteKey: "shoes_shm2", color1: "#1a1a1a", color2: "#555555", style: "boots"   },
+    { id: "shm3", name: "Botas Dor",  spriteKey: "shoes_shm3", color1: "#ffd600", color2: "#ff6f00", style: "boots"   },
+    { id: "shm4", name: "Botas Mor",  spriteKey: "shoes_shm4", color1: "#7b1fa2", color2: "#e040fb", style: "boots"   },
+    { id: "shm5", name: "Sandalia",   spriteKey: "shoes_shm5", color1: "#8d6e63", color2: "#6d4c41", style: "sandals" },
+    { id: "shm6", name: "San Neg",    spriteKey: "shoes_shm6", color1: "#212121", color2: "#616161", style: "sandals" },
+    { id: "shm7", name: "Botas Roj",  spriteKey: "shoes_shm7", color1: "#c62828", color2: "#ff5252", style: "boots"   },
+    { id: "shm8", name: "Sin calz",   spriteKey: null,          color1: null,      color2: null,      style: "bare"    },
+  ];
+
+  const SHOES_CATALOG_FEMALE = [
+    { id: "shf1", name: "Bota Alta",   spriteKey: "shoes_shf1", color1: "#1565c0", color2: "#f5f5f5", style: "boots"   },
+    { id: "shf2", name: "Bota Neg F",  spriteKey: "shoes_shf2", color1: "#1a1a1a", color2: "#555555", style: "boots"   },
+    { id: "shf3", name: "Bota Roja F", spriteKey: "shoes_shf3", color1: "#c62828", color2: "#ff5252", style: "boots"   },
+    { id: "shf4", name: "Sandal F",    spriteKey: "shoes_shf4", color1: "#8d6e63", color2: "#6d4c41", style: "sandals" },
+    { id: "shf5", name: "Tacón Dor",   spriteKey: "shoes_shf5", color1: "#ffd600", color2: "#ff6f00", style: "boots"   },
+    { id: "shf6", name: "Zapato Bla",  spriteKey: "shoes_shf6", color1: "#f5f5f5", color2: "#bdbdbd", style: "boots"   },
+    { id: "shf7", name: "Bota Mor F",  spriteKey: "shoes_shf7", color1: "#7b1fa2", color2: "#e040fb", style: "boots"   },
+    { id: "shf8", name: "Sin calz F",  spriteKey: null,          color1: null,      color2: null,      style: "bare"    },
+  ];
+
+  const SHOES_CATALOG_NAMEKIAN = [
+    { id: "shn1", name: "Sandal Nam",  spriteKey: "shoes_shn1", color1: "#4caf50", color2: "#1b5e20", style: "sandals" },
+    { id: "shn2", name: "Bota Nam",    spriteKey: "shoes_shn2", color1: "#2e7d32", color2: "#a5d6a7", style: "boots"   },
+    { id: "shn3", name: "Desc Nam",    spriteKey: null,          color1: null,      color2: null,      style: "bare"    },
+    { id: "shn4", name: "Vendaje",     spriteKey: "shoes_shn4", color1: "#8d6e63", color2: "#4caf50", style: "sandals" },
+    { id: "shn5", name: "Bota Osc",    spriteKey: "shoes_shn5", color1: "#1a2a1a", color2: "#4caf50", style: "boots"   },
+    { id: "shn6", name: "Bota Amar",   spriteKey: "shoes_shn6", color1: "#f9a825", color2: "#f57f17", style: "boots"   },
+    { id: "shn7", name: "Sandal Neg",  spriteKey: "shoes_shn7", color1: "#212121", color2: "#388e3c", style: "sandals" },
+    { id: "shn8", name: "Bota Azul N", spriteKey: "shoes_shn8", color1: "#0d47a1", color2: "#4caf50", style: "boots"   },
+  ];
+
+  const SHOES_CATALOG_FRIEZA = [
+    { id: "shr1", name: "Bota Arc 1", spriteKey: "shoes_shr1", color1: "#7c4dff", color2: "#1a1a1a", style: "boots"   },
+    { id: "shr2", name: "Bota Arc 2", spriteKey: "shoes_shr2", color1: "#f0e0f0", color2: "#9e9e9e", style: "boots"   },
+    { id: "shr3", name: "Escam Pie",  spriteKey: "shoes_shr3", color1: "#e040fb", color2: "#1a1a1a", style: "boots"   },
+    { id: "shr4", name: "Desc Arc",   spriteKey: null,          color1: null,      color2: null,      style: "bare"    },
+    { id: "shr5", name: "Bota Neg A", spriteKey: "shoes_shr5", color1: "#1a1a1a", color2: "#7c4dff", style: "boots"   },
+    { id: "shr6", name: "Bota Dor A", spriteKey: "shoes_shr6", color1: "#ffd700", color2: "#1a1a1a", style: "boots"   },
+    { id: "shr7", name: "Bota Bla A", spriteKey: "shoes_shr7", color1: "#f5f5f5", color2: "#e040fb", style: "boots"   },
+    { id: "shr8", name: "Sandal Arc", spriteKey: "shoes_shr8", color1: "#9e9e9e", color2: "#7c4dff", style: "sandals" },
+  ];
+
+  // ═══════════════════════════════════════════════════════════════
+  //  CATÁLOGOS DE GUANTES
+  // ═══════════════════════════════════════════════════════════════
+
+  const GLOVES_CATALOG_MALE = [
+    { id: "gm0", name: "Sin guantes", spriteKey: null,         color: null      },
+    { id: "gm1", name: "Blancos",     spriteKey: "glove_gm1", color: "#f5f5f5" },
+    { id: "gm2", name: "Negros",      spriteKey: "glove_gm2", color: "#212121" },
+    { id: "gm3", name: "Rojos",       spriteKey: "glove_gm3", color: "#c62828" },
+    { id: "gm4", name: "Azules",      spriteKey: "glove_gm4", color: "#1565c0" },
+    { id: "gm5", name: "Dorados",     spriteKey: "glove_gm5", color: "#ffd600" },
+    { id: "gm6", name: "Cibernét.",   spriteKey: "glove_gm6", color: "#00bcd4" },
+    { id: "gm7", name: "Morados",     spriteKey: "glove_gm7", color: "#6a1b9a" },
+  ];
+
+  const GLOVES_CATALOG_FEMALE = [
+    { id: "gf0", name: "Sin guantes", spriteKey: null,         color: null      },
+    { id: "gf1", name: "Blancos F",   spriteKey: "glove_gf1", color: "#f5f5f5" },
+    { id: "gf2", name: "Negros F",    spriteKey: "glove_gf2", color: "#212121" },
+    { id: "gf3", name: "Rojos F",     spriteKey: "glove_gf3", color: "#c62828" },
+    { id: "gf4", name: "Azules F",    spriteKey: "glove_gf4", color: "#1565c0" },
+    { id: "gf5", name: "Dorados F",   spriteKey: "glove_gf5", color: "#ffd600" },
+    { id: "gf6", name: "Cristal",     spriteKey: "glove_gf6", color: "#e1f5fe" },
+    { id: "gf7", name: "Morados F",   spriteKey: "glove_gf7", color: "#6a1b9a" },
+  ];
+
+  const GLOVES_CATALOG_NAMEKIAN = [
+    { id: "gn0", name: "Sin guantes",  spriteKey: null,          color: null      },
+    { id: "gn1", name: "Guant Nam 1",  spriteKey: "glove_gn1",  color: "#4caf50" },
+    { id: "gn2", name: "Guant Nam 2",  spriteKey: "glove_gn2",  color: "#1b5e20" },
+    { id: "gn3", name: "Vendaje",      spriteKey: "glove_gn3",  color: "#8d6e63" },
+    { id: "gn4", name: "Guant Neg N",  spriteKey: "glove_gn4",  color: "#1a2a1a" },
+    { id: "gn5", name: "Guant Amar",   spriteKey: "glove_gn5",  color: "#f9a825" },
+    { id: "gn6", name: "Guant Azul N", spriteKey: "glove_gn6",  color: "#0d47a1" },
+    { id: "gn7", name: "Guant Bla N",  spriteKey: "glove_gn7",  color: "#c8e6c9" },
+  ];
+
+  const GLOVES_CATALOG_FRIEZA = [
+    { id: "gr0", name: "Sin guantes", spriteKey: null,         color: null      },
+    { id: "gr1", name: "Arm Mano 1",  spriteKey: "glove_gr1", color: "#7c4dff" },
+    { id: "gr2", name: "Arm Mano 2",  spriteKey: "glove_gr2", color: "#f0e0f0" },
+    { id: "gr3", name: "Garra Arc",   spriteKey: "glove_gr3", color: "#1a1a1a" },
+    { id: "gr4", name: "Guant Dor A", spriteKey: "glove_gr4", color: "#ffd700" },
+    { id: "gr5", name: "Guant Neg A", spriteKey: "glove_gr5", color: "#212121" },
+    { id: "gr6", name: "Arm Mano 3",  spriteKey: "glove_gr6", color: "#e040fb" },
+    { id: "gr7", name: "Guant Cris",  spriteKey: "glove_gr7", color: "#e1f5fe" },
+  ];
+
+  // ═══════════════════════════════════════════════════════════════
+  //  AURAS
+  // ═══════════════════════════════════════════════════════════════
+
+  const AURAS_CATALOG = [
+    { id: "a0", name: "Sin aura",  spriteKey: null,       color: null,      style: "none"     },
+    { id: "a1", name: "Amarilla",  spriteKey: "aura_a1", color: "#fdd835", style: "flames"   },
+    { id: "a2", name: "Azul",      spriteKey: "aura_a2", color: "#00b0ff", style: "flames"   },
+    { id: "a3", name: "Roja",      spriteKey: "aura_a3", color: "#ff1744", style: "flames"   },
+    { id: "a4", name: "Morada",    spriteKey: "aura_a4", color: "#aa00ff", style: "flames"   },
+    { id: "a5", name: "Verde",     spriteKey: "aura_a5", color: "#00e676", style: "flames"   },
+    { id: "a6", name: "Blanca",    spriteKey: "aura_a6", color: "#e8eaf6", style: "divine"   },
+    { id: "a7", name: "Eléctrica", spriteKey: "aura_a7", color: "#90a4ae", style: "electric" },
+  ];
+
+  // ═══════════════════════════════════════════════════════════════
+  //  ACCESORIOS IMPORTADOS POR USUARIO
+  // ═══════════════════════════════════════════════════════════════
+
+  const ACCESSORIES_CATALOG = [
+    { id: "ac_none", name: "Ninguno", type: "none", slot: "over_shirt", color: null, userImage: null, dataURL: null },
+  ];
+
+  const ACCESSORY_TYPES = [
+    { id: "belt",    label: "Cinturón",  slot: "belt_slot",   icon: "🥋" },
+    { id: "cape",    label: "Capa",      slot: "under_shirt", icon: "🧣" },
+    { id: "bag",     label: "Mochila",   slot: "under_shirt", icon: "🎒" },
+    { id: "collar",  label: "Collar",    slot: "over_shirt",  icon: "📿" },
+    { id: "brace",   label: "Brazal",    slot: "over_shirt",  icon: "⌚" },
+    { id: "mask",    label: "Máscara",   slot: "over_shirt",  icon: "🥽" },
+    { id: "scouter", label: "Scouter",   slot: "over_shirt",  icon: "🔭" },
+    { id: "tail",    label: "Cola",      slot: "under_shirt", icon: "🐾" },
+    { id: "wings",   label: "Alas",      slot: "under_shirt", icon: "🦋" },
+    { id: "other",   label: "Otro",      slot: "over_shirt",  icon: "✨" },
+  ];
+
+  function addUserAccessory({ name, type, color, userImage, dataURL, combatDataURL, combatUserImage, scale, animFrames, rowCount, combatScale, combatAnimFrames, combatRowCount }) {
+    const typeDef = ACCESSORY_TYPES.find(t => t.id === type) || ACCESSORY_TYPES[ACCESSORY_TYPES.length - 1];
+    const entry = {
+      id:         "user_acc_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
+      name:       name || "Accesorio",
+      type:       typeDef.id,
+      slot:       typeDef.slot,
+      color:      color || "#888888",
+      userImage:  userImage || null,
+      dataURL:    dataURL   || null,
+      combatDataURL: combatDataURL || null,
+      combatUserImage: combatUserImage || null,
+      scale:           scale           ?? 1,
+      animFrames:      animFrames      ?? 6,
+      rowCount:        rowCount        ?? 0,
+      combatScale:     combatScale     ?? 1,
+      combatAnimFrames: combatAnimFrames ?? 6,
+      combatRowCount:  combatRowCount  ?? 0,
+    };
+    ACCESSORIES_CATALOG.push(entry);
+    return entry;
+  }
+
+  function removeUserAccessory(id) {
+    if (id === "ac_none") return false;
+    const idx = ACCESSORIES_CATALOG.findIndex(a => a.id === id);
+    if (idx === -1) return false;
+    ACCESSORIES_CATALOG.splice(idx, 1);
+    return true;
+  }
+
+  async function restoreUserAccessories(storedList) {
+    if (!Array.isArray(storedList)) return;
+    const loads = storedList.map(entry => new Promise(resolve => {
+      if (!entry.dataURL) { resolve(); return; }
+      const img = new Image();
+      img.onload = () => {
+        const accEntry = {
+          id:        entry.id,
+          name:      entry.name,
+          type:      entry.type,
+          slot:      (ACCESSORY_TYPES.find(t => t.id === entry.type) || { slot: "over_shirt" }).slot,
+          color:     entry.color,
+          userImage: img,
+          dataURL:   entry.dataURL,
+          combatDataURL:    entry.combatDataURL    || null,
+          scale:            entry.scale            ?? 1,
+          animFrames:       entry.animFrames       ?? 6,
+          rowCount:         entry.rowCount         ?? 0,
+          combatScale:      entry.combatScale      ?? 1,
+          combatAnimFrames: entry.combatAnimFrames ?? 6,
+          combatRowCount:   entry.combatRowCount   ?? 0,
+        };
+        if (entry.combatDataURL) {
+          const cimg = new Image();
+          cimg.onload = () => { accEntry.combatUserImage = cimg; };
+          cimg.src = entry.combatDataURL;
+        }
+        ACCESSORIES_CATALOG.push(accEntry);
+        resolve();
       };
+      img.onerror = () => resolve();
+      img.src = entry.dataURL;
+    }));
+    await Promise.all(loads);
+  }
 
-      const previewCanvas = document.getElementById("previewCanvas");
-      const previewCtx    = previewCanvas.getContext("2d");
-      const finalCanvas   = document.getElementById("finalCanvas");
-      const finalCtx      = finalCanvas.getContext("2d");
+  // ═══════════════════════════════════════════════════════════════
+  //  Alias de catálogos por defecto (masculino)
+  // ═══════════════════════════════════════════════════════════════
 
-      function currentCatalog(cat) {
-        return getCatalogFor(cat, player.appearance.raceId, player.appearance.gender);
+  const HAIR_CATALOG   = HAIR_CATALOG_MALE;
+  const FACE_CATALOG   = FACE_CATALOG_MALE;
+  const TOP_CATALOG    = TOP_CATALOG_MALE;
+  const BOTTOM_CATALOG = BOTTOM_CATALOG_MALE;
+  const SHOES_CATALOG  = SHOES_CATALOG_MALE;
+  const GLOVES_CATALOG = GLOVES_CATALOG_MALE;
+
+  const GENDERLESS_RACES = ["namekian", "frieza"];
+
+  function getCatalogFor(cat, raceId, gender) {
+    if (cat === "aura")      return AURAS_CATALOG;
+    if (cat === "accessory") return ACCESSORIES_CATALOG;
+    if (raceId === "namekian") {
+      switch (cat) {
+        case "face":   return FACE_CATALOG_NAMEKIAN;
+        case "hair":   return HAIR_CATALOG_NAMEKIAN;
+        case "shirt":  return TOP_CATALOG_NAMEKIAN;
+        case "pants":  return BOTTOM_CATALOG_NAMEKIAN;
+        case "shoes":  return SHOES_CATALOG_NAMEKIAN;
+        case "gloves": return GLOVES_CATALOG_NAMEKIAN;
       }
-
-      /* ══ Persistencia de accesorios importados ══ */
-      function _saveAccessoriesToLS() {
-        const toStore = ACCESSORIES_CATALOG
-          .filter(a => a.id !== "ac_none" && a.dataURL && !a.isFreeCustomization)
-          .map(a => ({
-            id: a.id, name: a.name, type: a.type, color: a.color, dataURL: a.dataURL,
-            combatDataURL: a.combatDataURL || null,
-            scale: a.scale ?? 1, animFrames: a.animFrames ?? 6,
-            rowCount: a.rowCount ?? 0,
-            combatScale: a.combatScale ?? 1, combatAnimFrames: a.combatAnimFrames ?? 6,
-            combatRowCount: a.combatRowCount ?? 0,
-          }));
-        try { localStorage.setItem(LS_ACC_KEY, JSON.stringify(toStore)); } catch(e) {
-          console.warn("[DC] No se pudo guardar accesorios en LS:", e);
-        }
+    }
+    if (raceId === "frieza") {
+      switch (cat) {
+        case "face":   return FACE_CATALOG_FRIEZA;
+        case "hair":   return HAIR_CATALOG_FRIEZA;
+        case "shirt":  return TOP_CATALOG_FRIEZA;
+        case "pants":  return BOTTOM_CATALOG_FRIEZA;
+        case "shoes":  return SHOES_CATALOG_FRIEZA;
+        case "gloves": return GLOVES_CATALOG_FRIEZA;
       }
+    }
+    const isFemale = gender === "female";
+    switch (cat) {
+      case "face":   return isFemale ? FACE_CATALOG_FEMALE   : FACE_CATALOG_MALE;
+      case "hair":   return isFemale ? HAIR_CATALOG_FEMALE   : HAIR_CATALOG_MALE;
+      case "shirt":  return isFemale ? TOP_CATALOG_FEMALE    : TOP_CATALOG_MALE;
+      case "pants":  return isFemale ? BOTTOM_CATALOG_FEMALE : BOTTOM_CATALOG_MALE;
+      case "shoes":  return isFemale ? SHOES_CATALOG_FEMALE  : SHOES_CATALOG_MALE;
+      case "gloves": return isFemale ? GLOVES_CATALOG_FEMALE : GLOVES_CATALOG_MALE;
+    }
+    return [];
+  }
 
-      async function _restoreAccessoriesFromLS() {
-        try {
-          const raw = localStorage.getItem(LS_ACC_KEY);
-          if (!raw) return;
-          const list = JSON.parse(raw);
-          await restoreUserAccessories(list);
-        } catch(e) {}
+  function getDefaultIds(raceId, gender) {
+    const face   = getCatalogFor("face",   raceId, gender);
+    const hair   = getCatalogFor("hair",   raceId, gender);
+    const shirt  = getCatalogFor("shirt",  raceId, gender);
+    const pants  = getCatalogFor("pants",  raceId, gender);
+    const shoes  = getCatalogFor("shoes",  raceId, gender);
+    const gloves = getCatalogFor("gloves", raceId, gender);
+    return {
+      faceId:      face[0]   ? face[0].id   : "fm0",
+      hairId:      hair[0]   ? hair[0].id   : "hm1",
+      topId:       shirt[0]  ? shirt[0].id  : "sm1",
+      bottomId:    pants[0]  ? pants[0].id  : "pm1",
+      shoesId:     shoes[0]  ? shoes[0].id  : "shm1",
+      glovesId:    gloves[0] ? gloves[0].id : "gm0",
+      accessoryId: "ac_none",
+    };
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  //  MAPA DE SPRITES
+  // ═══════════════════════════════════════════════════════════════
+
+  const SPRITE_IMAGES = {
+    human_male:      "Skins/HumanIdle.png",
+    human_male_fight: "Skins/HumanBattle.png",
+    human_female:    "Skins/MujerIdle.png",
+    saiyan_male:     "Skins/HumanIdle.png",
+    saiyan_male_fight: "Skins/HumanBattle.png",
+    saiyan_female:   "Skins/MujerIdle.png",
+    namekian_male:   "Skins/NamekianIdle.png",
+    android_male:    "Skins/HumanIdle.png",
+    android_male_fight: "Skins/HumanBattle.png",
+    android_female:  "Skins/MujerIdle.png",
+    kaioshin_male:   "Skins/Kaioshin.png",
+    kaioshin_female: "Skins/KaioshinF.png",
+    frieza_male:     "Skins/Arcosiano.png",
+
+    face_fm1: "face/male/fm1_eyes_normal.png",
+    face_fm2: "face/male/fm2_eyes_fierce.png",
+    face_fm3: "face/male/fm3_scar1.png",
+    face_fm4: "face/male/fm4_scar2.png",
+    face_fm5: "face/male/fm5_war_marks.png",
+    face_fm6: "face/male/fm6_paint.png",
+    face_fm7: "face/male/fm7_tattoo.png",
+    face_fm8: "face/male/fm8_beard.png",
+
+    face_ff1: "face/female/ff1_eyes_normal.png",
+    face_ff2: "face/female/ff2_eyes_cat.png",
+    face_ff3: "face/female/ff3_blush.png",
+    face_ff4: "face/female/ff4_paint.png",
+    face_ff5: "face/female/ff5_marks.png",
+    face_ff6: "face/female/ff6_scar.png",
+    face_ff7: "face/female/ff7_tattoo.png",
+    face_ff8: "face/female/ff8_freckles.png",
+
+    face_fn1: "face/namekian/fn1_eyes.png",
+    face_fn2: "face/namekian/fn2_marks.png",
+    face_fn3: "face/namekian/fn3_angry.png",
+    face_fn4: "face/namekian/fn4_dots.png",
+
+    face_fr1: "face/frieza/fr1_eyes.png",
+    face_fr2: "face/frieza/fr2_mark.png",
+    face_fr3: "face/frieza/fr3_lines.png",
+    face_fr4: "face/frieza/fr4_mask.png",
+
+    hair_hm1: "hair/male/hm1_mondongo.png",
+    hair_hm2: "hair/male/BaseSpriteSheet.png",
+    hair_hm3: "hair/male/hm3_ssj.png",
+    hair_hm4: "hair/male/hm4_blue.png",
+    hair_hm5: "hair/male/hm5_trunks.png",
+    hair_hm6: "hair/male/hm6_corto.png",
+    hair_hm7: "hair/male/hm7_largo.png",
+    hair_hm8: "hair/male/hm8_mohawk.png",
+
+    hair_hf1: "hair/female/hf1_largo1.png",
+    hair_hf2: "hair/female/hf2_coleta.png",
+    hair_hf3: "hair/female/hf3_kefla.png",
+    hair_hf4: "hair/female/hf4_corto.png",
+    hair_hf5: "hair/female/hf5_trenzas.png",
+    hair_hf6: "hair/female/hf6_rizos.png",
+    hair_hf7: "hair/female/hf7_ssjf.png",
+    hair_hf8: "hair/female/hf8_calva.png",
+
+    hair_hn1: "hair/namekian/hn1_antenas1.png",
+    hair_hn2: "hair/namekian/hn2_antenas2.png",
+    hair_hn3: "hair/namekian/hn3_cresta.png",
+    hair_hn4: "hair/namekian/hn4_cuernos.png",
+    hair_hn5: "hair/namekian/hn5_sin.png",
+    hair_hn6: "hair/namekian/hn6_picos.png",
+    hair_hn7: "hair/namekian/hn7_aletas.png",
+    hair_hn8: "hair/namekian/hn8_dientes.png",
+
+    hair_hr1: "hair/frieza/hr1_cuernos1.png",
+    hair_hr2: "hair/frieza/hr2_cuernos2.png",
+    hair_hr3: "hair/frieza/hr3_cresta.png",
+    hair_hr4: "hair/frieza/hr4_picos.png",
+    hair_hr5: "hair/frieza/hr5_sin.png",
+    hair_hr6: "hair/frieza/hr6_armadura.png",
+    hair_hr7: "hair/frieza/hr7_mascara.png",
+    hair_hr8: "hair/frieza/hr8_corona.png",
+
+    top_sm1: "tops/male/sm1_gi_orange.png",
+    top_sm2: "tops/male/sm2_gi_blue.png",
+    top_sm3: "tops/male/sm3_armor.png",
+    top_sm4: "tops/male/sm4_gi_green.png",
+    top_sm5: "tops/male/sm5_gi_purple.png",
+    top_sm6: "tops/male/sm6_gi_red.png",
+    top_sm7: "tops/male/sm7_black_sleeves.png",
+
+    top_sf1: "tops/female/sf1_gi_pink.png",
+    top_sf2: "tops/female/sf2_gi_blue.png",
+    top_sf3: "tops/female/sf3_armor.png",
+    top_sf4: "tops/female/sf4_gi_green.png",
+    top_sf5: "tops/female/sf5_gi_orange.png",
+    top_sf6: "tops/female/sf6_top_black.png",
+    top_sf7: "tops/female/sf7_gi_purple.png",
+
+    top_sn1: "tops/namekian/sn1_manto.png",
+    top_sn2: "tops/namekian/sn2_gi1.png",
+    top_sn3: "tops/namekian/sn3_armor.png",
+    top_sn4: "tops/namekian/sn4_gi2.png",
+    top_sn5: "tops/namekian/sn5_gi3.png",
+    top_sn6: "tops/namekian/sn6_gi4.png",
+    top_sn7: "tops/namekian/sn7_mant_osc.png",
+
+    top_sr1: "tops/frieza/sr1_armor1.png",
+    top_sr2: "tops/frieza/sr2_armor2.png",
+    top_sr3: "tops/frieza/sr3_manto.png",
+    top_sr4: "tops/frieza/sr4_armor3.png",
+    top_sr5: "tops/frieza/sr5_gi1.png",
+    top_sr6: "tops/frieza/sr6_gi2.png",
+    top_sr7: "tops/frieza/sr7_armor_gold.png",
+
+    bottom_pm1: "bottoms/male/pm1_orange.png",
+    bottom_pm2: "bottoms/male/pm2_blue.png",
+    bottom_pm3: "bottoms/male/pm3_white.png",
+    bottom_pm4: "bottoms/male/pm4_purple.png",
+    bottom_pm5: "bottoms/male/pm5_black.png",
+    bottom_pm6: "bottoms/male/pm6_green.png",
+    bottom_pm7: "bottoms/male/pm7_red.png",
+    bottom_pm8: "bottoms/male/pm8_brown.png",
+
+    bottom_pf1: "bottoms/female/pf1_skirt_orange.png",
+    bottom_pf2: "bottoms/female/pf2_pants_blue.png",
+    bottom_pf3: "bottoms/female/pf3_skirt_white.png",
+    bottom_pf4: "bottoms/female/pf4_leggings.png",
+    bottom_pf5: "bottoms/female/pf5_skirt_purple.png",
+    bottom_pf6: "bottoms/female/pf6_short_green.png",
+    bottom_pf7: "bottoms/female/pf7_skirt_red.png",
+    bottom_pf8: "bottoms/female/pf8_short_black.png",
+
+    bottom_pn1: "bottoms/namekian/pn1_pants.png",
+    bottom_pn2: "bottoms/namekian/pn2_manto_inf.png",
+    bottom_pn3: "bottoms/namekian/pn3_faja.png",
+    bottom_pn4: "bottoms/namekian/pn4_short.png",
+    bottom_pn5: "bottoms/namekian/pn5_osc.png",
+    bottom_pn6: "bottoms/namekian/pn6_cla.png",
+    bottom_pn7: "bottoms/namekian/pn7_amar.png",
+    bottom_pn8: "bottoms/namekian/pn8_azul.png",
+
+    bottom_pr1: "bottoms/frieza/pr1_armor1.png",
+    bottom_pr2: "bottoms/frieza/pr2_armor2.png",
+    bottom_pr3: "bottoms/frieza/pr3_manto.png",
+    bottom_pr4: "bottoms/frieza/pr4_escamas_neg.png",
+    bottom_pr5: "bottoms/frieza/pr5_escamas_bla.png",
+    bottom_pr6: "bottoms/frieza/pr6_pants.png",
+    bottom_pr7: "bottoms/frieza/pr7_gold.png",
+    bottom_pr8: "bottoms/frieza/pr8_armor3.png",
+
+    shoes_shm1: "shoes/male/shm1_blue.png",
+    shoes_shm2: "shoes/male/shm2_black.png",
+    shoes_shm3: "shoes/male/shm3_gold.png",
+    shoes_shm4: "shoes/male/shm4_purple.png",
+    shoes_shm5: "shoes/male/shm5_sandals.png",
+    shoes_shm6: "shoes/male/shm6_sandals_black.png",
+    shoes_shm7: "shoes/male/shm7_red.png",
+
+    shoes_shf1: "shoes/female/shf1_high_blue.png",
+    shoes_shf2: "shoes/female/shf2_black.png",
+    shoes_shf3: "shoes/female/shf3_red.png",
+    shoes_shf4: "shoes/female/shf4_sandals.png",
+    shoes_shf5: "shoes/female/shf5_gold.png",
+    shoes_shf6: "shoes/female/shf6_white.png",
+    shoes_shf7: "shoes/female/shf7_purple.png",
+
+    shoes_shn1: "shoes/namekian/shn1_sandals.png",
+    shoes_shn2: "shoes/namekian/shn2_boots.png",
+    shoes_shn4: "shoes/namekian/shn4_vendaje.png",
+    shoes_shn5: "shoes/namekian/shn5_osc.png",
+    shoes_shn6: "shoes/namekian/shn6_amar.png",
+    shoes_shn7: "shoes/namekian/shn7_sandals_black.png",
+    shoes_shn8: "shoes/namekian/shn8_blue.png",
+
+    shoes_shr1: "shoes/frieza/shr1_armor1.png",
+    shoes_shr2: "shoes/frieza/shr2_armor2.png",
+    shoes_shr3: "shoes/frieza/shr3_escamas.png",
+    shoes_shr5: "shoes/frieza/shr5_black.png",
+    shoes_shr6: "shoes/frieza/shr6_gold.png",
+    shoes_shr7: "shoes/frieza/shr7_white.png",
+    shoes_shr8: "shoes/frieza/shr8_sandals.png",
+
+    glove_gm1: "gloves/male/gm1_white.png",
+    glove_gm2: "gloves/male/gm2_black.png",
+    glove_gm3: "gloves/male/gm3_red.png",
+    glove_gm4: "gloves/male/gm4_blue.png",
+    glove_gm5: "gloves/male/gm5_gold.png",
+    glove_gm6: "gloves/male/gm6_cyber.png",
+    glove_gm7: "gloves/male/gm7_purple.png",
+
+    glove_gf1: "gloves/female/gf1_white.png",
+    glove_gf2: "gloves/female/gf2_black.png",
+    glove_gf3: "gloves/female/gf3_red.png",
+    glove_gf4: "gloves/female/gf4_blue.png",
+    glove_gf5: "gloves/female/gf5_gold.png",
+    glove_gf6: "gloves/female/gf6_crystal.png",
+    glove_gf7: "gloves/female/gf7_purple.png",
+
+    glove_gn1: "gloves/namekian/gn1_green.png",
+    glove_gn2: "gloves/namekian/gn2_dark.png",
+    glove_gn3: "gloves/namekian/gn3_vendaje.png",
+    glove_gn4: "gloves/namekian/gn4_black.png",
+    glove_gn5: "gloves/namekian/gn5_yellow.png",
+    glove_gn6: "gloves/namekian/gn6_blue.png",
+    glove_gn7: "gloves/namekian/gn7_white.png",
+
+    glove_gr1: "gloves/frieza/gr1_armor1.png",
+    glove_gr2: "gloves/frieza/gr2_armor2.png",
+    glove_gr3: "gloves/frieza/gr3_claw.png",
+    glove_gr4: "gloves/frieza/gr4_gold.png",
+    glove_gr5: "gloves/frieza/gr5_black.png",
+    glove_gr6: "gloves/frieza/gr6_armor3.png",
+    glove_gr7: "gloves/frieza/gr7_crystal.png",
+
+    aura_a1: "auras/a1_yellow.png",
+    aura_a2: "auras/a2_blue.png",
+    aura_a3: "auras/a3_red.png",
+    aura_a4: "auras/a4_purple.png",
+    aura_a5: "auras/a5_green.png",
+    aura_a6: "auras/a6_white.png",
+    aura_a7: "auras/a7_electric.png",
+  };
+
+  // ═══════════════════════════════════════════════════════════════
+  //  DETECCIÓN DE FRAME SIZE
+  // ═══════════════════════════════════════════════════════════════
+
+  const MAX_COLS   = 6;
+  const TOTAL_ROWS = 14;
+  const IDLE_ROW   = ACTIONS_META.idle.row;
+
+  function hasBattleGridLayout(img) {
+    if (!img || !img.naturalWidth || !img.naturalHeight) return false;
+    const byDefault = img.naturalWidth >= FRAME_W * COMBAT_MAX_COLS
+      && img.naturalHeight >= FRAME_H * COMBAT_TOTAL_ROWS;
+    const gridAspect = COMBAT_MAX_COLS / COMBAT_TOTAL_ROWS;
+    const imgAspect = img.naturalWidth / img.naturalHeight;
+    const byScaled = img.naturalWidth >= COMBAT_MAX_COLS * 8
+      && img.naturalHeight >= COMBAT_TOTAL_ROWS * 8
+      && Math.abs(imgAspect - gridAspect) < 0.06;
+    return byDefault || byScaled;
+  }
+
+  function getBattleFrameSize(img) {
+    if (!img || !img.naturalWidth) return { fw: FRAME_W, fh: FRAME_H };
+    if (hasBattleGridLayout(img)) {
+      const fw = Math.floor(img.naturalWidth / COMBAT_MAX_COLS);
+      const fh = Math.floor(img.naturalHeight / COMBAT_TOTAL_ROWS);
+      return { fw: fw > 0 ? fw : FRAME_W, fh: fh > 0 ? fh : FRAME_H };
+    }
+    return { fw: FRAME_W, fh: FRAME_H };
+  }
+
+  function isBattleSheet(img) {
+    if (!img || !img.naturalWidth || !img.naturalHeight) return false;
+    const { fw, fh } = getBattleFrameSize(img);
+    return hasBattleGridLayout(img)
+      && img.naturalWidth >= fw * COMBAT_MAX_COLS
+      && img.naturalHeight >= fh * COMBAT_TOTAL_ROWS;
+  }
+
+  function hasFullGridLayout(img) {
+    if (!img || !img.naturalWidth || !img.naturalHeight) return false;
+    const byDefaultGrid = img.naturalWidth >= FRAME_W * MAX_COLS && img.naturalHeight >= FRAME_H * TOTAL_ROWS;
+    const gridAspect = MAX_COLS / TOTAL_ROWS;
+    const imgAspect = img.naturalWidth / img.naturalHeight;
+    const byScaledGrid = img.naturalWidth >= MAX_COLS * 8
+      && img.naturalHeight >= TOTAL_ROWS * 8
+      && Math.abs(imgAspect - gridAspect) < 0.04;
+    return byDefaultGrid || byScaledGrid;
+  }
+
+  function detectFrameSize(img) {
+    if (!img || !img.naturalWidth) return { fw: FRAME_W, fh: FRAME_H };
+    if (hasFullGridLayout(img)) {
+      const fw = Math.floor(img.naturalWidth  / MAX_COLS);
+      const fh = Math.floor(img.naturalHeight / TOTAL_ROWS);
+      return { fw: fw > 0 ? fw : FRAME_W, fh: fh > 0 ? fh : FRAME_H };
+    }
+    return { fw: FRAME_W, fh: FRAME_H };
+  }
+
+  const _frameSizeCache = new Map();
+
+  function getFrameSize(img) {
+    if (!img) return { fw: FRAME_W, fh: FRAME_H };
+    const key = img.src || (img.naturalWidth + "x" + img.naturalHeight);
+    if (!_frameSizeCache.has(key)) _frameSizeCache.set(key, detectFrameSize(img));
+    return _frameSizeCache.get(key);
+  }
+
+  function isCompatibleSheet(img) {
+    if (!img || !img.naturalWidth || !img.naturalHeight) return false;
+    const { fw, fh } = getFrameSize(img);
+    return hasFullGridLayout(img) && img.naturalWidth >= fw * MAX_COLS && img.naturalHeight >= fh * TOTAL_ROWS;
+  }
+
+  function hasSheetLayout(img) {
+    if (!img || !img.naturalWidth || !img.naturalHeight) return false;
+    const { fw, fh } = getFrameSize(img);
+    return hasFullGridLayout(img) && img.naturalWidth >= fw && img.naturalHeight >= fh;
+  }
+
+  function isFreeCustomizationEntry(accDef) {
+    return !!(accDef && accDef.id !== "ac_none" && (accDef.isFreeCustomization || String(accDef.id).startsWith("fc_")));
+  }
+
+  function _getAccessoryImage(accDef) {
+    if (!accDef || accDef.id === "ac_none") return null;
+    const img = accDef.userImage;
+    const isImported = !!(accDef.dataURL || accDef.isFreeCustomization || String(accDef.id).startsWith("fc_") || String(accDef.id).startsWith("user_acc_"));
+    if (img) img._dcImportedLayer = isImported;
+    if (img && img.complete && img.naturalWidth) return img;
+    if (!accDef.dataURL) return img || null;
+    if (!accDef._pendingImage) {
+      const pending = new Image();
+      pending._dcImportedLayer = isImported;
+      accDef._pendingImage = pending;
+      pending.onload = () => {
+        pending._dcImportedLayer = isImported;
+        accDef.userImage = pending;
+        accDef._pendingImage = null;
+      };
+      pending.onerror = () => { accDef._pendingImage = null; };
+      pending.src = accDef.dataURL;
+    }
+    return accDef.userImage || null;
+  }
+
+  function getIdleFrameCoords(img) {
+    const { fw, fh } = getFrameSize(img);
+    return { srcX: 0, srcY: IDLE_ROW * fh, fw, fh };
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  //  OBJETO PLAYER
+  // ═══════════════════════════════════════════════════════════════
+
+  const player = {
+    x: 0, y: 0, vx: 0, vy: 0,
+    direction: 1,
+    onGround: false,
+    state: "idle",
+    appearance: {
+      raceId:      "human",
+      gender:      "male",
+      variantId:   "base",
+      faceId:      "fm0",
+      faceColor:   null,
+      hairId:      "hm1",
+      hairColor:   "#1a1a1a",
+      topId:       "sm1",
+      bottomId:    "pm1",
+      shoesId:     "shm1",
+      glovesId:    "gm0",
+      auraId:      "a1",
+      auraColor:   "#fdd835",
+      skinColor:   "#e8c898",
+      eyeColor:    "#3a2a1a",
+      browColor:   null,
+      pupilColor:  null,
+      accessoryId: "ac_none",
+    },
+    _animator: null,
+  };
+
+  // ═══════════════════════════════════════════════════════════════
+  //  ANIMADOR
+  // ═══════════════════════════════════════════════════════════════
+
+  class SpriteAnimator {
+    constructor(action = "idle", options = {}) {
+      this.battleMode  = !!options.battleMode;
+      this.action      = resolveCombatAction(action, this.battleMode);
+      this.frame       = 0;
+      this.elapsed     = 0;
+      this._lastTime   = performance.now();
+      this._onComplete = null;
+      this._queue      = [];
+      this.currentView = null;
+    }
+
+    _actionsMeta() {
+      return this.battleMode ? COMBAT_ACTIONS_META : ACTIONS_META;
+    }
+
+    get meta() {
+      if (!this.battleMode && this.currentView && VIEW_META[this.currentView]) {
+        return VIEW_META[this.currentView];
       }
+      const map = this._actionsMeta();
+      return map[this.action] || map[this.battleMode ? "combat_idle" : "idle"];
+    }
 
-      /* ══ Persistencia Free Customization ══ */
-      function _saveFreeCustomizationToLS() {
-        const toStore = FREE_CUSTOMIZATION_CATALOG.map(a => ({
-          id:       a.id,
-          name:     a.name,
-          type:     a.type,
-          slot:     a.slot,
-          color:    a.color,
-          dataURL:  a.dataURL,
-          combatDataURL: a.combatDataURL || null,
-          scale: a.scale ?? 1,
-          animFrames: a.animFrames ?? 6,
-          rowCount: a.rowCount ?? 0,
-          combatScale: a.combatScale ?? 1,
-          combatAnimFrames: a.combatAnimFrames ?? 6,
-          combatRowCount: a.combatRowCount ?? 0,
-          raceName: a.raceName || null,
-        }));
-        try { localStorage.setItem(LS_FREE_KEY, JSON.stringify(toStore)); } catch(e) {
-          console.warn("[DC] No se pudo guardar free customization en LS:", e);
-        }
-      }
+    setBattleMode(on) {
+      const next = !!on;
+      if (this.battleMode === next) return this;
+      this.battleMode = next;
+      this.currentView = null;
+      this._queue = [];
+      this.action = resolveCombatAction(this.action, this.battleMode);
+      this.frame = 0;
+      this.elapsed = 0;
+      return this;
+    }
 
-      function _restoreFreeCustomizationFromLS() {
-        try {
-          const raw = localStorage.getItem(LS_FREE_KEY);
-          if (!raw) return;
-          const list = JSON.parse(raw);
-          list.forEach(item => {
-            if (ACCESSORIES_CATALOG.find(a => a.id === item.id)) return;
-            const img = new Image();
-            img.src = item.dataURL;
-            const entry = {
-              id:                  item.id,
-              name:                item.name,
-              type:                item.type || "other",
-              slot:                item.slot || "over_shirt",
-              color:               item.color || null,
-              userImage:           img,
-              dataURL:             item.dataURL,
-              combatDataURL:       item.combatDataURL || null,
-              scale:               item.scale ?? 1,
-              animFrames:          item.animFrames ?? 6,
-              rowCount:            item.rowCount ?? 0,
-              combatScale:         item.combatScale ?? 1,
-              combatAnimFrames:    item.combatAnimFrames ?? 6,
-              combatRowCount:      item.combatRowCount ?? 0,
-              raceName:            item.raceName || null,
-              isFreeCustomization: true,
-            };
-            if (item.combatDataURL) {
-              const cimg = new Image();
-              cimg.onload = () => { entry.combatUserImage = cimg; };
-              cimg.src = item.combatDataURL;
-            }
-            FREE_CUSTOMIZATION_CATALOG.push(entry);
-            ACCESSORIES_CATALOG.push(entry);
-          });
-        } catch(e) {
-          console.warn("Error restaurando free customization:", e);
-        }
-      }
+    setView(viewKey) {
+      if (this.battleMode || !VIEW_META[viewKey]) return this;
+      this.currentView = viewKey; this.frame = 0; this.elapsed = 0;
+      return this;
+    }
 
-      /* ══ drawThumbCanvas ══ */
-      function drawThumbCanvas(canvas, cat, item) {
-        const ctx = canvas.getContext("2d");
-        const w = canvas.width, h = canvas.height;
-        ctx.clearRect(0, 0, w, h);
-        ctx.fillStyle = "#12172e";
-        ctx.fillRect(0, 0, w, h);
+    clearView() { this.currentView = null; return this; }
 
-        const img = (cat === "accessory" || cat === "free")
-          ? (item.userImage || null)
-          : (item.spriteKey ? imageMap[item.spriteKey] : null);
+    play(action, onComplete = null) {
+      const resolved = resolveCombatAction(action, this.battleMode);
+      const map = this._actionsMeta();
+      const m = map[resolved];
+      if (!m) return this;
+      this.currentView = null;
+      if (this.action === resolved && m.loop && !onComplete) return this;
+      this.action = resolved; this.frame = 0; this.elapsed = 0;
+      this._onComplete = onComplete;
+      return this;
+    }
 
-        if (img && img.complete && img.naturalWidth) {
-          const sheet = isCompatibleSheet(img);
-          let srcX, srcY, srcW, srcH;
-          if (sheet) {
-            const coords = getIdleFrameCoords(img);
-            srcX = coords.srcX; srcY = coords.srcY;
-            srcW = coords.fw;   srcH = coords.fh;
-            if (srcX + srcW > img.naturalWidth || srcY + srcH > img.naturalHeight) {
-              srcX = 0; srcY = 0; srcW = img.naturalWidth; srcH = img.naturalHeight;
-            }
+    then(action) { this._queue.push(action); return this; }
+
+    update(now = performance.now()) {
+      const delta = now - this._lastTime;
+      this._lastTime = now;
+      const m = this.meta;
+      if (!m) return;
+      this.elapsed += delta;
+      const fd = 1000 / m.fps;
+      while (this.elapsed >= fd) {
+        this.elapsed -= fd;
+        this.frame++;
+        if (this.frame >= m.frames) {
+          if (m.loop) {
+            this.frame = 0;
           } else {
-            srcX = 0; srcY = 0; srcW = img.naturalWidth; srcH = img.naturalHeight;
+            this.frame = m.frames - 1;
+            if (this._onComplete) { this._onComplete(); this._onComplete = null; }
+            if (this._queue.length > 0) this.play(this._queue.shift());
+          }
+        }
+      }
+    }
+
+    getFrameCoords(img = null) {
+      const m = this.meta;
+      let fw = FRAME_W, fh = FRAME_H;
+      if (img) {
+        const sz = isBattleSheet(img) ? getBattleFrameSize(img) : getFrameSize(img);
+        fw = sz.fw; fh = sz.fh;
+      }
+      const frame = Math.min(this.frame, Math.max(0, m.frames - 1));
+      return {
+        srcX: frame * fw, srcY: m.row * fh,
+        fw, fh,
+        action: this.currentView || this.action,
+        frame,
+        label:  m.label || "",
+      };
+    }
+
+    /** Coordenadas para capas (ropa, pelo, etc.) — siempre sheet de exploración */
+    getLayerFrameCoords(img = null) {
+      const layerKey = this.battleMode
+        ? (COMBAT_TO_IDLE_MAP[this.currentView || this.action] || "idle")
+        : (this.currentView || this.action);
+      const m = ACTIONS_META[layerKey] || ACTIONS_META.idle;
+      let fw = FRAME_W, fh = FRAME_H;
+      if (img) { const sz = getFrameSize(img); fw = sz.fw; fh = sz.fh; }
+      const frame = Math.min(this.frame, Math.max(0, m.frames - 1));
+      return {
+        srcX: frame * fw, srcY: m.row * fh,
+        fw, fh,
+        action: layerKey,
+        frame,
+        label: m.label || "",
+      };
+    }
+
+    reset() {
+      this.currentView = null;
+      this.play(this.battleMode ? "combat_idle" : "idle");
+      this._queue = [];
+    }
+
+    is(...actions) {
+      const current = this.currentView || this.action;
+      if (actions.includes(current)) return true;
+      if (this.battleMode) {
+        return actions.some((a) => resolveCombatAction(a, true) === current);
+      }
+      return false;
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  //  PRELOADER — acepta options.quiet para suprimir warnings
+  // ═══════════════════════════════════════════════════════════════
+
+  async function preloadAssets(basePath = "", options = {}) {
+    const quiet = !!options.quiet;
+    const variantSuffixes = getVariantSuffixes();
+    const entryMap = new Map(Object.entries(SPRITE_IMAGES));
+    for (const [key] of Object.entries(SPRITE_IMAGES)) {
+      for (const suffix of variantSuffixes) {
+        const variantKey = `${key}${suffix}`;
+        if (Object.prototype.hasOwnProperty.call(SPRITE_IMAGES, variantKey)) {
+          entryMap.set(variantKey, SPRITE_IMAGES[variantKey]);
+        }
+      }
+    }
+    const entries = Array.from(entryMap.entries());
+    const loadOne = ([key, filename]) => new Promise((resolve) => {
+      if (!filename) { resolve([key, null]); return; }
+      const img = new Image();
+      img.onload  = () => { _frameSizeCache.clear(); resolve([key, img]); };
+      img.onerror = () => {
+        if (!quiet) console.warn(`[CharacterSystem] No se pudo cargar: ${basePath}${filename}`);
+        resolve([key, null]);
+      };
+      img.src = basePath + filename;
+    });
+    const results = await Promise.all(entries.map(loadOne));
+    return Object.fromEntries(results);
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  //  UTILIDADES DE COLOR
+  // ═══════════════════════════════════════════════════════════════
+
+  const _tintCache = new Map();
+
+  function _hexToRgb(hex) {
+    const n = parseInt(hex.replace("#", ""), 16);
+    return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+  }
+
+  function _rgbToHsl(r, g, b) {
+    r /= 255; g /= 255; b /= 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    const l = (max + min) / 2;
+    if (max === min) return { h: 0, s: 0, l };
+    const d = max - min;
+    const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    let h;
+    if      (max === r) h = (g - b) / d + (g < b ? 6 : 0);
+    else if (max === g) h = (b - r) / d + 2;
+    else                h = (r - g) / d + 4;
+    return { h: h / 6, s, l };
+  }
+
+  function _hslToRgb(h, s, l) {
+    if (s === 0) { const v = Math.round(l * 255); return { r: v, g: v, b: v }; }
+    const hue2rgb = (p, q, t) => {
+      if (t < 0) t += 1; if (t > 1) t -= 1;
+      if (t < 1/6) return p + (q - p) * 6 * t;
+      if (t < 1/2) return q;
+      if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+      return p;
+    };
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+    return {
+      r: Math.round(hue2rgb(p, q, h + 1/3) * 255),
+      g: Math.round(hue2rgb(p, q, h)       * 255),
+      b: Math.round(hue2rgb(p, q, h - 1/3) * 255),
+    };
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  //  tintLayer — para MARCAS, TATUAJES, PINTURAS
+  // ═══════════════════════════════════════════════════════════════
+
+  function tintLayer(img, color, cacheKey, w = DISPLAY_W, h = DISPLAY_H, frameCoords = null) {
+    if (!color) return null;
+    const fc  = frameCoords ? `${frameCoords.srcX}_${frameCoords.srcY}_${frameCoords.fw}_${frameCoords.fh}` : "full";
+    const key = `tint2|${cacheKey}|${w}|${h}|${color}|${fc}`;
+
+    if (_tintCache.has(key)) return _tintCache.get(key);
+    if (_tintCache.size > 512) { const k = _tintCache.keys().next().value; _tintCache.delete(k); }
+
+    const off = document.createElement("canvas");
+    off.width = w; off.height = h;
+    const ctx = off.getContext("2d");
+    ctx.imageSmoothingEnabled = false;
+
+    if (!img || !img.complete || !img.naturalWidth) {
+      ctx.fillStyle = color;
+      ctx.fillRect(0, 0, w, h);
+      _tintCache.set(key, off);
+      return off;
+    }
+
+    if (frameCoords) {
+      ctx.drawImage(img, frameCoords.srcX, frameCoords.srcY, frameCoords.fw, frameCoords.fh, 0, 0, w, h);
+    } else {
+      ctx.drawImage(img, 0, 0, w, h);
+    }
+
+    try {
+      const target = _hexToRgb(color);
+      const { h: targetH, s: targetS } = _rgbToHsl(target.r, target.g, target.b);
+      const imageData = ctx.getImageData(0, 0, w, h);
+      const data      = imageData.data;
+
+      for (let i = 0; i < data.length; i += 4) {
+        const alpha = data[i + 3];
+        if (alpha < 16) continue;
+        const pr = data[i], pg = data[i + 1], pb = data[i + 2];
+        const { h: origH, s: origS, l: origL } = _rgbToHsl(pr, pg, pb);
+        if (origL < 0.14) continue;
+        if (origL > 0.86) {
+          if (targetS < 0.05) continue;
+          const { r, g, b } = _hslToRgb(targetH, targetS * 0.18, origL * 0.97);
+          data[i] = r; data[i + 1] = g; data[i + 2] = b;
+          continue;
+        }
+        if (origS < 0.12) {
+          const { r, g, b } = _hslToRgb(targetH, targetS * 0.55, origL);
+          data[i] = r; data[i + 1] = g; data[i + 2] = b;
+          continue;
+        }
+        const { r, g, b } = _hslToRgb(targetH, Math.min(1, origS * 0.4 + targetS * 0.6), origL);
+        data[i] = r; data[i + 1] = g; data[i + 2] = b;
+      }
+
+      ctx.putImageData(imageData, 0, 0);
+    } catch (e) {
+      console.warn("[tintLayer] fallback:", e.message);
+      ctx.globalCompositeOperation = "source-atop";
+      ctx.globalAlpha = 0.5;
+      ctx.fillStyle   = color;
+      ctx.fillRect(0, 0, w, h);
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = "source-over";
+    }
+
+    _tintCache.set(key, off);
+    return off;
+  }
+
+  function invalidateHairCache() { _tintCache.clear(); }
+
+  // ═══════════════════════════════════════════════════════════════
+  //  RENDER HELPERS
+  // ═══════════════════════════════════════════════════════════════
+
+  /**
+   * _drawLayerSprite — FIX imágenes importadas (accesorios/personalización libre)
+   *
+   * Cambios vs versión anterior:
+   * - Spritesheets (fullSheet/partialSheet): igual que antes, pixelado perfecto.
+   * - Imágenes importadas libres (no son spritesheet): se escalan
+   *   proporcionalmente para encajar en dw×dh, centradas, con
+   *   imageSmoothingQuality "high" para máxima calidad.
+   */
+  function _drawLayerSprite(ctx, img, destX, destY, dw, dh, animator, importedScale = 1) {
+    if (!img || !img.complete || !img.naturalWidth) return false;
+    const fullSheet   = isCompatibleSheet(img);
+    const partialSheet = !fullSheet && hasSheetLayout(img);
+    const useSheet    = fullSheet || partialSheet;
+
+    if (useSheet && animator) {
+      // Spritesheet: dibujar frame exacto sin suavizado (pixelart)
+      ctx.imageSmoothingEnabled = false;
+      let srcX, srcY, fw, fh;
+      if (fullSheet) {
+        const coordsFn = (animator.battleMode && !isBattleSheet(img) && animator.getLayerFrameCoords)
+          ? () => animator.getLayerFrameCoords(img)
+          : () => animator.getFrameCoords(img);
+        ({ srcX, srcY, fw, fh } = coordsFn());
+      } else {
+        ({ srcX, srcY, fw, fh } = getIdleFrameCoords(img));
+      }
+      if (srcX + fw <= img.naturalWidth && srcY + fh <= img.naturalHeight) {
+        ctx.drawImage(img, srcX, srcY, fw, fh, destX, destY, dw, dh);
+        return true;
+      }
+    }
+
+    // Imagen importada libre (accesorio, personalización):
+    // escalar proporcionalmente y centrar con alta calidad
+    const iw = img.naturalWidth, ih = img.naturalHeight;
+    const scale = Math.min(dw / iw, dh / ih) * importedScale;
+    const drawW = iw * scale, drawH = ih * scale;
+    const offsetX = destX + (dw - drawW) / 2;
+    const offsetY = destY + (dh - drawH) / 2;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(img, 0, 0, iw, ih, offsetX, offsetY, drawW, drawH);
+    return true;
+  }
+
+  function _pickSheetImage(cfg, mode) {
+    if (!cfg) return null;
+    if (mode === "combat") {
+      return cfg.combatSpriteImage || cfg.combatUserImage
+        || (cfg.combatSheet && (cfg.combatSheet.spriteImage || cfg.combatSheet.userImage))
+        || null;
+    }
+    return cfg.spriteImage || cfg.userImage
+      || (cfg.exploreSheet && (cfg.exploreSheet.spriteImage || cfg.exploreSheet.userImage))
+      || null;
+  }
+
+  function _pickSheetMeta(cfg, mode) {
+    const isCombat = mode === "combat";
+    return {
+      scale:      Number(isCombat ? (cfg.combatScale ?? cfg.scale) : cfg.scale) || 1,
+      animFrames: parseInt(isCombat ? (cfg.combatAnimFrames ?? cfg.animFrames) : cfg.animFrames, 10) || 0,
+      rowCount:   parseInt(isCombat ? (cfg.combatRowCount  ?? cfg.rowCount)  : cfg.rowCount,  10) || 0,
+      yOffset:    Number(cfg.yOffset) || 0,
+      sheetMode:  isCombat ? "combat" : "explore",
+    };
+  }
+
+  /**
+   * Elige spritesheet importado según modo (exploración / combate PvP).
+   * variantCustomizations, combatCustomization y free customization (accesorio fc_*).
+   */
+  function resolveCustomSheetBundle(cfg, battleMode) {
+    if (!cfg) return null;
+    if (battleMode) {
+      const hasCombat = !!(cfg.combatSpriteDataURL || cfg.combatDataURL
+        || cfg.combatSpriteImage || cfg.combatUserImage
+        || cfg.combatSheet?.spriteDataURL || cfg.combatSheet?.dataURL);
+      if (!hasCombat) return null;
+      const img = _pickSheetImage(cfg, "combat");
+      if (!img || !img.complete || !img.naturalWidth) return null;
+      return { img, custom: _pickSheetMeta(cfg, "combat") };
+    }
+    const hasExplore = !!(cfg.spriteDataURL || cfg.dataURL
+      || cfg.spriteImage || cfg.userImage
+      || cfg.exploreSheet?.spriteDataURL || cfg.exploreSheet?.dataURL);
+    if (!hasExplore) return null;
+    const img = _pickSheetImage(cfg, "explore");
+    if (!img || !img.complete || !img.naturalWidth) return null;
+    return { img, custom: _pickSheetMeta(cfg, "explore") };
+  }
+
+  function resolveFreeCustomizationBundle(accDef, battleMode) {
+    if (!accDef || !accDef.isFreeCustomization && !String(accDef.id || "").startsWith("fc_")) return null;
+    return resolveCustomSheetBundle(accDef, battleMode);
+  }
+
+  function _drawAccessoryLayer(ctx, accDef, screenX, screenY, dw, dh, animator, inCombatSheet) {
+    if (!accDef || accDef.id === "ac_none") return;
+    const bundle = resolveCustomSheetBundle(accDef, !!inCombatSheet);
+    if (bundle?.img?.complete && bundle.img.naturalWidth) {
+      _drawVariantSheet(ctx, bundle.img, screenX, screenY, dw, dh, animator, bundle.custom);
+      return;
+    }
+    const img = _getAccessoryImage(accDef);
+    if (img && img.complete && img.naturalWidth) {
+      const destX = screenX - dw / 2;
+      const destY = screenY - dh;
+      _drawLayerSprite(ctx, img, destX, destY, dw, dh, animator, IMPORTED_LAYER_SCALE);
+      return;
+    }
+    if (accDef.id === "ac_scouter" || accDef.type === "scouter") {
+      const destX = screenX - dw / 2;
+      const destY = screenY - dh;
+      const hx = destX + dw * 0.55;
+      const hy = destY + dh * 0.22;
+      ctx.save();
+      ctx.fillStyle = "#43a047";
+      ctx.fillRect(hx - dw * 0.18, hy - dh * 0.04, dw * 0.36, dh * 0.08);
+      ctx.fillStyle = "#e040fb";
+      ctx.beginPath();
+      ctx.arc(hx + dw * 0.12, hy, dw * 0.07, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  function _drawVariantSheet(ctx, img, screenX, screenY, dw, dh, animator, custom) {
+    if (!img || !img.complete || !img.naturalWidth) return false;
+    const scale = Math.max(0.25, Math.min(8, Number(custom?.scale) || 1));
+    // sheetMode del custom tiene prioridad sobre auto-detección por aspect ratio
+    const useCombat = custom?.sheetMode === "combat"
+      || (custom?.sheetMode !== "explore" && isBattleSheet(img));
+    const defaultColCount = useCombat ? COMBAT_MAX_COLS : MAX_COLS;
+    const defaultRowCount = useCombat ? COMBAT_TOTAL_ROWS : TOTAL_ROWS;
+    const metaMap = useCombat ? COMBAT_ACTIONS_META : ACTIONS_META;
+    const defaultAction = useCombat ? "combat_idle" : "idle";
+    // animFrames del usuario siempre tiene prioridad; si no está seteado usa el default
+    const userFrames = parseInt(custom?.animFrames, 10);
+    const frameCount = Math.max(1, Math.min(48, userFrames > 0 ? userFrames : defaultColCount));
+    // rowCount: si el usuario definió filas explícitamente las usamos, si no usamos el default
+    const userRows = parseInt(custom?.rowCount, 10);
+    const rowCount = Math.max(1, Math.min(64, userRows > 0 ? userRows : defaultRowCount));
+    const fw = Math.max(1, Math.floor(img.naturalWidth / frameCount));
+    const fh = Math.max(1, Math.floor(img.naturalHeight / rowCount));
+    let meta = animator?.meta || metaMap[defaultAction];
+    if (useCombat && animator && !metaMap[animator.action]) {
+      const mapped = COMBAT_TO_IDLE_MAP[animator.action]
+        ? resolveCombatAction(animator.action, true)
+        : (LEGACY_TO_COMBAT_MAP[animator.action] || animator.action);
+      meta = metaMap[mapped] || metaMap.combat_idle;
+    } else if (!useCombat && animator && !metaMap[animator.action]) {
+      meta = metaMap.idle;
+    }
+    const row = Math.max(0, Math.min(rowCount - 1, meta?.row || 0));
+    const frame = animator ? (animator.frame % frameCount) : 0;
+    const drawW = dw * scale;
+    const drawH = dh * scale;
+    const destX = screenX - drawW / 2;
+    const destY = screenY - drawH + (Number(custom?.yOffset) || 0);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(img, frame * fw, row * fh, fw, fh, destX, destY, drawW, drawH);
+    return true;
+  }
+
+  function _drawProceduralAura(ctx, screenX, screenY, dw, dh, auraEntry, color, phase) {
+    if (!auraEntry || auraEntry.style === "none" || !color) return;
+    const rgba = (hex, a) => {
+      const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+      return `rgba(${r},${g},${b},${a})`;
+    };
+    const cx = screenX, cy = screenY - dh * 0.55;
+    const grd = ctx.createRadialGradient(cx, cy, 4, cx, cy, dw * 0.9);
+    grd.addColorStop(0, rgba(color, 0.28));
+    grd.addColorStop(0.5, rgba(color, 0.10));
+    grd.addColorStop(1, rgba(color, 0));
+    ctx.fillStyle = grd;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, dw * 0.6, dh * 0.55, 0, 0, Math.PI * 2);
+    ctx.fill();
+    for (let i = 0; i < 10; i++) {
+      const ang = (i / 10) * Math.PI * 2 + phase * 0.05;
+      const rad = dw * 0.28 + Math.sin(phase * 0.08 + i) * 6;
+      const fx = cx + Math.cos(ang) * rad, fy = cy + Math.sin(ang) * rad * 0.5;
+      const fh2 = 10 + Math.sin(phase * 0.1 + i * 0.8) * 5;
+      ctx.fillStyle = rgba(color, 0.52);
+      ctx.beginPath();
+      ctx.moveTo(fx - 2, fy + 3);
+      ctx.lineTo(fx, fy - fh2);
+      ctx.lineTo(fx + 2, fy + 3);
+      ctx.fill();
+    }
+  }
+
+  function _tintSprite(sheetImg, color, w, h, coords, fullImg, iw, ih) {
+    const off = document.createElement("canvas"); off.width = w; off.height = h;
+    const c = off.getContext("2d");
+    c.imageSmoothingEnabled = false;
+
+    if (sheetImg && coords) {
+      c.drawImage(sheetImg, coords.srcX, coords.srcY, coords.fw || FRAME_W, coords.fh || FRAME_H, 0, 0, w, h);
+    } else if (fullImg) {
+      c.imageSmoothingEnabled = true;
+      c.imageSmoothingQuality = "high";
+      c.drawImage(fullImg, 0, 0, iw, ih, 0, 0, w, h);
+    }
+
+    c.globalCompositeOperation = "multiply";
+    c.globalAlpha = 1;
+    c.fillStyle = color;
+    c.fillRect(0, 0, w, h);
+
+    c.globalCompositeOperation = "destination-in";
+    c.globalAlpha = 1;
+    if (sheetImg && coords) {
+      c.imageSmoothingEnabled = false;
+      c.drawImage(sheetImg, coords.srcX, coords.srcY, coords.fw || FRAME_W, coords.fh || FRAME_H, 0, 0, w, h);
+    } else if (fullImg) {
+      c.imageSmoothingEnabled = true;
+      c.imageSmoothingQuality = "high";
+      c.drawImage(fullImg, 0, 0, iw, ih, 0, 0, w, h);
+    }
+
+    c.globalCompositeOperation = "source-over";
+    return off;
+  }
+
+  function tintHair(hairImg, hairColor, hairDef, w, h, frameCoords) {
+    if (!hairImg || !hairImg.complete || !hairImg.naturalWidth) return null;
+    const color = hairColor || "#1a1a1a";
+    const fc    = frameCoords
+      ? `${frameCoords.srcX}_${frameCoords.srcY}_${frameCoords.fw}_${frameCoords.fh}`
+      : "full";
+    const key = `hair2|${hairDef ? hairDef.id : "hair"}|${hairImg.src || ""}|${w}|${h}|${color}|${fc}`;
+
+    if (_tintCache.has(key)) return _tintCache.get(key);
+    if (_tintCache.size > 512) { const k = _tintCache.keys().next().value; _tintCache.delete(k); }
+
+    const result = _tintSprite(
+      frameCoords ? hairImg : null, color, w, h,
+      frameCoords || null,
+      !frameCoords ? hairImg : null,
+      hairImg.naturalWidth, hairImg.naturalHeight
+    );
+    _tintCache.set(key, result);
+    return result;
+  }
+
+  function tintFaceColor(faceImg, color, faceDef, w, h, frameCoords) {
+    if (!faceImg || !faceImg.complete || !faceImg.naturalWidth) return null;
+    const fc  = frameCoords
+      ? `${frameCoords.srcX}_${frameCoords.srcY}_${frameCoords.fw}_${frameCoords.fh}`
+      : "full";
+    const key = `faceColor2|${faceDef ? faceDef.id : "face"}|${faceImg.src || ""}|${w}|${h}|${color}|${fc}`;
+
+    if (_tintCache.has(key)) return _tintCache.get(key);
+    if (_tintCache.size > 512) { const k = _tintCache.keys().next().value; _tintCache.delete(k); }
+
+    const result = _tintSprite(
+      frameCoords ? faceImg : null, color, w, h,
+      frameCoords || null,
+      !frameCoords ? faceImg : null,
+      faceImg.naturalWidth, faceImg.naturalHeight
+    );
+    _tintCache.set(key, result);
+    return result;
+  }
+
+  function tintFaceDetailed(faceImg, browColor, pupilColor, faceDef, w, h, frameCoords) {
+    if (!faceImg || !faceImg.complete || !faceImg.naturalWidth) return null;
+
+    const fc  = frameCoords
+      ? `${frameCoords.srcX}_${frameCoords.srcY}_${frameCoords.fw}_${frameCoords.fh}`
+      : "full";
+    const key = `faceDetail|${faceDef ? faceDef.id : "face"}|${faceImg.src || ""}|${w}|${h}|${browColor}|${pupilColor}|${fc}`;
+
+    if (_tintCache.has(key)) return _tintCache.get(key);
+    if (_tintCache.size > 512) { const k = _tintCache.keys().next().value; _tintCache.delete(k); }
+
+    const off = document.createElement("canvas");
+    off.width = w; off.height = h;
+    const ctx = off.getContext("2d");
+    ctx.imageSmoothingEnabled = false;
+
+    if (frameCoords) {
+      ctx.drawImage(faceImg, frameCoords.srcX, frameCoords.srcY, frameCoords.fw, frameCoords.fh, 0, 0, w, h);
+    } else {
+      ctx.drawImage(faceImg, 0, 0, faceImg.naturalWidth, faceImg.naturalHeight, 0, 0, w, h);
+    }
+
+    let imageData;
+    try { imageData = ctx.getImageData(0, 0, w, h); }
+    catch(e) { _tintCache.set(key, off); return off; }
+
+    const data = imageData.data;
+
+    const browRgb  = _hexToRgb(browColor);
+    const pupilRgb = _hexToRgb(pupilColor);
+    const { h: browH,  s: browS,  l: browL  } = _rgbToHsl(browRgb.r,  browRgb.g,  browRgb.b);
+    const { h: pupilH, s: pupilS, l: pupilL } = _rgbToHsl(pupilRgb.r, pupilRgb.g, pupilRgb.b);
+
+    for (let i = 0; i < data.length; i += 4) {
+      const a = data[i + 3];
+      if (a < 16) continue;
+
+      const r = data[i], g = data[i+1], b = data[i+2];
+
+      const isBrow = r > 10 && g < 20 && b < 20 && r > g * 3 && r > b * 3;
+      const isIris = b > 10 && r < 30 && g < 30 && b > r * 2 && b > g * 2;
+
+      if (!isBrow && !isIris) continue;
+
+      const srcL = isBrow ? (r / 255 * 0.5) : (b / 255 * 0.5);
+
+      let finalH, finalS, finalL;
+
+      if (isBrow) {
+        finalH = browH;
+        finalS = browS;
+        if (browS < 0.05) {
+          finalS = 0;
+          finalL = browL < 0.5
+            ? srcL * (browL * 2 + 0.1)
+            : 0.5 + srcL * (browL - 0.5) * 2;
+        } else {
+          finalL = Math.max(srcL * 0.8, 0.03);
+        }
+      } else {
+        const srcLNorm = b / 255;
+
+        finalH = pupilH;
+        finalS = pupilS;
+
+        if (pupilS < 0.05) {
+          finalS = 0;
+          finalL = pupilL < 0.5
+            ? srcLNorm * pupilL * 1.5
+            : pupilL * 0.5 + srcLNorm * (1 - pupilL) * 0.5;
+        } else {
+          const darkL  = Math.max(pupilL * 0.3, 0.04);
+          const lightL = Math.min(pupilL * 1.6, 0.85);
+          finalL = darkL + srcLNorm * (lightL - darkL);
+        }
+      }
+
+      const { r: nr, g: ng, b: nb } = _hslToRgb(finalH, finalS, finalL);
+      data[i] = nr; data[i+1] = ng; data[i+2] = nb;
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+    _tintCache.set(key, off);
+    return off;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  //  drawPlayer
+  // ═══════════════════════════════════════════════════════════════
+
+  function drawPlayer(ctx, screenX, screenY, playerObj, imageMap, animator, charState) {
+    const p   = playerObj || player;
+    const baseApp = p.appearance || player.appearance;
+    const dir = p.direction || 1;
+    const gender = baseApp.gender || "male";
+    const raceId = baseApp.raceId || "human";
+    const raceDef = RACE_CATALOG.find((r) => r.id === raceId) || RACE_CATALOG[0];
+    const raceVariants = raceDef.variants || [{ id: "base", label: "Base", suffix: "" }];
+    const customVariants = baseApp.variantCustomizations || {};
+    const hasCatalogVariant = raceVariants.some((v) => v.id === baseApp.variantId);
+    const hasCustomVariant = !!customVariants[baseApp.variantId];
+    const variantId = (hasCatalogVariant || hasCustomVariant) ? baseApp.variantId : "base";
+    const variantCustom = getVariantCustomization(baseApp, variantId);
+    const app = getVariantAppearance(baseApp, variantId);
+    const spriteVariantId = (charState && charState.spriteVariantId) || variantId;
+    const inCombatSheet = spriteVariantId === "fight";
+    if (animator && animator.setBattleMode) {
+      if (inCombatSheet && !animator.battleMode) animator.setBattleMode(true);
+      else if (!inCombatSheet && animator.battleMode) animator.setBattleMode(false);
+    }
+    const combatCustom = inCombatSheet ? baseApp.combatCustomization : null;
+    const getVariantImg = (baseKey) => {
+      if (!imageMap || !baseKey) return null;
+      const spriteKey = getSpriteKey(baseKey, spriteVariantId);
+      return imageMap[spriteKey] || imageMap[baseKey] || null;
+    };
+
+    const viewKey = charState && charState.viewKey;
+    if (animator && viewKey && VIEW_META[viewKey]) animator.setView(viewKey);
+    else if (animator && !viewKey && animator.currentView) animator.clearView();
+
+    const faceCatalog = getCatalogFor("face",   raceId, gender);
+    const hairCatalog = getCatalogFor("hair",   raceId, gender);
+    const topCatalog  = getCatalogFor("shirt",  raceId, gender);
+    const btmCatalog  = getCatalogFor("pants",  raceId, gender);
+    const shoeCatalog = getCatalogFor("shoes",  raceId, gender);
+    const glvCatalog  = getCatalogFor("gloves", raceId, gender);
+
+    const faceDef   = faceCatalog.find((f) => f.id === app.faceId)   || faceCatalog[0];
+    const hairDef   = hairCatalog.find((h) => h.id === app.hairId)   || hairCatalog[0];
+    const topDef    = topCatalog.find((t)  => t.id === app.topId)    || topCatalog[0];
+    const btmDef    = btmCatalog.find((b)  => b.id === app.bottomId) || btmCatalog[0];
+    const shoesDef  = shoeCatalog.find((s) => s.id === app.shoesId)  || shoeCatalog[0];
+    const glovesId  = app.glovesId || (charState && charState.glovesId) || glvCatalog[0].id;
+    const glovesDef = glvCatalog.find((g) => g.id === glovesId) || glvCatalog[0];
+
+    const auraId    = app.auraId    || (charState && charState.auraId)    || "a0";
+    const auraColor = app.auraColor || (charState && charState.auraColor) || "#fdd835";
+    const auraPhase = (charState && charState.auraPhase) || 0;
+    const auraDef   = AURAS_CATALOG.find((a) => a.id === auraId) || AURAS_CATALOG[0];
+
+    const accessoryId = app.accessoryId || (charState && charState.accessoryId) || "ac_none";
+    const accDef      = ACCESSORIES_CATALOG.find((a) => a.id === accessoryId) || ACCESSORIES_CATALOG[0];
+    const accImg      = _getAccessoryImage(accDef);
+    const accSlot     = accDef ? accDef.slot : "over_shirt";
+    const freeCustom  = isFreeCustomizationEntry(accDef);
+
+    const bodyGender = raceDef.genderless ? "male" : gender;
+    const bodyImg    = getVariantImg(`${raceDef.id}_${bodyGender}`);
+
+    const dw = DISPLAY_W, dh = DISPLAY_H;
+    const destX = screenX - dw / 2, destY = screenY - dh;
+
+    ctx.save();
+    if (dir === -1) { ctx.translate(screenX * 2, 0); ctx.scale(-1, 1); }
+
+    // 1. AURA
+    const auraImg = getVariantImg(auraDef.spriteKey);
+    if (auraImg && auraImg.complete && auraImg.naturalWidth) {
+      const aw = dw * 1.8, ah = dh * 1.2;
+      const auraSheet = isCompatibleSheet(auraImg);
+      ctx.globalAlpha = 0.65;
+      if (auraSheet && animator) {
+        const { srcX, srcY, fw, fh } = (animator.battleMode && animator.getLayerFrameCoords)
+          ? animator.getLayerFrameCoords(auraImg)
+          : animator.getFrameCoords(auraImg);
+        ctx.imageSmoothingEnabled = false;
+        if (srcX + fw <= auraImg.naturalWidth && srcY + fh <= auraImg.naturalHeight) {
+          ctx.drawImage(auraImg, srcX, srcY, fw, fh, screenX - aw / 2, destY - ah * 0.1, aw, ah);
+        } else {
+          ctx.drawImage(auraImg, 0, 0, auraImg.naturalWidth, auraImg.naturalHeight, screenX - aw / 2, destY - ah * 0.1, aw, ah);
+        }
+      } else {
+        ctx.imageSmoothingEnabled = true;
+        ctx.drawImage(auraImg, screenX - aw / 2, destY - ah * 0.1, aw, ah);
+      }
+      ctx.globalAlpha = 1;
+    } else {
+      _drawProceduralAura(ctx, screenX, screenY, dw, dh, auraDef, auraColor, auraPhase);
+    }
+
+    // Plantilla global de combate (importada)
+    if (inCombatSheet) {
+      const globalCombat = resolveCustomSheetBundle(combatCustom, true);
+      if (globalCombat) {
+        _drawVariantSheet(ctx, globalCombat.img, screenX, screenY, dw, dh, animator, globalCombat.custom);
+        ctx.restore();
+        return;
+      }
+    }
+
+    // Forma / transformación con sheet propio (exploración o combate según modo)
+    if (variantId !== "base") {
+      const variantBundle = resolveCustomSheetBundle(variantCustom, inCombatSheet);
+      if (variantBundle) {
+        _drawVariantSheet(ctx, variantBundle.img, screenX, screenY, dw, dh, animator, variantBundle.custom);
+        ctx.restore();
+        return;
+      }
+    }
+
+    // Personalización libre (raza por spritesheet importado)
+    if (freeCustom) {
+      const freeBundle = resolveFreeCustomizationBundle(accDef, inCombatSheet);
+      if (freeBundle) {
+        _drawVariantSheet(ctx, freeBundle.img, screenX, screenY, dw, dh, animator, freeBundle.custom);
+        ctx.restore();
+        return;
+      }
+      if (accImg && accImg.complete && accImg.naturalWidth) {
+        _drawAccessoryLayer(ctx, accDef, screenX, screenY, dw, dh, animator, inCombatSheet);
+        ctx.restore();
+        return;
+      }
+    }
+
+    // 2. ACCESORIO under_shirt
+    if (accSlot === "under_shirt") {
+      _drawAccessoryLayer(ctx, accDef, screenX, screenY, dw, dh, animator, inCombatSheet);
+    }
+
+    // 3. CUERPO con tinte de piel (HumanBattle.png en modo combate)
+    if (bodyImg && bodyImg.complete && bodyImg.naturalWidth) {
+      const sheet = isBattleSheet(bodyImg) || isCompatibleSheet(bodyImg);
+      ctx.imageSmoothingEnabled = !sheet;
+      if (app.skinColor) {
+        const coords = sheet && animator ? animator.getFrameCoords(bodyImg) : null;
+        const tinted = _tintSprite(
+          sheet ? bodyImg : null, app.skinColor, dw, dh,
+          coords, !sheet ? bodyImg : null, bodyImg.naturalWidth, bodyImg.naturalHeight
+        );
+        ctx.drawImage(tinted, destX, destY, dw, dh);
+      } else {
+        _drawLayerSprite(ctx, bodyImg, destX, destY, dw, dh, animator);
+      }
+    }
+
+    // 4. ROPA INFERIOR
+    _drawLayerSprite(ctx, getVariantImg(btmDef?.spriteKey), destX, destY, dw, dh, animator);
+
+    // 5. CALZADO
+    _drawLayerSprite(ctx, getVariantImg(shoesDef?.spriteKey), destX, destY, dw, dh, animator);
+
+    // 6. CINTURÓN
+    if (accSlot === "belt_slot") {
+      _drawAccessoryLayer(ctx, accDef, screenX, screenY, dw, dh, animator, inCombatSheet);
+    }
+
+    // 7. ROPA SUPERIOR
+    _drawLayerSprite(ctx, getVariantImg(topDef?.spriteKey), destX, destY, dw, dh, animator);
+
+    // 8. GUANTES
+    _drawLayerSprite(ctx, getVariantImg(glovesDef?.spriteKey), destX, destY, dw, dh, animator);
+
+    // 9. CARA
+    const faceImg = getVariantImg(faceDef?.spriteKey);
+    if (faceImg && faceImg.complete && faceImg.naturalWidth) {
+      if (faceDef && faceDef.tintable) {
+        const faceSheet = isCompatibleSheet(faceImg);
+        let frameCoords = null;
+        if (faceSheet && animator) {
+          const { srcX, srcY, fw, fh } = (animator.battleMode && animator.getLayerFrameCoords)
+            ? animator.getLayerFrameCoords(faceImg)
+            : animator.getFrameCoords(faceImg);
+          if (srcX + fw <= faceImg.naturalWidth && srcY + fh <= faceImg.naturalHeight) {
+            frameCoords = { srcX, srcY, fw, fh };
+          }
+        }
+
+        if (faceDef.eyeColor) {
+          const browColor  = app.browColor  || null;
+          const pupilColor = app.pupilColor || null;
+          const eyeColor   = app.eyeColor   || null;
+          let tinted = null;
+
+          if (browColor || pupilColor) {
+            tinted = tintFaceDetailed(
+              faceImg,
+              browColor  || eyeColor || "#1a1a1a",
+              pupilColor || eyeColor || "#1a1a1a",
+              faceDef, dw, dh, frameCoords
+            );
+          } else if (eyeColor) {
+            tinted = tintFaceColor(faceImg, eyeColor, faceDef, dw, dh, frameCoords);
           }
 
-          const scale = Math.min(w / srcW, h / srcH) * 0.88;
-          const dw = Math.round(srcW * scale), dh = Math.round(srcH * scale);
-          const dx = Math.round((w - dw) / 2),  dy = Math.round((h - dh) / 2);
-          ctx.imageSmoothingEnabled = false;
-
-          if (cat === "hair" && item.tintable && player.appearance.hairColor) {
-            const frameCoords = sheet ? { srcX, srcY, fw: srcW, fh: srcH } : null;
-            const cacheKey = (item.id || "hair") + "|" + (img.src || "");
-            const tinted = tintLayer(img, player.appearance.hairColor, cacheKey, dw, dh, frameCoords);
-            if (tinted) ctx.drawImage(tinted, dx, dy, dw, dh);
-            else ctx.drawImage(img, srcX, srcY, srcW, srcH, dx, dy, dw, dh);
-          } else if (cat === "face" && item.tintable) {
-            const faceColor = item.eyeColor
-              ? (player.appearance.eyeColor || null)
-              : (player.appearance.faceColor || null);
-            if (faceColor) {
-              const frameCoords = sheet ? { srcX, srcY, fw: srcW, fh: srcH } : null;
-              const cacheKey = (item.id || "face") + "|" + (img.src || "");
-              const tinted = tintLayer(img, faceColor, cacheKey, dw, dh, frameCoords);
-              if (tinted) ctx.drawImage(tinted, dx, dy, dw, dh);
-              else ctx.drawImage(img, srcX, srcY, srcW, srcH, dx, dy, dw, dh);
-            } else {
-              ctx.drawImage(img, srcX, srcY, srcW, srcH, dx, dy, dw, dh);
-            }
-          } else if (cat === "aura" && item.color) {
-            ctx.drawImage(img, srcX, srcY, srcW, srcH, dx, dy, dw, dh);
-            const aColor = charState.auraColor || item.color;
-            ctx.globalCompositeOperation = "multiply";
-            ctx.fillStyle = aColor;
-            ctx.fillRect(dx, dy, dw, dh);
-            ctx.globalCompositeOperation = "destination-in";
-            ctx.drawImage(img, srcX, srcY, srcW, srcH, dx, dy, dw, dh);
-            ctx.globalCompositeOperation = "source-over";
+          if (tinted) {
+            ctx.imageSmoothingEnabled = false;
+            ctx.drawImage(tinted, destX, destY, dw, dh);
           } else {
-            ctx.drawImage(img, srcX, srcY, srcW, srcH, dx, dy, dw, dh);
+            _drawLayerSprite(ctx, faceImg, destX, destY, dw, dh, animator);
           }
         } else {
-          const color = item.color || item.color1 || item.skinColor || "#2a3560";
-          if (color) {
-            ctx.fillStyle = color + "88";
-            ctx.beginPath();
-            if (ctx.roundRect) ctx.roundRect(4, 4, w - 8, h - 8, 4);
-            else ctx.rect(4, 4, w - 8, h - 8);
-            ctx.fill();
-          }
-          const ACC_TYPE_ICONS = {
-            belt:"🥋", cape:"🧣", bag:"🎒", collar:"📿",
-            brace:"⌚", mask:"🥽", scouter:"🔭", tail:"🐾", wings:"🦋", none:"➕", other:"✨",
-          };
-          const BASE_ICONS = { race:"👾", face:"😶", hair:"💇", shirt:"👕", pants:"👖", gloves:"🥊", shoes:"👟", aura:"✨" };
-          const icon = cat === "accessory"
-            ? (ACC_TYPE_ICONS[item.type] || "🎽")
-            : (BASE_ICONS[cat] || "?");
-          ctx.font = `${Math.round(h * 0.38)}px sans-serif`;
-          ctx.textAlign = "center"; ctx.textBaseline = "middle";
-          ctx.fillText(icon, w / 2, h / 2);
-          ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
-        }
-      }
-
-      /* ══ Selector vista / animación ══ */
-      function initViewAnimBar() {
-        document.querySelectorAll("#viewBtns .view-btn").forEach((btn) => {
-          btn.addEventListener("click", () => {
-            const vk = btn.dataset.view;
-            if (activeViewKey === vk) {
-              activeViewKey = null;
-              btn.classList.remove("active-view");
-              _setAnim(activeAnimKey);
+          const faceColor = app.faceColor || null;
+          if (faceColor) {
+            const cacheKey = (faceDef.id || "face") + "|" + (faceImg.src || "");
+            const tinted = tintLayer(faceImg, faceColor, cacheKey, dw, dh, frameCoords);
+            if (tinted) {
+              ctx.imageSmoothingEnabled = false;
+              ctx.drawImage(tinted, destX, destY, dw, dh);
             } else {
-              activeViewKey = vk;
-              document.querySelectorAll("#viewBtns .view-btn").forEach(b => b.classList.remove("active-view"));
-              document.querySelectorAll("#animBtns .view-btn").forEach(b => b.classList.remove("active-anim"));
-              btn.classList.add("active-view");
-              animator.setView(vk);
-              finalAnim.setView(vk);
+              _drawLayerSprite(ctx, faceImg, destX, destY, dw, dh, animator);
             }
-          });
-        });
-        document.querySelectorAll("#animBtns .view-btn").forEach((btn) => {
-          btn.addEventListener("click", () => _setAnim(btn.dataset.anim));
-        });
-      }
-
-      function _setAnim(animKey) {
-        activeViewKey = null; activeAnimKey = animKey;
-        document.querySelectorAll("#viewBtns .view-btn").forEach(b => b.classList.remove("active-view"));
-        document.querySelectorAll("#animBtns .view-btn").forEach(b => b.classList.remove("active-anim"));
-        const t = document.querySelector(`#animBtns .view-btn[data-anim="${animKey}"]`);
-        if (t) t.classList.add("active-anim");
-        animator.clearView(); animator.play(animKey);
-        finalAnim.clearView(); finalAnim.play(animKey);
-      }
-
-      /* ══ Config de categorías ══ */
-      const CAT_CONFIG = {
-        race:      { label:"SELECCIONA LA RAZA",          catalog: RACE_CATALOG,     prop:"raceId",       needsGender:true },
-        face:      { label:"SELECCIONA LA CARA",                                       prop:"faceId",       needsFaceColor:true },
-        hair:      { label:"SELECCIONA EL CABELLO",                                    prop:"hairId",       needsColor:true, colorProp:"hairColor",  colorLabel:"COLOR CABELLO", palette:HAIR_PALETTE },
-        shirt:     { label:"SELECCIONA LA ROPA SUPERIOR",                              prop:"topId"   },
-        pants:     { label:"SELECCIONA LA ROPA INFERIOR",                              prop:"bottomId"},
-        gloves:    { label:"SELECCIONA LOS GUANTES",                                   prop:"glovesId",     isExtra:true },
-        shoes:     { label:"SELECCIONA EL CALZADO",                                    prop:"shoesId" },
-        accessory: {
-          label: "ACCESORIOS IMPORTADOS",
-          catalog: () => ACCESSORIES_CATALOG.filter(a =>
-            !a.isFreeCustomization && !a.id.startsWith("fc_")
-          ),
-          prop:"accessoryId", isExtra:true, isAccImport:true
-        },
-        free: {
-          label: "PERSONALIZACIÓN LIBRE",
-          catalog: () => ACCESSORIES_CATALOG.filter(a =>
-            a.isFreeCustomization || a.id.startsWith("fc_")
-          ),
-          prop:"accessoryId", isExtra:true, isAccImport:true
-        },
-        aura:      { label:"SELECCIONA EL AURA",          catalog: AURAS_CATALOG,      prop:"auraId",       isExtra:true, needsColor:true, colorProp:"auraColor", colorLabel:"COLOR AURA", palette:AURA_PALETTE },
-        combat:    { label:"PLANTILLA DE COMBATE", special:"combat" },
-        forms:     { label:"FORMAS CUSTOMIZABLES", special:"forms" },
-        color:     { label:"COLORES", special:"color" },
-      };
-
-      /* ══ renderItemsPanel ══ */
-      function renderItemsPanel(cat) {
-        const panel = document.getElementById("itemsPanel");
-        panel.innerHTML = "";
-        const cfg = CAT_CONFIG[cat];
-        if (!cfg) return;
-
-        const titleEl = document.createElement("div");
-        titleEl.className = "items-section-title";
-        const raceId  = player.appearance.raceId;
-        const gender  = player.appearance.gender;
-        const raceDef = RACE_CATALOG.find(r => r.id === raceId);
-        const showBadge = !["race","color","aura","accessory"].includes(cat);
-        if (showBadge && raceDef) {
-          titleEl.innerHTML = cfg.label + `<span class="race-badge">${raceDef.name}${GENDERLESS_RACES.includes(raceId) ? "" : gender === "female" ? " ♀" : " ♂"}</span>`;
-        } else {
-          titleEl.textContent = cfg.label;
-        }
-        panel.appendChild(titleEl);
-
-        if (cfg.special === "color") { renderColorPanel(panel); return; }
-        if (cfg.special === "combat") { renderCombatPanel(panel); return; }
-        if (cfg.special === "forms") { renderFormsPanel(panel); return; }
-
-        const catalog = typeof cfg.catalog === "function"
-          ? cfg.catalog()
-          : (cfg.catalog || currentCatalog(cat));
-
-        if (cfg.needsGender) {
-          const gRow = document.createElement("div");
-          gRow.className = "gender-row";
-          const genderless = GENDERLESS_RACES.includes(player.appearance.raceId);
-          ["male","female"].forEach(g => {
-            const btn = document.createElement("button");
-            btn.className = "gender-btn" + (player.appearance.gender === g ? " active" : "");
-            btn.textContent = g === "male" ? "♂ MASC" : "♀ FEM";
-            if (genderless) btn.disabled = true;
-            btn.addEventListener("click", () => {
-              if (player.appearance.gender === g) return;
-              player.appearance.gender = g;
-              _resetEquipmentForCurrentRaceGender();
-              document.querySelectorAll(".gender-btn").forEach(b => b.classList.remove("active"));
-              btn.classList.add("active");
-              updateStats();
-              if (activeCategory !== "race") renderItemsPanel(activeCategory);
-            });
-            gRow.appendChild(btn);
-          });
-          panel.appendChild(gRow);
-        }
-
-        const scroll = document.createElement("div");
-        scroll.className = "items-scroll";
-        panel.appendChild(scroll);
-
-        const page = pageState[cat] || 0;
-        const totalPages = Math.ceil(catalog.length / PAGE_SIZE);
-        const items = catalog.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
-
-        const grid = document.createElement("div");
-        grid.className = "items-grid";
-
-        items.forEach(item => {
-          const thumb = document.createElement("div");
-          thumb.className = "item-thumb";
-          const currentId = cfg.isExtra
-            ? (charState[cfg.prop] || player.appearance[cfg.prop])
-            : player.appearance[cfg.prop];
-          if (item.id === currentId) thumb.classList.add("selected");
-
-          const cv = document.createElement("canvas");
-          cv.width = 52; cv.height = 52;
-          drawThumbCanvas(cv, cat, item);
-          thumb.appendChild(cv);
-
-          const lbl = document.createElement("div");
-          lbl.className = "item-label";
-          lbl.textContent = item.raceName ? `${item.raceName} · ${item.name || item.id}` : (item.name || item.id);
-          thumb.appendChild(lbl);
-
-          if ((cat === "accessory" || cat === "free") && item.type && item.type !== "none") {
-            const td = ACCESSORY_TYPES.find(t => t.id === item.type);
-            const badge = document.createElement("div");
-            badge.className = "acc-type-badge";
-            badge.textContent = (td ? td.icon : "✨");
-            thumb.appendChild(badge);
-
-            const delBtn = document.createElement("button");
-            delBtn.className = "acc-delete-btn";
-            delBtn.textContent = "✕";
-            delBtn.title = "Eliminar accesorio";
-            delBtn.addEventListener("click", e => {
-              e.stopPropagation();
-              if (charState.accessoryId === item.id || player.appearance.accessoryId === item.id) {
-                charState.accessoryId = "ac_none";
-                player.appearance.accessoryId = "ac_none";
-              }
-              if (cat === "free") {
-                const idx = FREE_CUSTOMIZATION_CATALOG.findIndex(x => x.id === item.id);
-                if (idx !== -1) FREE_CUSTOMIZATION_CATALOG.splice(idx, 1);
-                _saveFreeCustomizationToLS();
-              }
-              removeUserAccessory(item.id);
-              renderItemsPanel(cat);
-              showToast("Accesorio eliminado", "warning");
-            });
-            thumb.appendChild(delBtn);
-          }
-
-          thumb.addEventListener("click", () => {
-            grid.querySelectorAll(".item-thumb").forEach(t => t.classList.remove("selected"));
-            thumb.classList.add("selected");
-
-            if (cfg.isExtra) {
-              charState[cfg.prop] = item.id;
-              player.appearance[cfg.prop] = item.id;
-              if (cat === "aura" && item.color) {
-                charState.auraColor = item.color;
-                player.appearance.auraColor = item.color;
-                grid.querySelectorAll("canvas").forEach((c, i) => { if (items[i]) drawThumbCanvas(c, cat, items[i]); });
-              }
-            } else {
-              player.appearance[cfg.prop] = item.id;
-              if (cat === "race") {
-                const race = RACE_CATALOG.find(r => r.id === item.id);
-                if (race) {
-                  player.appearance.skinColor = race.skinColor;
-                  player.appearance.eyeColor  = race.eyeColor;
-                }
-                if (GENDERLESS_RACES.includes(item.id)) player.appearance.gender = "male";
-                const variants = getActiveVariants();
-                if (!variants.some(v => v.id === player.appearance.variantId)) player.appearance.variantId = "base";
-                _resetEquipmentForCurrentRaceGender();
-              }
-              if (cat === "hair") invalidateHairCache();
-              if (cat === "face") invalidateHairCache();
-            }
-            updateStats();
-          });
-          grid.appendChild(thumb);
-        });
-        scroll.appendChild(grid);
-
-        if (cfg.needsFaceColor) {
-          renderFaceColorSection(panel, grid, items, cat);
-        }
-
-        if (cfg.needsColor && cfg.palette) {
-          renderColorSwatchSection(panel, grid, items, cat, cfg);
-        }
-
-        if (cfg.isAccImport) {
-          renderImportPanel(panel, cat);
-          if (cat === "free" || cat === "accessory") {
-            const selId = player.appearance.accessoryId || charState.accessoryId;
-            const selEntry = ACCESSORIES_CATALOG.find(a => a.id === selId && a.id !== "ac_none" && (
-              cat === "free" ? (a.isFreeCustomization || String(a.id).startsWith("fc_")) : !a.isFreeCustomization
-            ));
-            const editorId = cat === "free" ? "freeSheetEditor" : "accSheetEditor";
-            if (selEntry && !document.getElementById(editorId)) {
-              const editor = buildSheetImportSection({
-                title: `SHEETS ACTIVOS — ${selEntry.name}`,
-                exploreCfg: selEntry,
-                combatCfg: selEntry,
-                exploreDisabled: false,
-                combatDisabled: false,
-                onExploreLoaded: (url, img) => {
-                  selEntry.dataURL = url; selEntry.userImage = img;
-                  if (cat === "free") _saveFreeCustomizationToLS();
-                  else _saveAccessoriesToLS();
-                  invalidateHairCache(); showToast("Exploración actualizada", "success");
-                },
-                onCombatLoaded: (url, img) => {
-                  selEntry.combatDataURL = url; selEntry.combatUserImage = img;
-                  if (cat === "free") _saveFreeCustomizationToLS();
-                  else _saveAccessoriesToLS();
-                  invalidateHairCache(); showToast("Combate actualizado", "success");
-                },
-                onMetaChange: (meta) => {
-                  Object.assign(selEntry, meta);
-                  if (cat === "free") _saveFreeCustomizationToLS();
-                  else _saveAccessoriesToLS();
-                  invalidateHairCache();
-                },
-              });
-              editor.id = editorId;
-              panel.appendChild(editor);
-            }
-          }
-        }
-
-        if (totalPages > 1) {
-          const pag = document.createElement("div");
-          pag.className = "pagination";
-          const prev = document.createElement("button"); prev.className="page-btn"; prev.textContent="‹"; prev.disabled = page===0;
-          prev.addEventListener("click", () => { pageState[cat]=page-1; renderItemsPanel(cat); });
-          const info = document.createElement("span"); info.className="page-info"; info.textContent=`${page+1} / ${totalPages}`;
-          const next = document.createElement("button"); next.className="page-btn"; next.textContent="›"; next.disabled = page>=totalPages-1;
-          next.addEventListener("click", () => { pageState[cat]=page+1; renderItemsPanel(cat); });
-          pag.appendChild(prev); pag.appendChild(info); pag.appendChild(next);
-          panel.appendChild(pag);
-        }
-      }
-
-      function renderFaceColorSection(panel, grid, items, cat) {
-        const wrap = document.createElement("div");
-        wrap.className = "color-section";
-        const t = document.createElement("div"); t.className = "color-section-title"; t.textContent = "COLOR OJOS / MARCAS";
-        wrap.appendChild(t);
-
-        function addFaceRow(label, prop, palette) {
-          const row = document.createElement("div"); row.className = "face-color-row";
-          const lbl = document.createElement("span"); lbl.className = "face-color-label"; lbl.textContent = label;
-          row.appendChild(lbl);
-          const picker = document.createElement("input"); picker.type = "color";
-          picker.value = player.appearance[prop] || "#1a1a1a"; picker.className = "face-color-picker";
-          palette.forEach(hex => {
-            const sw = document.createElement("div");
-            sw.className = "face-color-chip" + (player.appearance[prop] === hex ? " active" : "");
-            sw.style.background = hex;
-            sw.addEventListener("click", () => {
-              player.appearance[prop] = hex; picker.value = hex;
-              row.querySelectorAll(".face-color-chip").forEach(c => c.classList.remove("active"));
-              sw.classList.add("active"); invalidateHairCache();
-              grid.querySelectorAll("canvas").forEach((c, i) => { if (items[i]) drawThumbCanvas(c, cat, items[i]); });
-            });
-            row.appendChild(sw);
-          });
-          picker.addEventListener("input", e => {
-            player.appearance[prop] = e.target.value;
-            row.querySelectorAll(".face-color-chip").forEach(c => c.classList.remove("active"));
-            invalidateHairCache();
-            grid.querySelectorAll("canvas").forEach((c, i) => { if (items[i]) drawThumbCanvas(c, cat, items[i]); });
-          });
-          row.appendChild(picker); wrap.appendChild(row);
-        }
-
-        addFaceRow("OJOS",    "eyeColor",   EYE_PALETTE);
-        addFaceRow("MARCAS",  "faceColor",  FACE_PALETTE);
-        addFaceRow("CEJAS",   "browColor",  FACE_PALETTE);
-        addFaceRow("PUPILAS", "pupilColor", EYE_PALETTE);
-        panel.appendChild(wrap);
-      }
-
-      function renderColorSwatchSection(panel, grid, items, cat, cfg) {
-        const cs = document.createElement("div"); cs.className = "color-section";
-        const cst = document.createElement("div"); cst.className = "color-section-title"; cst.textContent = cfg.colorLabel || "COLOR";
-        cs.appendChild(cst);
-        const swWrap = document.createElement("div"); swWrap.style.cssText = "display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px";
-        const picker = document.createElement("input"); picker.type = "color";
-        picker.value = (cfg.isExtra ? charState[cfg.colorProp] : player.appearance[cfg.colorProp]) || "#ffd700";
-        cfg.palette.forEach(hex => {
-          const sw = document.createElement("div");
-          const cur = cfg.isExtra ? charState[cfg.colorProp] : player.appearance[cfg.colorProp];
-          sw.style.cssText = `width:20px;height:20px;border-radius:3px;background:${hex};border:2px solid ${cur===hex?"white":"transparent"};cursor:pointer;flex-shrink:0;transition:.12s`;
-          sw.addEventListener("click", () => {
-            swWrap.querySelectorAll("div").forEach(s => s.style.borderColor = "transparent");
-            sw.style.borderColor = "white";
-            if (cfg.isExtra) { charState[cfg.colorProp] = hex; player.appearance[cfg.colorProp] = hex; }
-            else { player.appearance[cfg.colorProp] = hex; if (cfg.colorProp === "hairColor") invalidateHairCache(); }
-            picker.value = hex;
-            if (cat === "hair" || cat === "aura") {
-              grid.querySelectorAll("canvas").forEach((c, i) => { if (items[i]) drawThumbCanvas(c, cat, items[i]); });
-            }
-          });
-          swWrap.appendChild(sw);
-        });
-        cs.appendChild(swWrap);
-        const pickerRow = document.createElement("div"); pickerRow.style.cssText = "display:flex;align-items:center;gap:6px";
-        const pickerLabel = document.createElement("span"); pickerLabel.style.cssText = "font-size:10px;color:var(--td);letter-spacing:1px;flex:1"; pickerLabel.textContent = "PERSONALIZAR";
-        picker.addEventListener("input", e => {
-          if (cfg.isExtra) { charState[cfg.colorProp] = e.target.value; player.appearance[cfg.colorProp] = e.target.value; }
-          else { player.appearance[cfg.colorProp] = e.target.value; if (cfg.colorProp === "hairColor") invalidateHairCache(); }
-          swWrap.querySelectorAll("div").forEach(s => s.style.borderColor = "transparent");
-          if (cat === "hair" || cat === "aura") {
-            grid.querySelectorAll("canvas").forEach((c, i) => { if (items[i]) drawThumbCanvas(c, cat, items[i]); });
-          }
-        });
-        pickerRow.appendChild(pickerLabel); pickerRow.appendChild(picker);
-        cs.appendChild(pickerRow); panel.appendChild(cs);
-      }
-
-      function getActiveVariants() {
-        const race = RACE_CATALOG.find(r => r.id === player.appearance.raceId);
-        const catalogVariants = race?.variants?.length ? race.variants : [{ id: "base", label: "Base", suffix: "" }];
-        const customVariants = Object.entries(player.appearance.variantCustomizations || {})
-          .filter(([id]) => !catalogVariants.some(v => v.id === id))
-          .map(([id, cfg]) => ({ id, label: cfg.label || cfg.name || id, suffix: "" }));
-        return catalogVariants.concat(customVariants);
-      }
-
-      function _stripSheetImages(cfg) {
-        const out = Object.assign({}, cfg || {});
-        delete out.spriteImage;
-        delete out.userImage;
-        delete out.combatSpriteImage;
-        delete out.combatUserImage;
-        if (out.exploreSheet) out.exploreSheet = _stripSheetImages(out.exploreSheet);
-        if (out.combatSheet) out.combatSheet = _stripSheetImages(out.combatSheet);
-        return out;
-      }
-
-      function _hydrateSheetField(cfg, urlKey, imgKey) {
-        const url = cfg?.[urlKey];
-        if (!url) return;
-        const img = new Image();
-        img.onload = () => { cfg[imgKey] = img; invalidateHairCache(); };
-        img.onerror = () => {};
-        img.src = url;
-      }
-
-      function serializableVariantCustomizations(customs) {
-        const out = {};
-        Object.entries(customs || {}).forEach(([id, cfg]) => { out[id] = _stripSheetImages(cfg); });
-        return out;
-      }
-
-      function hydrateVariantCustomizations(customs) {
-        player.appearance.variantCustomizations = customs || {};
-        Object.values(player.appearance.variantCustomizations).forEach(cfg => {
-          _hydrateSheetField(cfg, "spriteDataURL", "spriteImage");
-          _hydrateSheetField(cfg, "combatSpriteDataURL", "combatSpriteImage");
-        });
-      }
-
-      function serializableCombatCustomization(cfg) {
-        return _stripSheetImages(cfg);
-      }
-
-      function hydrateCombatCustomization(cfg) {
-        player.appearance.combatCustomization = cfg || {};
-        _hydrateSheetField(player.appearance.combatCustomization, "spriteDataURL", "spriteImage");
-      }
-
-      function buildSheetImportSection(opts) {
-        const {
-          title, exploreLabel, combatLabel,
-          exploreCfg, combatCfg,
-          exploreDisabled, combatDisabled,
-          onExploreLoaded, onCombatLoaded,
-          onMetaChange,
-        } = opts;
-        const box = document.createElement("div");
-        box.className = "import-panel";
-        box.style.marginTop = opts.marginTop || "10px";
-        const titleEl = document.createElement("div");
-        titleEl.className = "import-title";
-        titleEl.textContent = title;
-        box.appendChild(titleEl);
-
-        function addSheetBlock(label, cfg, disabled, isCombat) {
-          const block = document.createElement("div");
-          block.style.marginBottom = "10px";
-          const sub = document.createElement("div");
-          sub.className = "import-title";
-          sub.style.fontSize = "9px";
-          sub.textContent = label;
-          block.appendChild(sub);
-          const preview = document.createElement("img");
-          preview.className = "import-preview";
-          const url = isCombat ? (cfg.combatSpriteDataURL || cfg.combatDataURL) : (cfg.spriteDataURL || cfg.dataURL);
-          if (url) { preview.src = url; preview.classList.add("visible"); }
-          block.appendChild(preview);
-          const fileLabel = document.createElement("label");
-          fileLabel.className = "import-file-label";
-          const fileInput = document.createElement("input");
-          fileInput.type = "file";
-          fileInput.accept = "image/*";
-          fileInput.disabled = !!disabled;
-          fileInput.addEventListener("change", e => {
-            const file = e.target.files[0];
-            if (!file || disabled) return;
-            const reader = new FileReader();
-            reader.onload = ev => {
-              const dataURL = ev.target.result;
-              const img = new Image();
-              img.onload = () => {
-                if (isCombat) onCombatLoaded(dataURL, img);
-                else onExploreLoaded(dataURL, img);
-                preview.src = dataURL;
-                preview.classList.add("visible");
-                invalidateHairCache();
-              };
-              img.onerror = () => showToast("No se pudo cargar la imagen", "error");
-              img.src = dataURL;
-            };
-            reader.readAsDataURL(file);
-          });
-          fileLabel.appendChild(fileInput);
-          fileLabel.appendChild(document.createTextNode("PNG"));
-          block.appendChild(fileLabel);
-          box.appendChild(block);
-        }
-
-        // ── Fila 1: escala + frames (columnas) + filas para EXPLORACIÓN ──
-        const metaRow = document.createElement("div");
-        metaRow.className = "import-row";
-        metaRow.style.flexWrap = "wrap";
-
-        function makeLabel(text) {
-          const s = document.createElement("span");
-          s.style.cssText = "font-size:8px;color:var(--td);letter-spacing:.5px;width:100%;margin-top:4px;display:block";
-          s.textContent = text;
-          return s;
-        }
-
-        const grpExpl = document.createElement("div");
-        grpExpl.style.cssText = "display:flex;flex-direction:column;gap:3px;flex:1;min-width:80px";
-        grpExpl.appendChild(makeLabel("▸ EXPLORACIÓN"));
-
-        const scaleExplore = document.createElement("input");
-        scaleExplore.className = "import-input-text";
-        scaleExplore.type = "number"; scaleExplore.min = "0.25"; scaleExplore.max = "8"; scaleExplore.step = "0.05";
-        scaleExplore.placeholder = "Escala"; scaleExplore.title = "Escala de tamaño";
-        scaleExplore.value = String(exploreCfg?.scale ?? 1);
-        scaleExplore.disabled = !!exploreDisabled;
-        grpExpl.appendChild(scaleExplore);
-
-        const framesExplore = document.createElement("input");
-        framesExplore.className = "import-input-text";
-        framesExplore.type = "number"; framesExplore.min = "1"; framesExplore.max = "48"; framesExplore.step = "1";
-        framesExplore.placeholder = "Cols (frames)"; framesExplore.title = "Cantidad de frames por fila (columnas)";
-        framesExplore.value = String(exploreCfg?.animFrames ?? 6);
-        framesExplore.disabled = !!exploreDisabled;
-        grpExpl.appendChild(framesExplore);
-
-        const rowsExplore = document.createElement("input");
-        rowsExplore.className = "import-input-text";
-        rowsExplore.type = "number"; rowsExplore.min = "1"; rowsExplore.max = "64"; rowsExplore.step = "1";
-        rowsExplore.placeholder = "Filas (auto)"; rowsExplore.title = "Cantidad de filas del spritesheet (dejar en 0 o vacío para auto: 14 expl / 11 combate)";
-        rowsExplore.value = String(exploreCfg?.rowCount ?? "");
-        rowsExplore.disabled = !!exploreDisabled;
-        grpExpl.appendChild(rowsExplore);
-
-        metaRow.appendChild(grpExpl);
-
-        // ── Grupo COMBATE ──
-        const grpComb = document.createElement("div");
-        grpComb.style.cssText = "display:flex;flex-direction:column;gap:3px;flex:1;min-width:80px";
-        grpComb.appendChild(makeLabel("▸ COMBATE"));
-
-        const scaleCombat = document.createElement("input");
-        scaleCombat.className = "import-input-text";
-        scaleCombat.type = "number"; scaleCombat.min = "0.25"; scaleCombat.max = "8"; scaleCombat.step = "0.05";
-        scaleCombat.placeholder = "Escala"; scaleCombat.title = "Escala de tamaño";
-        scaleCombat.value = String(combatCfg?.combatScale ?? combatCfg?.scale ?? 1);
-        scaleCombat.disabled = !!combatDisabled;
-        grpComb.appendChild(scaleCombat);
-
-        const framesCombat = document.createElement("input");
-        framesCombat.className = "import-input-text";
-        framesCombat.type = "number"; framesCombat.min = "1"; framesCombat.max = "48"; framesCombat.step = "1";
-        framesCombat.placeholder = "Cols (frames)"; framesCombat.title = "Cantidad de frames por fila (columnas)";
-        framesCombat.value = String(combatCfg?.combatAnimFrames ?? combatCfg?.animFrames ?? 6);
-        framesCombat.disabled = !!combatDisabled;
-        grpComb.appendChild(framesCombat);
-
-        const rowsCombat = document.createElement("input");
-        rowsCombat.className = "import-input-text";
-        rowsCombat.type = "number"; rowsCombat.min = "1"; rowsCombat.max = "64"; rowsCombat.step = "1";
-        rowsCombat.placeholder = "Filas (auto)"; rowsCombat.title = "Cantidad de filas del spritesheet (dejar vacío para auto: 11)";
-        rowsCombat.value = String(combatCfg?.combatRowCount ?? combatCfg?.rowCount ?? "");
-        rowsCombat.disabled = !!combatDisabled;
-        grpComb.appendChild(rowsCombat);
-
-        metaRow.appendChild(grpComb);
-
-        const saveMeta = () => {
-          const rExpl = parseInt(rowsExplore.value, 10);
-          const rComb = parseInt(rowsCombat.value, 10);
-          onMetaChange({
-            scale:           Number(scaleExplore.value) || 1,
-            animFrames:      parseInt(framesExplore.value, 10) || 6,
-            rowCount:        rExpl > 0 ? rExpl : 0,
-            combatScale:     Number(scaleCombat.value) || 1,
-            combatAnimFrames: parseInt(framesCombat.value, 10) || 6,
-            combatRowCount:  rComb > 0 ? rComb : 0,
-          });
-        };
-        [scaleExplore, framesExplore, rowsExplore, scaleCombat, framesCombat, rowsCombat]
-          .forEach(el => el.addEventListener("input", saveMeta));
-        box.appendChild(metaRow);
-
-        addSheetBlock(
-          exploreLabel || "🌍 EXPLORACIÓN (14 filas)",
-          exploreCfg || {}, exploreDisabled, false
-        );
-        addSheetBlock(
-          combatLabel || "⚔️ COMBATE PvP (11 filas)",
-          combatCfg || exploreCfg || {}, combatDisabled, true
-        );
-        return box;
-      }
-
-      function captureCurrentFormConfig() {
-        const app = player.appearance;
-        return {
-          faceId: app.faceId, faceColor: app.faceColor, browColor: app.browColor, pupilColor: app.pupilColor,
-          eyeColor: app.eyeColor, hairId: app.hairId, hairColor: app.hairColor,
-          topId: app.topId, bottomId: app.bottomId, shoesId: app.shoesId, glovesId: app.glovesId,
-          skinColor: app.skinColor, auraId: app.auraId, auraColor: app.auraColor, accessoryId: app.accessoryId,
-          scale: 1, animFrames: 6,
-        };
-      }
-
-      function renderCombatPanel(panel) {
-        const wrap = document.createElement("div"); wrap.className = "items-scroll"; wrap.style.padding = "10px";
-        panel.appendChild(wrap);
-        const cfg = player.appearance.combatCustomization || {};
-        const info = document.createElement("div");
-        info.style.cssText = "font-size:11px;color:var(--td);line-height:1.35;margin-bottom:10px";
-        info.textContent = "Sheet de combate global (11 filas PvP). Si no importás uno, se usa HumanBattle.png.";
-        wrap.appendChild(info);
-        const status = document.createElement("div");
-        status.style.cssText = "font-family:var(--fh);font-size:8px;letter-spacing:1px;color:var(--cyan);margin-bottom:8px";
-        status.textContent = cfg.spriteDataURL ? "PLANTILLA CUSTOM DE COMBATE" : "USANDO PLANTILLA NORMAL _FIGHT";
-        wrap.appendChild(status);
-
-        const importBox = document.createElement("div"); importBox.className = "import-panel";
-        importBox.innerHTML = `<div class="import-title">IMPORTAR SPRITESHEET DE COMBATE</div>`;
-        const imgPreview = document.createElement("img"); imgPreview.className = "import-preview";
-        if (cfg.spriteDataURL) { imgPreview.src = cfg.spriteDataURL; imgPreview.classList.add("visible"); }
-        importBox.appendChild(imgPreview);
-
-        const metaRow = document.createElement("div"); metaRow.className = "import-row";
-        const scaleInput = document.createElement("input"); scaleInput.className = "import-input-text";
-        scaleInput.type = "number"; scaleInput.min = "0.25"; scaleInput.max = "8"; scaleInput.step = "0.05";
-        scaleInput.value = String(cfg.scale || 1); scaleInput.placeholder = "Tamaño";
-        const framesInput = document.createElement("input"); framesInput.className = "import-input-text";
-        framesInput.type = "number"; framesInput.min = "1"; framesInput.max = "48"; framesInput.step = "1";
-        framesInput.value = String(cfg.animFrames || 6); framesInput.placeholder = "Cols (frames)"; framesInput.title = "Cantidad de frames por fila";
-        const rowsInput = document.createElement("input"); rowsInput.className = "import-input-text";
-        rowsInput.type = "number"; rowsInput.min = "1"; rowsInput.max = "64"; rowsInput.step = "1";
-        rowsInput.value = String(cfg.rowCount || ""); rowsInput.placeholder = "Filas (auto)"; rowsInput.title = "Filas del sheet (vacío = auto 11)";
-        const saveMeta = () => {
-          const rc = parseInt(rowsInput.value, 10);
-          player.appearance.combatCustomization ||= {};
-          player.appearance.combatCustomization.scale = Math.max(0.25, Math.min(8, Number(scaleInput.value) || 1));
-          player.appearance.combatCustomization.animFrames = Math.max(1, Math.min(48, parseInt(framesInput.value, 10) || 6));
-          player.appearance.combatCustomization.rowCount = rc > 0 ? rc : 0;
-          invalidateHairCache();
-        };
-        scaleInput.addEventListener("input", saveMeta); framesInput.addEventListener("input", saveMeta); rowsInput.addEventListener("input", saveMeta);
-        metaRow.appendChild(scaleInput); metaRow.appendChild(framesInput); metaRow.appendChild(rowsInput);
-        importBox.appendChild(metaRow);
-
-        const fileLabel = document.createElement("label"); fileLabel.className = "import-file-label";
-        const fileInput = document.createElement("input"); fileInput.type = "file"; fileInput.accept = "image/*";
-        fileInput.addEventListener("change", e => {
-          const file = e.target.files[0]; if (!file) return;
-          const reader = new FileReader();
-          reader.onload = ev => {
-            const dataURL = ev.target.result;
-            const img = new Image();
-            img.onload = () => {
-              const rc = parseInt(rowsInput.value, 10);
-              player.appearance.combatCustomization = Object.assign({}, player.appearance.combatCustomization || {}, {
-                spriteDataURL: dataURL, spriteImage: img,
-                scale: Math.max(0.25, Math.min(8, Number(scaleInput.value) || 1)),
-                animFrames: Math.max(1, Math.min(48, parseInt(framesInput.value, 10) || 6)),
-                rowCount: rc > 0 ? rc : 0,
-              });
-              imgPreview.src = dataURL; imgPreview.classList.add("visible");
-              invalidateHairCache(); showToast("Spritesheet de combate importado", "success");
-              renderItemsPanel("combat");
-            };
-            img.onerror = () => showToast("No se pudo cargar la imagen", "error");
-            img.src = dataURL;
-          };
-          reader.readAsDataURL(file);
-        });
-        fileLabel.appendChild(fileInput); fileLabel.appendChild(document.createTextNode("ARCHIVO PNG"));
-        importBox.appendChild(fileLabel); wrap.appendChild(importBox);
-
-        const resetBtn = document.createElement("button"); resetBtn.className = "import-add-btn";
-        resetBtn.style.marginTop = "10px"; resetBtn.textContent = "BORRAR PLANTILLA DE COMBATE";
-        resetBtn.disabled = !cfg.spriteDataURL && !cfg.scale && !cfg.animFrames;
-        resetBtn.addEventListener("click", () => {
-          player.appearance.combatCustomization = {}; invalidateHairCache();
-          showToast("Plantilla de combate reseteada", "warning"); renderItemsPanel("combat");
-        });
-        wrap.appendChild(resetBtn);
-      }
-
-      function renderFormsPanel(panel) {
-        const wrap = document.createElement("div"); wrap.className = "items-scroll"; wrap.style.padding = "10px";
-        panel.appendChild(wrap);
-        const variants = getActiveVariants();
-        const active = player.appearance.variantId || "base";
-
-        const createRow = document.createElement("div"); createRow.className = "import-row"; createRow.style.marginBottom = "10px";
-        const nameInput = document.createElement("input"); nameInput.className = "import-input-text";
-        nameInput.type = "text"; nameInput.maxLength = 18; nameInput.placeholder = "Nueva forma";
-        const addFormBtn = document.createElement("button"); addFormBtn.className = "import-add-btn"; addFormBtn.textContent = "AÑADIR";
-        addFormBtn.addEventListener("click", () => {
-          const label = nameInput.value.trim() || `Forma ${variants.length}`;
-          const id = `custom_${Date.now()}_${Math.random().toString(36).slice(2, 5)}`;
-          player.appearance.variantCustomizations ||= {};
-          player.appearance.variantCustomizations[id] = Object.assign(captureCurrentFormConfig(), { label });
-          player.appearance.variantId = id; invalidateHairCache();
-          showToast(`"${label}" creada`, "success"); renderItemsPanel("forms");
-        });
-        createRow.appendChild(nameInput); createRow.appendChild(addFormBtn); wrap.appendChild(createRow);
-
-        const row = document.createElement("div"); row.style.cssText = "display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px";
-        variants.forEach(v => {
-          const btn = document.createElement("button");
-          btn.className = "gender-btn" + (active === v.id ? " active" : "");
-          btn.textContent = v.label;
-          btn.addEventListener("click", () => { player.appearance.variantId = v.id; invalidateHairCache(); renderItemsPanel("forms"); });
-          row.appendChild(btn);
-        });
-        wrap.appendChild(row);
-
-        const custom = player.appearance.variantCustomizations?.[active] || null;
-        const info = document.createElement("div");
-        info.style.cssText = "font-size:11px;color:var(--td);line-height:1.35;margin-bottom:10px";
-        info.textContent = active === "base"
-          ? "Base usa el personaje normal (exploración + combate del juego)."
-          : "Cada forma puede tener sheet de exploración (14 filas) y de combate PvP (11 filas).";
-        wrap.appendChild(info);
-
-        const actions = document.createElement("div"); actions.style.cssText = "display:grid;gap:6px";
-        const saveBtn = document.createElement("button"); saveBtn.className = "import-add-btn";
-        saveBtn.textContent = "GUARDAR LOOK ACTUAL EN ESTA FORMA"; saveBtn.disabled = active === "base";
-        saveBtn.addEventListener("click", () => {
-          player.appearance.variantCustomizations ||= {};
-          player.appearance.variantCustomizations[active] = Object.assign(
-            {}, player.appearance.variantCustomizations[active] || {},
-            captureCurrentFormConfig(),
-            { scale: custom?.scale ?? 1, animFrames: custom?.animFrames ?? 6 }
-          );
-          invalidateHairCache(); showToast("Forma guardada","success"); renderItemsPanel("forms");
-        });
-        actions.appendChild(saveBtn);
-
-        const resetBtn = document.createElement("button"); resetBtn.className = "import-add-btn";
-        resetBtn.textContent = active.startsWith("custom_") ? "BORRAR ESTA FORMA" : "RESETEAR ESTA FORMA";
-        resetBtn.disabled = active === "base" || !custom;
-        resetBtn.addEventListener("click", () => {
-          delete player.appearance.variantCustomizations?.[active];
-          if (player.appearance.variantId === active) player.appearance.variantId = "base";
-          invalidateHairCache(); showToast(active.startsWith("custom_")?"Forma borrada":"Forma reseteada","warning"); renderItemsPanel("forms");
-        });
-        actions.appendChild(resetBtn); wrap.appendChild(actions);
-
-        if (active !== "base") {
-          wrap.appendChild(buildSheetImportSection({
-            title: `SPRITES — ${variants.find(v => v.id === active)?.label || active}`,
-            exploreCfg: custom || {},
-            combatCfg: custom || {},
-            exploreDisabled: false,
-            combatDisabled: false,
-            onExploreLoaded: (url, img) => {
-              player.appearance.variantCustomizations ||= {};
-              player.appearance.variantCustomizations[active] ||= { label: variants.find(v => v.id === active)?.label || active };
-              Object.assign(player.appearance.variantCustomizations[active], { spriteDataURL: url, spriteImage: img });
-              showToast("Sheet de exploración importado", "success");
-            },
-            onCombatLoaded: (url, img) => {
-              player.appearance.variantCustomizations ||= {};
-              player.appearance.variantCustomizations[active] ||= { label: variants.find(v => v.id === active)?.label || active };
-              Object.assign(player.appearance.variantCustomizations[active], { combatSpriteDataURL: url, combatSpriteImage: img });
-              showToast("Sheet de combate importado", "success");
-            },
-            onMetaChange: (meta) => {
-              player.appearance.variantCustomizations ||= {};
-              player.appearance.variantCustomizations[active] ||= { label: variants.find(v => v.id === active)?.label || active };
-              Object.assign(player.appearance.variantCustomizations[active], meta);
-            },
-          }));
-        }
-      }
-
-      function renderImportPanel(panel, cat) {
-        const isFreeCat = cat === "free";
-        const ip = document.createElement("div"); ip.className = "import-panel";
-        const t = document.createElement("div"); t.className = "import-title";
-        t.textContent = isFreeCat ? "➕ IMPORTAR PERSONALIZACIÓN LIBRE" : "➕ IMPORTAR ACCESORIO";
-        ip.appendChild(t);
-
-        const preview = document.createElement("img"); preview.className = "import-preview"; preview.alt = "preview";
-        if (_importPendingImg && _importPendingDataURL) { preview.src = _importPendingDataURL; preview.classList.add("visible"); }
-        ip.appendChild(preview);
-
-        const row1 = document.createElement("div"); row1.className = "import-row";
-        const nameInput = document.createElement("input"); nameInput.type = "text"; nameInput.className = "import-input-text";
-        nameInput.placeholder = isFreeCat ? "Nombre (ej: Mi Raza Custom)" : "Nombre del accesorio"; nameInput.maxLength = 24;
-        row1.appendChild(nameInput);
-
-        const typeSelect = document.createElement("select"); typeSelect.className = "import-select";
-        const raceInput = document.createElement("input"); raceInput.type = "text"; raceInput.className = "import-input-text";
-        raceInput.placeholder = "Raza (opcional)"; raceInput.maxLength = 20; raceInput.style.marginTop = "4px";
-
-        if (isFreeCat) {
-          row1.appendChild(raceInput);
-        } else {
-          ACCESSORY_TYPES.forEach(tp => {
-            const opt = document.createElement("option"); opt.value = tp.id; opt.textContent = `${tp.icon} ${tp.label}`;
-            typeSelect.appendChild(opt);
-          });
-          row1.appendChild(typeSelect);
-        }
-        ip.appendChild(row1);
-
-        const row2 = document.createElement("div"); row2.className = "import-row";
-        const fileLabel = document.createElement("label"); fileLabel.className = "import-file-label";
-        const fileInput = document.createElement("input"); fileInput.type = "file"; fileInput.accept = "image/*";
-        fileInput.addEventListener("change", e => {
-          const file = e.target.files[0]; if (!file) return;
-          const reader = new FileReader();
-          reader.onload = ev => {
-            _importPendingDataURL = ev.target.result;
-            const img = new Image();
-            img.onload = () => { _importPendingImg = img; preview.src = _importPendingDataURL; preview.classList.add("visible"); addBtn.disabled = false; };
-            img.onerror = () => showToast("No se pudo cargar la imagen","error");
-            img.src = _importPendingDataURL;
-          };
-          reader.readAsDataURL(file);
-        });
-        fileLabel.appendChild(fileInput); fileLabel.appendChild(document.createTextNode("📁 EXPLORACIÓN (14 filas)"));
-        row2.appendChild(fileLabel);
-
-        const combatLabel = document.createElement("label"); combatLabel.className = "import-file-label";
-        const combatInput = document.createElement("input"); combatInput.type = "file"; combatInput.accept = "image/*";
-        const combatPreview = document.createElement("img"); combatPreview.className = "import-preview";
-        combatInput.addEventListener("change", e => {
-          const file = e.target.files[0]; if (!file) return;
-          const reader = new FileReader();
-          reader.onload = ev => {
-            _importPendingCombatDataURL = ev.target.result;
-            const img = new Image();
-            img.onload = () => { _importPendingCombatImg = img; combatPreview.src = _importPendingCombatDataURL; combatPreview.classList.add("visible"); };
-            img.src = _importPendingCombatDataURL;
-          };
-          reader.readAsDataURL(file);
-        });
-        combatLabel.appendChild(combatInput); combatLabel.appendChild(document.createTextNode("⚔️ COMBATE (11 filas, opcional)"));
-        row2.appendChild(combatLabel);
-        ip.appendChild(combatPreview);
-
-        const addBtn = document.createElement("button"); addBtn.className = "import-add-btn";
-        addBtn.disabled = !_importPendingImg; addBtn.innerHTML = "✚ AÑADIR";
-
-        addBtn.addEventListener("click", () => {
-          if (!_importPendingImg || !_importPendingDataURL) { showToast("Primero seleccioná un archivo PNG","warning"); return; }
-          const name    = nameInput.value.trim() || (isFreeCat ? "Personalización" : "Accesorio");
-          const type    = isFreeCat ? "other" : typeSelect.value;
-          const typeDef = ACCESSORY_TYPES.find(td => td.id === type) || ACCESSORY_TYPES[ACCESSORY_TYPES.length-1];
-          const newId   = isFreeCat
-            ? `fc_${Date.now()}_${Math.random().toString(36).substr(2,5)}`
-            : `user_acc_${Date.now()}_${Math.random().toString(36).substr(2,5)}`;
-
-          const entry = {
-            id: newId, name, type, slot: typeDef.slot, color: null,
-            userImage: _importPendingImg, dataURL: _importPendingDataURL,
-            combatUserImage: _importPendingCombatImg || null,
-            combatDataURL: _importPendingCombatDataURL || null,
-            scale: 1, animFrames: 6, combatScale: 1, combatAnimFrames: 6,
-            raceName: isFreeCat ? (raceInput.value.trim() || null) : null,
-            isFreeCustomization: isFreeCat,
-          };
-
-          if (!ACCESSORIES_CATALOG.find(a => a.id === entry.id)) ACCESSORIES_CATALOG.push(entry);
-
-          if (isFreeCat) {
-            if (!FREE_CUSTOMIZATION_CATALOG.find(a => a.id === entry.id)) FREE_CUSTOMIZATION_CATALOG.push(entry);
-            _saveFreeCustomizationToLS();
           } else {
-            _saveAccessoriesToLS();
-          }
-
-          charState.accessoryId = entry.id;
-          player.appearance.accessoryId = entry.id;
-          _importPendingImg = null; _importPendingDataURL = null;
-          _importPendingCombatImg = null; _importPendingCombatDataURL = null;
-          showToast(`"${name}" añadido`, "success"); renderItemsPanel(cat);
-        });
-
-        row2.appendChild(addBtn); ip.appendChild(row2); panel.appendChild(ip);
-      }
-
-      function _resetEquipmentForCurrentRaceGender() {
-        const raceId  = player.appearance.raceId;
-        const gender  = player.appearance.gender;
-        const defaults = getDefaultIds(raceId, gender);
-        player.appearance.faceId   = defaults.faceId;
-        player.appearance.hairId   = defaults.hairId;
-        player.appearance.topId    = getCatalogFor("shirt",  raceId, gender).find(i => i.spriteKey === null)?.id || getCatalogFor("shirt",  raceId, gender).at(-1)?.id || defaults.topId;
-        player.appearance.bottomId = getCatalogFor("pants",  raceId, gender).find(i => i.spriteKey === null)?.id || getCatalogFor("pants",  raceId, gender).at(-1)?.id || defaults.bottomId;
-        player.appearance.shoesId  = getCatalogFor("shoes",  raceId, gender).find(i => i.spriteKey === null)?.id || getCatalogFor("shoes",  raceId, gender).at(-1)?.id || defaults.shoesId;
-        charState.glovesId = getCatalogFor("gloves", raceId, gender).find(i => i.spriteKey === null)?.id || getCatalogFor("gloves", raceId, gender)[0]?.id || "gm0";
-        player.appearance.glovesId = charState.glovesId;
-        invalidateHairCache();
-        ["face","hair","shirt","pants","shoes","gloves"].forEach(c => { pageState[c] = 0; });
-      }
-
-      function renderColorPanel(panel) {
-        const scroll = document.createElement("div"); scroll.className = "items-scroll"; panel.appendChild(scroll);
-        const cs = document.createElement("div"); cs.className = "color-section"; cs.style.cssText = "border-top:none;padding:8px 0"; scroll.appendChild(cs);
-
-        function addColorRow(label, palette, prop, isExtra) {
-          const row = document.createElement("div"); row.className="color-row";
-          const lbl = document.createElement("span"); lbl.className="color-row-label"; lbl.textContent=label;
-          row.appendChild(lbl);
-          const gwrap = document.createElement("div"); gwrap.className="color-gradient-wrap";
-          const swWrap = document.createElement("div"); swWrap.style.cssText="display:flex;gap:3px;flex-wrap:wrap;flex:1";
-          const picker = document.createElement("input"); picker.type="color";
-          const curVal = isExtra ? charState[prop] : player.appearance[prop];
-          picker.value = curVal || "#ffffff"; picker.style.cssText = "margin-left:4px;flex-shrink:0";
-          const result = document.createElement("div"); result.className="color-result"; result.style.background=curVal||"#fff";
-          function updateResult() { result.style.background=(isExtra?charState[prop]:player.appearance[prop])||"#fff"; }
-          palette.forEach(hex => {
-            const sw = document.createElement("div");
-            const cur = isExtra?charState[prop]:player.appearance[prop];
-            sw.style.cssText=`width:16px;height:16px;border-radius:3px;background:${hex};border:2px solid ${cur===hex?"white":"transparent"};cursor:pointer;flex-shrink:0;transition:.12s`;
-            sw.addEventListener("click", () => {
-              swWrap.querySelectorAll("div").forEach(s=>s.style.borderColor="transparent"); sw.style.borderColor="white";
-              if(isExtra){charState[prop]=hex;player.appearance[prop]=hex;}
-              else{player.appearance[prop]=hex;if(prop==="hairColor"||prop==="eyeColor"||prop==="faceColor")invalidateHairCache();}
-              picker.value=hex; updateResult();
-            });
-            swWrap.appendChild(sw);
-          });
-          picker.addEventListener("input", e=>{
-            if(isExtra){charState[prop]=e.target.value;player.appearance[prop]=e.target.value;}
-            else{player.appearance[prop]=e.target.value;if(prop==="hairColor"||prop==="eyeColor"||prop==="faceColor")invalidateHairCache();}
-            swWrap.querySelectorAll("div").forEach(s=>s.style.borderColor="transparent"); updateResult();
-          });
-          gwrap.appendChild(swWrap); gwrap.appendChild(picker); gwrap.appendChild(result);
-          row.appendChild(gwrap); cs.appendChild(row);
-        }
-
-        addColorRow("PIEL",    SKIN_PALETTE,  "skinColor",  false);
-        addColorRow("OJOS",    EYE_PALETTE,   "eyeColor",   false);
-        addColorRow("MARCAS",  FACE_PALETTE,  "faceColor",  false);
-        addColorRow("CABELLO", HAIR_PALETTE,  "hairColor",  false);
-        addColorRow("ROPA",    CLOTH_PALETTE, "clothColor", true);
-        addColorRow("AURA",    AURA_PALETTE,  "auraColor",  true);
-      }
-
-      const RACE_STATS = {
-        human:    { health:85, ki:75,  strength:80, defense:80, speed:80 },
-        saiyan:   { health:80, ki:90,  strength:95, defense:70, speed:85 },
-        namekian: { health:90, ki:85,  strength:85, defense:90, speed:70 },
-        android:  { health:95, ki:100, strength:90, defense:95, speed:75 },
-        kaioshin: { health:70, ki:100, strength:75, defense:80, speed:90 },
-        frieza:   { health:85, ki:95,  strength:88, defense:85, speed:95 },
-      };
-      function updateStats() {
-        const stats = RACE_STATS[player.appearance.raceId] || RACE_STATS.human;
-        [["health","barHealth","valHealth"],["ki","barKi","valKi"],["strength","barStr","valStr"],["defense","barDef","valDef"],["speed","barSpd","valSpd"]].forEach(([key,barId,valId]) => {
-          const v = stats[key] || 75;
-          document.getElementById(barId).style.width = v + "%";
-          document.getElementById(valId).textContent = v;
-        });
-      }
-
-      function buildCharState() {
-        return {
-          glovesId:    charState.glovesId    || player.appearance.glovesId    || "gm0",
-          auraId:      charState.auraId      || player.appearance.auraId      || "a0",
-          auraColor:   charState.auraColor   || player.appearance.auraColor   || "#fdd835",
-          accessoryId: charState.accessoryId || player.appearance.accessoryId || "ac_none",
-          auraPhase:   _auraPhase,
-          viewKey:     activeViewKey,
-          spriteVariantId: activeCategory === "combat" ? "fight" : null,
-        };
-      }
-
-      function loop(now) {
-        requestAnimationFrame(loop);
-        _auraPhase++;
-        animator.update(now);
-        finalAnim.update(now);
-        const ps = buildCharState();
-
-        previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
-        drawPlayer(previewCtx, previewCanvas.width / 2, previewCanvas.height - 16, player, imageMap, animator, ps);
-
-        finalCtx.clearRect(0, 0, finalCanvas.width, finalCanvas.height);
-        finalCtx.save();
-        const fw = finalCanvas.width, fh = finalCanvas.height;
-        finalCtx.translate(fw / 2, fh / 2);
-        if (uiFlipped) finalCtx.scale(-uiZoom, uiZoom);
-        else           finalCtx.scale(uiZoom, uiZoom);
-        finalCtx.translate(-fw / 2, -fh / 2);
-        const fp = Object.assign({}, player, { direction: 1, appearance: Object.assign({}, player.appearance) });
-        drawPlayer(finalCtx, fw / 2, fh - 16, fp, imageMap, finalAnim, ps);
-        finalCtx.restore();
-      }
-
-      function loadSlots() {
-        try {
-          const raw = localStorage.getItem(LS_KEY);
-          const parsed = raw ? JSON.parse(raw) : null;
-          savedSlots = Array.isArray(parsed)
-            ? Array.from({ length: 11 }, (_, i) => parsed[i] ?? null)
-            : Array(11).fill(null);
-        } catch { savedSlots = Array(11).fill(null); }
-        const si = parseInt(localStorage.getItem(LS_SLOT) || "0", 10);
-        activeSlotIndex = Number.isFinite(si) ? Math.max(0, Math.min(10, si)) : 0;
-      }
-
-      function saveSlots() {
-        // ── FIX v4.3.1: guardar con manejo de errores de cuota ──
-        try {
-          localStorage.setItem(LS_KEY, JSON.stringify(savedSlots));
-        } catch(e) {
-          console.warn("[DC] localStorage lleno — intentando limpiar dataURLs grandes...");
-          // Guardar versión sin dataURLs grandes
-          const slim = savedSlots.map(s => {
-            if (!s) return null;
-            const copy = Object.assign({}, s);
-            if (copy.accessoryDataURL && copy.accessoryDataURL.length > MAX_DATAURL_BYTES) {
-              delete copy.accessoryDataURL;
-            }
-            return copy;
-          });
-          try {
-            localStorage.setItem(LS_KEY, JSON.stringify(slim));
-          } catch(e2) {
-            console.error("[DC] No se pudo guardar slots:", e2);
+            _drawLayerSprite(ctx, faceImg, destX, destY, dw, dh, animator);
           }
         }
+      } else {
+        _drawLayerSprite(ctx, faceImg, destX, destY, dw, dh, animator);
       }
+    }
 
-      /* ── saveToSlot — FIX v4.3.1: guard dataURL + try/catch ── */
-      function saveToSlot(i) {
-        try {
-          const accId = charState.accessoryId || player.appearance.accessoryId || "ac_none";
-          const accEntry = ACCESSORIES_CATALOG.find(a => a.id === accId);
+    // 10. CABELLO
+    const hairImg = getVariantImg(hairDef?.spriteKey);
+    if (hairImg && hairImg.complete && hairImg.naturalWidth) {
+      const sheet = isCompatibleSheet(hairImg) && animator;
+      const coords = sheet ? (() => {
+        const { srcX, srcY, fw, fh } = (animator.battleMode && animator.getLayerFrameCoords)
+          ? animator.getLayerFrameCoords(hairImg)
+          : animator.getFrameCoords(hairImg);
+        if (srcX + fw <= hairImg.naturalWidth && srcY + fh <= hairImg.naturalHeight)
+          return { srcX, srcY, fw, fh };
+        return null;
+      })() : null;
 
-          // Guard: solo incluir dataURL si es pequeño (~1.5MB)
-          let accessoryDataURL = null;
-          if (accEntry && accEntry.dataURL) {
-            if (accEntry.dataURL.length <= MAX_DATAURL_BYTES) {
-              accessoryDataURL = accEntry.dataURL;
-            } else {
-              console.warn("[DC] dataURL del accesorio demasiado grande para LS, se omite.");
-            }
-          }
-
-          const accessoryIsFreeCustomization = !!(
-            accEntry?.isFreeCustomization ||
-            FREE_CUSTOMIZATION_CATALOG.some(a => a.id === accId) ||
-            player.appearance.raceId === "Custom" ||
-            String(accId).startsWith("fc_")
-          );
-
-          const d = {
-            name:             document.getElementById("charName").value || "Guerrero Z",
-            level:            1,
-            race:             player.appearance.raceId,
-            gender:           player.appearance.gender,
-            variantId:        player.appearance.variantId || "base",
-            variantCustomizations: serializableVariantCustomizations(player.appearance.variantCustomizations),
-            combatCustomization: serializableCombatCustomization(player.appearance.combatCustomization),
-            faceId:           player.appearance.faceId,
-            faceColor:        player.appearance.faceColor,
-            browColor:        player.appearance.browColor  || null,
-            pupilColor:       player.appearance.pupilColor || null,
-            hair:             player.appearance.hairId,
-            hairColor:        player.appearance.hairColor,
-            shirt:            player.appearance.topId,
-            pants:            player.appearance.bottomId,
-            shoes:            player.appearance.shoesId,
-            skinColor:        player.appearance.skinColor,
-            eyeColor:         player.appearance.eyeColor,
-            gloves:           charState.glovesId    || player.appearance.glovesId    || "gm0",
-            aura:             charState.auraId      || player.appearance.auraId      || "a0",
-            auraColor:        charState.auraColor   || player.appearance.auraColor   || "#fdd835",
-            clothColor:       charState.clothColor  || "#ff6a00",
-            accessory:        accId,
-            accessoryDataURL: accessoryDataURL,
-            accessoryIsFreeCustomization,
-            accessoryName:    accEntry?.name || null,
-          };
-
-          savedSlots[i] = d;
-          activeSlotIndex = i;
-          localStorage.setItem(LS_SLOT, String(i));
-          saveSlots();
-          renderSlots();
-          showToast(`"${d.name}" guardado en slot ${i + 1}`, "success");
-        } catch(err) {
-          console.error("[DC] saveToSlot error:", err);
-          showToast("Error al guardar — revisá la consola", "error");
-        }
+      const tinted = tintHair(hairImg, app.hairColor || "#1a1a1a", hairDef, dw, dh, coords);
+      if (tinted) {
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(tinted, destX, destY, dw, dh);
       }
+    }
 
-      function loadFromSlot(i) {
-        const d = savedSlots[i];
-        if (!d) return;
+    // 11. ACCESORIO over_shirt
+    if (accSlot === "over_shirt") {
+      _drawAccessoryLayer(ctx, accDef, screenX, screenY, dw, dh, animator, inCombatSheet);
+    }
 
-        player.appearance.raceId      = d.race       || "human";
-        player.appearance.gender      = d.gender     || "male";
-        player.appearance.variantId   = d.variantId  || "base";
-        hydrateVariantCustomizations(d.variantCustomizations || {});
-        hydrateCombatCustomization(d.combatCustomization || {});
-        player.appearance.faceId      = d.faceId     || "fm0";
-        player.appearance.faceColor   = d.faceColor  || null;
-        player.appearance.browColor   = d.browColor  || null;
-        player.appearance.pupilColor  = d.pupilColor || null;
-        player.appearance.hairId      = d.hair       || "hm1";
-        player.appearance.hairColor   = d.hairColor  || "#1a1a1a";
-        player.appearance.topId       = d.shirt      || "sm1";
-        player.appearance.bottomId    = d.pants      || "pm1";
-        player.appearance.shoesId     = d.shoes      || "shm1";
-        player.appearance.skinColor   = d.skinColor  || "#e8c898";
-        player.appearance.eyeColor    = d.eyeColor   || "#3a2a1a";
-        charState.glovesId            = d.gloves     || "gm0";
-        charState.auraId              = d.aura       || "a0";
-        charState.auraColor           = d.auraColor  || "#fdd835";
-        charState.clothColor          = d.clothColor || "#ff6a00";
-        player.appearance.glovesId    = charState.glovesId;
-        player.appearance.auraId      = charState.auraId;
-        player.appearance.auraColor   = charState.auraColor;
+    ctx.restore();
+  }
 
-        const accId = d.accessory || "ac_none";
-        const existing = ACCESSORIES_CATALOG.find(a => a.id === accId);
-        if (!existing && d.accessoryDataURL && accId !== "ac_none") {
-          const img = new Image();
-          img.src = d.accessoryDataURL;
-          const isFreeCat = !!(d.accessoryIsFreeCustomization || d.race === "Custom" || accId.startsWith("fc_"));
-          const entry = {
-            id: accId, name: d.accessoryName || "Personalización", type: "other",
-            slot: "over_shirt", color: null, userImage: img,
-            dataURL: d.accessoryDataURL, raceName: null, isFreeCustomization: isFreeCat,
-          };
-          ACCESSORIES_CATALOG.push(entry);
-          if (isFreeCat && !FREE_CUSTOMIZATION_CATALOG.find(x => x.id === accId)) {
-            FREE_CUSTOMIZATION_CATALOG.push(entry);
-          }
-        }
+  // ═══════════════════════════════════════════════════════════════
+  //  UTILIDADES
+  // ═══════════════════════════════════════════════════════════════
 
-        charState.accessoryId         = accId;
-        player.appearance.accessoryId = accId;
+  function getById(catalog, id)           { return catalog.find((e) => e.id === id) || catalog[0]; }
 
-        document.getElementById("charName").value = d.name || "Guerrero Z";
-        invalidateHairCache();
-        activeSlotIndex = i;
-        localStorage.setItem(LS_SLOT, String(i));
-        renderSlots();
-        renderItemsPanel(activeCategory);
-        updateStats();
-        showToast(`"${d.name}" cargado`, "success");
-      }
+  function cycleId(catalog, currentId, delta = 1) {
+    const idx  = catalog.findIndex((e) => e.id === currentId);
+    const next = ((idx === -1 ? 0 : idx) + delta + catalog.length) % catalog.length;
+    return catalog[next].id;
+  }
 
-      function deleteSlot(i) {
-        savedSlots[i] = null;
-        saveSlots();
-        renderSlots();
-        showToast(`Slot ${i + 1} eliminado`, "warning");
-      }
+  function initPlayer(overrides = {}) {
+    Object.assign(player, overrides);
+    player._animator = new SpriteAnimator("idle");
+  }
 
-      function renderSlots() {
-        const list = document.getElementById("slotsList");
-        list.innerHTML = "";
-        for (let i = 0; i < 11; i++) {
-          const d = savedSlots[i];
-          const card = document.createElement("div");
-          card.className = "slot-card" + (d ? "" : " empty") + (i === activeSlotIndex && d ? " active-slot" : "");
+  // ═══════════════════════════════════════════════════════════════
+  //  EXPORT
+  // ═══════════════════════════════════════════════════════════════
 
-          const num = document.createElement("div"); num.className = "slot-num"; num.textContent = i + 1;
+  const CharacterSystem = {
+    player,
+    RACE_CATALOG,
+    AURAS_CATALOG,
+    ACCESSORIES_CATALOG,
+    ACCESSORY_TYPES,
+    addUserAccessory,
+    removeUserAccessory,
+    restoreUserAccessories,
 
-          const miniWrap = document.createElement("div"); miniWrap.className = "slot-mini";
-          const mcv = document.createElement("canvas"); mcv.width = 34; mcv.height = 44;
-          const mctx = mcv.getContext("2d");
-          mctx.fillStyle = "#0d1020"; mctx.fillRect(0, 0, 34, 44);
+    FACE_CATALOG_MALE, FACE_CATALOG_FEMALE, FACE_CATALOG_NAMEKIAN, FACE_CATALOG_FRIEZA,
+    FACE_CATALOG,
 
-          if (d) {
-            try {
-              const slotRace   = d.race   || "human";
-              const slotGender = d.gender || "male";
-              const slotGloves = d.gloves  || getDefaultIds(slotRace, slotGender).glovesId;
-              const slotAcc    = d.accessory || "ac_none";
-              const mp = {
-                direction: 1,
-                appearance: {
-                  raceId: slotRace, gender: slotGender, variantId: d.variantId || "base",
-                  variantCustomizations: d.variantCustomizations || {}, combatCustomization: d.combatCustomization || {},
-                  faceId: d.faceId || getDefaultIds(slotRace, slotGender).faceId,
-                  faceColor: d.faceColor || null, hairId: d.hair || getDefaultIds(slotRace, slotGender).hairId,
-                  hairColor: d.hairColor || "#1a1a1a", topId: d.shirt || getDefaultIds(slotRace, slotGender).topId,
-                  bottomId: d.pants || getDefaultIds(slotRace, slotGender).bottomId,
-                  shoesId: d.shoes || getDefaultIds(slotRace, slotGender).shoesId,
-                  skinColor: d.skinColor || "#e8c898", eyeColor: d.eyeColor || "#3a2a1a",
-                  glovesId: slotGloves, auraId: "a0", auraColor: "#fdd835", accessoryId: slotAcc,
-                },
-              };
-              drawPlayer(mctx, 17, 42, mp, imageMap, null, {
-                glovesId: slotGloves, auraId: "a0", auraColor: "#fdd835",
-                accessoryId: slotAcc, auraPhase: 0, viewKey: null,
-              });
-            } catch(e) { console.warn("Error dibujando slot mini:", e); }
-          } else {
-            mctx.fillStyle = "#2a3560";
-            mctx.font = "22px sans-serif"; mctx.textAlign = "center";
-            mctx.fillText("+", 17, 32);
-          }
-          miniWrap.appendChild(mcv);
+    HAIR_CATALOG_MALE,   HAIR_CATALOG_FEMALE,   HAIR_CATALOG_NAMEKIAN,   HAIR_CATALOG_FRIEZA,
+    TOP_CATALOG_MALE,    TOP_CATALOG_FEMALE,    TOP_CATALOG_NAMEKIAN,    TOP_CATALOG_FRIEZA,
+    BOTTOM_CATALOG_MALE, BOTTOM_CATALOG_FEMALE, BOTTOM_CATALOG_NAMEKIAN, BOTTOM_CATALOG_FRIEZA,
+    SHOES_CATALOG_MALE,  SHOES_CATALOG_FEMALE,  SHOES_CATALOG_NAMEKIAN,  SHOES_CATALOG_FRIEZA,
+    GLOVES_CATALOG_MALE, GLOVES_CATALOG_FEMALE, GLOVES_CATALOG_NAMEKIAN, GLOVES_CATALOG_FRIEZA,
 
-          const info = document.createElement("div"); info.className = "slot-info";
-          const nm = document.createElement("div"); nm.className = "slot-name"; nm.textContent = d ? d.name : "VACÍO";
-          const lv = document.createElement("div"); lv.className = "slot-level"; lv.textContent = d ? `NIVEL ${d.level || 1}` : "—";
-          info.appendChild(nm); info.appendChild(lv);
+    HAIR_CATALOG, TOP_CATALOG, BOTTOM_CATALOG, SHOES_CATALOG, GLOVES_CATALOG,
 
-          card.appendChild(num); card.appendChild(miniWrap); card.appendChild(info);
+    getCatalogFor, getDefaultIds, getSpriteKey, getVariantAppearance, GENDERLESS_RACES,
+    isFreeCustomizationEntry, _getAccessoryImage, hasSheetLayout,
 
-          if (d) {
-            const lb = document.createElement("button"); lb.className = "slot-save-btn"; lb.textContent = "CARGAR";
-            lb.addEventListener("click", e => { e.stopPropagation(); loadFromSlot(i); });
-            const db = document.createElement("button"); db.className = "slot-delete-btn"; db.innerHTML = "✕";
-            db.addEventListener("click", e => { e.stopPropagation(); deleteSlot(i); });
-            card.appendChild(lb); card.appendChild(db);
-            card.addEventListener("click", () => saveToSlot(i));
-            card.title = "Click para sobreescribir";
-          } else {
-            const sb = document.createElement("button"); sb.className = "slot-save-btn"; sb.textContent = "GUARDAR";
-            sb.addEventListener("click", e => { e.stopPropagation(); saveToSlot(i); });
-            card.appendChild(sb);
-          }
-          list.appendChild(card);
-        }
-      }
+    SPRITE_IMAGES,
 
-      function initEvents() {
-        document.querySelectorAll(".cat-btn").forEach(btn => {
-          btn.addEventListener("click", () => {
-            document.querySelectorAll(".cat-btn").forEach(b => b.classList.remove("active"));
-            btn.classList.add("active");
-            activeCategory = btn.dataset.cat;
-            pageState[activeCategory] = 0;
-            renderItemsPanel(activeCategory);
-          });
-        });
+    ACTIONS_META, ACTIONS_META_MALE, ACTIONS_META_FEMALE, VIEW_META,
+    COMBAT_ACTIONS_META, COMBAT_TO_IDLE_MAP, LEGACY_TO_COMBAT_MAP,
+    COMBAT_MAX_COLS, COMBAT_TOTAL_ROWS, COMBAT_IDLE_ROW,
+    resolveCombatAction, resolveCustomSheetBundle, resolveFreeCustomizationBundle,
 
-        document.getElementById("btnFlip").addEventListener("click", () => {
-          uiFlipped = !uiFlipped; showToast(uiFlipped ? "Vista espejo" : "Vista normal", "success");
-        });
-        document.getElementById("btnZoom").addEventListener("click", () => {
-          uiZoom = uiZoom === 1 ? 1.25 : uiZoom === 1.25 ? 0.8 : 1;
-          showToast(`Zoom: ${Math.round(uiZoom * 100)}%`, "success");
-        });
-        document.getElementById("btnRotate").addEventListener("click", () =>
-          showToast("Rotación no disponible en esta versión", "warning")
-        );
-        document.getElementById("charName").addEventListener("input", e => {
-          charState.name = e.target.value || "Guerrero Z";
-        });
+    HAIR_VIEW_META,    HAIR_ACTIONS_META,
+    FACE_VIEW_META,    FACE_ACTIONS_META,
+    TOP_VIEW_META,     TOP_ACTIONS_META,
+    BOTTOM_VIEW_META,  BOTTOM_ACTIONS_META,
+    SHOES_VIEW_META,   SHOES_ACTIONS_META,
+    GLOVES_VIEW_META,  GLOVES_ACTIONS_META,
+    AURA_VIEW_META,    AURA_ACTIONS_META,
 
-        // ── FIX v4.3.1: btnStart con try/catch ──
-        document.getElementById("btnStart").addEventListener("click", () => {
-          try {
-            saveToSlot(activeSlotIndex);
-            showToast(`Iniciando con slot ${activeSlotIndex + 1}...`, "success");
-            setTimeout(() => { window.location.href = `game.html?slot=${activeSlotIndex}`; }, 600);
-          } catch(e) {
-            console.error("[DC] Error en btnStart:", e);
-            showToast("Error al iniciar — revisá la consola", "error");
-          }
-        });
-      }
+    FRAME_W, FRAME_H, DISPLAY_W, DISPLAY_H, IMPORTED_LAYER_SCALE, MAX_COLS, TOTAL_ROWS, IDLE_ROW,
 
-      function showToast(msg, type = "success") {
-        const c = document.getElementById("toastContainer");
-        const t = document.createElement("div");
-        t.className = `toast ${type}`;
-        t.textContent = msg;
-        c.appendChild(t);
-        setTimeout(() => t.remove(), 3000);
-      }
+    SpriteAnimator, initPlayer, preloadAssets, drawPlayer,
 
-      async function init() {
-        loadSlots();
-        try {
-          initPlayer();
-          animator  = new SpriteAnimator("idle");
-          finalAnim = new SpriteAnimator("idle");
-          initViewAnimBar();
-          showToast("Cargando sprites...", "warning");
+    tintHair, tintLayer, tintFaceColor, tintFaceDetailed, invalidateHairCache,
+    _hexToRgb, _rgbToHsl, _hslToRgb,
+    _tintSprite,
 
-          await _restoreAccessoriesFromLS();
-          _restoreFreeCustomizationFromLS();
+    detectFrameSize, getFrameSize, getBattleFrameSize, isCompatibleSheet, isBattleSheet, getIdleFrameCoords,
 
-          imageMap = await preloadAssets("", { quiet: true });
-          const loaded = Object.values(imageMap).filter(Boolean).length;
-          showToast(
-            loaded > 0 ? `${loaded} sprites cargados` : "Modo procedimental activo",
-            loaded > 0 ? "success" : "warning"
-          );
+    getById, cycleId,
 
-          if (savedSlots[activeSlotIndex]) {
-            try { loadFromSlot(activeSlotIndex); }
-            catch (err) { console.warn("Slot corrupto:", err); showToast("Datos de slot inválidos","warning"); }
-          }
-          renderItemsPanel("race");
-          renderSlots();
-          updateStats();
-        } catch (err) {
-          console.error(err);
-          imageMap = imageMap || {};
-          showToast("Falló parte de la carga — modo procedural activo.", "error");
-          try { initViewAnimBar(); renderItemsPanel("race"); renderSlots(); updateStats(); }
-          catch (e2) { console.error(e2); }
-        } finally {
-          initEvents();
-          requestAnimationFrame(loop);
-        }
-        setTimeout(() => showToast("¡Bienvenido a Dragon Creator Z!", "success"), 500);
-      }
+    getActionsMeta, getViewMeta,
+    getHairViewMeta,   getHairActionsMeta,
+    getFaceViewMeta,   getFaceActionsMeta,
+    getTopViewMeta,    getTopActionsMeta,
+    getBottomViewMeta, getBottomActionsMeta,
+    getShoesViewMeta,  getShoesActionsMeta,
+    getGlovesViewMeta, getGlovesActionsMeta,
+    getAuraViewMeta,   getAuraActionsMeta,
+  };
 
-      document.addEventListener("DOMContentLoaded", init);
-    </script>
-  </body>
-</html>
+  if (typeof module !== "undefined" && module.exports) module.exports = CharacterSystem;
+  else if (typeof window !== "undefined") window.CharacterSystem = CharacterSystem;
+
+})();
