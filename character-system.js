@@ -77,7 +77,7 @@
     fall:        { row: 5,  frames: 3, fps: 8,  loop: false, label: "Fall"        },
     land:        { row: 6,  frames: 3, fps: 10, loop: false, label: "Land"        },
     fly:         { row: 7,  frames: 4, fps: 6,  loop: true,  label: "Fly"         },
-    hover:       { row: 8,  frames: 5, fps: 4,  loop: true,  label: "Hover"       },
+    hover:       { row: 8,  frames: 2, fps: 4,  loop: true,  label: "Hover"       },
     meditate:    { row: 9,  frames: 3, fps: 2,  loop: true,  label: "Meditar"     },
     sleep:       { row: 10, frames: 3, fps: 1,  loop: true,  label: "Sleep"       },
     interaction: { row: 11, frames: 3, fps: 4,  loop: false, label: "Interaction" },
