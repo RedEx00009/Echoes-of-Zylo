@@ -853,8 +853,10 @@
           id:       a.id,  name:     a.name,  type:     a.type,
           slot:     a.slot, color:    a.color, dataURL:  a.dataURL,
           combatDataURL: a.combatDataURL || null,
+          specialDataURL: a.specialDataURL || null,
           scale: a.scale ?? 1, animFrames: a.animFrames ?? 6, rowCount: a.rowCount ?? 0,
           combatScale: a.combatScale ?? 1, combatAnimFrames: a.combatAnimFrames ?? 6, combatRowCount: a.combatRowCount ?? 0,
+          specialScale: a.specialScale ?? 1, specialAnimFrames: a.specialAnimFrames ?? 6, specialRowCount: a.specialRowCount ?? 0,
           raceName: a.raceName || null,
         }));
         try { localStorage.setItem(LS_FREE_KEY, JSON.stringify(toStore)); } catch(e) {
@@ -874,15 +876,21 @@
             const entry = {
               id: item.id, name: item.name, type: item.type || "other",
               slot: item.slot || "over_shirt", color: item.color || null, userImage: img,
-              dataURL: item.dataURL, combatDataURL: item.combatDataURL || null,
+              dataURL: item.dataURL, combatDataURL: item.combatDataURL || null, specialDataURL: item.specialDataURL || null,
               scale: item.scale ?? 1, animFrames: item.animFrames ?? 6, rowCount: item.rowCount ?? 0,
               combatScale: item.combatScale ?? 1, combatAnimFrames: item.combatAnimFrames ?? 6, combatRowCount: item.combatRowCount ?? 0,
+              specialScale: item.specialScale ?? 1, specialAnimFrames: item.specialAnimFrames ?? 6, specialRowCount: item.specialRowCount ?? 0,
               raceName: item.raceName || null, isFreeCustomization: true,
             };
             if (item.combatDataURL) {
               const cimg = new Image();
               cimg.onload = () => { entry.combatUserImage = cimg; };
               cimg.src = item.combatDataURL;
+            }
+            if (item.specialDataURL) {
+              const simg = new Image();
+              simg.onload = () => { entry.specialUserImage = simg; };
+              simg.src = item.specialDataURL;
             }
             FREE_CUSTOMIZATION_CATALOG.push(entry);
             ACCESSORIES_CATALOG.push(entry);
@@ -1437,8 +1445,10 @@
         const out = Object.assign({}, cfg || {});
         delete out.spriteImage; delete out.userImage;
         delete out.combatSpriteImage; delete out.combatUserImage;
+        delete out.specialSpriteImage; delete out.specialUserImage;
         if (out.exploreSheet) out.exploreSheet = _stripSheetImages(out.exploreSheet);
         if (out.combatSheet)  out.combatSheet  = _stripSheetImages(out.combatSheet);
+        if (out.specialSheet) out.specialSheet = _stripSheetImages(out.specialSheet);
         return out;
       }
 
@@ -1460,6 +1470,7 @@
         Object.values(player.appearance.variantCustomizations).forEach(cfg => {
           _hydrateSheetField(cfg, "spriteDataURL", "spriteImage");
           _hydrateSheetField(cfg, "combatSpriteDataURL", "combatSpriteImage");
+          _hydrateSheetField(cfg, "specialSpriteDataURL", "specialSpriteImage");
         });
       }
 
@@ -1471,8 +1482,9 @@
       }
 
       function buildSheetImportSection(opts) {
-        const { title, exploreLabel, combatLabel, exploreCfg, combatCfg,
-                exploreDisabled, combatDisabled, onExploreLoaded, onCombatLoaded, onMetaChange } = opts;
+        const { title, exploreLabel, combatLabel, specialLabel, exploreCfg, combatCfg, specialCfg,
+                exploreDisabled, combatDisabled, specialDisabled,
+                onExploreLoaded, onCombatLoaded, onSpecialLoaded, onMetaChange } = opts;
         const box = document.createElement("div"); box.className = "import-panel"; box.style.marginTop = opts.marginTop || "10px";
         const titleEl = document.createElement("div"); titleEl.className = "import-title"; titleEl.textContent = title;
         box.appendChild(titleEl);
@@ -1483,12 +1495,14 @@
           s.textContent = text; return s;
         }
 
-        function addSheetBlock(label, cfg, disabled, isCombat) {
+        function addSheetBlock(label, cfg, disabled, kind) {
           const block = document.createElement("div"); block.style.marginBottom = "10px";
           const sub = document.createElement("div"); sub.className = "import-title"; sub.style.fontSize = "9px"; sub.textContent = label;
           block.appendChild(sub);
           const preview = document.createElement("img"); preview.className = "import-preview";
-          const url = isCombat ? (cfg.combatSpriteDataURL || cfg.combatDataURL) : (cfg.spriteDataURL || cfg.dataURL);
+          const url = kind === 'combat' ? (cfg.combatSpriteDataURL || cfg.combatDataURL)
+                    : kind === 'special' ? (cfg.specialSpriteDataURL || cfg.specialDataURL)
+                    : (cfg.spriteDataURL || cfg.dataURL);
           if (url) { preview.src = url; preview.classList.add("visible"); }
           block.appendChild(preview);
           const fileLabel = document.createElement("label"); fileLabel.className = "import-file-label";
@@ -1499,7 +1513,9 @@
             reader.onload = ev => {
               const dataURL = ev.target.result; const img = new Image();
               img.onload = () => {
-                if (isCombat) onCombatLoaded(dataURL, img); else onExploreLoaded(dataURL, img);
+                if (kind === 'combat') onCombatLoaded && onCombatLoaded(dataURL, img);
+                else if (kind === 'special') onSpecialLoaded && onSpecialLoaded(dataURL, img);
+                else onExploreLoaded && onExploreLoaded(dataURL, img);
                 preview.src = dataURL; preview.classList.add("visible"); invalidateHairCache();
               };
               img.onerror = () => showToast("No se pudo cargar la imagen", "error");
@@ -1539,8 +1555,9 @@
         [scaleExplore, framesExplore, rowsExplore, scaleCombat, framesCombat, rowsCombat].forEach(el => el.addEventListener("input", saveMeta));
         box.appendChild(metaRow);
 
-        addSheetBlock(exploreLabel || "🌍 EXPLORACIÓN (14 filas)", exploreCfg||{}, exploreDisabled, false);
-        addSheetBlock(combatLabel  || "⚔️ COMBATE PvP (11 filas)", combatCfg||exploreCfg||{}, combatDisabled, true);
+        addSheetBlock(exploreLabel || "🌍 EXPLORACIÓN (14 filas)", exploreCfg||{}, exploreDisabled, 'explore');
+        addSheetBlock(combatLabel  || "⚔️ COMBATE PvP (11 filas)", combatCfg||exploreCfg||{}, combatDisabled, 'combat');
+        addSheetBlock(specialLabel || "✨ ESPECIAL (var)", specialCfg||exploreCfg||{}, specialDisabled, 'special');
         return box;
       }
 
@@ -1667,7 +1684,8 @@
         if (active !== "base") {
           wrap.appendChild(buildSheetImportSection({
             title: `SPRITES — ${variants.find(v=>v.id===active)?.label||active}`,
-            exploreCfg: custom||{}, combatCfg: custom||{}, exploreDisabled:false, combatDisabled:false,
+            exploreCfg: custom||{}, combatCfg: custom||{}, specialCfg: custom||{},
+            exploreDisabled:false, combatDisabled:false, specialDisabled:false,
             onExploreLoaded: (url,img) => {
               player.appearance.variantCustomizations||={};
               player.appearance.variantCustomizations[active]||={label:variants.find(v=>v.id===active)?.label||active};
@@ -1679,6 +1697,12 @@
               player.appearance.variantCustomizations[active]||={label:variants.find(v=>v.id===active)?.label||active};
               Object.assign(player.appearance.variantCustomizations[active],{combatSpriteDataURL:url,combatSpriteImage:img});
               showToast("Sheet de combate importado","success");
+            },
+            onSpecialLoaded: (url,img) => {
+              player.appearance.variantCustomizations||={};
+              player.appearance.variantCustomizations[active]||={label:variants.find(v=>v.id===active)?.label||active};
+              Object.assign(player.appearance.variantCustomizations[active],{specialSpriteDataURL:url,specialSpriteImage:img});
+              showToast("Sheet especial importado","success");
             },
             onMetaChange: (meta) => {
               player.appearance.variantCustomizations||={};
@@ -1890,8 +1914,23 @@
           console.warn("[DC] localStorage lleno — intentando limpiar dataURLs grandes...");
           const slim=savedSlots.map(s=>{
             if(!s) return null;
-            const copy=Object.assign({},s);
-            if(copy.accessoryDataURL&&copy.accessoryDataURL.length>MAX_DATAURL_BYTES) delete copy.accessoryDataURL;
+            const copy=JSON.parse(JSON.stringify(s));
+            // Remove top-level large dataURLs
+            if(copy.accessoryDataURL && copy.accessoryDataURL.length>MAX_DATAURL_BYTES) delete copy.accessoryDataURL;
+            if(copy.previewDataURL && copy.previewDataURL.length>MAX_DATAURL_BYTES) delete copy.previewDataURL;
+            // Trim variant customizations large sheets
+            if(copy.variantCustomizations && typeof copy.variantCustomizations === 'object') {
+              Object.values(copy.variantCustomizations).forEach(cfg => {
+                if(!cfg) return;
+                if(cfg.spriteDataURL && cfg.spriteDataURL.length>MAX_DATAURL_BYTES) delete cfg.spriteDataURL;
+                if(cfg.combatSpriteDataURL && cfg.combatSpriteDataURL.length>MAX_DATAURL_BYTES) delete cfg.combatSpriteDataURL;
+                if(cfg.specialSpriteDataURL && cfg.specialSpriteDataURL.length>MAX_DATAURL_BYTES) delete cfg.specialSpriteDataURL;
+              });
+            }
+            // Trim combat customization
+            if(copy.combatCustomization) {
+              if(copy.combatCustomization.spriteDataURL && copy.combatCustomization.spriteDataURL.length>MAX_DATAURL_BYTES) delete copy.combatCustomization.spriteDataURL;
+            }
             return copy;
           });
           try { localStorage.setItem(LS_KEY,JSON.stringify(slim)); }
