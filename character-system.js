@@ -1,21 +1,51 @@
 // @ts-nocheck
 /**
- * DRAGON CREATOR Z — Character System v1.0.2
- * Spritesheet de 14 filas (igual para body, hair, face, tops, bottoms, shoes, gloves, auras):
- *   Row 0  → base_view   (vista base, 3 frames)
- *   Row 1  → idle        (3 frames)
- *   Row 2  → walk        (4 frames)
- *   Row 3  → run         (4 frames)
- *   Row 4  → attack_1    (6 frames)
- *   Row 5  → attack_2    (3 frames)
- *   Row 6  → jump        (3 frames)
- *   Row 7  → hurt        (1 frame)
- *   Row 8  → death       (3 frames)
- *   Row 9  → ki_charge   (3 frames)
- *   Row 10 → fly         (3 frames)
- *   Row 11 → fly_map     (3 frames)
- *   Row 12 → trans1_view (transformación 1, 3 frames)
- *   Row 13 → trans2_view (transformación 2, 3 frames)
+ * DRAGON CREATOR Z — Character System v2.0.0
+ *
+ * ══════════════════════════════════════════════════════════════════
+ *  NUEVA ESTRUCTURA DE SPRITESHEET (3 archivos por personaje)
+ * ══════════════════════════════════════════════════════════════════
+ *
+ *  ── Brett_Base.png  (RP / Exploración) ── MAX_COLS = 5, TOTAL_ROWS = 12
+ *   Row 0  → base_view       (vista personaje,  1 frame)
+ *   Row 1  → idle            (3 frames)
+ *   Row 2  → walk            (4 frames)
+ *   Row 3  → run             (4 frames)
+ *   Row 4  → jump            (3 frames)
+ *   Row 5  → fall            (3 frames)
+ *   Row 6  → land            (3 frames)
+ *   Row 7  → fly             (4 frames)
+ *   Row 8  → hover           (5 frames)
+ *   Row 9  → meditate        (3 frames)
+ *   Row 10 → sleep           (3 frames)
+ *   Row 11 → interaction     (3 frames)
+ *
+ *  ── Brett_Pelea.png  (Combate) ── COMBAT_MAX_COLS = 4, COMBAT_TOTAL_ROWS = 13
+ *   Row 0  → combat_view     (vista personaje combate, 1 frame)
+ *   Row 1  → combat_idle     (4 frames)
+ *   Row 2  → dash            (3 frames)
+ *   Row 3  → rush            (3 frames)
+ *   Row 4  → light_combo     (4 frames)
+ *   Row 5  → heavy_combo     (3 frames)
+ *   Row 6  → special         (3 frames)
+ *   Row 7  → block           (2 frames)
+ *   Row 8  → hit             (3 frames)
+ *   Row 9  → recovery        (3 frames)
+ *   Row 10 → charge          (3 frames)
+ *   Row 11 → sparring        (4 frames)
+ *   Row 12 → knockback_fly   (1 frame)
+ *
+ *  ── Brett_special.png  (Especiales) ── SPECIAL_MAX_COLS = 6, SPECIAL_TOTAL_ROWS = 10
+ *   Row 0  → fusion_metamoru (4 frames)
+ *   Row 1  → fusion_potara   (3 frames)
+ *   Row 2  → carry_player    (4 frames)
+ *   Row 3  → training        (6 frames)
+ *   Row 4  → hold_item       (4 frames)
+ *   Row 5  → use_item        (4 frames)
+ *   Row 6  → eat_drink       (3 frames)
+ *   Row 7  → drive           (1 frame)
+ *   Row 8  → sit             (3 frames)
+ *   Row 9  → emote           (3 frames)
  */
 
 "use strict";
@@ -29,78 +59,118 @@
   const IMPORTED_LAYER_SCALE = 1.22;
 
   // ═══════════════════════════════════════════════════════════════
-  //  META COMPARTIDA
+  //  RP / EXPLORACIÓN META  (Brett_Base.png)
   // ═══════════════════════════════════════════════════════════════
 
+  const MAX_COLS   = 5;   // columna más ancha: hover tiene 5 frames
+  const TOTAL_ROWS = 12;
+
   const VIEW_META = {
-    base_view:   { row: 0,  frames: 3, fps: 2,  loop: true,  label: "Base"             },
-    trans1_view: { row: 12, frames: 3, fps: 2,  loop: true,  label: "Transformación 1"  },
-    trans2_view: { row: 13, frames: 3, fps: 2,  loop: true,  label: "Transformación 2"  },
+    base_view: { row: 0, frames: 1, fps: 1, loop: true, label: "Base" },
   };
 
   const ACTIONS_META = {
-    idle:      { row: 1,  frames: 3, fps: 2,  loop: true,  label: "Idle"      },
-    walk:      { row: 2,  frames: 4, fps: 5,  loop: true,  label: "Walk"      },
-    run:       { row: 3,  frames: 4, fps: 12, loop: true,  label: "Run"       },
-    attack_1:  { row: 4,  frames: 6, fps: 8,  loop: false, label: "Attack 1"  },
-    attack_2:  { row: 5,  frames: 3, fps: 8,  loop: false, label: "Attack 2"  },
-    jump:      { row: 6,  frames: 3, fps: 8,  loop: false, label: "Jump"      },
-    hurt:      { row: 7,  frames: 1, fps: 6,  loop: false, label: "Hurt"      },
-    death:     { row: 8,  frames: 3, fps: 4,  loop: false, label: "Death"     },
-    ki_charge: { row: 9,  frames: 3, fps: 6,  loop: true,  label: "Ki Charge" },
-    fly:       { row: 10, frames: 3, fps: 2,  loop: true,  label: "Fly"       },
-    fly_map:   { row: 11, frames: 3, fps: 1,  loop: true,  label: "Fly Map"   },
+    idle:        { row: 1,  frames: 3, fps: 3,  loop: true,  label: "Idle"        },
+    walk:        { row: 2,  frames: 4, fps: 6,  loop: true,  label: "Walk"        },
+    run:         { row: 3,  frames: 4, fps: 12, loop: true,  label: "Run"         },
+    jump:        { row: 4,  frames: 3, fps: 8,  loop: false, label: "Jump"        },
+    fall:        { row: 5,  frames: 3, fps: 8,  loop: false, label: "Fall"        },
+    land:        { row: 6,  frames: 3, fps: 10, loop: false, label: "Land"        },
+    fly:         { row: 7,  frames: 4, fps: 6,  loop: true,  label: "Fly"         },
+    hover:       { row: 8,  frames: 5, fps: 4,  loop: true,  label: "Hover"       },
+    meditate:    { row: 9,  frames: 3, fps: 2,  loop: true,  label: "Meditar"     },
+    sleep:       { row: 10, frames: 3, fps: 1,  loop: true,  label: "Sleep"       },
+    interaction: { row: 11, frames: 3, fps: 4,  loop: false, label: "Interaction" },
   };
 
   const ACTIONS_META_MALE   = ACTIONS_META;
   const ACTIONS_META_FEMALE = ACTIONS_META;
 
-  /** humanBattle.png — 11 filas PvP (cuerpo); capas siguen en HumanIdle.png */
+  const IDLE_ROW = ACTIONS_META.idle.row;
+
+  // ═══════════════════════════════════════════════════════════════
+  //  COMBATE META  (Brett_Pelea.png)
+  // ═══════════════════════════════════════════════════════════════
+
+  const COMBAT_MAX_COLS   = 4;   // columna más ancha: combat_idle / light_combo / sparring = 4
+  const COMBAT_TOTAL_ROWS = 13;
+
+  const COMBAT_VIEW_META = {
+    combat_view: { row: 0, frames: 1, fps: 1, loop: true, label: "Combat View" },
+  };
+
   const COMBAT_ACTIONS_META = {
-    combat_idle: { row: 0,  frames: 3, fps: 2,  loop: true,  label: "Combat Idle" },
-    dash_rush:   { row: 1,  frames: 4, fps: 12, loop: true,  label: "Dash Rush"   },
-    light_combo: { row: 2,  frames: 6, fps: 10, loop: false, label: "Light Combo" },
-    heavy_combo: { row: 3,  frames: 5, fps: 9,  loop: false, label: "Heavy Combo" },
-    special:     { row: 4,  frames: 6, fps: 8,  loop: false, label: "Special"     },
-    block:       { row: 5,  frames: 2, fps: 6,  loop: false, label: "Block"       },
-    hit:         { row: 6,  frames: 2, fps: 8,  loop: false, label: "Hit"         },
-    recovery:    { row: 7,  frames: 3, fps: 6,  loop: false, label: "Recovery"    },
-    charge:      { row: 8,  frames: 4, fps: 6,  loop: true,  label: "Charge"      },
-    knockback:   { row: 9,  frames: 4, fps: 8,  loop: false, label: "Knockback"   },
-    fly_combat:  { row: 10, frames: 3, fps: 2,  loop: true,  label: "Fly Combat"  },
+    combat_view:   { row: 0,  frames: 1, fps: 1,  loop: true,  label: "Combat View"   },
+    combat_idle:   { row: 1,  frames: 4, fps: 4,  loop: true,  label: "Combat Idle"   },
+    dash:          { row: 2,  frames: 3, fps: 12, loop: false, label: "Dash"          },
+    rush:          { row: 3,  frames: 3, fps: 12, loop: false, label: "Rush"          },
+    light_combo:   { row: 4,  frames: 4, fps: 10, loop: false, label: "Light Combo"   },
+    heavy_combo:   { row: 5,  frames: 3, fps: 9,  loop: false, label: "Heavy Combo"   },
+    special:       { row: 6,  frames: 3, fps: 8,  loop: false, label: "Special"       },
+    block:         { row: 7,  frames: 2, fps: 6,  loop: false, label: "Block"         },
+    hit:           { row: 8,  frames: 3, fps: 8,  loop: false, label: "Hit"           },
+    recovery:      { row: 9,  frames: 3, fps: 6,  loop: false, label: "Recovery"      },
+    charge:        { row: 10, frames: 3, fps: 4,  loop: true,  label: "Charge"        },
+    sparring:      { row: 11, frames: 4, fps: 8,  loop: true,  label: "Sparring"      },
+    knockback_fly: { row: 12, frames: 1, fps: 1,  loop: false, label: "Knockback Fly" },
   };
 
-  const COMBAT_MAX_COLS   = 6;
-  const COMBAT_TOTAL_ROWS = 11;
-  const COMBAT_IDLE_ROW   = COMBAT_ACTIONS_META.combat_idle.row;
+  const COMBAT_IDLE_ROW = COMBAT_ACTIONS_META.combat_idle.row;
 
-  /** Mapeo animación combate → fila del sheet de exploración (capas) */
+  // ═══════════════════════════════════════════════════════════════
+  //  ESPECIALES META  (Brett_special.png)
+  // ═══════════════════════════════════════════════════════════════
+
+  const SPECIAL_MAX_COLS   = 6;   // training tiene 6 frames
+  const SPECIAL_TOTAL_ROWS = 10;
+
+  const SPECIAL_ACTIONS_META = {
+    fusion_metamoru: { row: 0, frames: 4, fps: 4,  loop: false, label: "Fusion Metamoru" },
+    fusion_potara:   { row: 1, frames: 3, fps: 4,  loop: false, label: "Fusion Potara"   },
+    carry_player:    { row: 2, frames: 4, fps: 6,  loop: true,  label: "Carry Player"    },
+    training:        { row: 3, frames: 6, fps: 8,  loop: true,  label: "Training"        },
+    hold_item:       { row: 4, frames: 4, fps: 4,  loop: true,  label: "Hold Item"       },
+    use_item:        { row: 5, frames: 4, fps: 6,  loop: false, label: "Use Item"        },
+    eat_drink:       { row: 6, frames: 3, fps: 4,  loop: false, label: "Eat/Drink"       },
+    drive:           { row: 7, frames: 1, fps: 1,  loop: true,  label: "Drive"           },
+    sit:             { row: 8, frames: 3, fps: 2,  loop: true,  label: "Sentarse"        },
+    emote:           { row: 9, frames: 3, fps: 4,  loop: false, label: "Emote"           },
+  };
+
+  // ═══════════════════════════════════════════════════════════════
+  //  MAPEOS DE COMPATIBILIDAD  (combat ↔ exploración, legacy)
+  // ═══════════════════════════════════════════════════════════════
+
+  /** Mapeo animación combate → animación RP equivalente (para capas de ropa) */
   const COMBAT_TO_IDLE_MAP = {
-    combat_idle: "idle",
-    dash_rush:   "run",
-    light_combo: "attack_1",
-    heavy_combo: "attack_2",
-    special:     "attack_2",
-    block:       "idle",
-    hit:         "hurt",
-    recovery:    "idle",
-    charge:      "ki_charge",
-    knockback:   "hurt",
-    fly_combat:  "fly",
+    combat_view:   "idle",
+    combat_idle:   "idle",
+    dash:          "run",
+    rush:          "run",
+    light_combo:   "idle",
+    heavy_combo:   "idle",
+    special:       "idle",
+    block:         "idle",
+    hit:           "idle",
+    recovery:      "idle",
+    charge:        "meditate",
+    sparring:      "idle",
+    knockback_fly: "fly",
   };
 
+  /** Mapeo hacia atrás: animación RP → animación combate equivalente */
   const LEGACY_TO_COMBAT_MAP = {
-    idle:      "combat_idle",
-    walk:      "combat_idle",
-    run:       "dash_rush",
-    attack_1:  "light_combo",
-    attack_2:  "heavy_combo",
-    hurt:      "hit",
-    death:     "knockback",
-    ki_charge: "charge",
-    fly:       "fly_combat",
-    jump:      "dash_rush",
-    fly_map:   "fly_combat",
+    idle:        "combat_idle",
+    walk:        "combat_idle",
+    run:         "dash",
+    jump:        "dash",
+    fall:        "dash",
+    land:        "combat_idle",
+    fly:         "knockback_fly",
+    hover:       "combat_idle",
+    meditate:    "charge",
+    sleep:       "knockback_fly",
+    interaction: "combat_idle",
   };
 
   function resolveCombatAction(action, battleMode) {
@@ -114,6 +184,7 @@
     return rev ? rev[0] : action;
   }
 
+  // Alias de metas para capas (todas usan el mismo sheet de exploración)
   const HAIR_VIEW_META       = VIEW_META;
   const HAIR_ACTIONS_META    = ACTIONS_META;
   const FACE_VIEW_META       = VIEW_META;
@@ -129,22 +200,25 @@
   const AURA_VIEW_META       = VIEW_META;
   const AURA_ACTIONS_META    = ACTIONS_META;
 
-  function getActionsMeta()       { return ACTIONS_META; }
-  function getViewMeta()          { return VIEW_META; }
-  function getHairViewMeta()      { return HAIR_VIEW_META; }
-  function getHairActionsMeta()   { return HAIR_ACTIONS_META; }
-  function getFaceViewMeta()      { return FACE_VIEW_META; }
-  function getFaceActionsMeta()   { return FACE_ACTIONS_META; }
-  function getTopViewMeta()       { return TOP_VIEW_META; }
-  function getTopActionsMeta()    { return TOP_ACTIONS_META; }
-  function getBottomViewMeta()    { return BOTTOM_VIEW_META; }
-  function getBottomActionsMeta() { return BOTTOM_ACTIONS_META; }
-  function getShoesViewMeta()     { return SHOES_VIEW_META; }
-  function getShoesActionsMeta()  { return SHOES_ACTIONS_META; }
-  function getGlovesViewMeta()    { return GLOVES_VIEW_META; }
-  function getGlovesActionsMeta() { return GLOVES_ACTIONS_META; }
-  function getAuraViewMeta()      { return AURA_VIEW_META; }
-  function getAuraActionsMeta()   { return AURA_ACTIONS_META; }
+  function getActionsMeta()        { return ACTIONS_META; }
+  function getViewMeta()           { return VIEW_META; }
+  function getCombatViewMeta()     { return COMBAT_VIEW_META; }
+  function getCombatActionsMeta()  { return COMBAT_ACTIONS_META; }
+  function getSpecialActionsMeta() { return SPECIAL_ACTIONS_META; }
+  function getHairViewMeta()       { return HAIR_VIEW_META; }
+  function getHairActionsMeta()    { return HAIR_ACTIONS_META; }
+  function getFaceViewMeta()       { return FACE_VIEW_META; }
+  function getFaceActionsMeta()    { return FACE_ACTIONS_META; }
+  function getTopViewMeta()        { return TOP_VIEW_META; }
+  function getTopActionsMeta()     { return TOP_ACTIONS_META; }
+  function getBottomViewMeta()     { return BOTTOM_VIEW_META; }
+  function getBottomActionsMeta()  { return BOTTOM_ACTIONS_META; }
+  function getShoesViewMeta()      { return SHOES_VIEW_META; }
+  function getShoesActionsMeta()   { return SHOES_ACTIONS_META; }
+  function getGlovesViewMeta()     { return GLOVES_VIEW_META; }
+  function getGlovesActionsMeta()  { return GLOVES_ACTIONS_META; }
+  function getAuraViewMeta()       { return AURA_VIEW_META; }
+  function getAuraActionsMeta()    { return AURA_ACTIONS_META; }
 
   // ═══════════════════════════════════════════════════════════════
   //  RAZAS
@@ -169,7 +243,7 @@
     { id: "frieza",   name: "FRIEZA",    spriteKey: "frieza_male",   skinColor: "#f0e0f0", eyeColor: "#ff0000", genderless: true, variants: [
       { id: "base", label: "Base", suffix: "" },
     ] },
-    { id: "Custom",   name: "CUSTOM",    spriteKey: "null",   skinColor: "#f0e0f0", eyeColor: "#ffffff", genderless: true, variants: [
+    { id: "Custom",   name: "CUSTOM",    spriteKey: "null",          skinColor: "#f0e0f0", eyeColor: "#ffffff", genderless: true, variants: [
       { id: "base", label: "Base", suffix: "" },
     ] },
   ];
@@ -675,23 +749,41 @@
 
   // ═══════════════════════════════════════════════════════════════
   //  MAPA DE SPRITES
+  //  — Ahora cada raza tiene 3 sheets: base, fight, special
   // ═══════════════════════════════════════════════════════════════
 
   const SPRITE_IMAGES = {
-    human_male:      "Skins/HumanIdle.png",
-    human_male_fight: "Skins/HumanBattle.png",
-    human_female:    "Skins/MujerIdle.png",
-    saiyan_male:     "Skins/HumanIdle.png",
-    saiyan_male_fight: "Skins/HumanBattle.png",
-    saiyan_female:   "Skins/MujerIdle.png",
-    namekian_male:   "Skins/NamekianIdle.png",
-    android_male:    "Skins/HumanIdle.png",
-    android_male_fight: "Skins/HumanBattle.png",
-    android_female:  "Skins/MujerIdle.png",
-    kaioshin_male:   "Skins/Kaioshin.png",
-    kaioshin_female: "Skins/KaioshinF.png",
-    frieza_male:     "Skins/Arcosiano.png",
+    // Humano / Saiyan / Androide (comparten base body)
+    human_male:         "Skins/HumanIdle.png",
+    human_male_fight:   "Skins/HumanBattle.png",
+    human_male_special: "Skins/HumanSpecial.png",
+    human_female:       "Skins/MujerIdle.png",
+    human_female_fight: "Skins/MujerBattle.png",
 
+    saiyan_male:         "Skins/HumanIdle.png",
+    saiyan_male_fight:   "Skins/HumanBattle.png",
+    saiyan_male_special: "Skins/HumanSpecial.png",
+    saiyan_female:       "Skins/MujerIdle.png",
+
+    namekian_male:         "Skins/NamekianIdle.png",
+    namekian_male_fight:   "Skins/NamekianBattle.png",
+    namekian_male_special: "Skins/NamekianSpecial.png",
+
+    android_male:         "Skins/HumanIdle.png",
+    android_male_fight:   "Skins/HumanBattle.png",
+    android_male_special: "Skins/HumanSpecial.png",
+    android_female:       "Skins/MujerIdle.png",
+
+    kaioshin_male:         "Skins/Kaioshin.png",
+    kaioshin_male_fight:   "Skins/KaioshinBattle.png",
+    kaioshin_male_special: "Skins/KaioshinSpecial.png",
+    kaioshin_female:       "Skins/KaioshinF.png",
+
+    frieza_male:         "Skins/Arcosiano.png",
+    frieza_male_fight:   "Skins/ArcosianoBattle.png",
+    frieza_male_special: "Skins/ArcasianoSpecial.png",
+
+    // Faces — sin cambios
     face_fm1: "face/male/fm1_eyes_normal.png",
     face_fm2: "face/male/fm2_eyes_fierce.png",
     face_fm3: "face/male/fm3_scar1.png",
@@ -720,6 +812,7 @@
     face_fr3: "face/frieza/fr3_lines.png",
     face_fr4: "face/frieza/fr4_mask.png",
 
+    // Hair — sin cambios
     hair_hm1: "hair/male/hm1_mondongo.png",
     hair_hm2: "hair/male/BaseSpriteSheet.png",
     hair_hm3: "hair/male/hm3_ssj.png",
@@ -756,171 +849,112 @@
     hair_hr7: "hair/frieza/hr7_mascara.png",
     hair_hr8: "hair/frieza/hr8_corona.png",
 
-    top_sm1: "tops/male/sm1_gi_orange.png",
-    top_sm2: "tops/male/sm2_gi_blue.png",
-    top_sm3: "tops/male/sm3_armor.png",
-    top_sm4: "tops/male/sm4_gi_green.png",
-    top_sm5: "tops/male/sm5_gi_purple.png",
-    top_sm6: "tops/male/sm6_gi_red.png",
+    // Tops / Bottoms / Shoes / Gloves — sin cambios
+    top_sm1: "tops/male/sm1_gi_orange.png",    top_sm2: "tops/male/sm2_gi_blue.png",
+    top_sm3: "tops/male/sm3_armor.png",         top_sm4: "tops/male/sm4_gi_green.png",
+    top_sm5: "tops/male/sm5_gi_purple.png",     top_sm6: "tops/male/sm6_gi_red.png",
     top_sm7: "tops/male/sm7_black_sleeves.png",
 
-    top_sf1: "tops/female/sf1_gi_pink.png",
-    top_sf2: "tops/female/sf2_gi_blue.png",
-    top_sf3: "tops/female/sf3_armor.png",
-    top_sf4: "tops/female/sf4_gi_green.png",
-    top_sf5: "tops/female/sf5_gi_orange.png",
-    top_sf6: "tops/female/sf6_top_black.png",
+    top_sf1: "tops/female/sf1_gi_pink.png",    top_sf2: "tops/female/sf2_gi_blue.png",
+    top_sf3: "tops/female/sf3_armor.png",       top_sf4: "tops/female/sf4_gi_green.png",
+    top_sf5: "tops/female/sf5_gi_orange.png",   top_sf6: "tops/female/sf6_top_black.png",
     top_sf7: "tops/female/sf7_gi_purple.png",
 
-    top_sn1: "tops/namekian/sn1_manto.png",
-    top_sn2: "tops/namekian/sn2_gi1.png",
-    top_sn3: "tops/namekian/sn3_armor.png",
-    top_sn4: "tops/namekian/sn4_gi2.png",
-    top_sn5: "tops/namekian/sn5_gi3.png",
-    top_sn6: "tops/namekian/sn6_gi4.png",
+    top_sn1: "tops/namekian/sn1_manto.png",    top_sn2: "tops/namekian/sn2_gi1.png",
+    top_sn3: "tops/namekian/sn3_armor.png",     top_sn4: "tops/namekian/sn4_gi2.png",
+    top_sn5: "tops/namekian/sn5_gi3.png",       top_sn6: "tops/namekian/sn6_gi4.png",
     top_sn7: "tops/namekian/sn7_mant_osc.png",
 
-    top_sr1: "tops/frieza/sr1_armor1.png",
-    top_sr2: "tops/frieza/sr2_armor2.png",
-    top_sr3: "tops/frieza/sr3_manto.png",
-    top_sr4: "tops/frieza/sr4_armor3.png",
-    top_sr5: "tops/frieza/sr5_gi1.png",
-    top_sr6: "tops/frieza/sr6_gi2.png",
+    top_sr1: "tops/frieza/sr1_armor1.png",     top_sr2: "tops/frieza/sr2_armor2.png",
+    top_sr3: "tops/frieza/sr3_manto.png",       top_sr4: "tops/frieza/sr4_armor3.png",
+    top_sr5: "tops/frieza/sr5_gi1.png",         top_sr6: "tops/frieza/sr6_gi2.png",
     top_sr7: "tops/frieza/sr7_armor_gold.png",
 
-    bottom_pm1: "bottoms/male/pm1_orange.png",
-    bottom_pm2: "bottoms/male/pm2_blue.png",
-    bottom_pm3: "bottoms/male/pm3_white.png",
-    bottom_pm4: "bottoms/male/pm4_purple.png",
-    bottom_pm5: "bottoms/male/pm5_black.png",
-    bottom_pm6: "bottoms/male/pm6_green.png",
-    bottom_pm7: "bottoms/male/pm7_red.png",
-    bottom_pm8: "bottoms/male/pm8_brown.png",
+    bottom_pm1: "bottoms/male/pm1_orange.png",  bottom_pm2: "bottoms/male/pm2_blue.png",
+    bottom_pm3: "bottoms/male/pm3_white.png",   bottom_pm4: "bottoms/male/pm4_purple.png",
+    bottom_pm5: "bottoms/male/pm5_black.png",   bottom_pm6: "bottoms/male/pm6_green.png",
+    bottom_pm7: "bottoms/male/pm7_red.png",     bottom_pm8: "bottoms/male/pm8_brown.png",
 
-    bottom_pf1: "bottoms/female/pf1_skirt_orange.png",
-    bottom_pf2: "bottoms/female/pf2_pants_blue.png",
-    bottom_pf3: "bottoms/female/pf3_skirt_white.png",
-    bottom_pf4: "bottoms/female/pf4_leggings.png",
-    bottom_pf5: "bottoms/female/pf5_skirt_purple.png",
-    bottom_pf6: "bottoms/female/pf6_short_green.png",
-    bottom_pf7: "bottoms/female/pf7_skirt_red.png",
-    bottom_pf8: "bottoms/female/pf8_short_black.png",
+    bottom_pf1: "bottoms/female/pf1_skirt_orange.png", bottom_pf2: "bottoms/female/pf2_pants_blue.png",
+    bottom_pf3: "bottoms/female/pf3_skirt_white.png",  bottom_pf4: "bottoms/female/pf4_leggings.png",
+    bottom_pf5: "bottoms/female/pf5_skirt_purple.png", bottom_pf6: "bottoms/female/pf6_short_green.png",
+    bottom_pf7: "bottoms/female/pf7_skirt_red.png",    bottom_pf8: "bottoms/female/pf8_short_black.png",
 
-    bottom_pn1: "bottoms/namekian/pn1_pants.png",
-    bottom_pn2: "bottoms/namekian/pn2_manto_inf.png",
-    bottom_pn3: "bottoms/namekian/pn3_faja.png",
-    bottom_pn4: "bottoms/namekian/pn4_short.png",
-    bottom_pn5: "bottoms/namekian/pn5_osc.png",
-    bottom_pn6: "bottoms/namekian/pn6_cla.png",
-    bottom_pn7: "bottoms/namekian/pn7_amar.png",
-    bottom_pn8: "bottoms/namekian/pn8_azul.png",
+    bottom_pn1: "bottoms/namekian/pn1_pants.png",       bottom_pn2: "bottoms/namekian/pn2_manto_inf.png",
+    bottom_pn3: "bottoms/namekian/pn3_faja.png",         bottom_pn4: "bottoms/namekian/pn4_short.png",
+    bottom_pn5: "bottoms/namekian/pn5_osc.png",          bottom_pn6: "bottoms/namekian/pn6_cla.png",
+    bottom_pn7: "bottoms/namekian/pn7_amar.png",         bottom_pn8: "bottoms/namekian/pn8_azul.png",
 
-    bottom_pr1: "bottoms/frieza/pr1_armor1.png",
-    bottom_pr2: "bottoms/frieza/pr2_armor2.png",
-    bottom_pr3: "bottoms/frieza/pr3_manto.png",
-    bottom_pr4: "bottoms/frieza/pr4_escamas_neg.png",
-    bottom_pr5: "bottoms/frieza/pr5_escamas_bla.png",
-    bottom_pr6: "bottoms/frieza/pr6_pants.png",
-    bottom_pr7: "bottoms/frieza/pr7_gold.png",
-    bottom_pr8: "bottoms/frieza/pr8_armor3.png",
+    bottom_pr1: "bottoms/frieza/pr1_armor1.png",         bottom_pr2: "bottoms/frieza/pr2_armor2.png",
+    bottom_pr3: "bottoms/frieza/pr3_manto.png",           bottom_pr4: "bottoms/frieza/pr4_escamas_neg.png",
+    bottom_pr5: "bottoms/frieza/pr5_escamas_bla.png",     bottom_pr6: "bottoms/frieza/pr6_pants.png",
+    bottom_pr7: "bottoms/frieza/pr7_gold.png",            bottom_pr8: "bottoms/frieza/pr8_armor3.png",
 
-    shoes_shm1: "shoes/male/shm1_blue.png",
-    shoes_shm2: "shoes/male/shm2_black.png",
-    shoes_shm3: "shoes/male/shm3_gold.png",
-    shoes_shm4: "shoes/male/shm4_purple.png",
-    shoes_shm5: "shoes/male/shm5_sandals.png",
-    shoes_shm6: "shoes/male/shm6_sandals_black.png",
+    shoes_shm1: "shoes/male/shm1_blue.png",    shoes_shm2: "shoes/male/shm2_black.png",
+    shoes_shm3: "shoes/male/shm3_gold.png",    shoes_shm4: "shoes/male/shm4_purple.png",
+    shoes_shm5: "shoes/male/shm5_sandals.png", shoes_shm6: "shoes/male/shm6_sandals_black.png",
     shoes_shm7: "shoes/male/shm7_red.png",
 
-    shoes_shf1: "shoes/female/shf1_high_blue.png",
-    shoes_shf2: "shoes/female/shf2_black.png",
-    shoes_shf3: "shoes/female/shf3_red.png",
-    shoes_shf4: "shoes/female/shf4_sandals.png",
-    shoes_shf5: "shoes/female/shf5_gold.png",
-    shoes_shf6: "shoes/female/shf6_white.png",
+    shoes_shf1: "shoes/female/shf1_high_blue.png", shoes_shf2: "shoes/female/shf2_black.png",
+    shoes_shf3: "shoes/female/shf3_red.png",        shoes_shf4: "shoes/female/shf4_sandals.png",
+    shoes_shf5: "shoes/female/shf5_gold.png",       shoes_shf6: "shoes/female/shf6_white.png",
     shoes_shf7: "shoes/female/shf7_purple.png",
 
-    shoes_shn1: "shoes/namekian/shn1_sandals.png",
-    shoes_shn2: "shoes/namekian/shn2_boots.png",
-    shoes_shn4: "shoes/namekian/shn4_vendaje.png",
-    shoes_shn5: "shoes/namekian/shn5_osc.png",
-    shoes_shn6: "shoes/namekian/shn6_amar.png",
-    shoes_shn7: "shoes/namekian/shn7_sandals_black.png",
+    shoes_shn1: "shoes/namekian/shn1_sandals.png", shoes_shn2: "shoes/namekian/shn2_boots.png",
+    shoes_shn4: "shoes/namekian/shn4_vendaje.png",  shoes_shn5: "shoes/namekian/shn5_osc.png",
+    shoes_shn6: "shoes/namekian/shn6_amar.png",     shoes_shn7: "shoes/namekian/shn7_sandals_black.png",
     shoes_shn8: "shoes/namekian/shn8_blue.png",
 
-    shoes_shr1: "shoes/frieza/shr1_armor1.png",
-    shoes_shr2: "shoes/frieza/shr2_armor2.png",
-    shoes_shr3: "shoes/frieza/shr3_escamas.png",
-    shoes_shr5: "shoes/frieza/shr5_black.png",
-    shoes_shr6: "shoes/frieza/shr6_gold.png",
-    shoes_shr7: "shoes/frieza/shr7_white.png",
+    shoes_shr1: "shoes/frieza/shr1_armor1.png", shoes_shr2: "shoes/frieza/shr2_armor2.png",
+    shoes_shr3: "shoes/frieza/shr3_escamas.png", shoes_shr5: "shoes/frieza/shr5_black.png",
+    shoes_shr6: "shoes/frieza/shr6_gold.png",    shoes_shr7: "shoes/frieza/shr7_white.png",
     shoes_shr8: "shoes/frieza/shr8_sandals.png",
 
-    glove_gm1: "gloves/male/gm1_white.png",
-    glove_gm2: "gloves/male/gm2_black.png",
-    glove_gm3: "gloves/male/gm3_red.png",
-    glove_gm4: "gloves/male/gm4_blue.png",
-    glove_gm5: "gloves/male/gm5_gold.png",
-    glove_gm6: "gloves/male/gm6_cyber.png",
+    glove_gm1: "gloves/male/gm1_white.png",   glove_gm2: "gloves/male/gm2_black.png",
+    glove_gm3: "gloves/male/gm3_red.png",      glove_gm4: "gloves/male/gm4_blue.png",
+    glove_gm5: "gloves/male/gm5_gold.png",     glove_gm6: "gloves/male/gm6_cyber.png",
     glove_gm7: "gloves/male/gm7_purple.png",
 
-    glove_gf1: "gloves/female/gf1_white.png",
-    glove_gf2: "gloves/female/gf2_black.png",
-    glove_gf3: "gloves/female/gf3_red.png",
-    glove_gf4: "gloves/female/gf4_blue.png",
-    glove_gf5: "gloves/female/gf5_gold.png",
-    glove_gf6: "gloves/female/gf6_crystal.png",
+    glove_gf1: "gloves/female/gf1_white.png",  glove_gf2: "gloves/female/gf2_black.png",
+    glove_gf3: "gloves/female/gf3_red.png",     glove_gf4: "gloves/female/gf4_blue.png",
+    glove_gf5: "gloves/female/gf5_gold.png",    glove_gf6: "gloves/female/gf6_crystal.png",
     glove_gf7: "gloves/female/gf7_purple.png",
 
-    glove_gn1: "gloves/namekian/gn1_green.png",
-    glove_gn2: "gloves/namekian/gn2_dark.png",
-    glove_gn3: "gloves/namekian/gn3_vendaje.png",
-    glove_gn4: "gloves/namekian/gn4_black.png",
-    glove_gn5: "gloves/namekian/gn5_yellow.png",
-    glove_gn6: "gloves/namekian/gn6_blue.png",
+    glove_gn1: "gloves/namekian/gn1_green.png", glove_gn2: "gloves/namekian/gn2_dark.png",
+    glove_gn3: "gloves/namekian/gn3_vendaje.png",glove_gn4: "gloves/namekian/gn4_black.png",
+    glove_gn5: "gloves/namekian/gn5_yellow.png", glove_gn6: "gloves/namekian/gn6_blue.png",
     glove_gn7: "gloves/namekian/gn7_white.png",
 
-    glove_gr1: "gloves/frieza/gr1_armor1.png",
-    glove_gr2: "gloves/frieza/gr2_armor2.png",
-    glove_gr3: "gloves/frieza/gr3_claw.png",
-    glove_gr4: "gloves/frieza/gr4_gold.png",
-    glove_gr5: "gloves/frieza/gr5_black.png",
-    glove_gr6: "gloves/frieza/gr6_armor3.png",
+    glove_gr1: "gloves/frieza/gr1_armor1.png",  glove_gr2: "gloves/frieza/gr2_armor2.png",
+    glove_gr3: "gloves/frieza/gr3_claw.png",     glove_gr4: "gloves/frieza/gr4_gold.png",
+    glove_gr5: "gloves/frieza/gr5_black.png",    glove_gr6: "gloves/frieza/gr6_armor3.png",
     glove_gr7: "gloves/frieza/gr7_crystal.png",
 
-    aura_a1: "auras/a1_yellow.png",
-    aura_a2: "auras/a2_blue.png",
-    aura_a3: "auras/a3_red.png",
-    aura_a4: "auras/a4_purple.png",
-    aura_a5: "auras/a5_green.png",
-    aura_a6: "auras/a6_white.png",
+    aura_a1: "auras/a1_yellow.png", aura_a2: "auras/a2_blue.png",
+    aura_a3: "auras/a3_red.png",    aura_a4: "auras/a4_purple.png",
+    aura_a5: "auras/a5_green.png",  aura_a6: "auras/a6_white.png",
     aura_a7: "auras/a7_electric.png",
   };
 
   // ═══════════════════════════════════════════════════════════════
   //  DETECCIÓN DE FRAME SIZE
+  //  Ahora detecta los 3 tipos de sheet: RP, COMBAT, SPECIAL
   // ═══════════════════════════════════════════════════════════════
 
-  const MAX_COLS   = 6;
-  const TOTAL_ROWS = 14;
-  const IDLE_ROW   = ACTIONS_META.idle.row;
-
-  function hasBattleGridLayout(img) {
+  /** Detecta si es un sheet de combate (Brett_Pelea.png) */
+  function hasCombatGridLayout(img) {
     if (!img || !img.naturalWidth || !img.naturalHeight) return false;
-    const byDefault = img.naturalWidth >= FRAME_W * COMBAT_MAX_COLS
-      && img.naturalHeight >= FRAME_H * COMBAT_TOTAL_ROWS;
     const gridAspect = COMBAT_MAX_COLS / COMBAT_TOTAL_ROWS;
-    const imgAspect = img.naturalWidth / img.naturalHeight;
-    const byScaled = img.naturalWidth >= COMBAT_MAX_COLS * 8
+    const imgAspect  = img.naturalWidth / img.naturalHeight;
+    return img.naturalWidth  >= COMBAT_MAX_COLS * 8
       && img.naturalHeight >= COMBAT_TOTAL_ROWS * 8
-      && Math.abs(imgAspect - gridAspect) < 0.06;
-    return byDefault || byScaled;
+      && Math.abs(imgAspect - gridAspect) < 0.08;
   }
 
-  function getBattleFrameSize(img) {
+  function getCombatFrameSize(img) {
     if (!img || !img.naturalWidth) return { fw: FRAME_W, fh: FRAME_H };
-    if (hasBattleGridLayout(img)) {
-      const fw = Math.floor(img.naturalWidth / COMBAT_MAX_COLS);
+    if (hasCombatGridLayout(img)) {
+      const fw = Math.floor(img.naturalWidth  / COMBAT_MAX_COLS);
       const fh = Math.floor(img.naturalHeight / COMBAT_TOTAL_ROWS);
       return { fw: fw > 0 ? fw : FRAME_W, fh: fh > 0 ? fh : FRAME_H };
     }
@@ -929,25 +963,52 @@
 
   function isBattleSheet(img) {
     if (!img || !img.naturalWidth || !img.naturalHeight) return false;
-    const { fw, fh } = getBattleFrameSize(img);
-    return hasBattleGridLayout(img)
-      && img.naturalWidth >= fw * COMBAT_MAX_COLS
-      && img.naturalHeight >= fh * COMBAT_TOTAL_ROWS;
+    return hasCombatGridLayout(img);
   }
 
+  /** Detecta si es un sheet de especiales (Brett_special.png) */
+  function hasSpecialGridLayout(img) {
+    if (!img || !img.naturalWidth || !img.naturalHeight) return false;
+    const gridAspect = SPECIAL_MAX_COLS / SPECIAL_TOTAL_ROWS;
+    const imgAspect  = img.naturalWidth / img.naturalHeight;
+    return img.naturalWidth  >= SPECIAL_MAX_COLS * 8
+      && img.naturalHeight >= SPECIAL_TOTAL_ROWS * 8
+      && Math.abs(imgAspect - gridAspect) < 0.08;
+  }
+
+  function getSpecialFrameSize(img) {
+    if (!img || !img.naturalWidth) return { fw: FRAME_W, fh: FRAME_H };
+    if (hasSpecialGridLayout(img)) {
+      const fw = Math.floor(img.naturalWidth  / SPECIAL_MAX_COLS);
+      const fh = Math.floor(img.naturalHeight / SPECIAL_TOTAL_ROWS);
+      return { fw: fw > 0 ? fw : FRAME_W, fh: fh > 0 ? fh : FRAME_H };
+    }
+    return { fw: FRAME_W, fh: FRAME_H };
+  }
+
+  function isSpecialSheet(img) {
+    if (!img || !img.naturalWidth || !img.naturalHeight) return false;
+    return hasSpecialGridLayout(img);
+  }
+
+  /** Detecta si es un sheet de exploración/RP (Brett_Base.png) */
   function hasFullGridLayout(img) {
     if (!img || !img.naturalWidth || !img.naturalHeight) return false;
-    const byDefaultGrid = img.naturalWidth >= FRAME_W * MAX_COLS && img.naturalHeight >= FRAME_H * TOTAL_ROWS;
     const gridAspect = MAX_COLS / TOTAL_ROWS;
-    const imgAspect = img.naturalWidth / img.naturalHeight;
-    const byScaledGrid = img.naturalWidth >= MAX_COLS * 8
+    const imgAspect  = img.naturalWidth / img.naturalHeight;
+    return img.naturalWidth  >= MAX_COLS * 8
       && img.naturalHeight >= TOTAL_ROWS * 8
-      && Math.abs(imgAspect - gridAspect) < 0.04;
-    return byDefaultGrid || byScaledGrid;
+      && Math.abs(imgAspect - gridAspect) < 0.08;
   }
 
   function detectFrameSize(img) {
     if (!img || !img.naturalWidth) return { fw: FRAME_W, fh: FRAME_H };
+    if (isBattleSheet(img)) {
+      return getCombatFrameSize(img);
+    }
+    if (isSpecialSheet(img)) {
+      return getSpecialFrameSize(img);
+    }
     if (hasFullGridLayout(img)) {
       const fw = Math.floor(img.naturalWidth  / MAX_COLS);
       const fh = Math.floor(img.naturalHeight / TOTAL_ROWS);
@@ -965,16 +1026,17 @@
     return _frameSizeCache.get(key);
   }
 
+  // Alias para compatibilidad con código antiguo
+  function getBattleFrameSize(img) { return getCombatFrameSize(img); }
+
   function isCompatibleSheet(img) {
     if (!img || !img.naturalWidth || !img.naturalHeight) return false;
-    const { fw, fh } = getFrameSize(img);
-    return hasFullGridLayout(img) && img.naturalWidth >= fw * MAX_COLS && img.naturalHeight >= fh * TOTAL_ROWS;
+    return hasFullGridLayout(img);
   }
 
   function hasSheetLayout(img) {
     if (!img || !img.naturalWidth || !img.naturalHeight) return false;
-    const { fw, fh } = getFrameSize(img);
-    return hasFullGridLayout(img) && img.naturalWidth >= fw && img.naturalHeight >= fh;
+    return hasFullGridLayout(img) || isBattleSheet(img) || isSpecialSheet(img);
   }
 
   function isFreeCustomizationEntry(accDef) {
@@ -1041,47 +1103,71 @@
   };
 
   // ═══════════════════════════════════════════════════════════════
-  //  ANIMADOR
+  //  ANIMADOR — actualizado para los 3 tipos de sheet
   // ═══════════════════════════════════════════════════════════════
 
   class SpriteAnimator {
     constructor(action = "idle", options = {}) {
-      this.battleMode  = !!options.battleMode;
-      this.action      = resolveCombatAction(action, this.battleMode);
-      this.frame       = 0;
-      this.elapsed     = 0;
-      this._lastTime   = performance.now();
-      this._onComplete = null;
-      this._queue      = [];
-      this.currentView = null;
+      this.battleMode   = !!options.battleMode;
+      this.specialMode  = !!options.specialMode;
+      this.action       = this._resolveAction(action);
+      this.frame        = 0;
+      this.elapsed      = 0;
+      this._lastTime    = performance.now();
+      this._onComplete  = null;
+      this._queue       = [];
+      this.currentView  = null;
+    }
+
+    _resolveAction(action) {
+      if (this.specialMode) {
+        return SPECIAL_ACTIONS_META[action] ? action : "sit";
+      }
+      return resolveCombatAction(action, this.battleMode);
     }
 
     _actionsMeta() {
+      if (this.specialMode) return SPECIAL_ACTIONS_META;
       return this.battleMode ? COMBAT_ACTIONS_META : ACTIONS_META;
     }
 
     get meta() {
-      if (!this.battleMode && this.currentView && VIEW_META[this.currentView]) {
+      if (!this.battleMode && !this.specialMode && this.currentView && VIEW_META[this.currentView]) {
         return VIEW_META[this.currentView];
       }
       const map = this._actionsMeta();
-      return map[this.action] || map[this.battleMode ? "combat_idle" : "idle"];
+      const def = this.specialMode ? "sit"
+        : (this.battleMode ? "combat_idle" : "idle");
+      return map[this.action] || map[def];
     }
 
     setBattleMode(on) {
       const next = !!on;
-      if (this.battleMode === next) return this;
-      this.battleMode = next;
+      if (this.battleMode === next && !this.specialMode) return this;
+      this.battleMode  = next;
+      this.specialMode = false;
       this.currentView = null;
       this._queue = [];
       this.action = resolveCombatAction(this.action, this.battleMode);
-      this.frame = 0;
-      this.elapsed = 0;
+      this.frame = 0; this.elapsed = 0;
+      return this;
+    }
+
+    setSpecialMode(on) {
+      const next = !!on;
+      if (this.specialMode === next) return this;
+      this.specialMode = next;
+      this.battleMode  = false;
+      this.currentView = null;
+      this._queue = [];
+      this.action = next ? "sit" : "idle";
+      this.frame = 0; this.elapsed = 0;
       return this;
     }
 
     setView(viewKey) {
-      if (this.battleMode || !VIEW_META[viewKey]) return this;
+      if (this.battleMode || this.specialMode) return this;
+      if (!VIEW_META[viewKey]) return this;
       this.currentView = viewKey; this.frame = 0; this.elapsed = 0;
       return this;
     }
@@ -1089,7 +1175,7 @@
     clearView() { this.currentView = null; return this; }
 
     play(action, onComplete = null) {
-      const resolved = resolveCombatAction(action, this.battleMode);
+      const resolved = this._resolveAction(action);
       const map = this._actionsMeta();
       const m = map[resolved];
       if (!m) return this;
@@ -1128,7 +1214,9 @@
       const m = this.meta;
       let fw = FRAME_W, fh = FRAME_H;
       if (img) {
-        const sz = isBattleSheet(img) ? getBattleFrameSize(img) : getFrameSize(img);
+        const sz = isBattleSheet(img) ? getCombatFrameSize(img)
+          : isSpecialSheet(img)       ? getSpecialFrameSize(img)
+          : getFrameSize(img);
         fw = sz.fw; fh = sz.fh;
       }
       const frame = Math.min(this.frame, Math.max(0, m.frames - 1));
@@ -1137,15 +1225,21 @@
         fw, fh,
         action: this.currentView || this.action,
         frame,
-        label:  m.label || "",
+        label: m.label || "",
       };
     }
 
-    /** Coordenadas para capas (ropa, pelo, etc.) — siempre sheet de exploración */
+    /** Coordenadas para capas (ropa, pelo, etc.) — siempre sheet de exploración/RP */
     getLayerFrameCoords(img = null) {
-      const layerKey = this.battleMode
-        ? (COMBAT_TO_IDLE_MAP[this.currentView || this.action] || "idle")
-        : (this.currentView || this.action);
+      let layerKey;
+      if (this.specialMode) {
+        // Durante special, capas usan idle del sheet de exploración
+        layerKey = "idle";
+      } else if (this.battleMode) {
+        layerKey = COMBAT_TO_IDLE_MAP[this.currentView || this.action] || "idle";
+      } else {
+        layerKey = this.currentView || this.action;
+      }
       const m = ACTIONS_META[layerKey] || ACTIONS_META.idle;
       let fw = FRAME_W, fh = FRAME_H;
       if (img) { const sz = getFrameSize(img); fw = sz.fw; fh = sz.fh; }
@@ -1161,6 +1255,7 @@
 
     reset() {
       this.currentView = null;
+      this.specialMode = false;
       this.play(this.battleMode ? "combat_idle" : "idle");
       this._queue = [];
     }
@@ -1176,7 +1271,7 @@
   }
 
   // ═══════════════════════════════════════════════════════════════
-  //  PRELOADER — acepta options.quiet para suprimir warnings
+  //  PRELOADER
   // ═══════════════════════════════════════════════════════════════
 
   async function preloadAssets(basePath = "", options = {}) {
@@ -1207,7 +1302,7 @@
   }
 
   // ═══════════════════════════════════════════════════════════════
-  //  UTILIDADES DE COLOR
+  //  UTILIDADES DE COLOR (sin cambios)
   // ═══════════════════════════════════════════════════════════════
 
   const _tintCache = new Map();
@@ -1249,105 +1344,180 @@
     };
   }
 
-  // ═══════════════════════════════════════════════════════════════
-  //  tintLayer — para MARCAS, TATUAJES, PINTURAS
-  // ═══════════════════════════════════════════════════════════════
-
   function tintLayer(img, color, cacheKey, w = DISPLAY_W, h = DISPLAY_H, frameCoords = null) {
     if (!color) return null;
     const fc  = frameCoords ? `${frameCoords.srcX}_${frameCoords.srcY}_${frameCoords.fw}_${frameCoords.fh}` : "full";
     const key = `tint2|${cacheKey}|${w}|${h}|${color}|${fc}`;
-
     if (_tintCache.has(key)) return _tintCache.get(key);
     if (_tintCache.size > 512) { const k = _tintCache.keys().next().value; _tintCache.delete(k); }
-
     const off = document.createElement("canvas");
     off.width = w; off.height = h;
     const ctx = off.getContext("2d");
     ctx.imageSmoothingEnabled = false;
-
     if (!img || !img.complete || !img.naturalWidth) {
-      ctx.fillStyle = color;
-      ctx.fillRect(0, 0, w, h);
-      _tintCache.set(key, off);
-      return off;
+      ctx.fillStyle = color; ctx.fillRect(0, 0, w, h);
+      _tintCache.set(key, off); return off;
     }
-
     if (frameCoords) {
       ctx.drawImage(img, frameCoords.srcX, frameCoords.srcY, frameCoords.fw, frameCoords.fh, 0, 0, w, h);
     } else {
       ctx.drawImage(img, 0, 0, w, h);
     }
-
     try {
       const target = _hexToRgb(color);
       const { h: targetH, s: targetS } = _rgbToHsl(target.r, target.g, target.b);
       const imageData = ctx.getImageData(0, 0, w, h);
       const data      = imageData.data;
-
       for (let i = 0; i < data.length; i += 4) {
         const alpha = data[i + 3];
         if (alpha < 16) continue;
         const pr = data[i], pg = data[i + 1], pb = data[i + 2];
-        const { h: origH, s: origS, l: origL } = _rgbToHsl(pr, pg, pb);
+        const { l: origL, s: origS } = _rgbToHsl(pr, pg, pb);
         if (origL < 0.14) continue;
         if (origL > 0.86) {
           if (targetS < 0.05) continue;
           const { r, g, b } = _hslToRgb(targetH, targetS * 0.18, origL * 0.97);
-          data[i] = r; data[i + 1] = g; data[i + 2] = b;
-          continue;
+          data[i] = r; data[i + 1] = g; data[i + 2] = b; continue;
         }
         if (origS < 0.12) {
           const { r, g, b } = _hslToRgb(targetH, targetS * 0.55, origL);
-          data[i] = r; data[i + 1] = g; data[i + 2] = b;
-          continue;
+          data[i] = r; data[i + 1] = g; data[i + 2] = b; continue;
         }
         const { r, g, b } = _hslToRgb(targetH, Math.min(1, origS * 0.4 + targetS * 0.6), origL);
         data[i] = r; data[i + 1] = g; data[i + 2] = b;
       }
-
       ctx.putImageData(imageData, 0, 0);
     } catch (e) {
-      console.warn("[tintLayer] fallback:", e.message);
       ctx.globalCompositeOperation = "source-atop";
-      ctx.globalAlpha = 0.5;
-      ctx.fillStyle   = color;
-      ctx.fillRect(0, 0, w, h);
-      ctx.globalAlpha = 1;
-      ctx.globalCompositeOperation = "source-over";
+      ctx.globalAlpha = 0.5; ctx.fillStyle = color; ctx.fillRect(0, 0, w, h);
+      ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over";
     }
-
-    _tintCache.set(key, off);
-    return off;
+    _tintCache.set(key, off); return off;
   }
 
   function invalidateHairCache() { _tintCache.clear(); }
+
+  function _tintSprite(sheetImg, color, w, h, coords, fullImg, iw, ih) {
+    const off = document.createElement("canvas"); off.width = w; off.height = h;
+    const c = off.getContext("2d");
+    c.imageSmoothingEnabled = false;
+    if (sheetImg && coords) {
+      c.drawImage(sheetImg, coords.srcX, coords.srcY, coords.fw || FRAME_W, coords.fh || FRAME_H, 0, 0, w, h);
+    } else if (fullImg) {
+      c.imageSmoothingEnabled = true; c.imageSmoothingQuality = "high";
+      c.drawImage(fullImg, 0, 0, iw, ih, 0, 0, w, h);
+    }
+    c.globalCompositeOperation = "multiply"; c.globalAlpha = 1;
+    c.fillStyle = color; c.fillRect(0, 0, w, h);
+    c.globalCompositeOperation = "destination-in"; c.globalAlpha = 1;
+    if (sheetImg && coords) {
+      c.imageSmoothingEnabled = false;
+      c.drawImage(sheetImg, coords.srcX, coords.srcY, coords.fw || FRAME_W, coords.fh || FRAME_H, 0, 0, w, h);
+    } else if (fullImg) {
+      c.imageSmoothingEnabled = true; c.imageSmoothingQuality = "high";
+      c.drawImage(fullImg, 0, 0, iw, ih, 0, 0, w, h);
+    }
+    c.globalCompositeOperation = "source-over";
+    return off;
+  }
+
+  function tintHair(hairImg, hairColor, hairDef, w, h, frameCoords) {
+    if (!hairImg || !hairImg.complete || !hairImg.naturalWidth) return null;
+    const color = hairColor || "#1a1a1a";
+    const fc = frameCoords ? `${frameCoords.srcX}_${frameCoords.srcY}_${frameCoords.fw}_${frameCoords.fh}` : "full";
+    const key = `hair2|${hairDef ? hairDef.id : "hair"}|${hairImg.src || ""}|${w}|${h}|${color}|${fc}`;
+    if (_tintCache.has(key)) return _tintCache.get(key);
+    if (_tintCache.size > 512) { const k = _tintCache.keys().next().value; _tintCache.delete(k); }
+    const result = _tintSprite(
+      frameCoords ? hairImg : null, color, w, h,
+      frameCoords || null,
+      !frameCoords ? hairImg : null,
+      hairImg.naturalWidth, hairImg.naturalHeight
+    );
+    _tintCache.set(key, result); return result;
+  }
+
+  function tintFaceColor(faceImg, color, faceDef, w, h, frameCoords) {
+    if (!faceImg || !faceImg.complete || !faceImg.naturalWidth) return null;
+    const fc = frameCoords ? `${frameCoords.srcX}_${frameCoords.srcY}_${frameCoords.fw}_${frameCoords.fh}` : "full";
+    const key = `faceColor2|${faceDef ? faceDef.id : "face"}|${faceImg.src || ""}|${w}|${h}|${color}|${fc}`;
+    if (_tintCache.has(key)) return _tintCache.get(key);
+    if (_tintCache.size > 512) { const k = _tintCache.keys().next().value; _tintCache.delete(k); }
+    const result = _tintSprite(
+      frameCoords ? faceImg : null, color, w, h,
+      frameCoords || null,
+      !frameCoords ? faceImg : null,
+      faceImg.naturalWidth, faceImg.naturalHeight
+    );
+    _tintCache.set(key, result); return result;
+  }
+
+  function tintFaceDetailed(faceImg, browColor, pupilColor, faceDef, w, h, frameCoords) {
+    if (!faceImg || !faceImg.complete || !faceImg.naturalWidth) return null;
+    const fc = frameCoords ? `${frameCoords.srcX}_${frameCoords.srcY}_${frameCoords.fw}_${frameCoords.fh}` : "full";
+    const key = `faceDetail|${faceDef ? faceDef.id : "face"}|${faceImg.src || ""}|${w}|${h}|${browColor}|${pupilColor}|${fc}`;
+    if (_tintCache.has(key)) return _tintCache.get(key);
+    if (_tintCache.size > 512) { const k = _tintCache.keys().next().value; _tintCache.delete(k); }
+    const off = document.createElement("canvas");
+    off.width = w; off.height = h;
+    const ctx = off.getContext("2d");
+    ctx.imageSmoothingEnabled = false;
+    if (frameCoords) {
+      ctx.drawImage(faceImg, frameCoords.srcX, frameCoords.srcY, frameCoords.fw, frameCoords.fh, 0, 0, w, h);
+    } else {
+      ctx.drawImage(faceImg, 0, 0, faceImg.naturalWidth, faceImg.naturalHeight, 0, 0, w, h);
+    }
+    let imageData;
+    try { imageData = ctx.getImageData(0, 0, w, h); }
+    catch(e) { _tintCache.set(key, off); return off; }
+    const data = imageData.data;
+    const browRgb  = _hexToRgb(browColor);
+    const pupilRgb = _hexToRgb(pupilColor);
+    const { h: browH, s: browS, l: browL }   = _rgbToHsl(browRgb.r,  browRgb.g,  browRgb.b);
+    const { h: pupilH, s: pupilS, l: pupilL } = _rgbToHsl(pupilRgb.r, pupilRgb.g, pupilRgb.b);
+    for (let i = 0; i < data.length; i += 4) {
+      const a = data[i + 3];
+      if (a < 16) continue;
+      const r = data[i], g = data[i+1], b = data[i+2];
+      const isBrow = r > 10 && g < 20 && b < 20 && r > g * 3 && r > b * 3;
+      const isIris = b > 10 && r < 30 && g < 30 && b > r * 2 && b > g * 2;
+      if (!isBrow && !isIris) continue;
+      const srcL = isBrow ? (r / 255 * 0.5) : (b / 255 * 0.5);
+      let finalH, finalS, finalL;
+      if (isBrow) {
+        finalH = browH; finalS = browS;
+        if (browS < 0.05) { finalS = 0; finalL = browL < 0.5 ? srcL * (browL * 2 + 0.1) : 0.5 + srcL * (browL - 0.5) * 2; }
+        else { finalL = Math.max(srcL * 0.8, 0.03); }
+      } else {
+        const srcLNorm = b / 255;
+        finalH = pupilH; finalS = pupilS;
+        if (pupilS < 0.05) { finalS = 0; finalL = pupilL < 0.5 ? srcLNorm * pupilL * 1.5 : pupilL * 0.5 + srcLNorm * (1 - pupilL) * 0.5; }
+        else { const darkL = Math.max(pupilL * 0.3, 0.04); const lightL = Math.min(pupilL * 1.6, 0.85); finalL = darkL + srcLNorm * (lightL - darkL); }
+      }
+      const { r: nr, g: ng, b: nb } = _hslToRgb(finalH, finalS, finalL);
+      data[i] = nr; data[i+1] = ng; data[i+2] = nb;
+    }
+    ctx.putImageData(imageData, 0, 0);
+    _tintCache.set(key, off); return off;
+  }
 
   // ═══════════════════════════════════════════════════════════════
   //  RENDER HELPERS
   // ═══════════════════════════════════════════════════════════════
 
-  /**
-   * _drawLayerSprite — FIX imágenes importadas (accesorios/personalización libre)
-   *
-   * Cambios vs versión anterior:
-   * - Spritesheets (fullSheet/partialSheet): igual que antes, pixelado perfecto.
-   * - Imágenes importadas libres (no son spritesheet): se escalan
-   *   proporcionalmente para encajar en dw×dh, centradas, con
-   *   imageSmoothingQuality "high" para máxima calidad.
-   */
   function _drawLayerSprite(ctx, img, destX, destY, dw, dh, animator, importedScale = 1) {
     if (!img || !img.complete || !img.naturalWidth) return false;
-    const fullSheet   = isCompatibleSheet(img);
+    const fullSheet    = isCompatibleSheet(img);
     const partialSheet = !fullSheet && hasSheetLayout(img);
-    const useSheet    = fullSheet || partialSheet;
+    const useSheet     = fullSheet || partialSheet;
 
     if (useSheet && animator) {
-      // Spritesheet: dibujar frame exacto sin suavizado (pixelart)
       ctx.imageSmoothingEnabled = false;
       let srcX, srcY, fw, fh;
       if (fullSheet) {
-        const coordsFn = (animator.battleMode && !isBattleSheet(img) && animator.getLayerFrameCoords)
+        const useCombatCoords = animator.battleMode && !isBattleSheet(img) && animator.getLayerFrameCoords;
+        const useSpecialCoords = animator.specialMode && !isSpecialSheet(img) && animator.getLayerFrameCoords;
+        const coordsFn = (useCombatCoords || useSpecialCoords)
           ? () => animator.getLayerFrameCoords(img)
           : () => animator.getFrameCoords(img);
         ({ srcX, srcY, fw, fh } = coordsFn());
@@ -1360,8 +1530,6 @@
       }
     }
 
-    // Imagen importada libre (accesorio, personalización):
-    // escalar proporcionalmente y centrar con alta calidad
     const iw = img.naturalWidth, ih = img.naturalHeight;
     const scale = Math.min(dw / iw, dh / ih) * importedScale;
     const drawW = iw * scale, drawH = ih * scale;
@@ -1380,104 +1548,74 @@
         || (cfg.combatSheet && (cfg.combatSheet.spriteImage || cfg.combatSheet.userImage))
         || null;
     }
+    if (mode === "special") {
+      return cfg.specialSpriteImage || cfg.specialUserImage
+        || (cfg.specialSheet && (cfg.specialSheet.spriteImage || cfg.specialSheet.userImage))
+        || null;
+    }
     return cfg.spriteImage || cfg.userImage
       || (cfg.exploreSheet && (cfg.exploreSheet.spriteImage || cfg.exploreSheet.userImage))
       || null;
   }
 
   function _pickSheetMeta(cfg, mode) {
-    const isCombat = mode === "combat";
+    const isCombat  = mode === "combat";
+    const isSpecial = mode === "special";
     return {
-      scale: Number(isCombat ? (cfg.combatScale ?? cfg.scale) : cfg.scale) || 1,
-      animFrames: parseInt(isCombat ? (cfg.combatAnimFrames ?? cfg.animFrames) : cfg.animFrames, 10) || (isCombat ? 6 : 6),
-      yOffset: Number(cfg.yOffset) || 0,
-      sheetMode: isCombat ? "combat" : "explore",
+      scale:      Number(isCombat ? (cfg.combatScale ?? cfg.scale) : isSpecial ? (cfg.specialScale ?? cfg.scale) : cfg.scale) || 1,
+      animFrames: parseInt(isCombat ? (cfg.combatAnimFrames ?? cfg.animFrames) : isSpecial ? (cfg.specialAnimFrames ?? cfg.animFrames) : cfg.animFrames, 10) || 0,
+      rowCount:   parseInt(isCombat ? (cfg.combatRowCount ?? cfg.rowCount) : isSpecial ? (cfg.specialRowCount ?? cfg.rowCount) : cfg.rowCount, 10) || 0,
+      yOffset:    Number(cfg.yOffset) || 0,
+      sheetMode:  mode || "explore",
     };
   }
 
-  /**
-   * Elige spritesheet importado según modo (exploración / combate PvP).
-   * variantCustomizations, combatCustomization y free customization (accesorio fc_*).
-   */
-  function resolveCustomSheetBundle(cfg, battleMode) {
+  function resolveCustomSheetBundle(cfg, battleMode, specialMode) {
     if (!cfg) return null;
-    if (battleMode) {
-      const hasCombat = !!(cfg.combatSpriteDataURL || cfg.combatDataURL
-        || cfg.combatSpriteImage || cfg.combatUserImage
+    const mode = specialMode ? "special" : battleMode ? "combat" : "explore";
+    if (mode === "combat") {
+      const hasCombat = !!(cfg.combatSpriteDataURL || cfg.combatDataURL || cfg.combatSpriteImage || cfg.combatUserImage
         || cfg.combatSheet?.spriteDataURL || cfg.combatSheet?.dataURL);
       if (!hasCombat) return null;
-      const img = _pickSheetImage(cfg, "combat");
-      if (!img || !img.complete || !img.naturalWidth) return null;
-      return { img, custom: _pickSheetMeta(cfg, "combat") };
+    } else if (mode === "special") {
+      const hasSpecial = !!(cfg.specialSpriteDataURL || cfg.specialDataURL || cfg.specialSpriteImage || cfg.specialUserImage
+        || cfg.specialSheet?.spriteDataURL || cfg.specialSheet?.dataURL);
+      if (!hasSpecial) return null;
+    } else {
+      const hasExplore = !!(cfg.spriteDataURL || cfg.dataURL || cfg.spriteImage || cfg.userImage
+        || cfg.exploreSheet?.spriteDataURL || cfg.exploreSheet?.dataURL);
+      if (!hasExplore) return null;
     }
-    const hasExplore = !!(cfg.spriteDataURL || cfg.dataURL
-      || cfg.spriteImage || cfg.userImage
-      || cfg.exploreSheet?.spriteDataURL || cfg.exploreSheet?.dataURL);
-    if (!hasExplore) return null;
-    const img = _pickSheetImage(cfg, "explore");
+    const img = _pickSheetImage(cfg, mode);
     if (!img || !img.complete || !img.naturalWidth) return null;
-    return { img, custom: _pickSheetMeta(cfg, "explore") };
+    return { img, custom: _pickSheetMeta(cfg, mode) };
   }
 
-  function resolveFreeCustomizationBundle(accDef, battleMode) {
-    if (!accDef || !accDef.isFreeCustomization && !String(accDef.id || "").startsWith("fc_")) return null;
-    return resolveCustomSheetBundle(accDef, battleMode);
-  }
-
-  function _drawAccessoryLayer(ctx, accDef, screenX, screenY, dw, dh, animator, inCombatSheet) {
-    if (!accDef || accDef.id === "ac_none") return;
-    const bundle = resolveCustomSheetBundle(accDef, !!inCombatSheet);
-    if (bundle?.img?.complete && bundle.img.naturalWidth) {
-      _drawVariantSheet(ctx, bundle.img, screenX, screenY, dw, dh, animator, bundle.custom);
-      return;
-    }
-    const img = _getAccessoryImage(accDef);
-    if (img && img.complete && img.naturalWidth) {
-      const destX = screenX - dw / 2;
-      const destY = screenY - dh;
-      _drawLayerSprite(ctx, img, destX, destY, dw, dh, animator, IMPORTED_LAYER_SCALE);
-      return;
-    }
-    if (accDef.id === "ac_scouter" || accDef.type === "scouter") {
-      const destX = screenX - dw / 2;
-      const destY = screenY - dh;
-      const hx = destX + dw * 0.55;
-      const hy = destY + dh * 0.22;
-      ctx.save();
-      ctx.fillStyle = "#43a047";
-      ctx.fillRect(hx - dw * 0.18, hy - dh * 0.04, dw * 0.36, dh * 0.08);
-      ctx.fillStyle = "#e040fb";
-      ctx.beginPath();
-      ctx.arc(hx + dw * 0.12, hy, dw * 0.07, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-    }
+  function resolveFreeCustomizationBundle(accDef, battleMode, specialMode) {
+    if (!accDef || (!accDef.isFreeCustomization && !String(accDef.id || "").startsWith("fc_"))) return null;
+    return resolveCustomSheetBundle(accDef, battleMode, specialMode);
   }
 
   function _drawVariantSheet(ctx, img, screenX, screenY, dw, dh, animator, custom) {
     if (!img || !img.complete || !img.naturalWidth) return false;
     const scale = Math.max(0.25, Math.min(8, Number(custom?.scale) || 1));
-    const useCombat = custom?.sheetMode === "combat" || isBattleSheet(img);
-    const rowCount = useCombat ? COMBAT_TOTAL_ROWS : TOTAL_ROWS;
-    const colCount = useCombat ? COMBAT_MAX_COLS : MAX_COLS;
-    const metaMap = useCombat ? COMBAT_ACTIONS_META : ACTIONS_META;
-    const defaultAction = useCombat ? "combat_idle" : "idle";
-    const frameCount = Math.max(1, Math.min(48, parseInt(custom?.animFrames || colCount, 10) || colCount));
-    const fw = Math.max(1, Math.floor(img.naturalWidth / frameCount));
-    const fh = Math.max(1, Math.floor(img.naturalHeight / rowCount));
-    let meta = animator?.meta || metaMap[defaultAction];
-    if (useCombat && animator && !metaMap[animator.action]) {
-      const mapped = COMBAT_TO_IDLE_MAP[animator.action]
-        ? resolveCombatAction(animator.action, true)
-        : (LEGACY_TO_COMBAT_MAP[animator.action] || animator.action);
-      meta = metaMap[mapped] || metaMap.combat_idle;
-    } else if (!useCombat && animator && !metaMap[animator.action]) {
-      meta = metaMap.idle;
-    }
-    const row = Math.max(0, Math.min(rowCount - 1, meta?.row || 0));
+    const useCombat  = custom?.sheetMode === "combat"  || isBattleSheet(img);
+    const useSpecial = custom?.sheetMode === "special" || isSpecialSheet(img);
+    const rowCount   = useCombat ? COMBAT_TOTAL_ROWS : useSpecial ? SPECIAL_TOTAL_ROWS : TOTAL_ROWS;
+    const colCount   = useCombat ? COMBAT_MAX_COLS   : useSpecial ? SPECIAL_MAX_COLS   : MAX_COLS;
+    const metaMap    = useCombat ? COMBAT_ACTIONS_META : useSpecial ? SPECIAL_ACTIONS_META : ACTIONS_META;
+    const defaultKey = useCombat ? "combat_idle" : useSpecial ? "sit" : "idle";
+    const userFrames = parseInt(custom?.animFrames, 10);
+    const userRows   = parseInt(custom?.rowCount,   10);
+    const frameCount    = Math.max(1, Math.min(48, userFrames > 0 ? userFrames : colCount));
+    const effectiveRows = Math.max(1, Math.min(64, userRows   > 0 ? userRows   : rowCount));
+    const fw = Math.max(1, Math.floor(img.naturalWidth  / frameCount));
+    const fh = Math.max(1, Math.floor(img.naturalHeight / effectiveRows));
+    let meta = animator?.meta || metaMap[defaultKey];
+    if (!metaMap[animator?.action]) meta = metaMap[defaultKey];
+    const row   = Math.max(0, Math.min(effectiveRows - 1, meta?.row || 0));
     const frame = animator ? (animator.frame % frameCount) : 0;
-    const drawW = dw * scale;
-    const drawH = dh * scale;
+    const drawW = dw * scale, drawH = dh * scale;
     const destX = screenX - drawW / 2;
     const destY = screenY - drawH + (Number(custom?.yOffset) || 0);
     ctx.imageSmoothingEnabled = false;
@@ -1514,191 +1652,56 @@
     }
   }
 
-  function _tintSprite(sheetImg, color, w, h, coords, fullImg, iw, ih) {
-    const off = document.createElement("canvas"); off.width = w; off.height = h;
-    const c = off.getContext("2d");
-    c.imageSmoothingEnabled = false;
-
-    if (sheetImg && coords) {
-      c.drawImage(sheetImg, coords.srcX, coords.srcY, coords.fw || FRAME_W, coords.fh || FRAME_H, 0, 0, w, h);
-    } else if (fullImg) {
-      c.imageSmoothingEnabled = true;
-      c.imageSmoothingQuality = "high";
-      c.drawImage(fullImg, 0, 0, iw, ih, 0, 0, w, h);
+  function _drawAccessoryLayer(ctx, accDef, screenX, screenY, dw, dh, animator, inCombatSheet, inSpecialSheet) {
+    if (!accDef || accDef.id === "ac_none") return;
+    const bundle = resolveCustomSheetBundle(accDef, !!inCombatSheet, !!inSpecialSheet);
+    if (bundle?.img?.complete && bundle.img.naturalWidth) {
+      _drawVariantSheet(ctx, bundle.img, screenX, screenY, dw, dh, animator, bundle.custom);
+      return;
     }
-
-    c.globalCompositeOperation = "multiply";
-    c.globalAlpha = 1;
-    c.fillStyle = color;
-    c.fillRect(0, 0, w, h);
-
-    c.globalCompositeOperation = "destination-in";
-    c.globalAlpha = 1;
-    if (sheetImg && coords) {
-      c.imageSmoothingEnabled = false;
-      c.drawImage(sheetImg, coords.srcX, coords.srcY, coords.fw || FRAME_W, coords.fh || FRAME_H, 0, 0, w, h);
-    } else if (fullImg) {
-      c.imageSmoothingEnabled = true;
-      c.imageSmoothingQuality = "high";
-      c.drawImage(fullImg, 0, 0, iw, ih, 0, 0, w, h);
+    const img = _getAccessoryImage(accDef);
+    if (img && img.complete && img.naturalWidth) {
+      const destX = screenX - dw / 2, destY = screenY - dh;
+      _drawLayerSprite(ctx, img, destX, destY, dw, dh, animator, IMPORTED_LAYER_SCALE);
     }
-
-    c.globalCompositeOperation = "source-over";
-    return off;
-  }
-
-  function tintHair(hairImg, hairColor, hairDef, w, h, frameCoords) {
-    if (!hairImg || !hairImg.complete || !hairImg.naturalWidth) return null;
-    const color = hairColor || "#1a1a1a";
-    const fc    = frameCoords
-      ? `${frameCoords.srcX}_${frameCoords.srcY}_${frameCoords.fw}_${frameCoords.fh}`
-      : "full";
-    const key = `hair2|${hairDef ? hairDef.id : "hair"}|${hairImg.src || ""}|${w}|${h}|${color}|${fc}`;
-
-    if (_tintCache.has(key)) return _tintCache.get(key);
-    if (_tintCache.size > 512) { const k = _tintCache.keys().next().value; _tintCache.delete(k); }
-
-    const result = _tintSprite(
-      frameCoords ? hairImg : null, color, w, h,
-      frameCoords || null,
-      !frameCoords ? hairImg : null,
-      hairImg.naturalWidth, hairImg.naturalHeight
-    );
-    _tintCache.set(key, result);
-    return result;
-  }
-
-  function tintFaceColor(faceImg, color, faceDef, w, h, frameCoords) {
-    if (!faceImg || !faceImg.complete || !faceImg.naturalWidth) return null;
-    const fc  = frameCoords
-      ? `${frameCoords.srcX}_${frameCoords.srcY}_${frameCoords.fw}_${frameCoords.fh}`
-      : "full";
-    const key = `faceColor2|${faceDef ? faceDef.id : "face"}|${faceImg.src || ""}|${w}|${h}|${color}|${fc}`;
-
-    if (_tintCache.has(key)) return _tintCache.get(key);
-    if (_tintCache.size > 512) { const k = _tintCache.keys().next().value; _tintCache.delete(k); }
-
-    const result = _tintSprite(
-      frameCoords ? faceImg : null, color, w, h,
-      frameCoords || null,
-      !frameCoords ? faceImg : null,
-      faceImg.naturalWidth, faceImg.naturalHeight
-    );
-    _tintCache.set(key, result);
-    return result;
-  }
-
-  function tintFaceDetailed(faceImg, browColor, pupilColor, faceDef, w, h, frameCoords) {
-    if (!faceImg || !faceImg.complete || !faceImg.naturalWidth) return null;
-
-    const fc  = frameCoords
-      ? `${frameCoords.srcX}_${frameCoords.srcY}_${frameCoords.fw}_${frameCoords.fh}`
-      : "full";
-    const key = `faceDetail|${faceDef ? faceDef.id : "face"}|${faceImg.src || ""}|${w}|${h}|${browColor}|${pupilColor}|${fc}`;
-
-    if (_tintCache.has(key)) return _tintCache.get(key);
-    if (_tintCache.size > 512) { const k = _tintCache.keys().next().value; _tintCache.delete(k); }
-
-    const off = document.createElement("canvas");
-    off.width = w; off.height = h;
-    const ctx = off.getContext("2d");
-    ctx.imageSmoothingEnabled = false;
-
-    if (frameCoords) {
-      ctx.drawImage(faceImg, frameCoords.srcX, frameCoords.srcY, frameCoords.fw, frameCoords.fh, 0, 0, w, h);
-    } else {
-      ctx.drawImage(faceImg, 0, 0, faceImg.naturalWidth, faceImg.naturalHeight, 0, 0, w, h);
-    }
-
-    let imageData;
-    try { imageData = ctx.getImageData(0, 0, w, h); }
-    catch(e) { _tintCache.set(key, off); return off; }
-
-    const data = imageData.data;
-
-    const browRgb  = _hexToRgb(browColor);
-    const pupilRgb = _hexToRgb(pupilColor);
-    const { h: browH,  s: browS,  l: browL  } = _rgbToHsl(browRgb.r,  browRgb.g,  browRgb.b);
-    const { h: pupilH, s: pupilS, l: pupilL } = _rgbToHsl(pupilRgb.r, pupilRgb.g, pupilRgb.b);
-
-    for (let i = 0; i < data.length; i += 4) {
-      const a = data[i + 3];
-      if (a < 16) continue;
-
-      const r = data[i], g = data[i+1], b = data[i+2];
-
-      const isBrow = r > 10 && g < 20 && b < 20 && r > g * 3 && r > b * 3;
-      const isIris = b > 10 && r < 30 && g < 30 && b > r * 2 && b > g * 2;
-
-      if (!isBrow && !isIris) continue;
-
-      const srcL = isBrow ? (r / 255 * 0.5) : (b / 255 * 0.5);
-
-      let finalH, finalS, finalL;
-
-      if (isBrow) {
-        finalH = browH;
-        finalS = browS;
-        if (browS < 0.05) {
-          finalS = 0;
-          finalL = browL < 0.5
-            ? srcL * (browL * 2 + 0.1)
-            : 0.5 + srcL * (browL - 0.5) * 2;
-        } else {
-          finalL = Math.max(srcL * 0.8, 0.03);
-        }
-      } else {
-        const srcLNorm = b / 255;
-
-        finalH = pupilH;
-        finalS = pupilS;
-
-        if (pupilS < 0.05) {
-          finalS = 0;
-          finalL = pupilL < 0.5
-            ? srcLNorm * pupilL * 1.5
-            : pupilL * 0.5 + srcLNorm * (1 - pupilL) * 0.5;
-        } else {
-          const darkL  = Math.max(pupilL * 0.3, 0.04);
-          const lightL = Math.min(pupilL * 1.6, 0.85);
-          finalL = darkL + srcLNorm * (lightL - darkL);
-        }
-      }
-
-      const { r: nr, g: ng, b: nb } = _hslToRgb(finalH, finalS, finalL);
-      data[i] = nr; data[i+1] = ng; data[i+2] = nb;
-    }
-
-    ctx.putImageData(imageData, 0, 0);
-    _tintCache.set(key, off);
-    return off;
   }
 
   // ═══════════════════════════════════════════════════════════════
-  //  drawPlayer
+  //  drawPlayer — actualizado para soportar los 3 sheets
   // ═══════════════════════════════════════════════════════════════
 
   function drawPlayer(ctx, screenX, screenY, playerObj, imageMap, animator, charState) {
-    const p   = playerObj || player;
+    const p       = playerObj || player;
     const baseApp = p.appearance || player.appearance;
-    const dir = p.direction || 1;
-    const gender = baseApp.gender || "male";
-    const raceId = baseApp.raceId || "human";
+    const dir     = p.direction || 1;
+    const gender  = baseApp.gender || "male";
+    const raceId  = baseApp.raceId || "human";
     const raceDef = RACE_CATALOG.find((r) => r.id === raceId) || RACE_CATALOG[0];
-    const raceVariants = raceDef.variants || [{ id: "base", label: "Base", suffix: "" }];
-    const customVariants = baseApp.variantCustomizations || {};
+
+    const raceVariants    = raceDef.variants || [{ id: "base", label: "Base", suffix: "" }];
+    const customVariants  = baseApp.variantCustomizations || {};
     const hasCatalogVariant = raceVariants.some((v) => v.id === baseApp.variantId);
-    const hasCustomVariant = !!customVariants[baseApp.variantId];
-    const variantId = (hasCatalogVariant || hasCustomVariant) ? baseApp.variantId : "base";
-    const variantCustom = getVariantCustomization(baseApp, variantId);
-    const app = getVariantAppearance(baseApp, variantId);
+    const hasCustomVariant  = !!customVariants[baseApp.variantId];
+    const variantId       = (hasCatalogVariant || hasCustomVariant) ? baseApp.variantId : "base";
+    const variantCustom   = getVariantCustomization(baseApp, variantId);
+    const app             = getVariantAppearance(baseApp, variantId);
+
     const spriteVariantId = (charState && charState.spriteVariantId) || variantId;
-    const inCombatSheet = spriteVariantId === "fight";
+    const inCombatSheet   = spriteVariantId === "fight";
+    const inSpecialSheet  = spriteVariantId === "special";
+
     if (animator && animator.setBattleMode) {
-      if (inCombatSheet && !animator.battleMode) animator.setBattleMode(true);
-      else if (!inCombatSheet && animator.battleMode) animator.setBattleMode(false);
+      if (inCombatSheet  && !animator.battleMode)  animator.setBattleMode(true);
+      else if (inSpecialSheet && !animator.specialMode) animator.setSpecialMode(true);
+      else if (!inCombatSheet && !inSpecialSheet && (animator.battleMode || animator.specialMode)) {
+        animator.setBattleMode(false);
+        animator.setSpecialMode(false);
+      }
     }
-    const combatCustom = inCombatSheet ? baseApp.combatCustomization : null;
+
+    const combatCustom  = inCombatSheet  ? baseApp.combatCustomization  : null;
+    const specialCustom = inSpecialSheet ? baseApp.specialCustomization : null;
+
     const getVariantImg = (baseKey) => {
       if (!imageMap || !baseKey) return null;
       const spriteKey = getSpriteKey(baseKey, spriteVariantId);
@@ -1716,12 +1719,12 @@
     const shoeCatalog = getCatalogFor("shoes",  raceId, gender);
     const glvCatalog  = getCatalogFor("gloves", raceId, gender);
 
-    const faceDef   = faceCatalog.find((f) => f.id === app.faceId)   || faceCatalog[0];
-    const hairDef   = hairCatalog.find((h) => h.id === app.hairId)   || hairCatalog[0];
-    const topDef    = topCatalog.find((t)  => t.id === app.topId)    || topCatalog[0];
-    const btmDef    = btmCatalog.find((b)  => b.id === app.bottomId) || btmCatalog[0];
-    const shoesDef  = shoeCatalog.find((s) => s.id === app.shoesId)  || shoeCatalog[0];
-    const glovesId  = app.glovesId || (charState && charState.glovesId) || glvCatalog[0].id;
+    const faceDef  = faceCatalog.find((f) => f.id === app.faceId)   || faceCatalog[0];
+    const hairDef  = hairCatalog.find((h) => h.id === app.hairId)   || hairCatalog[0];
+    const topDef   = topCatalog.find((t)  => t.id === app.topId)    || topCatalog[0];
+    const btmDef   = btmCatalog.find((b)  => b.id === app.bottomId) || btmCatalog[0];
+    const shoesDef = shoeCatalog.find((s) => s.id === app.shoesId)  || shoeCatalog[0];
+    const glovesId = app.glovesId || (charState && charState.glovesId) || glvCatalog[0].id;
     const glovesDef = glvCatalog.find((g) => g.id === glovesId) || glvCatalog[0];
 
     const auraId    = app.auraId    || (charState && charState.auraId)    || "a0";
@@ -1751,7 +1754,7 @@
       const auraSheet = isCompatibleSheet(auraImg);
       ctx.globalAlpha = 0.65;
       if (auraSheet && animator) {
-        const { srcX, srcY, fw, fh } = (animator.battleMode && animator.getLayerFrameCoords)
+        const { srcX, srcY, fw, fh } = (animator.battleMode || animator.specialMode) && animator.getLayerFrameCoords
           ? animator.getLayerFrameCoords(auraImg)
           : animator.getFrameCoords(auraImg);
         ctx.imageSmoothingEnabled = false;
@@ -1769,47 +1772,52 @@
       _drawProceduralAura(ctx, screenX, screenY, dw, dh, auraDef, auraColor, auraPhase);
     }
 
-    // Plantilla global de combate (importada)
+    // Plantilla global de combate importada
     if (inCombatSheet) {
-      const globalCombat = resolveCustomSheetBundle(combatCustom, true);
+      const globalCombat = resolveCustomSheetBundle(combatCustom, true, false);
       if (globalCombat) {
         _drawVariantSheet(ctx, globalCombat.img, screenX, screenY, dw, dh, animator, globalCombat.custom);
-        ctx.restore();
-        return;
+        ctx.restore(); return;
       }
     }
 
-    // Forma / transformación con sheet propio (exploración o combate según modo)
+    // Plantilla global de especiales importada
+    if (inSpecialSheet) {
+      const globalSpecial = resolveCustomSheetBundle(specialCustom, false, true);
+      if (globalSpecial) {
+        _drawVariantSheet(ctx, globalSpecial.img, screenX, screenY, dw, dh, animator, globalSpecial.custom);
+        ctx.restore(); return;
+      }
+    }
+
+    // Variante (transformación) con sheet propio
     if (variantId !== "base") {
-      const variantBundle = resolveCustomSheetBundle(variantCustom, inCombatSheet);
+      const variantBundle = resolveCustomSheetBundle(variantCustom, inCombatSheet, inSpecialSheet);
       if (variantBundle) {
         _drawVariantSheet(ctx, variantBundle.img, screenX, screenY, dw, dh, animator, variantBundle.custom);
-        ctx.restore();
-        return;
+        ctx.restore(); return;
       }
     }
 
-    // Personalización libre (raza por spritesheet importado)
+    // Personalización libre
     if (freeCustom) {
-      const freeBundle = resolveFreeCustomizationBundle(accDef, inCombatSheet);
+      const freeBundle = resolveFreeCustomizationBundle(accDef, inCombatSheet, inSpecialSheet);
       if (freeBundle) {
         _drawVariantSheet(ctx, freeBundle.img, screenX, screenY, dw, dh, animator, freeBundle.custom);
-        ctx.restore();
-        return;
+        ctx.restore(); return;
       }
       if (accImg && accImg.complete && accImg.naturalWidth) {
-        _drawAccessoryLayer(ctx, accDef, screenX, screenY, dw, dh, animator, inCombatSheet);
-        ctx.restore();
-        return;
+        _drawAccessoryLayer(ctx, accDef, screenX, screenY, dw, dh, animator, inCombatSheet, inSpecialSheet);
+        ctx.restore(); return;
       }
     }
 
     // 2. ACCESORIO under_shirt
     if (accSlot === "under_shirt") {
-      _drawAccessoryLayer(ctx, accDef, screenX, screenY, dw, dh, animator, inCombatSheet);
+      _drawAccessoryLayer(ctx, accDef, screenX, screenY, dw, dh, animator, inCombatSheet, inSpecialSheet);
     }
 
-    // 3. CUERPO con tinte de piel (HumanBattle.png en modo combate)
+    // 3. CUERPO con tinte de piel
     if (bodyImg && bodyImg.complete && bodyImg.naturalWidth) {
       const sheet = isBattleSheet(bodyImg) || isCompatibleSheet(bodyImg);
       ctx.imageSmoothingEnabled = !sheet;
@@ -1826,19 +1834,15 @@
     }
 
     // 4. ROPA INFERIOR
-    _drawLayerSprite(ctx, getVariantImg(btmDef?.spriteKey), destX, destY, dw, dh, animator);
-
+    _drawLayerSprite(ctx, getVariantImg(btmDef?.spriteKey),   destX, destY, dw, dh, animator);
     // 5. CALZADO
     _drawLayerSprite(ctx, getVariantImg(shoesDef?.spriteKey), destX, destY, dw, dh, animator);
-
     // 6. CINTURÓN
     if (accSlot === "belt_slot") {
-      _drawAccessoryLayer(ctx, accDef, screenX, screenY, dw, dh, animator, inCombatSheet);
+      _drawAccessoryLayer(ctx, accDef, screenX, screenY, dw, dh, animator, inCombatSheet, inSpecialSheet);
     }
-
     // 7. ROPA SUPERIOR
-    _drawLayerSprite(ctx, getVariantImg(topDef?.spriteKey), destX, destY, dw, dh, animator);
-
+    _drawLayerSprite(ctx, getVariantImg(topDef?.spriteKey),    destX, destY, dw, dh, animator);
     // 8. GUANTES
     _drawLayerSprite(ctx, getVariantImg(glovesDef?.spriteKey), destX, destY, dw, dh, animator);
 
@@ -1849,48 +1853,31 @@
         const faceSheet = isCompatibleSheet(faceImg);
         let frameCoords = null;
         if (faceSheet && animator) {
-          const { srcX, srcY, fw, fh } = (animator.battleMode && animator.getLayerFrameCoords)
+          const { srcX, srcY, fw, fh } = (animator.battleMode || animator.specialMode) && animator.getLayerFrameCoords
             ? animator.getLayerFrameCoords(faceImg)
             : animator.getFrameCoords(faceImg);
-          if (srcX + fw <= faceImg.naturalWidth && srcY + fh <= faceImg.naturalHeight) {
+          if (srcX + fw <= faceImg.naturalWidth && srcY + fh <= faceImg.naturalHeight)
             frameCoords = { srcX, srcY, fw, fh };
-          }
         }
-
         if (faceDef.eyeColor) {
           const browColor  = app.browColor  || null;
           const pupilColor = app.pupilColor || null;
           const eyeColor   = app.eyeColor   || null;
           let tinted = null;
-
           if (browColor || pupilColor) {
-            tinted = tintFaceDetailed(
-              faceImg,
-              browColor  || eyeColor || "#1a1a1a",
-              pupilColor || eyeColor || "#1a1a1a",
-              faceDef, dw, dh, frameCoords
-            );
+            tinted = tintFaceDetailed(faceImg, browColor || eyeColor || "#1a1a1a", pupilColor || eyeColor || "#1a1a1a", faceDef, dw, dh, frameCoords);
           } else if (eyeColor) {
             tinted = tintFaceColor(faceImg, eyeColor, faceDef, dw, dh, frameCoords);
           }
-
-          if (tinted) {
-            ctx.imageSmoothingEnabled = false;
-            ctx.drawImage(tinted, destX, destY, dw, dh);
-          } else {
-            _drawLayerSprite(ctx, faceImg, destX, destY, dw, dh, animator);
-          }
+          if (tinted) { ctx.imageSmoothingEnabled = false; ctx.drawImage(tinted, destX, destY, dw, dh); }
+          else { _drawLayerSprite(ctx, faceImg, destX, destY, dw, dh, animator); }
         } else {
           const faceColor = app.faceColor || null;
           if (faceColor) {
             const cacheKey = (faceDef.id || "face") + "|" + (faceImg.src || "");
             const tinted = tintLayer(faceImg, faceColor, cacheKey, dw, dh, frameCoords);
-            if (tinted) {
-              ctx.imageSmoothingEnabled = false;
-              ctx.drawImage(tinted, destX, destY, dw, dh);
-            } else {
-              _drawLayerSprite(ctx, faceImg, destX, destY, dw, dh, animator);
-            }
+            if (tinted) { ctx.imageSmoothingEnabled = false; ctx.drawImage(tinted, destX, destY, dw, dh); }
+            else { _drawLayerSprite(ctx, faceImg, destX, destY, dw, dh, animator); }
           } else {
             _drawLayerSprite(ctx, faceImg, destX, destY, dw, dh, animator);
           }
@@ -1905,24 +1892,20 @@
     if (hairImg && hairImg.complete && hairImg.naturalWidth) {
       const sheet = isCompatibleSheet(hairImg) && animator;
       const coords = sheet ? (() => {
-        const { srcX, srcY, fw, fh } = (animator.battleMode && animator.getLayerFrameCoords)
+        const { srcX, srcY, fw, fh } = (animator.battleMode || animator.specialMode) && animator.getLayerFrameCoords
           ? animator.getLayerFrameCoords(hairImg)
           : animator.getFrameCoords(hairImg);
         if (srcX + fw <= hairImg.naturalWidth && srcY + fh <= hairImg.naturalHeight)
           return { srcX, srcY, fw, fh };
         return null;
       })() : null;
-
       const tinted = tintHair(hairImg, app.hairColor || "#1a1a1a", hairDef, dw, dh, coords);
-      if (tinted) {
-        ctx.imageSmoothingEnabled = false;
-        ctx.drawImage(tinted, destX, destY, dw, dh);
-      }
+      if (tinted) { ctx.imageSmoothingEnabled = false; ctx.drawImage(tinted, destX, destY, dw, dh); }
     }
 
     // 11. ACCESORIO over_shirt
     if (accSlot === "over_shirt") {
-      _drawAccessoryLayer(ctx, accDef, screenX, screenY, dw, dh, animator, inCombatSheet);
+      _drawAccessoryLayer(ctx, accDef, screenX, screenY, dw, dh, animator, inCombatSheet, inSpecialSheet);
     }
 
     ctx.restore();
@@ -1975,11 +1958,20 @@
 
     SPRITE_IMAGES,
 
-    ACTIONS_META, ACTIONS_META_MALE, ACTIONS_META_FEMALE, VIEW_META,
-    COMBAT_ACTIONS_META, COMBAT_TO_IDLE_MAP, LEGACY_TO_COMBAT_MAP,
-    COMBAT_MAX_COLS, COMBAT_TOTAL_ROWS, COMBAT_IDLE_ROW,
+    // ── Metas de animación ──────────────────────────────────────
+    VIEW_META, ACTIONS_META, ACTIONS_META_MALE, ACTIONS_META_FEMALE,
+    COMBAT_VIEW_META, COMBAT_ACTIONS_META,
+    SPECIAL_ACTIONS_META,
+    COMBAT_TO_IDLE_MAP, LEGACY_TO_COMBAT_MAP,
     resolveCombatAction, resolveCustomSheetBundle, resolveFreeCustomizationBundle,
 
+    // Constantes de grid
+    FRAME_W, FRAME_H, DISPLAY_W, DISPLAY_H, IMPORTED_LAYER_SCALE,
+    MAX_COLS, TOTAL_ROWS, IDLE_ROW,
+    COMBAT_MAX_COLS, COMBAT_TOTAL_ROWS, COMBAT_IDLE_ROW,
+    SPECIAL_MAX_COLS, SPECIAL_TOTAL_ROWS,
+
+    // Alias de capas
     HAIR_VIEW_META,    HAIR_ACTIONS_META,
     FACE_VIEW_META,    FACE_ACTIONS_META,
     TOP_VIEW_META,     TOP_ACTIONS_META,
@@ -1988,19 +1980,19 @@
     GLOVES_VIEW_META,  GLOVES_ACTIONS_META,
     AURA_VIEW_META,    AURA_ACTIONS_META,
 
-    FRAME_W, FRAME_H, DISPLAY_W, DISPLAY_H, IMPORTED_LAYER_SCALE, MAX_COLS, TOTAL_ROWS, IDLE_ROW,
-
     SpriteAnimator, initPlayer, preloadAssets, drawPlayer,
 
     tintHair, tintLayer, tintFaceColor, tintFaceDetailed, invalidateHairCache,
-    _hexToRgb, _rgbToHsl, _hslToRgb,
-    _tintSprite,
+    _hexToRgb, _rgbToHsl, _hslToRgb, _tintSprite,
 
-    detectFrameSize, getFrameSize, getBattleFrameSize, isCompatibleSheet, isBattleSheet, getIdleFrameCoords,
+    detectFrameSize, getFrameSize,
+    getBattleFrameSize, getCombatFrameSize, getSpecialFrameSize,
+    isCompatibleSheet, isBattleSheet, isSpecialSheet, getIdleFrameCoords,
+    hasFullGridLayout, hasCombatGridLayout, hasSpecialGridLayout,
 
     getById, cycleId,
 
-    getActionsMeta, getViewMeta,
+    getActionsMeta, getViewMeta, getCombatViewMeta, getCombatActionsMeta, getSpecialActionsMeta,
     getHairViewMeta,   getHairActionsMeta,
     getFaceViewMeta,   getFaceActionsMeta,
     getTopViewMeta,    getTopActionsMeta,
