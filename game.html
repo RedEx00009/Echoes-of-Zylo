@@ -403,8 +403,7 @@
       <!-- Portal Panel -->
       <div id="portalPanel">
         <div class="portal-title">✦ PORTAL DE VIAJE</div>
-        <div class="portal-btns" id="portalBtns">
-        </div>
+        <div class="portal-btns" id="portalBtns"></div>
       </div>
 
       <!-- Trailer Panel -->
@@ -525,10 +524,7 @@
       const variants = getActiveRaceVariants(CS);
       const current = variants.some(v => v.id === app.variantId) ? app.variantId : "base";
       app.variantId = current;
-      if (variants.length <= 1) {
-        panel.style.display = "none";
-        return;
-      }
+      if (variants.length <= 1) { panel.style.display = "none"; return; }
       select.innerHTML = variants.map(v => `<option value="${v.id}">${v.label}</option>`).join("");
       select.value = current;
       panel.style.display = "flex";
@@ -566,44 +562,28 @@
       });
     }
 
-    // ══ FIX: Función para restaurar imagen de accesorio/free-customization desde un slot ══
     function restoreAccImageForSlot(slotData, CS) {
       if (!slotData || !CS) return;
       const accId = slotData.accessory || slotData.accessoryId || "ac_none";
       if (accId === "ac_none") return;
-
-      // Buscar en el catálogo existente
       const existing = CS.ACCESSORIES_CATALOG.find(a => a.id === accId);
-
-      // Si ya tiene imagen cargada, no hacer nada
       if (existing && existing.userImage && existing.userImage.complete && existing.userImage.naturalWidth > 0) return;
-
-      // Obtener dataURL: del slot o del catálogo existente
       const dataURL = slotData.accessoryDataURL || existing?.dataURL || null;
       if (!dataURL) return;
-
       const isFree = !!(slotData.accessoryIsFreeCustomization || String(accId).startsWith("fc_"));
       const img = new Image();
       img.onload = () => {
         if (existing) {
-          // Actualizar la entrada existente con la imagen
           existing.userImage = img;
           if (!existing.dataURL) existing.dataURL = dataURL;
           existing.isFreeCustomization = existing.isFreeCustomization || isFree;
         } else {
-          // Crear nueva entrada en el catálogo
           CS.ACCESSORIES_CATALOG.push({
-            id: accId,
-            name: slotData.accessoryName || "Personalización",
-            type: "other",
-            slot: "over_shirt",
-            color: null,
-            userImage: img,
-            dataURL: dataURL,
-            isFreeCustomization: isFree,
+            id: accId, name: slotData.accessoryName || "Personalización",
+            type: "other", slot: "over_shirt", color: null,
+            userImage: img, dataURL: dataURL, isFreeCustomization: isFree,
           });
         }
-        // Invalidar caché para que redibuje
         CS.invalidateHairCache && CS.invalidateHairCache();
       };
       img.onerror = () => console.warn("[game] No se pudo cargar imagen de accesorio:", accId);
@@ -650,7 +630,6 @@
         CS.player.appearance.auraId = slotData.aura || "a0";
         CS.player.appearance.auraColor = slotData.auraColor || "#fdd835";
         CS.player.appearance.accessoryId = slotData.accessory || slotData.accessoryId || "ac_none";
-        // ══ FIX: Restaurar imagen del accesorio/free-customization ══
         restoreAccImageForSlot(slotData, CS);
         CS.invalidateHairCache && CS.invalidateHairCache();
         renderVariantSelector();
@@ -683,16 +662,32 @@
       return `<div class="action-btn ${cls || "btn-emote"}" onclick="${action}"><span class="btn-icon">${icon}</span><span class="btn-label">${label}</span></div>`;
     }
 
+    // ══ RP ACTIONS — ahora incluye acciones del sheet "special" ══
     const RP_ACTIONS = [
-      { id:"wave",     icon:"👋", key:"Z", label:"SALUDAR",  title:"Saludar",  anim:"jump",      text:"SALUDO",   color:"#f5c400" },
-      { id:"train",    icon:"🥋", key:"Q", label:"ENTRENAR", title:"Entrenar", anim:"attack_1",  text:"ENTRENA",  color:"#ff7043" },
-      { id:"meditate", icon:"🧘", key:"E", label:"MEDITAR",  title:"Meditar",  anim:"ki_charge", text:"MEDITA",   color:"#00e5ff", hold:2200 },
-      { id:"sit",      icon:"🪑", key:"R", label:"SENTARSE", title:"Sentarse", anim:"idle",      text:"SENTADO",  color:"#c8cfe8", hold:1800 },
-      { id:"warmup",   icon:"🔥", key:"F", label:"CALENTAR", title:"Calentar", anim:"run",       text:"CALIENTA", color:"#ffca28", hold:1600 },
-      { id:"emote",    icon:"✨", key:"C", label:"EMOTE",    title:"Emote",    anim:"jump",      text:"EMOTE",    color:"#aa00ff" },
-      { id:"eat",      icon:"🍙", key:"V", label:"COMER",    title:"Comer",    anim:"idle",      text:"COME",     color:"#66bb6a", objectIcon:"🍙", hold:1300 },
-      { id:"object",   icon:"🎒", key:"B", label:"OBJETO",   title:"Objeto",   anim:"idle",      text:"OBJETO",   color:"#90caf9", objectIcon:"🎒", hold:1300 },
+      { id:"wave",      icon:"👋", key:"Z", label:"SALUDAR",  title:"Saludar",    anim:"idle",         text:"SALUDO",   color:"#f5c400", sheet:"base" },
+      { id:"train",     icon:"🥋", key:"Q", label:"ENTRENAR", title:"Entrenar",   anim:"training",     text:"ENTRENA",  color:"#ff7043", sheet:"special", hold:2200 },
+      { id:"meditate",  icon:"🧘", key:"E", label:"MEDITAR",  title:"Meditar",    anim:"meditate",     text:"MEDITA",   color:"#00e5ff", sheet:"base",    hold:2200 },
+      { id:"sit",       icon:"🪑", key:"R", label:"SENTARSE", title:"Sentarse",   anim:"sit",          text:"SENTADO",  color:"#c8cfe8", sheet:"special", hold:1800 },
+      { id:"warmup",    icon:"🔥", key:"F", label:"CALENTAR", title:"Calentar",   anim:"run",          text:"CALIENTA", color:"#ffca28", sheet:"base",    hold:1600 },
+      { id:"emote",     icon:"✨", key:"C", label:"EMOTE",    title:"Emote",      anim:"emote",        text:"EMOTE",    color:"#aa00ff", sheet:"special" },
+      { id:"eat",       icon:"🍙", key:"V", label:"COMER",    title:"Comer",      anim:"eat_drink",    text:"COME",     color:"#66bb6a", sheet:"special", objectIcon:"🍙", hold:1300 },
+      { id:"object",    icon:"🎒", key:"B", label:"OBJETO",   title:"Objeto",     anim:"hold_item",    text:"OBJETO",   color:"#90caf9", sheet:"special", objectIcon:"🎒", hold:1300 },
     ];
+
+    // ══ Resolución de animación por sheet para el animator ══
+    // Ahora setSpecialMode es soportado
+    function _setAnimatorSheet(sheet) {
+      if (!csAnimator) return;
+      if (sheet === "special") {
+        csAnimator.setSpecialMode(true);
+      } else if (sheet === "combat") {
+        csAnimator.setBattleMode(true);
+        csAnimator.setSpecialMode(false);
+      } else {
+        csAnimator.setBattleMode(false);
+        csAnimator.setSpecialMode(false);
+      }
+    }
 
     function renderActionBars() {
       const skills = document.getElementById("skillsBar");
@@ -744,6 +739,7 @@
       }
     }
 
+    // ══ CONTROL MODE — actualizado con setSpecialMode ══
     function setControlMode(mode) {
       if (mode === "pvp") {
         controlMode = "pvp";
@@ -754,8 +750,15 @@
       }
       const CS = window.CharacterSystem;
       if (csAnimator && csAnimator.setBattleMode) {
-        csAnimator.setBattleMode(isCombatMode);
-        csAnimator.play(isCombatMode ? "combat_idle" : (isFlying ? "fly" : "idle"));
+        if (isCombatMode) {
+          csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
+          csAnimator.setBattleMode(true);
+          csAnimator.play("combat_idle");
+        } else {
+          csAnimator.setBattleMode(false);
+          csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
+          csAnimator.play(isFlying ? "fly" : "idle");
+        }
       }
       renderActionBars();
       const msg = controlMode === "pvp" ? "⚔️ Duelo PvP — controles de combate" : (isCombatMode ? "Modo combate (práctica)" : "Modo rol");
@@ -816,11 +819,12 @@
     }
 
     function getNetworkGridTarget(img, maxDim) {
-      const cols = window.CharacterSystem?.MAX_COLS || 6;
-      const rows = window.CharacterSystem?.TOTAL_ROWS || 14;
+      const CS = window.CharacterSystem;
+      const cols = CS?.MAX_COLS || 5;
+      const rows = CS?.TOTAL_ROWS || 12;
       const aspect = cols / rows;
       const imgAspect = img.naturalWidth / img.naturalHeight;
-      const isGrid = img.naturalWidth >= cols * 8 && img.naturalHeight >= rows * 8 && Math.abs(imgAspect - aspect) < 0.04;
+      const isGrid = img.naturalWidth >= cols * 8 && img.naturalHeight >= rows * 8 && Math.abs(imgAspect - aspect) < 0.08;
       if (!isGrid) return null;
       const maxFrame = Math.max(32, Math.min(96, Math.floor((maxDim || 384) / cols)));
       const originalFrame = Math.floor(Math.min(img.naturalWidth / cols, img.naturalHeight / rows));
@@ -830,10 +834,11 @@
 
     function getNetworkVariantGridTarget(img, frameCount, maxDim) {
       const cols = Math.max(1, Math.min(24, parseInt(frameCount || 6, 10) || 6));
-      const rows = window.CharacterSystem?.TOTAL_ROWS || 14;
+      const CS = window.CharacterSystem;
+      const rows = CS?.TOTAL_ROWS || 12;
       const aspect = cols / rows;
       const imgAspect = img.naturalWidth / img.naturalHeight;
-      const isGrid = img.naturalWidth >= cols * 8 && img.naturalHeight >= rows * 8 && Math.abs(imgAspect - aspect) < 0.04;
+      const isGrid = img.naturalWidth >= cols * 8 && img.naturalHeight >= rows * 8 && Math.abs(imgAspect - aspect) < 0.08;
       if (!isGrid) return null;
       const maxFrame = Math.max(32, Math.min(96, Math.floor((maxDim || 384) / cols)));
       const originalFrame = Math.floor(Math.min(img.naturalWidth / cols, img.naturalHeight / rows));
@@ -841,7 +846,7 @@
       return { w: cols * frame, h: rows * frame };
     }
 
-    function compressDataURLForNetwork(dataURL, maxDim) {
+    async function compressDataURLForNetwork(dataURL, maxDim) {
       if (!dataURL) return null;
       if (dataURL.length < 90000) return dataURL;
       return new Promise((resolve) => {
@@ -864,7 +869,7 @@
       });
     }
 
-    function compressVariantSheetForNetwork(dataURL, frameCount, maxDim) {
+    async function compressVariantSheetForNetwork(dataURL, frameCount, maxDim) {
       if (!dataURL) return null;
       if (dataURL.length < 90000) return dataURL;
       return new Promise((resolve) => {
@@ -909,18 +914,16 @@
       const out = {};
       Object.entries(customs || {}).forEach(([id, cfg]) => {
         out[id] = Object.assign({}, cfg);
-        delete out[id].spriteImage;
-        delete out[id].userImage;
-        delete out[id].combatSpriteImage;
-        delete out[id].combatUserImage;
+        delete out[id].spriteImage; delete out[id].userImage;
+        delete out[id].combatSpriteImage; delete out[id].combatUserImage;
+        delete out[id].specialSpriteImage; delete out[id].specialUserImage;
       });
       return out;
     }
 
     function serializeCombatCustomization(cfg) {
       const out = Object.assign({}, cfg || {});
-      delete out.spriteImage;
-      delete out.userImage;
+      delete out.spriteImage; delete out.userImage;
       return out;
     }
 
@@ -938,6 +941,7 @@
       Object.values(app.variantCustomizations).forEach((cfg) => {
         _hydrateSheetField(cfg, "spriteDataURL", "spriteImage");
         _hydrateSheetField(cfg, "combatSpriteDataURL", "combatSpriteImage");
+        _hydrateSheetField(cfg, "specialSpriteDataURL", "specialSpriteImage");
       });
     }
 
@@ -946,13 +950,10 @@
       _hydrateSheetField(app.combatCustomization, "spriteDataURL", "spriteImage");
     }
 
-    // ══ FIX PRINCIPAL: restoreAllAccessoriesForGame mejorado ══
-    // Ahora carga PRIMERO desde dragonCreatorZ_freeCustomization (la fuente canónica),
-    // y luego desde dragonCreatorZ_accessories, y finalmente desde el slot activo.
     async function restoreAllAccessoriesForGame(CS) {
       if (!CS) return;
 
-      // 1. Restaurar Free Customizations (sprites importados como raza/skin completo)
+      // 1. Free Customizations
       try {
         const rawFree = localStorage.getItem("dragonCreatorZ_freeCustomization");
         if (rawFree) {
@@ -960,7 +961,6 @@
           if (Array.isArray(list)) {
             await Promise.all(list.map((item) => new Promise((resolve) => {
               if (!item?.dataURL) { resolve(); return; }
-              // Si ya existe en el catálogo, actualizar dataURL si falta
               const existing = CS.ACCESSORIES_CATALOG.find(a => a.id === item.id);
               if (existing) {
                 if (!existing.dataURL) existing.dataURL = item.dataURL;
@@ -977,12 +977,7 @@
                 }
                 if (!existing.userImage || !existing.userImage.complete || !existing.userImage.naturalWidth) {
                   const img = new Image();
-                  img.onload = () => {
-                    existing.userImage = img;
-                    existing.isFreeCustomization = true;
-                    CS.invalidateHairCache?.();
-                    resolve();
-                  };
+                  img.onload = () => { existing.userImage = img; existing.isFreeCustomization = true; CS.invalidateHairCache?.(); resolve(); };
                   img.onerror = resolve;
                   img.src = item.dataURL;
                 } else { resolve(); }
@@ -991,20 +986,13 @@
               const img = new Image();
               img.onload = () => {
                 const entry = {
-                  id: item.id,
-                  name: item.name || "Personalización",
-                  type: item.type || "other",
-                  slot: item.slot || "over_shirt",
-                  color: item.color || null,
-                  userImage: img,
-                  dataURL: item.dataURL,
+                  id: item.id, name: item.name || "Personalización",
+                  type: item.type || "other", slot: item.slot || "over_shirt",
+                  color: item.color || null, userImage: img, dataURL: item.dataURL,
                   combatDataURL: item.combatDataURL || null,
-                  scale: item.scale ?? 1,
-                  animFrames: item.animFrames ?? 6,
-                  combatScale: item.combatScale ?? 1,
-                  combatAnimFrames: item.combatAnimFrames ?? 6,
-                  raceName: item.raceName || null,
-                  isFreeCustomization: true,
+                  scale: item.scale ?? 1, animFrames: item.animFrames ?? 6,
+                  combatScale: item.combatScale ?? 1, combatAnimFrames: item.combatAnimFrames ?? 6,
+                  raceName: item.raceName || null, isFreeCustomization: true,
                 };
                 if (item.combatDataURL) {
                   const cimg = new Image();
@@ -1022,7 +1010,7 @@
         }
       } catch (e) { console.warn("[game] Error restaurando freeCustomization:", e); }
 
-      // 2. Restaurar accesorios normales importados
+      // 2. Accesorios normales
       try {
         const rawAcc = localStorage.getItem("dragonCreatorZ_accessories");
         if (rawAcc) {
@@ -1056,18 +1044,12 @@
               const img = new Image();
               img.onload = () => {
                 const accEntry = {
-                  id: entry.id,
-                  name: entry.name || "Accesorio",
-                  type: entry.type || "other",
-                  slot: (window.CharacterSystem?.ACCESSORY_TYPES?.find(t => t.id === entry.type) || { slot: "over_shirt" }).slot,
-                  color: entry.color || null,
-                  userImage: img,
-                  dataURL: entry.dataURL,
+                  id: entry.id, name: entry.name || "Accesorio", type: entry.type || "other",
+                  slot: (CS.ACCESSORY_TYPES?.find(t => t.id === entry.type) || { slot: "over_shirt" }).slot,
+                  color: entry.color || null, userImage: img, dataURL: entry.dataURL,
                   combatDataURL: entry.combatDataURL || null,
-                  scale: entry.scale ?? 1,
-                  animFrames: entry.animFrames ?? 6,
-                  combatScale: entry.combatScale ?? 1,
-                  combatAnimFrames: entry.combatAnimFrames ?? 6,
+                  scale: entry.scale ?? 1, animFrames: entry.animFrames ?? 6,
+                  combatScale: entry.combatScale ?? 1, combatAnimFrames: entry.combatAnimFrames ?? 6,
                   isFreeCustomization: false,
                 };
                 if (entry.combatDataURL) {
@@ -1086,7 +1068,7 @@
         }
       } catch (e) { console.warn("[game] Error restaurando accessories:", e); }
 
-      // 3. Restaurar desde el slot activo (por si el dataURL solo está ahí)
+      // 3. Slot activo
       try {
         const sc = savedChar || {};
         const accId = sc.accessory || sc.accessoryId;
@@ -1103,14 +1085,9 @@
                   CS.invalidateHairCache?.();
                 } else {
                   CS.ACCESSORIES_CATALOG.push({
-                    id: accId,
-                    name: sc.accessoryName || "Personalización",
-                    type: "other",
-                    slot: "over_shirt",
-                    color: null,
-                    userImage: img,
-                    dataURL: sc.accessoryDataURL,
-                    isFreeCustomization: isFree,
+                    id: accId, name: sc.accessoryName || "Personalización",
+                    type: "other", slot: "over_shirt", color: null,
+                    userImage: img, dataURL: sc.accessoryDataURL, isFreeCustomization: isFree,
                   });
                 }
                 resolve();
@@ -1194,11 +1171,8 @@
         skinColor: app?.skinColor || sc.skinColor || "#e8c898",
         auraId: app?.auraId || sc.aura || "a0",
         auraColor: app?.auraColor || sc.auraColor || player.auraColor || "#fdd835",
-        accessoryId,
-        accessoryDataURL,
-        accessoryCombatDataURL,
-        accessoryIsFreeCustomization,
-        accessorySlot,
+        accessoryId, accessoryDataURL, accessoryCombatDataURL,
+        accessoryIsFreeCustomization, accessorySlot,
         clothColor: sc.clothColor || "#ff6a00",
       };
       if (includePreview) payload.previewDataURL = renderAppearancePreview(CS);
@@ -1259,13 +1233,15 @@
           if (cfg?.combatSpriteDataURL && cfg.combatSpriteDataURL.length > 90000) {
             cfg.combatSpriteDataURL = await compressVariantSheetForNetwork(cfg.combatSpriteDataURL, cfg.combatAnimFrames || 6, 384);
           }
+          if (cfg?.specialSpriteDataURL && cfg.specialSpriteDataURL.length > 90000) {
+            cfg.specialSpriteDataURL = await compressVariantSheetForNetwork(cfg.specialSpriteDataURL, cfg.specialAnimFrames || 6, 384);
+          }
         }
       }
       if (appearance.combatCustomization?.spriteDataURL && appearance.combatCustomization.spriteDataURL.length > 90000) {
         appearance.combatCustomization.spriteDataURL = await compressVariantSheetForNetwork(
           appearance.combatCustomization.spriteDataURL,
-          appearance.combatCustomization.animFrames || 6,
-          384
+          appearance.combatCustomization.animFrames || 6, 384
         );
       }
       db.ref("players/" + myPlayerId).update({ appearance, t: Date.now() });
@@ -1288,33 +1264,33 @@
         const allPlayers = snapshot.val() || {};
         for (const id in otherPlayers) {
           if (!allPlayers[id]) {
-            delete otherPlayers[id];
-            delete otherPlayerAnimators[id];
-            delete otherPlayerAccessoryImages[id];
-            delete otherPlayerPreviewImages[id];
-            otherPlayerAccessoryLoading.delete(id);
-            otherPlayerPreviewLoading.delete(id);
+            delete otherPlayers[id]; delete otherPlayerAnimators[id];
+            delete otherPlayerAccessoryImages[id]; delete otherPlayerPreviewImages[id];
+            otherPlayerAccessoryLoading.delete(id); otherPlayerPreviewLoading.delete(id);
           }
         }
         for (const [id, data] of Object.entries(allPlayers)) {
           if (id === myPlayerId) continue;
           if (Date.now() - (data.t||0) > 15000) {
-            delete otherPlayers[id];
-            delete otherPlayerAnimators[id];
-            delete otherPlayerAccessoryImages[id];
-            delete otherPlayerPreviewImages[id];
-            otherPlayerAccessoryLoading.delete(id);
-            otherPlayerPreviewLoading.delete(id);
+            delete otherPlayers[id]; delete otherPlayerAnimators[id];
+            delete otherPlayerAccessoryImages[id]; delete otherPlayerPreviewImages[id];
+            otherPlayerAccessoryLoading.delete(id); otherPlayerPreviewLoading.delete(id);
             continue;
           }
           const prev = otherPlayers[id];
           const prevAccURL = prev?.appearance?.accessoryDataURL || null;
           const prevPreviewURL = prev?.appearance?.previewDataURL || null;
           otherPlayers[id] = data;
-          if (!otherPlayerAnimators[id]) { const CS = window.CharacterSystem; if (CS) otherPlayerAnimators[id] = new CS.SpriteAnimator("idle"); }
+          if (!otherPlayerAnimators[id]) {
+            const CS = window.CharacterSystem;
+            if (CS) otherPlayerAnimators[id] = new CS.SpriteAnimator("idle");
+          }
           if (otherPlayerAnimators[id]) {
-            if (otherPlayerAnimators[id].setBattleMode) otherPlayerAnimators[id].setBattleMode(!!data.combatMode);
-            if (data.animAction) otherPlayerAnimators[id].play(data.animAction);
+            const anim = otherPlayerAnimators[id];
+            // Sincronizar modo del animador remoto
+            if (data.specialMode && anim.setSpecialMode) anim.setSpecialMode(true);
+            else if (anim.setBattleMode) anim.setBattleMode(!!data.combatMode);
+            if (data.animAction) anim.play(data.animAction);
           }
           const newAccURL = data.appearance?.accessoryDataURL || null;
           if (newAccURL && newAccURL !== prevAccURL) {
@@ -1322,18 +1298,14 @@
             img.onload = () => { otherPlayerAccessoryImages[id] = img; };
             img.onerror = () => { otherPlayerAccessoryImages[id] = null; };
             img.src = newAccURL;
-          } else if (!newAccURL) {
-            otherPlayerAccessoryImages[id] = null;
-          }
+          } else if (!newAccURL) { otherPlayerAccessoryImages[id] = null; }
           const newPreviewURL = data.appearance?.previewDataURL || null;
           if (newPreviewURL && newPreviewURL !== prevPreviewURL) {
             const pimg = new Image();
             pimg.onload = () => { otherPlayerPreviewImages[id] = pimg; };
             pimg.onerror = () => { delete otherPlayerPreviewImages[id]; };
             pimg.src = newPreviewURL;
-          } else if (!newPreviewURL) {
-            delete otherPlayerPreviewImages[id];
-          }
+          } else if (!newPreviewURL) { delete otherPlayerPreviewImages[id]; }
         }
         updateMpHud();
       });
@@ -1349,15 +1321,19 @@
       if (now - mpLastSend < MP_SEND_RATE) return;
       mpLastSend = now;
       let animAction;
-      if (isCombatMode && csAnimator?.battleMode) {
-        animAction = isFlying ? "fly_combat" : (player.moving ? (isRunning ? "dash_rush" : "dash_rush") : "combat_idle");
+      // Determinar animación actual incluyendo special mode
+      if (csAnimator?.specialMode) {
+        animAction = csAnimator.action || "sit";
+      } else if (isCombatMode && csAnimator?.battleMode) {
+        animAction = isFlying ? "knockback_fly" : (player.moving ? "dash" : "combat_idle");
       } else {
         animAction = isFlying ? "fly" : (player.moving ? (isRunning ? "run" : "walk") : "idle");
       }
       if (performance.now() < rpActionUntil && csAnimator) animAction = csAnimator.action || animAction;
       db.ref("players/" + myPlayerId).update({
         x:Math.floor(player.x), y:Math.floor(player.y), facing:player.facing, animAction,
-        combatMode:isCombatMode, flying:isFlying, hp:player.hp, maxHp:player.maxHp,
+        combatMode:isCombatMode, specialMode:!!(csAnimator?.specialMode),
+        flying:isFlying, hp:player.hp, maxHp:player.maxHp,
         strength:player.strength, defense:player.defense,
         level:player.level, map:currentMap, t:Date.now(),
       });
@@ -1436,26 +1412,21 @@
             }
             const remoteVariantId = app.variantId || "base";
             const remoteVariantCfg = app.variantCustomizations?.[remoteVariantId];
-            if (remoteVariantCfg?.spriteDataURL) {
-              const cacheKey = `${id}:${remoteVariantId}:explore`;
-              if (!otherPlayerVariantImages[cacheKey]) {
-                const vimg = new Image();
-                vimg.onload = () => { otherPlayerVariantImages[cacheKey] = vimg; };
-                vimg.src = remoteVariantCfg.spriteDataURL;
-              } else {
-                remoteVariantCfg.spriteImage = otherPlayerVariantImages[cacheKey];
+            // Cargar sheets de variante (exploración, combate y especial)
+            ["spriteDataURL:spriteImage", "combatSpriteDataURL:combatSpriteImage", "specialSpriteDataURL:specialSpriteImage"].forEach(pair => {
+              const [urlKey, imgKey] = pair.split(":");
+              if (remoteVariantCfg?.[urlKey]) {
+                const suffix = urlKey.replace("SpriteDataURL","").replace("DataURL","");
+                const cacheKey = `${id}:${remoteVariantId}:${suffix || "explore"}`;
+                if (!otherPlayerVariantImages[cacheKey]) {
+                  const vimg = new Image();
+                  vimg.onload = () => { otherPlayerVariantImages[cacheKey] = vimg; };
+                  vimg.src = remoteVariantCfg[urlKey];
+                } else {
+                  remoteVariantCfg[imgKey] = otherPlayerVariantImages[cacheKey];
+                }
               }
-            }
-            if (remoteVariantCfg?.combatSpriteDataURL) {
-              const cacheKey = `${id}:${remoteVariantId}:combat`;
-              if (!otherPlayerVariantImages[cacheKey]) {
-                const vimg = new Image();
-                vimg.onload = () => { otherPlayerVariantImages[cacheKey] = vimg; };
-                vimg.src = remoteVariantCfg.combatSpriteDataURL;
-              } else {
-                remoteVariantCfg.combatSpriteImage = otherPlayerVariantImages[cacheKey];
-              }
-            }
+            });
             const remoteCombatCfg = app.combatCustomization;
             if (remoteCombatCfg?.spriteDataURL) {
               const cacheKey = `${id}:combat`;
@@ -1463,13 +1434,19 @@
                 const cimg = new Image();
                 cimg.onload = () => { otherPlayerVariantImages[cacheKey] = cimg; };
                 cimg.src = remoteCombatCfg.spriteDataURL;
-              } else {
-                remoteCombatCfg.spriteImage = otherPlayerVariantImages[cacheKey];
-              }
+              } else { remoteCombatCfg.spriteImage = otherPlayerVariantImages[cacheKey]; }
             }
             const remApp = Object.assign({}, app, { accessoryId: remoteAccId });
             const remCSPlayer = { appearance: remApp, direction: p.facing || 1 };
-            const remState = { glovesId: remApp.glovesId, auraId: remApp.auraId, auraColor: remApp.auraColor, accessoryId: remoteAccId, auraPhase: (now * 0.003) % (Math.PI * 2), viewKey: null, spriteVariantId: p.combatMode ? "fight" : null };
+            // Determinar spriteVariantId remoto
+            let remSpriteVariantId = null;
+            if (p.specialMode) remSpriteVariantId = "special";
+            else if (p.combatMode) remSpriteVariantId = "fight";
+            const remState = {
+              glovesId: remApp.glovesId, auraId: remApp.auraId, auraColor: remApp.auraColor,
+              accessoryId: remoteAccId, auraPhase: (now * 0.003) % (Math.PI * 2),
+              viewKey: null, spriteVariantId: remSpriteVariantId,
+            };
             ctx.fillStyle = "rgba(0,0,0,0.3)";
             ctx.beginPath();
             ctx.ellipse(sx, sy + 3, 16, 5, 0, 0, Math.PI * 2);
@@ -1583,10 +1560,7 @@
       const { w, h } = MAPS.sky;
       const map = [];
       for (let y=0;y<h;y++){map[y]=[];for(let x=0;x<w;x++)map[y][x]=14;}
-      for (let i=0;i<45;i++){
-        const tx=Math.floor(Math.random()*w), ty=Math.floor(Math.random()*h);
-        if(map[ty][tx]===14) map[ty][tx]=15;
-      }
+      for (let i=0;i<45;i++){const tx=Math.floor(Math.random()*w),ty=Math.floor(Math.random()*h);if(map[ty][tx]===14)map[ty][tx]=15;}
       for (let y=55;y<62;y++) for (let x=52;x<68;x++) map[y][x]=2;
       for (let y=72;y<76;y++) for (let x=58;x<62;x++) map[y][x]=3;
       return map;
@@ -1745,8 +1719,7 @@
       trailers[myPlayerId] = {
         x: snapX*TILE, y: snapY*TILE,
         ownerId: myPlayerId, ownerName: player.name,
-        map: currentMap,
-        invited: new Set(),
+        map: currentMap, invited: new Set(),
       };
       myTrailerSpawned = true;
       showHudToast("🚐 Casa rodante invocada","xp");
@@ -1770,25 +1743,21 @@
 
     function enterTrailerFromPanel() {
       document.getElementById("trailerPanel").classList.remove("visible");
-      const tid = trailerPanelTarget.id;
-      if (!tid) return;
+      const tid = trailerPanelTarget.id; if (!tid) return;
       enterTrailer(tid);
     }
     window.enterTrailerFromPanel = enterTrailerFromPanel;
 
     function enterTrailer(ownerId) {
-      inTrailer = true;
-      trailerOwner = ownerId;
+      inTrailer = true; trailerOwner = ownerId;
       document.getElementById("trailerInterior").classList.add("visible");
       document.getElementById("trailerOwnerLabel").textContent = ownerId === myPlayerId ? "🏠 TU CASA RODANTE" : `🏠 CASA DE ${trailers[ownerId]?.ownerName||"?"}`;
-      resizeCanvas();
-      gameState = "trailer";
+      resizeCanvas(); gameState = "trailer";
       showHudToast("🚐 Dentro de la casa rodante","info");
     }
 
     function exitTrailer() {
-      inTrailer = false;
-      trailerOwner = null;
+      inTrailer = false; trailerOwner = null;
       document.getElementById("trailerInterior").classList.remove("visible");
       gameState = "playing";
     }
@@ -1814,10 +1783,8 @@
     window.closeTrailerPanel = closeTrailerPanel;
 
     function sendTrailerChat() {
-      const inp = document.getElementById("trailerChatInput");
-      if (!inp) return;
-      const text = inp.value.trim(); if (!text) return;
-      inp.value = "";
+      const inp = document.getElementById("trailerChatInput"); if (!inp) return;
+      const text = inp.value.trim(); if (!text) return; inp.value = "";
       if (!mpConnected) return;
       const prefix = trailerOwner===myPlayerId ? "[TRAILER]" : `[TRAILER DE ${trailers[trailerOwner]?.ownerName||"?"}]`;
       db.ref("chat").push().set({id:myPlayerId,name:player.name,text:`${prefix} ${text}`,t:Date.now()});
@@ -1827,10 +1794,9 @@
     function drawTrailerInterior() {
       const w = trailerCanvas.width || window.innerWidth;
       const h = trailerCanvas.height || window.innerHeight - 60;
-      tCtx.fillStyle = "#1a0f2e";
-      tCtx.fillRect(0, 0, w, h);
+      tCtx.fillStyle = "#1a0f2e"; tCtx.fillRect(0, 0, w, h);
       tCtx.fillStyle = "#2a1a40";
-      for (let y=0;y<h;y+=48) for (let x=0;x<w;x+=48) { if(((x/48+y/48)%2)===0) { tCtx.fillStyle="#2a1a40"; } else { tCtx.fillStyle="#231535"; } tCtx.fillRect(x,y,48,48); }
+      for (let y=0;y<h;y+=48) for (let x=0;x<w;x+=48) { if(((x/48+y/48)%2)===0){tCtx.fillStyle="#2a1a40";}else{tCtx.fillStyle="#231535";}tCtx.fillRect(x,y,48,48); }
       tCtx.fillStyle = "#3a2a55";
       tCtx.fillRect(0,0,w,80); tCtx.fillRect(0,h-80,w,80); tCtx.fillRect(0,0,80,h); tCtx.fillRect(w-80,0,80,h);
       tCtx.fillStyle = "#0a2040"; tCtx.fillRect(120,20,140,50);
@@ -1853,14 +1819,12 @@
       for (const [tid, tr] of Object.entries(trailers)) {
         if (tid === myPlayerId) continue;
         if (Math.hypot(tr.x - player.x, tr.y - player.y) < 80 && tr.map === currentMap) {
-          trailerPanelTarget.id = tid;
-          trailerPanelTarget.owner = tr.ownerName;
+          trailerPanelTarget.id = tid; trailerPanelTarget.owner = tr.ownerName;
           document.getElementById("trailerPanelInfo").textContent = `Casa de ${tr.ownerName}`;
           document.getElementById("trailerEnterBtn").textContent = "🚪 ENTRAR";
           document.getElementById("trailerInviteBtn").style.display = "none";
           document.getElementById("trailerPanel").classList.add("visible");
-          gameState = "menu";
-          return;
+          gameState = "menu"; return;
         }
       }
       if (myTrailerSpawned && trailers[myPlayerId] && trailers[myPlayerId].map === currentMap) {
@@ -1889,20 +1853,14 @@
         closeBtn.className = "portal-btn";
         closeBtn.style.cssText = "background:rgba(245,196,0,.1);border-color:var(--accent);color:var(--accent)";
         closeBtn.textContent = "✕ CERRAR";
-        closeBtn.onclick = () => {
-          document.getElementById("portalPanel").classList.remove("visible");
-          gameState = "playing";
-        };
+        closeBtn.onclick = () => { document.getElementById("portalPanel").classList.remove("visible"); gameState = "playing"; };
         container.appendChild(closeBtn);
       }
       document.getElementById("portalPanel").classList.add("visible");
       gameState = "menu";
     }
 
-    function openDialog(npc) {
-      activeNpc = npc; dialogPage = 0; gameState = "dialog";
-      showDialogPage(npc, 0);
-    }
+    function openDialog(npc) { activeNpc = npc; dialogPage = 0; gameState = "dialog"; showDialogPage(npc, 0); }
 
     function showDialogPage(npc, page) {
       const d = npc.dialogs[page];
@@ -1913,8 +1871,7 @@
       opts.innerHTML = "";
       d.opts.forEach(o => {
         const btn = document.createElement("div");
-        btn.className = "dialog-opt";
-        btn.textContent = o.label;
+        btn.className = "dialog-opt"; btn.textContent = o.label;
         btn.onclick = () => {
           if (o.next === -1) closeDialog();
           else if (o.next === -2) { closeDialog(); travelTo("earth"); }
@@ -1930,21 +1887,49 @@
       document.getElementById("dialogBox").classList.remove("visible");
     }
 
-    const emoteParticles = [];
+    // ══ performRpAction — actualizado para 3 sheets ══
     function performRpAction(actionId) {
       const action = RP_ACTIONS.find(a => a.id === actionId) || RP_ACTIONS[0];
       const hold = action.hold || 900;
       rpActionUntil = performance.now() + hold;
+
       if (csAnimator) {
-        if (action.anim === "attack_1" || action.anim === "attack_2" || action.anim === "jump") {
-          csAnimator.play(action.anim, () => csAnimator.play(isFlying ? "fly" : "idle"));
+        const sheet = action.sheet || "base";
+        // Configurar el modo del animador según el sheet de la acción
+        if (sheet === "special") {
+          csAnimator.setSpecialMode && csAnimator.setSpecialMode(true);
+          csAnimator.play(action.anim || "sit", () => {
+            csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
+            csAnimator.play(isFlying ? "fly" : "idle");
+          });
+        } else if (sheet === "combat") {
+          // Acciones RP en sheet de combate (si las hubiera)
+          csAnimator.setBattleMode && csAnimator.setBattleMode(true);
+          csAnimator.play(action.anim || "combat_idle", () => {
+            if (!isCombatMode) {
+              csAnimator.setBattleMode && csAnimator.setBattleMode(false);
+              csAnimator.play(isFlying ? "fly" : "idle");
+            }
+          });
         } else {
-          csAnimator.play(action.anim || "idle");
-          setTimeout(() => {
-            if (performance.now() >= rpActionUntil && csAnimator && !player.moving) csAnimator.play(isFlying ? "fly" : "idle");
-          }, hold);
+          // Sheet base — asegurar que no esté en modo special
+          if (csAnimator.specialMode) csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
+          if (!isCombatMode && csAnimator.battleMode) csAnimator.setBattleMode && csAnimator.setBattleMode(false);
+          const anim = action.anim || "idle";
+          if (anim === "attack_1" || anim === "attack_2" || anim === "jump") {
+            csAnimator.play(anim, () => csAnimator.play(isFlying ? "fly" : "idle"));
+          } else {
+            csAnimator.play(anim || "idle");
+            setTimeout(() => {
+              if (performance.now() >= rpActionUntil && csAnimator && !player.moving) {
+                csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
+                csAnimator.play(isFlying ? "fly" : "idle");
+              }
+            }, hold);
+          }
         }
       }
+
       const fx = player.x + player.facing * 18;
       combatEffects.push({ x: fx, y: player.y - 52, text: action.icon, timer: 1.4, color: action.color || "#f5c400" });
       if (action.objectIcon) {
@@ -1952,14 +1937,18 @@
       }
       showHudToast(`${action.icon} ${action.title}`, "info");
       if (mpConnected && myPlayerId) {
-        db.ref("players/" + myPlayerId).update({ animAction: action.anim || "idle", t: Date.now() });
+        db.ref("players/" + myPlayerId).update({
+          animAction: action.anim || "idle",
+          specialMode: (action.sheet === "special"),
+          t: Date.now()
+        });
         db.ref("emotes/" + myPlayerId).set({ type:action.id, icon:action.icon, name:player.name, x:player.x, y:player.y, t:Date.now() });
       }
     }
     window.performRpAction = performRpAction;
 
     function sendEmote(type) {
-      const map = { wave:"wave", bow:"emote", laugh:"emote", power:"warmup" };
+      const map = { wave:"wave", bow:"sit", laugh:"emote", power:"warmup" };
       performRpAction(map[type] || type || "emote");
     }
     window.sendEmote = sendEmote;
@@ -1971,33 +1960,30 @@
       if (action === "fly") {
         if (MAPS[currentMap]?.alwaysFly) {
           isFlying = true;
-          if (csAnimator) csAnimator.play("fly");
-          showHudToast("En el cielo siempre volás", "info");
-          return;
+          if (csAnimator) { csAnimator.setSpecialMode && csAnimator.setSpecialMode(false); csAnimator.play("fly"); }
+          showHudToast("En el cielo siempre volás", "info"); return;
         }
         isFlying = !isFlying;
-        if (csAnimator) csAnimator.play(isFlying ? (csAnimator.battleMode ? "fly_combat" : "fly") : (csAnimator.battleMode ? "combat_idle" : "idle"));
+        if (csAnimator) {
+          csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
+          csAnimator.play(isFlying ? (csAnimator.battleMode ? "knockback_fly" : "fly") : (csAnimator.battleMode ? "combat_idle" : "idle"));
+        }
         showHudToast(isFlying ? "Vuelo activado" : "Vuelo desactivado", "info");
-        renderActionBars();
-        publishMyAppearance(true);
-        return;
+        renderActionBars(); publishMyAppearance(true); return;
       }
       if (action === "vanish") {
         const dist = 84;
         player.x += player.facing * dist;
         combatEffects.push({ x: player.x - player.facing * 30, y: player.y - 35, text: "Z-VANISH", timer: 0.9, color: "#00e5ff" });
         showHudToast("Z-Vanish", "info");
-        if (csAnimator) csAnimator.play("dash_rush", combatEndAnim);
+        if (csAnimator) { csAnimator.setSpecialMode && csAnimator.setSpecialMode(false); csAnimator.play("dash", combatEndAnim); }
         return;
       }
-      const combatAnims = {
-        combo1: "light_combo", combo2: "heavy_combo",
-        special1: "special", special2: "special",
-      };
+      const combatAnims = { combo1:"light_combo", combo2:"heavy_combo", special1:"special", special2:"special" };
       const anim = combatAnims[action] || (action === "combo2" || action === "special2" ? "heavy_combo" : "light_combo");
       const color = action.startsWith("special") ? "#00e5ff" : "#f5c400";
       combatEffects.push({ x: player.x + player.facing * 24, y: player.y - 44, text: labels[action] || "ATAQUE", timer: 0.9, color });
-      if (csAnimator) csAnimator.play(anim, combatEndAnim);
+      if (csAnimator) { csAnimator.setSpecialMode && csAnimator.setSpecialMode(false); csAnimator.play(anim, combatEndAnim); }
       showHudToast(labels[action] || "Ataque", action.startsWith("special") ? "info" : "xp");
     }
     window.performCombatAction = performCombatAction;
@@ -2005,10 +1991,16 @@
     function applyMapFlightMode(prevMap) {
       if (MAPS[currentMap]?.alwaysFly) {
         isFlying = true;
-        if (csAnimator) csAnimator.play("fly");
+        if (csAnimator) {
+          csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
+          csAnimator.play("fly");
+        }
       } else if (prevMap && MAPS[prevMap]?.alwaysFly) {
         isFlying = false;
-        if (csAnimator && !player.moving) csAnimator.play("idle");
+        if (csAnimator && !player.moving) {
+          csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
+          csAnimator.play("idle");
+        }
       }
     }
 
@@ -2059,8 +2051,7 @@
     function showHudToast(msg, type="xp") {
       const wrap = document.getElementById("toastHud");
       const el = document.createElement("div");
-      el.className = `hud-toast ${type}`;
-      el.textContent = msg;
+      el.className = `hud-toast ${type}`; el.textContent = msg;
       el.style.top = `${-50-Math.random()*30}px`;
       el.style.left = `${-80+Math.random()*160}px`;
       wrap.appendChild(el);
@@ -2072,8 +2063,7 @@
 
     function getItemCtx() {
       return {
-        player,
-        savedChar,
+        player, savedChar,
         CS: window.CharacterSystem,
         showToast: (msg, type) => showHudToast(msg, type || "info"),
         updateHud: updatePlayerHud,
@@ -2084,8 +2074,7 @@
 
     function showShenronOverlay() {
       const ov = document.getElementById("shenronOverlay");
-      document.getElementById("shenronWishText").textContent =
-        "¡Vida y ki restaurados al máximo!";
+      document.getElementById("shenronWishText").textContent = "¡Vida y ki restaurados al máximo!";
       ov.classList.add("open");
       showHudToast("🐉 ¡SHENRON INVOCADO!", "lvl");
       setTimeout(() => ov.classList.remove("open"), 4500);
@@ -2094,14 +2083,11 @@
     function openInventoryPanel() {
       invSelectedId = null;
       document.getElementById("inventoryPanel").classList.add("open");
-      renderInventoryList();
-      renderInventoryDetail(null);
+      renderInventoryList(); renderInventoryDetail(null);
     }
     window.openInventoryPanel = openInventoryPanel;
 
-    function closeInventoryPanel() {
-      document.getElementById("inventoryPanel").classList.remove("open");
-    }
+    function closeInventoryPanel() { document.getElementById("inventoryPanel").classList.remove("open"); }
     window.closeInventoryPanel = closeInventoryPanel;
 
     function drawItemIconCanvas(itemId, canvas) {
@@ -2117,74 +2103,38 @@
       const listEl = document.getElementById("invList");
       if (!IS || !listEl) return;
       const inv = IS.getInventory();
-      if (!inv.length) {
-        listEl.innerHTML = '<div class="inv-empty">Vacío</div>';
-        return;
-      }
+      if (!inv.length) { listEl.innerHTML = '<div class="inv-empty">Vacío</div>'; return; }
       listEl.innerHTML = "";
       inv.forEach((entry) => {
-        const def = IS.ITEM_DEFS[entry.id];
-        if (!def) return;
+        const def = IS.ITEM_DEFS[entry.id]; if (!def) return;
         const row = document.createElement("div");
         row.className = "inv-item-row" + (invSelectedId === entry.id ? " sel" : "");
-        row.onclick = () => {
-          invSelectedId = entry.id;
-          renderInventoryList();
-          renderInventoryDetail(entry.id);
-        };
-        const cvs = document.createElement("canvas");
-        cvs.className = "inv-item-canvas";
-        cvs.width = 32;
-        cvs.height = 32;
+        row.onclick = () => { invSelectedId = entry.id; renderInventoryList(); renderInventoryDetail(entry.id); };
+        const cvs = document.createElement("canvas"); cvs.className = "inv-item-canvas"; cvs.width = 32; cvs.height = 32;
         drawItemIconCanvas(entry.id, cvs);
-        const name = document.createElement("span");
-        name.className = "inv-item-name";
-        name.textContent = def.name;
-        const qty = document.createElement("span");
-        qty.className = "inv-item-qty";
-        qty.textContent = "×" + entry.qty;
-        row.appendChild(cvs);
-        row.appendChild(name);
-        row.appendChild(qty);
+        const name = document.createElement("span"); name.className = "inv-item-name"; name.textContent = def.name;
+        const qty = document.createElement("span"); qty.className = "inv-item-qty"; qty.textContent = "×" + entry.qty;
+        row.appendChild(cvs); row.appendChild(name); row.appendChild(qty);
         listEl.appendChild(row);
       });
     }
 
     function renderInventoryDetail(itemId) {
       const IS = window.ItemSystem;
-      const detail = document.getElementById("invDetail");
-      if (!detail) return;
-      if (!itemId || !IS) {
-        detail.innerHTML = '<div class="inv-empty">Seleccioná un objeto</div>';
-        return;
-      }
+      const detail = document.getElementById("invDetail"); if (!detail) return;
+      if (!itemId || !IS) { detail.innerHTML = '<div class="inv-empty">Seleccioná un objeto</div>'; return; }
       const def = IS.ITEM_DEFS[itemId];
       const entry = IS.getInventory().find((e) => e.id === itemId);
-      if (!def || !entry) {
-        detail.innerHTML = '<div class="inv-empty">Objeto no disponible</div>';
-        return;
-      }
+      if (!def || !entry) { detail.innerHTML = '<div class="inv-empty">Objeto no disponible</div>'; return; }
       const actions = IS.getAvailableActions(itemId);
       detail.innerHTML = "";
-      const preview = document.createElement("canvas");
-      preview.className = "inv-preview";
-      preview.width = 64;
-      preview.height = 64;
-      drawItemIconCanvas(itemId, preview);
-      detail.appendChild(preview);
-      const title = document.createElement("div");
-      title.className = "inv-detail-name";
-      title.textContent = def.name + " ×" + entry.qty;
-      detail.appendChild(title);
-      const desc = document.createElement("div");
-      desc.className = "inv-detail-desc";
-      desc.textContent = def.desc || "";
-      detail.appendChild(desc);
-      const actionsWrap = document.createElement("div");
-      actionsWrap.className = "inv-actions";
+      const preview = document.createElement("canvas"); preview.className = "inv-preview"; preview.width = 64; preview.height = 64;
+      drawItemIconCanvas(itemId, preview); detail.appendChild(preview);
+      const title = document.createElement("div"); title.className = "inv-detail-name"; title.textContent = def.name + " ×" + entry.qty; detail.appendChild(title);
+      const desc = document.createElement("div"); desc.className = "inv-detail-desc"; desc.textContent = def.desc || ""; detail.appendChild(desc);
+      const actionsWrap = document.createElement("div"); actionsWrap.className = "inv-actions";
       actions.forEach((act) => {
-        const btn = document.createElement("button");
-        btn.type = "button";
+        const btn = document.createElement("button"); btn.type = "button";
         btn.className = "inv-action-btn" + (act === "destroy" ? " danger" : "");
         btn.textContent = IS.ACTION_LABELS[act] || act;
         btn.onclick = () => performInventoryAction(itemId, act);
@@ -2192,31 +2142,26 @@
       });
       detail.appendChild(actionsWrap);
       if (IS.countDragonBalls() > 0) {
-        const hint = document.createElement("div");
-        hint.className = "inv-balls-hint";
+        const hint = document.createElement("div"); hint.className = "inv-balls-hint";
         hint.textContent = `Esferas del dragón: ${IS.countDragonBalls()}/7`;
         detail.appendChild(hint);
       }
     }
 
     function performInventoryAction(itemId, action) {
-      const IS = window.ItemSystem;
-      if (!IS) return;
+      const IS = window.ItemSystem; if (!IS) return;
       const res = IS.useItem(itemId, getItemCtx(), action);
       showHudToast(res.msg, res.ok ? "info" : "dmg");
       if (res.ok) {
         renderInventoryList();
-        if (IS.getInventory().some((e) => e.id === itemId)) {
-          renderInventoryDetail(itemId);
-        } else {
-          invSelectedId = null;
-          renderInventoryDetail(null);
-        }
+        if (IS.getInventory().some((e) => e.id === itemId)) renderInventoryDetail(itemId);
+        else { invSelectedId = null; renderInventoryDetail(null); }
       }
     }
 
     let gameState = "loading";
 
+    // ══ updatePlayer — actualizado para manejar special mode correctamente ══
     function updatePlayer(dt) {
       if (gameState !== "playing") return;
       if (window.PvpSystem) window.PvpSystem.update(dt);
@@ -2237,14 +2182,26 @@
         const rpLocked = performance.now() < rpActionUntil;
         const atkLocked = csAnimator.meta && !csAnimator.meta.loop;
         if (!rpLocked && !atkLocked) {
-          if ((controlMode === "pvp" || isCombatMode) && csAnimator.battleMode) {
-            if (isFlying) csAnimator.play("fly_combat");
-            else if (player.moving) csAnimator.play(isRunning ? "dash_rush" : "dash_rush");
+          if (csAnimator.specialMode) {
+            // En modo special: si el jugador se mueve, salir del special mode
+            if (player.moving) {
+              csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
+              csAnimator.play(isRunning ? "run" : "walk");
+            }
+            // Si está quieto en special mode, dejar que la animación siga
+          } else if ((controlMode === "pvp" || isCombatMode) && csAnimator.battleMode) {
+            if (isFlying) csAnimator.play("knockback_fly");
+            else if (player.moving) csAnimator.play("dash");
             else csAnimator.play("combat_idle");
-          } else if (isFlying) csAnimator.play("fly");
-          else if (player.moving && isRunning) csAnimator.play("run");
-          else if (player.moving) csAnimator.play("walk");
-          else csAnimator.play("idle");
+          } else if (isFlying) {
+            csAnimator.play("fly");
+          } else if (player.moving && isRunning) {
+            csAnimator.play("run");
+          } else if (player.moving) {
+            csAnimator.play("walk");
+          } else {
+            csAnimator.play("idle");
+          }
         }
       }
 
@@ -2264,8 +2221,7 @@
       const mapDef = MAPS[currentMap];
       player.x = Math.max(TILE, Math.min(player.x, (mapDef.w-1)*TILE));
       player.y = Math.max(TILE, Math.min(player.y, (mapDef.h-1)*TILE));
-      player.auraPhase += dt*3;
-      player.animTimer += dt;
+      player.auraPhase += dt*3; player.animTimer += dt;
       if (player.animTimer >= 1/8) { player.animTimer=0; player.animFrame=(player.animFrame+1)%4; }
 
       const ptx=Math.floor(player.x/TILE), pty=Math.floor(player.y/TILE);
@@ -2284,8 +2240,7 @@
     }
 
     function drawWorld() {
-      const map = worldMaps[currentMap];
-      if (!map) return;
+      const map = worldMaps[currentMap]; if (!map) return;
       const mapDef = MAPS[currentMap];
       const startX=Math.floor(cam.x/TILE), startY=Math.floor(cam.y/TILE);
       const endX=Math.min(mapDef.w, startX+Math.ceil(canvas.width/TILE)+2);
@@ -2294,8 +2249,7 @@
         const tile = map[ty]?.[tx]??0;
         const color = TILE_COLORS[tile]||"#2d5a27";
         const sx=tx*TILE-cam.x, sy=ty*TILE-cam.y;
-        ctx.fillStyle = color;
-        ctx.fillRect(sx,sy,TILE+1,TILE+1);
+        ctx.fillStyle = color; ctx.fillRect(sx,sy,TILE+1,TILE+1);
         if (tile===0||tile===7) {
           ctx.fillStyle = tile===7?"rgba(0,100,0,0.2)":"rgba(255,255,255,0.03)";
           if ((tx+ty)%3===0) ctx.fillRect(sx+8,sy+8,4,4);
@@ -2438,26 +2392,29 @@
       });
     }
 
-    // ══ FIX: drawPlayerChar — usa CharacterSystem si está disponible,
-    //    incluyendo cuando el accesorio es una free customization (imagen importada)
+    // ══ drawPlayerChar — actualizado para spriteVariantId con "special" ══
     function drawPlayerChar() {
       const sx=player.x-cam.x, sy=player.y-cam.y;
       const CS=window.CharacterSystem;
       const useCS=CS&&csImageMap&&csAnimator&&(
-        // Usar CS si hay al menos algo cargado O si el jugador tiene accesorio/free custom
         Object.values(csImageMap).some(img=>img&&img.complete&&img.naturalWidth>0) ||
         CS.player.appearance.accessoryId !== "ac_none"
       );
       if (useCS) {
         const accId = CS.player.appearance.accessoryId || "ac_none";
-        const csState={
+        // Determinar spriteVariantId según el modo del animador
+        let spriteVariantId = null;
+        if (csAnimator.specialMode) spriteVariantId = "special";
+        else if (isCombatMode) spriteVariantId = "fight";
+
+        const csState = {
           glovesId:CS.player.appearance.glovesId||"gm0",
           auraId:CS.player.appearance.auraId||"a0",
           auraColor:CS.player.appearance.auraColor||"#fdd835",
           accessoryId:accId,
           auraPhase:player.auraPhase||0,
           viewKey:null,
-          spriteVariantId:isCombatMode?"fight":null
+          spriteVariantId,
         };
         ctx.fillStyle="rgba(0,0,0,0.3)"; ctx.beginPath(); ctx.ellipse(sx,sy+3,16,5,0,0,Math.PI*2); ctx.fill();
         const mobileSpriteScale = (window.matchMedia?.("(pointer:coarse)").matches && window.innerHeight < 520) ? 0.84 : 1;
@@ -2485,8 +2442,7 @@
 
     function drawCombatEffects(dt) {
       combatEffects = combatEffects.filter(e => {
-        e.timer -= dt;
-        if (e.timer<=0) return false;
+        e.timer -= dt; if (e.timer<=0) return false;
         const sx=e.x-cam.x, sy=e.y-cam.y-(1-e.timer)*30;
         ctx.globalAlpha=Math.min(1,e.timer*2);
         ctx.fillStyle=e.color; ctx.font="bold 16px Orbitron,monospace"; ctx.textAlign="center"; ctx.textBaseline="middle";
@@ -2513,9 +2469,7 @@
       if (radarOn) {
         mmCtx.fillStyle="#ff6ec7";
         npcs.forEach(npc => {
-          mmCtx.beginPath();
-          mmCtx.arc((npc.x/TILE)*scaleX, (npc.y/TILE)*scaleY, 3, 0, Math.PI*2);
-          mmCtx.fill();
+          mmCtx.beginPath(); mmCtx.arc((npc.x/TILE)*scaleX, (npc.y/TILE)*scaleY, 3, 0, Math.PI*2); mmCtx.fill();
         });
       }
       mmCtx.fillStyle=radarOn ? "#00ffff" : "#00e5ff";
@@ -2550,11 +2504,8 @@
         ctx.fillStyle=grd; ctx.fillRect(0,0,canvas.width,canvas.height*.6);
       } else if (currentMap==="sky") {
         const grd=ctx.createLinearGradient(0, 0, 0, canvas.height);
-        grd.addColorStop(0, "#b8e4f8");
-        grd.addColorStop(0.45, "#87CEEB");
-        grd.addColorStop(1, "#d4effa");
-        ctx.fillStyle = grd;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        grd.addColorStop(0, "#b8e4f8"); grd.addColorStop(0.45, "#87CEEB"); grd.addColorStop(1, "#d4effa");
+        ctx.fillStyle = grd; ctx.fillRect(0, 0, canvas.width, canvas.height);
         for (let i = 0; i < 10; i++) {
           const cx = ((i * 173 + cam.x * 0.12 + cam.y * 0.05) % (canvas.width + 220)) - 110;
           const cy = 30 + (i * 89 + cam.y * 0.08) % (canvas.height * 0.75);
@@ -2576,7 +2527,7 @@
     // ══ LOAD GAME ══
     async function loadGame() {
       const steps=[
-        ["GENERANDO LOBBY...", ()=>{
+        ["GENERANDO MUNDOS...", ()=>{
           worldMaps.lobby = generateLobbyMap();
           worldMaps.earth = generateEarthMap();
           worldMaps.sky = generateSkyMap();
@@ -2592,7 +2543,6 @@
           const CS=window.CharacterSystem;
           if (CS) {
             try {
-              // ══ FIX: Primero restaurar todos los accesorios/free customizations ══
               await restoreAllAccessoriesForGame(CS);
               if (window.ItemSystem) window.ItemSystem.ensureScouterAccessory(CS);
 
@@ -2622,34 +2572,23 @@
                 CS.player.appearance.auraId=savedChar.aura||"a0";
                 CS.player.appearance.auraColor=savedChar.auraColor||"#fdd835";
 
-                // ══ FIX CLAVE: Establecer accessoryId DESPUÉS de restaurar catálogos ══
                 const savedAccId = savedChar.accessory || savedChar.accessoryId || "ac_none";
                 CS.player.appearance.accessoryId = savedAccId;
 
-                // ══ FIX: Si el accesorio del slot tiene dataURL y no está en catálogo, cargarlo ahora ══
                 if (savedAccId !== "ac_none") {
                   const accInCatalog = CS.ACCESSORIES_CATALOG.find(a => a.id === savedAccId);
                   if (!accInCatalog || !accInCatalog.userImage || !accInCatalog.userImage.complete || !accInCatalog.userImage.naturalWidth) {
-                    // Buscar dataURL: primero en el slot, luego en freeCustomization LS
                     let dataURL = savedChar.accessoryDataURL || null;
                     if (!dataURL) {
                       try {
                         const rawFree = localStorage.getItem("dragonCreatorZ_freeCustomization");
-                        if (rawFree) {
-                          const freeList = JSON.parse(rawFree);
-                          const found = freeList.find(x => x.id === savedAccId);
-                          if (found) dataURL = found.dataURL;
-                        }
+                        if (rawFree) { const freeList = JSON.parse(rawFree); const found = freeList.find(x => x.id === savedAccId); if (found) dataURL = found.dataURL; }
                       } catch(e) {}
                     }
                     if (!dataURL) {
                       try {
                         const rawAcc = localStorage.getItem("dragonCreatorZ_accessories");
-                        if (rawAcc) {
-                          const accList = JSON.parse(rawAcc);
-                          const found = accList.find(x => x.id === savedAccId);
-                          if (found) dataURL = found.dataURL;
-                        }
+                        if (rawAcc) { const accList = JSON.parse(rawAcc); const found = accList.find(x => x.id === savedAccId); if (found) dataURL = found.dataURL; }
                       } catch(e) {}
                     }
                     if (dataURL) {
@@ -2662,14 +2601,9 @@
                             accInCatalog.isFreeCustomization = accInCatalog.isFreeCustomization || isFree;
                           } else {
                             CS.ACCESSORIES_CATALOG.push({
-                              id: savedAccId,
-                              name: savedChar.accessoryName || "Personalización",
-                              type: "other",
-                              slot: "over_shirt",
-                              color: null,
-                              userImage: img,
-                              dataURL: dataURL,
-                              isFreeCustomization: isFree,
+                              id: savedAccId, name: savedChar.accessoryName || "Personalización",
+                              type: "other", slot: "over_shirt", color: null,
+                              userImage: img, dataURL: dataURL, isFreeCustomization: isFree,
                             });
                           }
                           CS.invalidateHairCache?.();
@@ -2684,6 +2618,7 @@
               }
 
               CS.player.direction=player.facing;
+              // Crear animador con las nuevas capacidades del CS v2
               csAnimator=new CS.SpriteAnimator("idle");
               renderVariantSelector();
             } catch(err){ console.warn("[game]",err); csImageMap=null; csAnimator=null; }
@@ -2694,7 +2629,6 @@
         ["CONECTANDO AL SERVIDOR...", async()=>{
           buildMpHud();
           initMultiplayer();
-          // Esperar un tick para que las imágenes de accesorios terminen de cargar
           await new Promise(r=>setTimeout(r,300));
           publishMyAppearance(true);
           db.ref("trailers").on("value", snap => {
@@ -2723,7 +2657,6 @@
       gameState="playing";
       updatePlayerHud();
 
-      // ══ FIX: Re-publicar apariencia tras 1s para asegurar que imágenes estén listas ══
       setTimeout(() => { publishMyAppearance(true); }, 1000);
     }
 
