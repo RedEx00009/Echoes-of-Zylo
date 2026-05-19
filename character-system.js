@@ -1799,17 +1799,15 @@
       }
     }
 
-    // Personalización libre
+    // Personalización libre — dibuja el sheet importado si existe, pero
+    // no retorna para permitir que las capas (ropa/accesorios) se sigan dibujando.
     if (freeCustom) {
       const freeBundle = resolveFreeCustomizationBundle(accDef, inCombatSheet, inSpecialSheet);
       if (freeBundle) {
         _drawVariantSheet(ctx, freeBundle.img, screenX, screenY, dw, dh, animator, freeBundle.custom);
-        ctx.restore(); return;
+        // Continuar: no hacemos restore/return para que el accesorio y capas siguientes se rendericen
       }
-      if (accImg && accImg.complete && accImg.naturalWidth) {
-        _drawAccessoryLayer(ctx, accDef, screenX, screenY, dw, dh, animator, inCombatSheet, inSpecialSheet);
-        ctx.restore(); return;
-      }
+      // Si no hay sheet completo, se seguirá el flujo normal y el accesorio se dibujará más abajo
     }
 
     // 2. ACCESORIO under_shirt
