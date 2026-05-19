@@ -268,7 +268,7 @@
         background: radial-gradient(ellipse, rgba(74,106,255,.3) 0%, transparent 70%);
         border-radius: 50%; pointer-events: none;
       }
-      #previewCanvas { image-rendering: pixelated; image-rendering: crisp-edges; position: relative; z-index: 1; width: 180px; height: 220px; }
+      #previewCanvas { image-rendering: pixelated; image-rendering: crisp-edges; position: relative; z-index: 1; width: 180px; height: 260px; }
 
       .name-section { padding: 10px 16px 8px; flex-shrink: 0; border-top: 1px solid var(--border); }
       .name-label { display: block; font-family: var(--fh); font-size: 8px; letter-spacing: 2px; color: var(--td); margin-bottom: 5px; text-align: center; }
@@ -310,7 +310,7 @@
         background: radial-gradient(ellipse 70% 60% at 50% 80%, rgba(74,106,255,.1) 0%, transparent 70%);
         pointer-events: none;
       }
-      #finalCanvas { image-rendering: pixelated; image-rendering: crisp-edges; border-radius: 8px; width: 200px; height: 220px; position: relative; z-index: 1; }
+      #finalCanvas { image-rendering: pixelated; image-rendering: crisp-edges; border-radius: 8px; width: 200px; height: 240px; position: relative; z-index: 1; }
 
       .final-controls { display: flex; gap: 8px; justify-content: center; padding: 0 14px 10px; flex-shrink: 0; }
       .ctrl-btn {
@@ -403,10 +403,10 @@
         .items-grid { grid-template-columns: repeat(4,1fr); }
         .center-col { height:auto; border-right:none; border-bottom:1px solid var(--border); }
         .preview-canvas-wrap { min-height:220px; padding:12px 0; }
-        #previewCanvas { width:140px; height:180px; }
+        #previewCanvas { width:140px; height:200px; }
         .right-col { height: auto; }
         .final-canvas-wrap { padding: 8px; }
-        #finalCanvas { width:160px; height:180px; }
+        #finalCanvas { width:160px; height:200px; }
         .save-section { overflow-y: visible; }
         .start-btn { margin:0 12px 16px; font-size:12px; padding:14px 12px; letter-spacing:2px; }
         #toastContainer { bottom:12px; right:50%; transform:translateX(50%); align-items:center; }
@@ -481,7 +481,7 @@
         </div>
         <div class="preview-canvas-wrap">
           <div class="preview-shadow"></div>
-          <canvas id="previewCanvas" width="180" height="220"></canvas>
+          <canvas id="previewCanvas" width="180" height="260"></canvas>
         </div>
         <div class="name-section">
           <label class="name-label">NOMBRE DEL PERSONAJE</label>
@@ -503,7 +503,7 @@
       <div class="right-col">
         <div class="right-header"><span class="right-title">VISTA FINAL</span></div>
         <div class="final-canvas-wrap">
-          <canvas id="finalCanvas" width="200" height="220"></canvas>
+          <canvas id="finalCanvas" width="220" height="260"></canvas>
         </div>
         <div class="final-controls">
           <button class="ctrl-btn" id="btnRotate" title="Rotar">🔄</button>
@@ -572,8 +572,6 @@
 
       let _importPendingImg    = null;
       let _importPendingDataURL = null;
-      let _importPendingCombatImg = null;
-      let _importPendingCombatDataURL = null;
 
       const charState = {
         name:        "Guerrero Z",
@@ -600,12 +598,7 @@
       function _saveAccessoriesToLS() {
         const toStore = ACCESSORIES_CATALOG
           .filter(a => a.id !== "ac_none" && a.dataURL && !a.isFreeCustomization)
-          .map(a => ({
-            id: a.id, name: a.name, type: a.type, color: a.color, dataURL: a.dataURL,
-            combatDataURL: a.combatDataURL || null,
-            scale: a.scale ?? 1, animFrames: a.animFrames ?? 6,
-            combatScale: a.combatScale ?? 1, combatAnimFrames: a.combatAnimFrames ?? 6,
-          }));
+          .map(a => ({ id: a.id, name: a.name, type: a.type, color: a.color, dataURL: a.dataURL }));
         try { localStorage.setItem(LS_ACC_KEY, JSON.stringify(toStore)); } catch(e) {
           console.warn("[DC] No se pudo guardar accesorios en LS:", e);
         }
@@ -629,11 +622,6 @@
           slot:     a.slot,
           color:    a.color,
           dataURL:  a.dataURL,
-          combatDataURL: a.combatDataURL || null,
-          scale: a.scale ?? 1,
-          animFrames: a.animFrames ?? 6,
-          combatScale: a.combatScale ?? 1,
-          combatAnimFrames: a.combatAnimFrames ?? 6,
           raceName: a.raceName || null,
         }));
         try { localStorage.setItem(LS_FREE_KEY, JSON.stringify(toStore)); } catch(e) {
@@ -658,19 +646,9 @@
               color:               item.color || null,
               userImage:           img,
               dataURL:             item.dataURL,
-              combatDataURL:       item.combatDataURL || null,
-              scale:               item.scale ?? 1,
-              animFrames:          item.animFrames ?? 6,
-              combatScale:         item.combatScale ?? 1,
-              combatAnimFrames:    item.combatAnimFrames ?? 6,
               raceName:            item.raceName || null,
               isFreeCustomization: true,
             };
-            if (item.combatDataURL) {
-              const cimg = new Image();
-              cimg.onload = () => { entry.combatUserImage = cimg; };
-              cimg.src = item.combatDataURL;
-            }
             FREE_CUSTOMIZATION_CATALOG.push(entry);
             ACCESSORIES_CATALOG.push(entry);
           });
@@ -981,42 +959,6 @@
 
         if (cfg.isAccImport) {
           renderImportPanel(panel, cat);
-          if (cat === "free" || cat === "accessory") {
-            const selId = player.appearance.accessoryId || charState.accessoryId;
-            const selEntry = ACCESSORIES_CATALOG.find(a => a.id === selId && a.id !== "ac_none" && (
-              cat === "free" ? (a.isFreeCustomization || String(a.id).startsWith("fc_")) : !a.isFreeCustomization
-            ));
-            const editorId = cat === "free" ? "freeSheetEditor" : "accSheetEditor";
-            if (selEntry && !document.getElementById(editorId)) {
-              const editor = buildSheetImportSection({
-                title: `SHEETS ACTIVOS — ${selEntry.name}`,
-                exploreCfg: selEntry,
-                combatCfg: selEntry,
-                exploreDisabled: false,
-                combatDisabled: false,
-                onExploreLoaded: (url, img) => {
-                  selEntry.dataURL = url; selEntry.userImage = img;
-                  if (cat === "free") _saveFreeCustomizationToLS();
-                  else _saveAccessoriesToLS();
-                  invalidateHairCache(); showToast("Exploración actualizada", "success");
-                },
-                onCombatLoaded: (url, img) => {
-                  selEntry.combatDataURL = url; selEntry.combatUserImage = img;
-                  if (cat === "free") _saveFreeCustomizationToLS();
-                  else _saveAccessoriesToLS();
-                  invalidateHairCache(); showToast("Combate actualizado", "success");
-                },
-                onMetaChange: (meta) => {
-                  Object.assign(selEntry, meta);
-                  if (cat === "free") _saveFreeCustomizationToLS();
-                  else _saveAccessoriesToLS();
-                  invalidateHairCache();
-                },
-              });
-              editor.id = editorId;
-              panel.appendChild(editor);
-            }
-          }
         }
 
         if (totalPages > 1) {
@@ -1119,157 +1061,42 @@
         return catalogVariants.concat(customVariants);
       }
 
-      function _stripSheetImages(cfg) {
-        const out = Object.assign({}, cfg || {});
-        delete out.spriteImage;
-        delete out.userImage;
-        delete out.combatSpriteImage;
-        delete out.combatUserImage;
-        if (out.exploreSheet) out.exploreSheet = _stripSheetImages(out.exploreSheet);
-        if (out.combatSheet) out.combatSheet = _stripSheetImages(out.combatSheet);
-        return out;
-      }
-
-      function _hydrateSheetField(cfg, urlKey, imgKey) {
-        const url = cfg?.[urlKey];
-        if (!url) return;
-        const img = new Image();
-        img.onload = () => { cfg[imgKey] = img; invalidateHairCache(); };
-        img.onerror = () => {};
-        img.src = url;
-      }
-
       function serializableVariantCustomizations(customs) {
         const out = {};
-        Object.entries(customs || {}).forEach(([id, cfg]) => { out[id] = _stripSheetImages(cfg); });
+        Object.entries(customs || {}).forEach(([id, cfg]) => {
+          out[id] = Object.assign({}, cfg);
+          delete out[id].spriteImage;
+          delete out[id].userImage;
+        });
         return out;
       }
 
       function hydrateVariantCustomizations(customs) {
         player.appearance.variantCustomizations = customs || {};
         Object.values(player.appearance.variantCustomizations).forEach(cfg => {
-          _hydrateSheetField(cfg, "spriteDataURL", "spriteImage");
-          _hydrateSheetField(cfg, "combatSpriteDataURL", "combatSpriteImage");
+          if (!cfg?.spriteDataURL) return;
+          const img = new Image();
+          img.onload = () => { cfg.spriteImage = img; invalidateHairCache(); };
+          img.src = cfg.spriteDataURL;
         });
       }
 
       function serializableCombatCustomization(cfg) {
-        return _stripSheetImages(cfg);
+        const out = Object.assign({}, cfg || {});
+        delete out.spriteImage;
+        delete out.userImage;
+        return out;
       }
 
       function hydrateCombatCustomization(cfg) {
         player.appearance.combatCustomization = cfg || {};
-        _hydrateSheetField(player.appearance.combatCustomization, "spriteDataURL", "spriteImage");
-      }
-
-      function buildSheetImportSection(opts) {
-        const {
-          title, exploreLabel, combatLabel,
-          exploreCfg, combatCfg,
-          exploreDisabled, combatDisabled,
-          onExploreLoaded, onCombatLoaded,
-          onMetaChange,
-        } = opts;
-        const box = document.createElement("div");
-        box.className = "import-panel";
-        box.style.marginTop = opts.marginTop || "10px";
-        const titleEl = document.createElement("div");
-        titleEl.className = "import-title";
-        titleEl.textContent = title;
-        box.appendChild(titleEl);
-
-        function addSheetBlock(label, cfg, disabled, isCombat) {
-          const block = document.createElement("div");
-          block.style.marginBottom = "10px";
-          const sub = document.createElement("div");
-          sub.className = "import-title";
-          sub.style.fontSize = "9px";
-          sub.textContent = label;
-          block.appendChild(sub);
-          const preview = document.createElement("img");
-          preview.className = "import-preview";
-          const url = isCombat ? (cfg.combatSpriteDataURL || cfg.combatDataURL) : (cfg.spriteDataURL || cfg.dataURL);
-          if (url) { preview.src = url; preview.classList.add("visible"); }
-          block.appendChild(preview);
-          const fileLabel = document.createElement("label");
-          fileLabel.className = "import-file-label";
-          const fileInput = document.createElement("input");
-          fileInput.type = "file";
-          fileInput.accept = "image/*";
-          fileInput.disabled = !!disabled;
-          fileInput.addEventListener("change", e => {
-            const file = e.target.files[0];
-            if (!file || disabled) return;
-            const reader = new FileReader();
-            reader.onload = ev => {
-              const dataURL = ev.target.result;
-              const img = new Image();
-              img.onload = () => {
-                if (isCombat) onCombatLoaded(dataURL, img);
-                else onExploreLoaded(dataURL, img);
-                preview.src = dataURL;
-                preview.classList.add("visible");
-                invalidateHairCache();
-              };
-              img.onerror = () => showToast("No se pudo cargar la imagen", "error");
-              img.src = dataURL;
-            };
-            reader.readAsDataURL(file);
-          });
-          fileLabel.appendChild(fileInput);
-          fileLabel.appendChild(document.createTextNode("PNG"));
-          block.appendChild(fileLabel);
-          box.appendChild(block);
-        }
-
-        const metaRow = document.createElement("div");
-        metaRow.className = "import-row";
-        const scaleExplore = document.createElement("input");
-        scaleExplore.className = "import-input-text";
-        scaleExplore.type = "number"; scaleExplore.min = "0.25"; scaleExplore.max = "8"; scaleExplore.step = "0.05";
-        scaleExplore.placeholder = "Tamaño expl.";
-        scaleExplore.value = String(exploreCfg?.scale ?? 1);
-        scaleExplore.disabled = !!exploreDisabled;
-        const framesExplore = document.createElement("input");
-        framesExplore.className = "import-input-text";
-        framesExplore.type = "number"; framesExplore.min = "1"; framesExplore.max = "48"; framesExplore.step = "1";
-        framesExplore.placeholder = "Frames expl.";
-        framesExplore.value = String(exploreCfg?.animFrames ?? 6);
-        framesExplore.disabled = !!exploreDisabled;
-        const scaleCombat = document.createElement("input");
-        scaleCombat.className = "import-input-text";
-        scaleCombat.type = "number"; scaleCombat.min = "0.25"; scaleCombat.max = "8"; scaleCombat.step = "0.05";
-        scaleCombat.placeholder = "Tamaño comb.";
-        scaleCombat.value = String(combatCfg?.combatScale ?? combatCfg?.scale ?? 1);
-        scaleCombat.disabled = !!combatDisabled;
-        const framesCombat = document.createElement("input");
-        framesCombat.className = "import-input-text";
-        framesCombat.type = "number"; framesCombat.min = "1"; framesCombat.max = "48"; framesCombat.step = "1";
-        framesCombat.placeholder = "Frames comb.";
-        framesCombat.value = String(combatCfg?.combatAnimFrames ?? combatCfg?.animFrames ?? 6);
-        framesCombat.disabled = !!combatDisabled;
-        const saveMeta = () => onMetaChange({
-          scale: Number(scaleExplore.value) || 1,
-          animFrames: parseInt(framesExplore.value, 10) || 6,
-          combatScale: Number(scaleCombat.value) || 1,
-          combatAnimFrames: parseInt(framesCombat.value, 10) || 6,
-        });
-        [scaleExplore, framesExplore, scaleCombat, framesCombat].forEach(el => el.addEventListener("input", saveMeta));
-        metaRow.appendChild(scaleExplore);
-        metaRow.appendChild(framesExplore);
-        metaRow.appendChild(scaleCombat);
-        metaRow.appendChild(framesCombat);
-        box.appendChild(metaRow);
-
-        addSheetBlock(
-          exploreLabel || "🌍 EXPLORACIÓN (14 filas)",
-          exploreCfg || {}, exploreDisabled, false
-        );
-        addSheetBlock(
-          combatLabel || "⚔️ COMBATE PvP (11 filas)",
-          combatCfg || exploreCfg || {}, combatDisabled, true
-        );
-        return box;
+        if (!cfg?.spriteDataURL) return;
+        const img = new Image();
+        img.onload = () => {
+          player.appearance.combatCustomization.spriteImage = img;
+          invalidateHairCache();
+        };
+        img.src = cfg.spriteDataURL;
       }
 
       function captureCurrentFormConfig() {
@@ -1287,20 +1114,17 @@
         const wrap = document.createElement("div"); wrap.className = "items-scroll"; wrap.style.padding = "10px";
         panel.appendChild(wrap);
         const cfg = player.appearance.combatCustomization || {};
-        const spCfg = player.appearance.specialCustomization || {};
-
         const info = document.createElement("div");
         info.style.cssText = "font-size:11px;color:var(--td);line-height:1.35;margin-bottom:10px";
-        info.textContent = "Sheet de combate global (11 filas PvP). Si no importás uno, se usa HumanBattle.png.";
+        info.textContent = "Esta plantilla se usa solo al entrar a modo combate.";
         wrap.appendChild(info);
         const status = document.createElement("div");
         status.style.cssText = "font-family:var(--fh);font-size:8px;letter-spacing:1px;color:var(--cyan);margin-bottom:8px";
-        status.textContent = cfg.spriteDataURL ? "✅ PLANTILLA CUSTOM DE COMBATE" : "USANDO PLANTILLA NORMAL _FIGHT";
+        status.textContent = cfg.spriteDataURL ? "PLANTILLA CUSTOM DE COMBATE" : "USANDO PLANTILLA NORMAL _FIGHT";
         wrap.appendChild(status);
 
-        // ── BLOQUE COMBATE ──
         const importBox = document.createElement("div"); importBox.className = "import-panel";
-        importBox.innerHTML = `<div class="import-title">⚔️ COMBATE PvP (11 filas)</div>`;
+        importBox.innerHTML = `<div class="import-title">IMPORTAR SPRITESHEET DE COMBATE</div>`;
         const imgPreview = document.createElement("img"); imgPreview.className = "import-preview";
         if (cfg.spriteDataURL) { imgPreview.src = cfg.spriteDataURL; imgPreview.classList.add("visible"); }
         importBox.appendChild(imgPreview);
@@ -1308,13 +1132,13 @@
         const metaRow = document.createElement("div"); metaRow.className = "import-row";
         const scaleInput = document.createElement("input"); scaleInput.className = "import-input-text";
         scaleInput.type = "number"; scaleInput.min = "0.25"; scaleInput.max = "8"; scaleInput.step = "0.05";
-        scaleInput.value = String(cfg.scale || 0.72); scaleInput.placeholder = "Tamaño";
+        scaleInput.value = String(cfg.scale || 1); scaleInput.placeholder = "Tamaño";
         const framesInput = document.createElement("input"); framesInput.className = "import-input-text";
         framesInput.type = "number"; framesInput.min = "1"; framesInput.max = "48"; framesInput.step = "1";
         framesInput.value = String(cfg.animFrames || 6); framesInput.placeholder = "Frames/fila";
         const saveMeta = () => {
           player.appearance.combatCustomization ||= {};
-          player.appearance.combatCustomization.scale = Math.max(0.25, Math.min(8, Number(scaleInput.value) || 0.72));
+          player.appearance.combatCustomization.scale = Math.max(0.25, Math.min(8, Number(scaleInput.value) || 1));
           player.appearance.combatCustomization.animFrames = Math.max(1, Math.min(48, parseInt(framesInput.value, 10) || 6));
           invalidateHairCache();
         };
@@ -1333,7 +1157,7 @@
             img.onload = () => {
               player.appearance.combatCustomization = Object.assign({}, player.appearance.combatCustomization || {}, {
                 spriteDataURL: dataURL, spriteImage: img,
-                scale: Math.max(0.25, Math.min(8, Number(scaleInput.value) || 0.72)),
+                scale: Math.max(0.25, Math.min(8, Number(scaleInput.value) || 1)),
                 animFrames: Math.max(1, Math.min(48, parseInt(framesInput.value, 10) || 6)),
               });
               imgPreview.src = dataURL; imgPreview.classList.add("visible");
@@ -1356,80 +1180,6 @@
           showToast("Plantilla de combate reseteada", "warning"); renderItemsPanel("combat");
         });
         wrap.appendChild(resetBtn);
-
-        // ── SEPARADOR ──
-        const sep = document.createElement("hr");
-        sep.style.cssText = "border:none;border-top:1px solid var(--border);margin:14px 0";
-        wrap.appendChild(sep);
-
-        // ── BLOQUE ESPECIALES ──
-        const spStatus = document.createElement("div");
-        spStatus.style.cssText = "font-family:var(--fh);font-size:8px;letter-spacing:1px;color:var(--magenta);margin-bottom:8px";
-        spStatus.textContent = spCfg.spriteDataURL ? "✅ SHEET ESPECIAL CARGADO" : "SIN SHEET DE ESPECIALES";
-        wrap.appendChild(spStatus);
-
-        const spBox = document.createElement("div"); spBox.className = "import-panel";
-        spBox.innerHTML = `<div class="import-title" style="color:var(--magenta)">✨ ANIMACIONES ESPECIALES</div>
-          <div style="font-size:10px;color:var(--td);margin-bottom:6px;line-height:1.4">
-            Fusión, Carry Player, Items, Emotes, etc.<br>Se activan desde acciones especiales del juego.
-          </div>`;
-
-        const spPreview = document.createElement("img"); spPreview.className = "import-preview";
-        if (spCfg.spriteDataURL) { spPreview.src = spCfg.spriteDataURL; spPreview.classList.add("visible"); }
-        spBox.appendChild(spPreview);
-
-        const spMetaRow = document.createElement("div"); spMetaRow.className = "import-row";
-        const spScale = document.createElement("input"); spScale.className = "import-input-text";
-        spScale.type = "number"; spScale.min = "0.25"; spScale.max = "8"; spScale.step = "0.05";
-        spScale.value = String(spCfg.scale || 0.72); spScale.placeholder = "Tamaño";
-        const spFrames = document.createElement("input"); spFrames.className = "import-input-text";
-        spFrames.type = "number"; spFrames.min = "1"; spFrames.max = "48"; spFrames.step = "1";
-        spFrames.value = String(spCfg.animFrames || 4); spFrames.placeholder = "Frames/fila";
-        const saveSpMeta = () => {
-          player.appearance.specialCustomization ||= {};
-          player.appearance.specialCustomization.scale = Math.max(0.25, Math.min(8, Number(spScale.value) || 0.72));
-          player.appearance.specialCustomization.animFrames = Math.max(1, Math.min(48, parseInt(spFrames.value, 10) || 4));
-          invalidateHairCache();
-        };
-        spScale.addEventListener("input", saveSpMeta); spFrames.addEventListener("input", saveSpMeta);
-        spMetaRow.appendChild(spScale); spMetaRow.appendChild(spFrames);
-        spBox.appendChild(spMetaRow);
-
-        const spFileLabel = document.createElement("label"); spFileLabel.className = "import-file-label";
-        const spFileInput = document.createElement("input"); spFileInput.type = "file"; spFileInput.accept = "image/*";
-        spFileInput.addEventListener("change", e => {
-          const file = e.target.files[0]; if (!file) return;
-          const reader = new FileReader();
-          reader.onload = ev => {
-            const dataURL = ev.target.result;
-            const img = new Image();
-            img.onload = () => {
-              player.appearance.specialCustomization = Object.assign({}, player.appearance.specialCustomization || {}, {
-                spriteDataURL: dataURL, spriteImage: img,
-                scale: Math.max(0.25, Math.min(8, Number(spScale.value) || 0.72)),
-                animFrames: Math.max(1, Math.min(48, parseInt(spFrames.value, 10) || 4)),
-              });
-              spPreview.src = dataURL; spPreview.classList.add("visible");
-              invalidateHairCache(); showToast("Sheet de especiales importado", "success");
-              renderItemsPanel("combat");
-            };
-            img.onerror = () => showToast("No se pudo cargar la imagen", "error");
-            img.src = dataURL;
-          };
-          reader.readAsDataURL(file);
-        });
-        spFileLabel.appendChild(spFileInput); spFileLabel.appendChild(document.createTextNode("ARCHIVO PNG"));
-        spBox.appendChild(spFileLabel);
-
-        const spResetBtn = document.createElement("button"); spResetBtn.className = "import-add-btn";
-        spResetBtn.style.marginTop = "10px"; spResetBtn.textContent = "BORRAR SHEET ESPECIAL";
-        spResetBtn.disabled = !spCfg.spriteDataURL;
-        spResetBtn.addEventListener("click", () => {
-          player.appearance.specialCustomization = {}; invalidateHairCache();
-          showToast("Sheet especial eliminado", "warning"); renderItemsPanel("combat");
-        });
-        spBox.appendChild(spResetBtn);
-        wrap.appendChild(spBox);
       }
 
       function renderFormsPanel(panel) {
@@ -1465,10 +1215,28 @@
         const custom = player.appearance.variantCustomizations?.[active] || null;
         const info = document.createElement("div");
         info.style.cssText = "font-size:11px;color:var(--td);line-height:1.35;margin-bottom:10px";
-        info.textContent = active === "base"
-          ? "Base usa el personaje normal (exploración + combate del juego)."
-          : "Cada forma puede tener sheet de exploración (14 filas) y de combate PvP (11 filas).";
+        info.textContent = active === "base" ? "Base usa el personaje normal." : "Importá un spritesheet de 14 filas para esta forma.";
         wrap.appendChild(info);
+
+        const scaleInput = document.createElement("input"); scaleInput.className = "import-input-text";
+        scaleInput.type = "number"; scaleInput.min = "0.25"; scaleInput.max = "5"; scaleInput.step = "0.05";
+        scaleInput.value = String(custom?.scale || 1); scaleInput.disabled = active === "base"; scaleInput.placeholder = "Tamaño";
+        const framesInput = document.createElement("input"); framesInput.className = "import-input-text";
+        framesInput.type = "number"; framesInput.min = "1"; framesInput.max = "24"; framesInput.step = "1";
+        framesInput.value = String(custom?.animFrames || 6); framesInput.disabled = active === "base"; framesInput.placeholder = "Frames/fila";
+        const metaRow = document.createElement("div"); metaRow.className = "import-row";
+        metaRow.appendChild(scaleInput); metaRow.appendChild(framesInput); wrap.appendChild(metaRow);
+
+        const saveMeta = () => {
+          if (active === "base") return;
+          player.appearance.variantCustomizations ||= {};
+          player.appearance.variantCustomizations[active] ||= { label: variants.find(v => v.id === active)?.label || active };
+          const c = player.appearance.variantCustomizations[active];
+          c.scale = Math.max(0.25, Math.min(5, Number(scaleInput.value) || 1));
+          c.animFrames = Math.max(1, Math.min(24, parseInt(framesInput.value, 10) || 6));
+          invalidateHairCache();
+        };
+        scaleInput.addEventListener("input", saveMeta); framesInput.addEventListener("input", saveMeta);
 
         const actions = document.createElement("div"); actions.style.cssText = "display:grid;gap:6px";
         const saveBtn = document.createElement("button"); saveBtn.className = "import-add-btn";
@@ -1478,7 +1246,7 @@
           player.appearance.variantCustomizations[active] = Object.assign(
             {}, player.appearance.variantCustomizations[active] || {},
             captureCurrentFormConfig(),
-            { scale: custom?.scale ?? 1, animFrames: custom?.animFrames ?? 6 }
+            { scale: Math.max(0.25, Math.min(5, Number(scaleInput.value)||1)), animFrames: Math.max(1, Math.min(24, parseInt(framesInput.value,10)||6)) }
           );
           invalidateHairCache(); showToast("Forma guardada","success"); renderItemsPanel("forms");
         });
@@ -1494,32 +1262,37 @@
         });
         actions.appendChild(resetBtn); wrap.appendChild(actions);
 
-        if (active !== "base") {
-          wrap.appendChild(buildSheetImportSection({
-            title: `SPRITES — ${variants.find(v => v.id === active)?.label || active}`,
-            exploreCfg: custom || {},
-            combatCfg: custom || {},
-            exploreDisabled: false,
-            combatDisabled: false,
-            onExploreLoaded: (url, img) => {
+        const importBox = document.createElement("div"); importBox.className = "import-panel"; importBox.style.marginTop = "10px";
+        importBox.innerHTML = `<div class="import-title">IMPORTAR SPRITESHEET DE ESTA FORMA</div>`;
+        const imgPreview = document.createElement("img"); imgPreview.className = "import-preview";
+        if (custom?.spriteDataURL) { imgPreview.src = custom.spriteDataURL; imgPreview.classList.add("visible"); }
+        importBox.appendChild(imgPreview);
+        const fileLabel = document.createElement("label"); fileLabel.className = "import-file-label";
+        const fileInput = document.createElement("input"); fileInput.type = "file"; fileInput.accept = "image/*"; fileInput.disabled = active === "base";
+        fileInput.addEventListener("change", e => {
+          const file = e.target.files[0]; if (!file || active === "base") return;
+          const reader = new FileReader();
+          reader.onload = ev => {
+            const dataURL = ev.target.result;
+            const img = new Image();
+            img.onload = () => {
               player.appearance.variantCustomizations ||= {};
-              player.appearance.variantCustomizations[active] ||= { label: variants.find(v => v.id === active)?.label || active };
-              Object.assign(player.appearance.variantCustomizations[active], { spriteDataURL: url, spriteImage: img });
-              showToast("Sheet de exploración importado", "success");
-            },
-            onCombatLoaded: (url, img) => {
-              player.appearance.variantCustomizations ||= {};
-              player.appearance.variantCustomizations[active] ||= { label: variants.find(v => v.id === active)?.label || active };
-              Object.assign(player.appearance.variantCustomizations[active], { combatSpriteDataURL: url, combatSpriteImage: img });
-              showToast("Sheet de combate importado", "success");
-            },
-            onMetaChange: (meta) => {
-              player.appearance.variantCustomizations ||= {};
-              player.appearance.variantCustomizations[active] ||= { label: variants.find(v => v.id === active)?.label || active };
-              Object.assign(player.appearance.variantCustomizations[active], meta);
-            },
-          }));
-        }
+              player.appearance.variantCustomizations[active] ||= {};
+              Object.assign(player.appearance.variantCustomizations[active], {
+                spriteDataURL: dataURL, spriteImage: img,
+                scale: Math.max(0.25, Math.min(5, Number(scaleInput.value)||1)),
+                animFrames: Math.max(1, Math.min(24, parseInt(framesInput.value,10)||6)),
+              });
+              imgPreview.src = dataURL; imgPreview.classList.add("visible");
+              invalidateHairCache(); showToast("Spritesheet de forma importado","success");
+            };
+            img.onerror = () => showToast("No se pudo cargar la imagen","error");
+            img.src = dataURL;
+          };
+          reader.readAsDataURL(file);
+        });
+        fileLabel.appendChild(fileInput); fileLabel.appendChild(document.createTextNode("ARCHIVO PNG"));
+        importBox.appendChild(fileLabel); wrap.appendChild(importBox);
       }
 
       function renderImportPanel(panel, cat) {
@@ -1568,26 +1341,8 @@
           };
           reader.readAsDataURL(file);
         });
-        fileLabel.appendChild(fileInput); fileLabel.appendChild(document.createTextNode("📁 EXPLORACIÓN (14 filas)"));
+        fileLabel.appendChild(fileInput); fileLabel.appendChild(document.createTextNode("📁 ARCHIVO PNG"));
         row2.appendChild(fileLabel);
-
-        const combatLabel = document.createElement("label"); combatLabel.className = "import-file-label";
-        const combatInput = document.createElement("input"); combatInput.type = "file"; combatInput.accept = "image/*";
-        const combatPreview = document.createElement("img"); combatPreview.className = "import-preview";
-        combatInput.addEventListener("change", e => {
-          const file = e.target.files[0]; if (!file) return;
-          const reader = new FileReader();
-          reader.onload = ev => {
-            _importPendingCombatDataURL = ev.target.result;
-            const img = new Image();
-            img.onload = () => { _importPendingCombatImg = img; combatPreview.src = _importPendingCombatDataURL; combatPreview.classList.add("visible"); };
-            img.src = _importPendingCombatDataURL;
-          };
-          reader.readAsDataURL(file);
-        });
-        combatLabel.appendChild(combatInput); combatLabel.appendChild(document.createTextNode("⚔️ COMBATE (11 filas, opcional)"));
-        row2.appendChild(combatLabel);
-        ip.appendChild(combatPreview);
 
         const addBtn = document.createElement("button"); addBtn.className = "import-add-btn";
         addBtn.disabled = !_importPendingImg; addBtn.innerHTML = "✚ AÑADIR";
@@ -1604,9 +1359,6 @@
           const entry = {
             id: newId, name, type, slot: typeDef.slot, color: null,
             userImage: _importPendingImg, dataURL: _importPendingDataURL,
-            combatUserImage: _importPendingCombatImg || null,
-            combatDataURL: _importPendingCombatDataURL || null,
-            scale: 1, animFrames: 6, combatScale: 1, combatAnimFrames: 6,
             raceName: isFreeCat ? (raceInput.value.trim() || null) : null,
             isFreeCustomization: isFreeCat,
           };
@@ -1623,7 +1375,6 @@
           charState.accessoryId = entry.id;
           player.appearance.accessoryId = entry.id;
           _importPendingImg = null; _importPendingDataURL = null;
-          _importPendingCombatImg = null; _importPendingCombatDataURL = null;
           showToast(`"${name}" añadido`, "success"); renderItemsPanel(cat);
         });
 
@@ -1726,7 +1477,7 @@
         const ps = buildCharState();
 
         previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
-        drawPlayer(previewCtx, previewCanvas.width / 2, previewCanvas.height - 4, player, imageMap, animator, ps);
+        drawPlayer(previewCtx, previewCanvas.width / 2, previewCanvas.height - 16, player, imageMap, animator, ps);
 
         finalCtx.clearRect(0, 0, finalCanvas.width, finalCanvas.height);
         finalCtx.save();
@@ -1736,7 +1487,7 @@
         else           finalCtx.scale(uiZoom, uiZoom);
         finalCtx.translate(-fw / 2, -fh / 2);
         const fp = Object.assign({}, player, { direction: 1, appearance: Object.assign({}, player.appearance) });
-        drawPlayer(finalCtx, fw / 2, fh - 4, fp, imageMap, finalAnim, ps);
+        drawPlayer(finalCtx, fw / 2, fh - 16, fp, imageMap, finalAnim, ps);
         finalCtx.restore();
       }
 
@@ -1806,7 +1557,6 @@
             variantId:        player.appearance.variantId || "base",
             variantCustomizations: serializableVariantCustomizations(player.appearance.variantCustomizations),
             combatCustomization: serializableCombatCustomization(player.appearance.combatCustomization),
-            specialCustomization: serializableCombatCustomization(player.appearance.specialCustomization || {}),
             faceId:           player.appearance.faceId,
             faceColor:        player.appearance.faceColor,
             browColor:        player.appearance.browColor  || null,
@@ -1849,15 +1599,6 @@
         player.appearance.variantId   = d.variantId  || "base";
         hydrateVariantCustomizations(d.variantCustomizations || {});
         hydrateCombatCustomization(d.combatCustomization || {});
-        // Cargar sheet especial
-        if (d.specialCustomization) {
-          player.appearance.specialCustomization = d.specialCustomization || {};
-          if (d.specialCustomization.spriteDataURL) {
-            const img = new Image();
-            img.onload = () => { player.appearance.specialCustomization.spriteImage = img; invalidateHairCache(); };
-            img.src = d.specialCustomization.spriteDataURL;
-          }
-        }
         player.appearance.faceId      = d.faceId     || "fm0";
         player.appearance.faceColor   = d.faceColor  || null;
         player.appearance.browColor   = d.browColor  || null;
