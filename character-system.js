@@ -618,22 +618,69 @@
     { id: "other",   label: "Otro",      slot: "over_shirt",  icon: "✨" },
   ];
 
-  function addUserAccessory({ name, type, color, userImage, dataURL, combatDataURL, combatUserImage, scale, animFrames, combatScale, combatAnimFrames }) {
+  // ═════════════════════════════════════════════════════════════════
+  //  ACCESORIOS NORMALES — items pequeños (user_acc_*)
+  // ═════════════════════════════════════════════════════════════════
+
+  function addUserAccessory({ name, type, color, userImage, dataURL, combatDataURL, combatUserImage, specialDataURL, specialUserImage, scale, animFrames, rowCount, combatScale, combatAnimFrames, combatRowCount, specialScale, specialAnimFrames, specialRowCount }) {
     const typeDef = ACCESSORY_TYPES.find(t => t.id === type) || ACCESSORY_TYPES[ACCESSORY_TYPES.length - 1];
     const entry = {
-      id:         "user_acc_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
-      name:       name || "Accesorio",
-      type:       typeDef.id,
-      slot:       typeDef.slot,
-      color:      color || "#888888",
-      userImage:  userImage || null,
-      dataURL:    dataURL   || null,
-      combatDataURL: combatDataURL || null,
+      id:             "user_acc_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
+      name:           name || "Accesorio",
+      type:           typeDef.id,
+      slot:           typeDef.slot,
+      color:          color || "#888888",
+      userImage:      userImage || null,
+      dataURL:        dataURL || null,
+      combatDataURL:  combatDataURL || null,
       combatUserImage: combatUserImage || null,
-      scale: scale ?? 1,
-      animFrames: animFrames ?? 6,
-      combatScale: combatScale ?? 1,
+      specialDataURL: specialDataURL || null,
+      specialUserImage: specialUserImage || null,
+      scale:          scale ?? 1,
+      animFrames:     animFrames ?? 6,
+      rowCount:       rowCount ?? 0,
+      combatScale:    combatScale ?? 1,
       combatAnimFrames: combatAnimFrames ?? 6,
+      combatRowCount: combatRowCount ?? 0,
+      specialScale:   specialScale ?? 1,
+      specialAnimFrames: specialAnimFrames ?? 6,
+      specialRowCount: specialRowCount ?? 0,
+      isFreeCustomization: false,
+    };
+    ACCESSORIES_CATALOG.push(entry);
+    return entry;
+  }
+
+  // ═════════════════════════════════════════════════════════════════
+  //  PERSONALIZACIÓN LIBRE — sheets completos (fc_*)
+  // ═════════════════════════════════════════════════════════════════
+
+  function addFreeCustomizationSheet({ name, raceName, userImage, dataURL, combatUserImage, combatDataURL, specialUserImage, specialDataURL, scale, animFrames, rowCount, combatScale, combatAnimFrames, combatRowCount, specialScale, specialAnimFrames, specialRowCount, yOffset }) {
+    const newId = "fc_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6);
+    const entry = {
+      id:              newId,
+      name:            name || "Personalización",
+      type:            "other",
+      slot:            "over_sheet",
+      color:           null,
+      userImage:       userImage || null,
+      dataURL:         dataURL || null,
+      combatUserImage: combatUserImage || null,
+      combatDataURL:   combatDataURL || null,
+      specialUserImage: specialUserImage || null,
+      specialDataURL:  specialDataURL || null,
+      scale:           scale ?? 1,
+      animFrames:      animFrames ?? 6,
+      rowCount:        rowCount ?? 12,
+      combatScale:     combatScale ?? 1,
+      combatAnimFrames: combatAnimFrames ?? 6,
+      combatRowCount:  combatRowCount ?? 13,
+      specialScale:    specialScale ?? 1,
+      specialAnimFrames: specialAnimFrames ?? 6,
+      specialRowCount: specialRowCount ?? 10,
+      yOffset:         yOffset ?? 0,
+      raceName:        raceName || null,
+      isFreeCustomization: true,
     };
     ACCESSORIES_CATALOG.push(entry);
     return entry;
