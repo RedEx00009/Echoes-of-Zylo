@@ -910,10 +910,14 @@
     const byDefault = img.naturalWidth >= FRAME_W * COMBAT_MAX_COLS
       && img.naturalHeight >= FRAME_H * COMBAT_TOTAL_ROWS;
     const gridAspect = COMBAT_MAX_COLS / COMBAT_TOTAL_ROWS;
-    const imgAspect = img.naturalWidth / img.naturalHeight;
+    const imgAspect  = img.naturalWidth / img.naturalHeight;
+    // Tolerancia estricta + comprobación de divisibilidad para evitar falsos positivos
+    const aspectMatch  = Math.abs(imgAspect - gridAspect) < 0.025;
+    const cleanCols    = (img.naturalWidth  % COMBAT_MAX_COLS)   / img.naturalWidth  < 0.02;
+    const cleanRows    = (img.naturalHeight % COMBAT_TOTAL_ROWS) / img.naturalHeight < 0.02;
     const byScaled = img.naturalWidth >= COMBAT_MAX_COLS * 8
       && img.naturalHeight >= COMBAT_TOTAL_ROWS * 8
-      && Math.abs(imgAspect - gridAspect) < 0.06;
+      && aspectMatch && cleanCols && cleanRows;
     return byDefault || byScaled;
   }
 
@@ -937,12 +941,20 @@
 
   function hasFullGridLayout(img) {
     if (!img || !img.naturalWidth || !img.naturalHeight) return false;
+    // Verificación exacta: dimensiones múltiplo perfecto de la grilla estándar (96×96 × 6 cols × 14 filas)
     const byDefaultGrid = img.naturalWidth >= FRAME_W * MAX_COLS && img.naturalHeight >= FRAME_H * TOTAL_ROWS;
+    // Verificación por aspecto para sheets escalados: tolerancia reducida a 0.02 para evitar
+    // falsos positivos con sprites custom que tienen proporciones similares pero grilla distinta
     const gridAspect = MAX_COLS / TOTAL_ROWS;
-    const imgAspect = img.naturalWidth / img.naturalHeight;
+    const imgAspect  = img.naturalWidth / img.naturalHeight;
+    // Solo acepta el formato escalado si el aspecto coincide muy estrictamente Y
+    // el ancho es divisible de forma limpia por MAX_COLS (sin residuo > 2%)
+    const aspectMatch = Math.abs(imgAspect - gridAspect) < 0.02;
+    const cleanCols   = (img.naturalWidth % MAX_COLS) / img.naturalWidth < 0.02;
+    const cleanRows   = (img.naturalHeight % TOTAL_ROWS) / img.naturalHeight < 0.02;
     const byScaledGrid = img.naturalWidth >= MAX_COLS * 8
       && img.naturalHeight >= TOTAL_ROWS * 8
-      && Math.abs(imgAspect - gridAspect) < 0.04;
+      && aspectMatch && cleanCols && cleanRows;
     return byDefaultGrid || byScaledGrid;
   }
 
