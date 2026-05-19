@@ -1,98 +1,119 @@
 // @ts-nocheck
 /**
- * DRAGON CREATOR Z — Character System v2.0.0
+ * DRAGON CREATOR Z — Character System v3.0.0
  *
  * ══════════════════════════════════════════════════════════════════
- *  NUEVA ESTRUCTURA DE SPRITESHEET (3 archivos por personaje)
+ *  ESTRUCTURA DE SPRITESHEET — Base (RP / Exploración)
+ *  Grilla real: 6 columnas × 14 filas
+ *  Tamaño de celda: calculado dinámicamente del sheet (img.width/6, img.height/14)
+ *  Tamaño de display: DISPLAY_W × DISPLAY_H (configurable)
  * ══════════════════════════════════════════════════════════════════
  *
- *  ── Brett_Base.png  (RP / Exploración) ── MAX_COLS = 5, TOTAL_ROWS = 12
- *   Row 0  → base_view       (vista personaje,  1 frame)
- *   Row 1  → idle            (3 frames)
- *   Row 2  → walk            (4 frames)
- *   Row 3  → run             (4 frames)
- *   Row 4  → jump            (3 frames)
- *   Row 5  → fall            (3 frames)
- *   Row 6  → land            (3 frames)
- *   Row 7  → fly             (4 frames)
- *   Row 8  → hover           (5 frames)
- *   Row 9  → meditate        (3 frames)
- *   Row 10 → sleep           (3 frames)
- *   Row 11 → interaction     (3 frames)
+ *  ── *_Base.png  (RP / Exploración) ── MAX_COLS=6, TOTAL_ROWS=14
+ *   Row  0 → base_view   (1 frame)
+ *   Row  1 → idle        (3 frames)
+ *   Row  2 → walk        (4 frames)
+ *   Row  3 → run         (4 frames)
+ *   Row  4 → run2        (4 frames)   ← segunda variante de carrera
+ *   Row  5 → jump        (3 frames)
+ *   Row  6 → fall        (2 frames)
+ *   Row  7 → fly         (4 frames)
+ *   Row  8 → hover       (2 frames)
+ *   Row  9 → meditate    (3 frames)
+ *   Row 10 → sleep       (3 frames)
+ *   Row 11 → interaction (3 frames)
+ *   Row 12 → (reservada / futura)
+ *   Row 13 → (reservada / futura)
  *
- *  ── Brett_Pelea.png  (Combate) ── COMBAT_MAX_COLS = 4, COMBAT_TOTAL_ROWS = 13
- *   Row 0  → combat_view     (vista personaje combate, 1 frame)
- *   Row 1  → combat_idle     (4 frames)
- *   Row 2  → dash            (3 frames)
- *   Row 3  → rush            (3 frames)
- *   Row 4  → light_combo     (4 frames)
- *   Row 5  → heavy_combo     (3 frames)
- *   Row 6  → special         (3 frames)
- *   Row 7  → block           (2 frames)
- *   Row 8  → hit             (3 frames)
- *   Row 9  → recovery        (3 frames)
- *   Row 10 → charge          (3 frames)
- *   Row 11 → sparring        (4 frames)
- *   Row 12 → knockback_fly   (1 frame)
+ *  ── *_Pelea.png  (Combate) ── COMBAT_MAX_COLS=4, COMBAT_TOTAL_ROWS=13
+ *   Row  0 → combat_view   (1 frame)
+ *   Row  1 → combat_idle   (4 frames)
+ *   Row  2 → dash          (3 frames)
+ *   Row  3 → rush          (3 frames)
+ *   Row  4 → light_combo   (4 frames)
+ *   Row  5 → heavy_combo   (3 frames)
+ *   Row  6 → special       (3 frames)
+ *   Row  7 → block         (2 frames)
+ *   Row  8 → hit           (3 frames)
+ *   Row  9 → recovery      (3 frames)
+ *   Row 10 → charge        (3 frames)
+ *   Row 11 → sparring      (4 frames)
+ *   Row 12 → knockback_fly (1 frame)
  *
- *  ── Brett_special.png  (Especiales) ── SPECIAL_MAX_COLS = 6, SPECIAL_TOTAL_ROWS = 10
- *   Row 0  → fusion_metamoru (4 frames)
- *   Row 1  → fusion_potara   (3 frames)
- *   Row 2  → carry_player    (4 frames)
- *   Row 3  → training        (6 frames)
- *   Row 4  → hold_item       (4 frames)
- *   Row 5  → use_item        (4 frames)
- *   Row 6  → eat_drink       (3 frames)
- *   Row 7  → drive           (1 frame)
- *   Row 8  → sit             (3 frames)
- *   Row 9  → emote           (3 frames)
+ *  ── *_special.png  (Especiales) ── SPECIAL_MAX_COLS=6, SPECIAL_TOTAL_ROWS=10
+ *   Row 0 → fusion_metamoru (4 frames)
+ *   Row 1 → fusion_potara   (3 frames)
+ *   Row 2 → carry_player    (4 frames)
+ *   Row 3 → training        (6 frames)
+ *   Row 4 → hold_item       (4 frames)
+ *   Row 5 → use_item        (4 frames)
+ *   Row 6 → eat_drink       (3 frames)
+ *   Row 7 → drive           (1 frame)
+ *   Row 8 → sit             (3 frames)
+ *   Row 9 → emote           (3 frames)
  */
 
 "use strict";
 
 (function () {
 
-  const FRAME_W   = 96;
-  const FRAME_H   = 96;
+  // ═══════════════════════════════════════════════════════════════
+  //  CONSTANTES DE DISPLAY  (tamaño en pantalla, no del sprite)
+  // ═══════════════════════════════════════════════════════════════
+
   const DISPLAY_W = 180;
   const DISPLAY_H = 220;
   const IMPORTED_LAYER_SCALE = 1.22;
 
+  // Fallback si no se puede leer el sheet (96×96 era el valor antiguo)
+  const FRAME_W = 96;
+  const FRAME_H = 96;
+
   // ═══════════════════════════════════════════════════════════════
-  //  RP / EXPLORACIÓN META  (Brett_Base.png)
+  //  RP / EXPLORACIÓN — grilla REAL del sprite
+  //  6 columnas × 14 filas
   // ═══════════════════════════════════════════════════════════════
 
-  const MAX_COLS   = 5;   // columna más ancha: hover tiene 5 frames
-  const TOTAL_ROWS = 12;
+  const MAX_COLS   = 6;
+  const TOTAL_ROWS = 14;
 
+  /**
+   * VIEW_META: meta de la fila de previsualización del personaje.
+   */
   const VIEW_META = {
     base_view: { row: 0, frames: 1, fps: 1, loop: true, label: "Base" },
   };
 
+  /**
+   * ACTIONS_META: animaciones de exploración/RP.
+   * Cada entrada define exactamente cuántos frames usa su fila
+   * (nunca asumimos que todas tienen MAX_COLS frames).
+   */
   const ACTIONS_META = {
-    idle:        { row: 1,  frames: 3, fps: 3,  loop: true,  label: "Idle"        },
-    walk:        { row: 2,  frames: 4, fps: 6,  loop: true,  label: "Walk"        },
-    run:         { row: 3,  frames: 4, fps: 12, loop: true,  label: "Run"         },
-    jump:        { row: 4,  frames: 3, fps: 8,  loop: false, label: "Jump"        },
-    fall:        { row: 5,  frames: 3, fps: 8,  loop: false, label: "Fall"        },
-    land:        { row: 6,  frames: 3, fps: 10, loop: false, label: "Land"        },
-    fly:         { row: 7,  frames: 4, fps: 6,  loop: true,  label: "Fly"         },
-    hover:       { row: 8,  frames: 2, fps: 4,  loop: true,  label: "Hover"       },
-    meditate:    { row: 9,  frames: 3, fps: 2,  loop: true,  label: "Meditar"     },
+    idle:        { row:  1, frames: 3, fps: 3,  loop: true,  label: "Idle"        },
+    walk:        { row:  2, frames: 4, fps: 6,  loop: true,  label: "Walk"        },
+    run:         { row:  3, frames: 4, fps: 12, loop: true,  label: "Run"         },
+    run2:        { row:  4, frames: 4, fps: 14, loop: true,  label: "Run 2"       },
+    jump:        { row:  5, frames: 3, fps: 8,  loop: false, label: "Jump"        },
+    fall:        { row:  6, frames: 2, fps: 6,  loop: false, label: "Fall"        },
+    fly:         { row:  7, frames: 4, fps: 6,  loop: true,  label: "Fly"         },
+    hover:       { row:  8, frames: 2, fps: 4,  loop: true,  label: "Hover"       },
+    meditate:    { row:  9, frames: 3, fps: 2,  loop: true,  label: "Meditar"     },
     sleep:       { row: 10, frames: 3, fps: 1,  loop: true,  label: "Sleep"       },
     interaction: { row: 11, frames: 3, fps: 4,  loop: false, label: "Interaction" },
+    // Filas 12-13 reservadas — no exponer animaciones hasta tener contenido
   };
 
   const ACTIONS_META_MALE   = ACTIONS_META;
   const ACTIONS_META_FEMALE = ACTIONS_META;
 
-  const IDLE_ROW = ACTIONS_META.idle.row;
+  const IDLE_ROW = ACTIONS_META.idle.row; // 1
 
   // ═══════════════════════════════════════════════════════════════
-  //  COMBATE META  (Brett_Pelea.png)
+  //  COMBATE — grilla 4 columnas × 13 filas
   // ═══════════════════════════════════════════════════════════════
 
-  const COMBAT_MAX_COLS   = 4;   // columna más ancha: combat_idle / light_combo / sparring = 4
+  const COMBAT_MAX_COLS   = 4;
   const COMBAT_TOTAL_ROWS = 13;
 
   const COMBAT_VIEW_META = {
@@ -100,28 +121,28 @@
   };
 
   const COMBAT_ACTIONS_META = {
-    combat_view:   { row: 0,  frames: 1, fps: 1,  loop: true,  label: "Combat View"   },
-    combat_idle:   { row: 1,  frames: 4, fps: 4,  loop: true,  label: "Combat Idle"   },
-    dash:          { row: 2,  frames: 3, fps: 12, loop: false, label: "Dash"          },
-    rush:          { row: 3,  frames: 3, fps: 12, loop: false, label: "Rush"          },
-    light_combo:   { row: 4,  frames: 4, fps: 10, loop: false, label: "Light Combo"   },
-    heavy_combo:   { row: 5,  frames: 3, fps: 9,  loop: false, label: "Heavy Combo"   },
-    special:       { row: 6,  frames: 3, fps: 8,  loop: false, label: "Special"       },
-    block:         { row: 7,  frames: 2, fps: 6,  loop: false, label: "Block"         },
-    hit:           { row: 8,  frames: 3, fps: 8,  loop: false, label: "Hit"           },
-    recovery:      { row: 9,  frames: 3, fps: 6,  loop: false, label: "Recovery"      },
+    combat_view:   { row:  0, frames: 1, fps: 1,  loop: true,  label: "Combat View"   },
+    combat_idle:   { row:  1, frames: 4, fps: 4,  loop: true,  label: "Combat Idle"   },
+    dash:          { row:  2, frames: 3, fps: 12, loop: false, label: "Dash"          },
+    rush:          { row:  3, frames: 3, fps: 12, loop: false, label: "Rush"          },
+    light_combo:   { row:  4, frames: 4, fps: 10, loop: false, label: "Light Combo"   },
+    heavy_combo:   { row:  5, frames: 3, fps: 9,  loop: false, label: "Heavy Combo"   },
+    special:       { row:  6, frames: 3, fps: 8,  loop: false, label: "Special"       },
+    block:         { row:  7, frames: 2, fps: 6,  loop: false, label: "Block"         },
+    hit:           { row:  8, frames: 3, fps: 8,  loop: false, label: "Hit"           },
+    recovery:      { row:  9, frames: 3, fps: 6,  loop: false, label: "Recovery"      },
     charge:        { row: 10, frames: 3, fps: 4,  loop: true,  label: "Charge"        },
     sparring:      { row: 11, frames: 4, fps: 8,  loop: true,  label: "Sparring"      },
     knockback_fly: { row: 12, frames: 1, fps: 1,  loop: false, label: "Knockback Fly" },
   };
 
-  const COMBAT_IDLE_ROW = COMBAT_ACTIONS_META.combat_idle.row;
+  const COMBAT_IDLE_ROW = COMBAT_ACTIONS_META.combat_idle.row; // 1
 
   // ═══════════════════════════════════════════════════════════════
-  //  ESPECIALES META  (Brett_special.png)
+  //  ESPECIALES — grilla 6 columnas × 10 filas
   // ═══════════════════════════════════════════════════════════════
 
-  const SPECIAL_MAX_COLS   = 6;   // training tiene 6 frames
+  const SPECIAL_MAX_COLS   = 6;
   const SPECIAL_TOTAL_ROWS = 10;
 
   const SPECIAL_ACTIONS_META = {
@@ -138,10 +159,10 @@
   };
 
   // ═══════════════════════════════════════════════════════════════
-  //  MAPEOS DE COMPATIBILIDAD  (combat ↔ exploración, legacy)
+  //  MAPEOS DE COMPATIBILIDAD
   // ═══════════════════════════════════════════════════════════════
 
-  /** Mapeo animación combate → animación RP equivalente (para capas de ropa) */
+  /** Combate → animación RP equivalente (para capas de ropa sobre sheet base) */
   const COMBAT_TO_IDLE_MAP = {
     combat_view:   "idle",
     combat_idle:   "idle",
@@ -158,14 +179,14 @@
     knockback_fly: "fly",
   };
 
-  /** Mapeo hacia atrás: animación RP → animación combate equivalente */
+  /** RP → combate equivalente */
   const LEGACY_TO_COMBAT_MAP = {
     idle:        "combat_idle",
     walk:        "combat_idle",
     run:         "dash",
+    run2:        "dash",
     jump:        "dash",
     fall:        "dash",
-    land:        "combat_idle",
     fly:         "knockback_fly",
     hover:       "combat_idle",
     meditate:    "charge",
@@ -184,21 +205,14 @@
     return rev ? rev[0] : action;
   }
 
-  // Alias de metas para capas (todas usan el mismo sheet de exploración)
-  const HAIR_VIEW_META       = VIEW_META;
-  const HAIR_ACTIONS_META    = ACTIONS_META;
-  const FACE_VIEW_META       = VIEW_META;
-  const FACE_ACTIONS_META    = ACTIONS_META;
-  const TOP_VIEW_META        = VIEW_META;
-  const TOP_ACTIONS_META     = ACTIONS_META;
-  const BOTTOM_VIEW_META     = VIEW_META;
-  const BOTTOM_ACTIONS_META  = ACTIONS_META;
-  const SHOES_VIEW_META      = VIEW_META;
-  const SHOES_ACTIONS_META   = ACTIONS_META;
-  const GLOVES_VIEW_META     = VIEW_META;
-  const GLOVES_ACTIONS_META  = ACTIONS_META;
-  const AURA_VIEW_META       = VIEW_META;
-  const AURA_ACTIONS_META    = ACTIONS_META;
+  // Alias de metas de capas (todas las capas usan el sheet de exploración)
+  const HAIR_VIEW_META      = VIEW_META;   const HAIR_ACTIONS_META   = ACTIONS_META;
+  const FACE_VIEW_META      = VIEW_META;   const FACE_ACTIONS_META   = ACTIONS_META;
+  const TOP_VIEW_META       = VIEW_META;   const TOP_ACTIONS_META    = ACTIONS_META;
+  const BOTTOM_VIEW_META    = VIEW_META;   const BOTTOM_ACTIONS_META = ACTIONS_META;
+  const SHOES_VIEW_META     = VIEW_META;   const SHOES_ACTIONS_META  = ACTIONS_META;
+  const GLOVES_VIEW_META    = VIEW_META;   const GLOVES_ACTIONS_META = ACTIONS_META;
+  const AURA_VIEW_META      = VIEW_META;   const AURA_ACTIONS_META   = ACTIONS_META;
 
   function getActionsMeta()        { return ACTIONS_META; }
   function getViewMeta()           { return VIEW_META; }
@@ -221,36 +235,138 @@
   function getAuraActionsMeta()    { return AURA_ACTIONS_META; }
 
   // ═══════════════════════════════════════════════════════════════
+  //  DETECCIÓN DE FRAME SIZE — basada en la grilla real del sheet
+  // ═══════════════════════════════════════════════════════════════
+
+  /**
+   * Calcula el tamaño de celda de un sheet dado.
+   * No asume 96×96 — usa el tamaño real de la imagen dividido
+   * por la cantidad de columnas/filas de la grilla correspondiente.
+   *
+   * Retorna { fw, fh } en píxeles del sheet original.
+   */
+  function _computeFrameSize(img, cols, rows) {
+    if (!img || !img.naturalWidth || !img.naturalHeight) {
+      return { fw: FRAME_W, fh: FRAME_H };
+    }
+    const fw = Math.floor(img.naturalWidth  / cols);
+    const fh = Math.floor(img.naturalHeight / rows);
+    return {
+      fw: fw > 0 ? fw : FRAME_W,
+      fh: fh > 0 ? fh : FRAME_H,
+    };
+  }
+
+  /**
+   * Detecta qué tipo de grilla tiene el sheet:
+   *   "base"    → exploración (MAX_COLS × TOTAL_ROWS)
+   *   "combat"  → combate    (COMBAT_MAX_COLS × COMBAT_TOTAL_ROWS)
+   *   "special" → especiales (SPECIAL_MAX_COLS × SPECIAL_TOTAL_ROWS)
+   *   null      → desconocido / imagen suelta
+   *
+   * La detección usa el aspect ratio de la imagen comparado con el
+   * aspect ratio esperado de cada grilla. Tolerancia: 8 %.
+   */
+  function _detectSheetType(img) {
+    if (!img || !img.naturalWidth || !img.naturalHeight) return null;
+    const iw = img.naturalWidth, ih = img.naturalHeight;
+    const ratio = iw / ih;
+
+    const ratioBase    = MAX_COLS   / TOTAL_ROWS;
+    const ratioCombat  = COMBAT_MAX_COLS   / COMBAT_TOTAL_ROWS;
+    const ratioSpecial = SPECIAL_MAX_COLS  / SPECIAL_TOTAL_ROWS;
+
+    const TOL = 0.08;
+
+    if (Math.abs(ratio - ratioCombat)  < TOL &&
+        iw >= COMBAT_MAX_COLS   * 8 &&
+        ih >= COMBAT_TOTAL_ROWS * 8) return "combat";
+
+    if (Math.abs(ratio - ratioSpecial) < TOL &&
+        iw >= SPECIAL_MAX_COLS   * 8 &&
+        ih >= SPECIAL_TOTAL_ROWS * 8) return "special";
+
+    if (Math.abs(ratio - ratioBase)    < TOL &&
+        iw >= MAX_COLS   * 8 &&
+        ih >= TOTAL_ROWS * 8) return "base";
+
+    return null;
+  }
+
+  const _frameSizeCache = new Map();
+
+  /**
+   * Obtiene (y cachea) { fw, fh } para el sheet.
+   * El frame size se calcula a partir de la imagen real, no de constantes fijas.
+   */
+  function getFrameSize(img) {
+    if (!img) return { fw: FRAME_W, fh: FRAME_H };
+    const key = (img.src || "") + "|" + img.naturalWidth + "x" + img.naturalHeight;
+    if (_frameSizeCache.has(key)) return _frameSizeCache.get(key);
+
+    const type = _detectSheetType(img);
+    let result;
+    switch (type) {
+      case "combat":  result = _computeFrameSize(img, COMBAT_MAX_COLS,  COMBAT_TOTAL_ROWS);  break;
+      case "special": result = _computeFrameSize(img, SPECIAL_MAX_COLS, SPECIAL_TOTAL_ROWS); break;
+      case "base":    result = _computeFrameSize(img, MAX_COLS,         TOTAL_ROWS);         break;
+      default:        result = { fw: FRAME_W, fh: FRAME_H };
+    }
+    _frameSizeCache.set(key, result);
+    return result;
+  }
+
+  function detectFrameSize(img)      { return getFrameSize(img); }
+  function getCombatFrameSize(img)   { return _computeFrameSize(img, COMBAT_MAX_COLS,  COMBAT_TOTAL_ROWS); }
+  function getSpecialFrameSize(img)  { return _computeFrameSize(img, SPECIAL_MAX_COLS, SPECIAL_TOTAL_ROWS); }
+  function getBattleFrameSize(img)   { return getCombatFrameSize(img); }  // alias legacy
+
+  function isCompatibleSheet(img)  { return _detectSheetType(img) === "base"; }
+  function isBattleSheet(img)      { return _detectSheetType(img) === "combat"; }
+  function isSpecialSheet(img)     { return _detectSheetType(img) === "special"; }
+  function hasFullGridLayout(img)  { return isCompatibleSheet(img); }
+  function hasCombatGridLayout(img){ return isBattleSheet(img); }
+  function hasSpecialGridLayout(img){ return isSpecialSheet(img); }
+  function hasSheetLayout(img)     { return _detectSheetType(img) !== null; }
+
+  /** Coordenadas del primer frame de idle (para thumbnails / fallback) */
+  function getIdleFrameCoords(img) {
+    const { fw, fh } = getFrameSize(img);
+    return { srcX: 0, srcY: IDLE_ROW * fh, fw, fh };
+  }
+
+  // ═══════════════════════════════════════════════════════════════
   //  RAZAS
   // ═══════════════════════════════════════════════════════════════
 
   const RACE_CATALOG = [
     { id: "human",    name: "HUMANO",    spriteKey: "human_male",    skinColor: "#e8c898", eyeColor: "#3a2a1a", variants: [
-      { id: "base",  label: "Base",    suffix: "" },
-    ] },
+      { id: "base", label: "Base", suffix: "" },
+    ]},
     { id: "saiyan",   name: "SAIYAN",    spriteKey: "saiyan_male",   skinColor: "#d4a574", eyeColor: "#1a1a1a", variants: [
       { id: "base", label: "Base", suffix: "" },
-    ] },
+    ]},
     { id: "namekian", name: "NAMEKIANO", spriteKey: "namekian_male", skinColor: "#4caf50", eyeColor: "#ff0000", genderless: true, variants: [
       { id: "base", label: "Base", suffix: "" },
-    ] },
+    ]},
     { id: "android",  name: "ANDROIDE",  spriteKey: "android_male",  skinColor: "#c0c0c0", eyeColor: "#00e5ff", variants: [
       { id: "base", label: "Base", suffix: "" },
-    ] },
+    ]},
     { id: "kaioshin", name: "KAIOSHIN",  spriteKey: "kaioshin_male", skinColor: "#9c88ff", eyeColor: "#ffd700", variants: [
       { id: "base", label: "Base", suffix: "" },
-    ] },
+    ]},
     { id: "frieza",   name: "FRIEZA",    spriteKey: "frieza_male",   skinColor: "#f0e0f0", eyeColor: "#ff0000", genderless: true, variants: [
       { id: "base", label: "Base", suffix: "" },
-    ] },
+    ]},
     { id: "Custom",   name: "CUSTOM",    spriteKey: "null",          skinColor: "#f0e0f0", eyeColor: "#ffffff", genderless: true, variants: [
       { id: "base", label: "Base", suffix: "" },
-    ] },
+    ]},
   ];
 
   function getVariantDef(variantId) {
     if (!variantId || variantId === "base") return null;
-    if (variantId === "fight") return { id: "fight", label: "Combate", suffix: "_fight" };
+    if (variantId === "fight")   return { id: "fight",   label: "Combate",    suffix: "_fight" };
+    if (variantId === "special") return { id: "special", label: "Especiales", suffix: "_special" };
     for (const race of RACE_CATALOG) {
       const found = race.variants?.find((v) => v.id === variantId);
       if (found) return found;
@@ -269,9 +385,7 @@
   function getVariantSuffixes() {
     const suffixes = new Set();
     RACE_CATALOG.forEach((race) => {
-      (race.variants || []).forEach((variant) => {
-        if (variant.suffix) suffixes.add(variant.suffix);
-      });
+      (race.variants || []).forEach((v) => { if (v.suffix) suffixes.add(v.suffix); });
     });
     return suffixes;
   }
@@ -289,9 +403,7 @@
       "faceId", "faceColor", "browColor", "pupilColor", "eyeColor",
       "hairId", "hairColor", "topId", "bottomId", "shoesId",
       "glovesId", "skinColor", "auraId", "auraColor", "accessoryId",
-    ].forEach((key) => {
-      if (custom[key] !== undefined) overrides[key] = custom[key];
-    });
+    ].forEach((key) => { if (custom[key] !== undefined) overrides[key] = custom[key]; });
     return Object.assign({}, app, overrides, {
       variantId,
       variantCustomizations: app.variantCustomizations,
@@ -303,43 +415,43 @@
   // ═══════════════════════════════════════════════════════════════
 
   const FACE_CATALOG_MALE = [
-    { id: "fm0", name: "Sin cara",   spriteKey: null,          tintable: false },
-    { id: "fm1", name: "Ojos Nor",   spriteKey: "face_fm1",    tintable: true,  eyeColor: true  },
-    { id: "fm2", name: "Ojos Fri",   spriteKey: "face_fm2",    tintable: true,  eyeColor: true  },
-    { id: "fm3", name: "Cicatriz 1", spriteKey: "face_fm3",    tintable: false },
-    { id: "fm4", name: "Cicatriz 2", spriteKey: "face_fm4",    tintable: false },
-    { id: "fm5", name: "Marcas War", spriteKey: "face_fm5",    tintable: true  },
-    { id: "fm6", name: "Pinturas",   spriteKey: "face_fm6",    tintable: true  },
-    { id: "fm7", name: "Tatuaje",    spriteKey: "face_fm7",    tintable: true  },
-    { id: "fm8", name: "Barba",      spriteKey: "face_fm8",    tintable: true  },
+    { id: "fm0", name: "Sin cara",   spriteKey: null,       tintable: false },
+    { id: "fm1", name: "Ojos Nor",   spriteKey: "face_fm1", tintable: true,  eyeColor: true },
+    { id: "fm2", name: "Ojos Fri",   spriteKey: "face_fm2", tintable: true,  eyeColor: true },
+    { id: "fm3", name: "Cicatriz 1", spriteKey: "face_fm3", tintable: false },
+    { id: "fm4", name: "Cicatriz 2", spriteKey: "face_fm4", tintable: false },
+    { id: "fm5", name: "Marcas War", spriteKey: "face_fm5", tintable: true },
+    { id: "fm6", name: "Pinturas",   spriteKey: "face_fm6", tintable: true },
+    { id: "fm7", name: "Tatuaje",    spriteKey: "face_fm7", tintable: true },
+    { id: "fm8", name: "Barba",      spriteKey: "face_fm8", tintable: true },
   ];
 
   const FACE_CATALOG_FEMALE = [
-    { id: "ff0", name: "Sin cara",   spriteKey: null,          tintable: false },
-    { id: "ff1", name: "Ojos Nor F", spriteKey: "face_ff1",    tintable: true,  eyeColor: true  },
-    { id: "ff2", name: "Ojos Cat F", spriteKey: "face_ff2",    tintable: true,  eyeColor: true  },
-    { id: "ff3", name: "Rubor",      spriteKey: "face_ff3",    tintable: true  },
-    { id: "ff4", name: "Pintura F",  spriteKey: "face_ff4",    tintable: true  },
-    { id: "ff5", name: "Marcas F",   spriteKey: "face_ff5",    tintable: true  },
-    { id: "ff6", name: "Cicatriz F", spriteKey: "face_ff6",    tintable: false },
-    { id: "ff7", name: "Tatuaje F",  spriteKey: "face_ff7",    tintable: true  },
-    { id: "ff8", name: "Pecas",      spriteKey: "face_ff8",    tintable: false },
+    { id: "ff0", name: "Sin cara",   spriteKey: null,       tintable: false },
+    { id: "ff1", name: "Ojos Nor F", spriteKey: "face_ff1", tintable: true,  eyeColor: true },
+    { id: "ff2", name: "Ojos Cat F", spriteKey: "face_ff2", tintable: true,  eyeColor: true },
+    { id: "ff3", name: "Rubor",      spriteKey: "face_ff3", tintable: true },
+    { id: "ff4", name: "Pintura F",  spriteKey: "face_ff4", tintable: true },
+    { id: "ff5", name: "Marcas F",   spriteKey: "face_ff5", tintable: true },
+    { id: "ff6", name: "Cicatriz F", spriteKey: "face_ff6", tintable: false },
+    { id: "ff7", name: "Tatuaje F",  spriteKey: "face_ff7", tintable: true },
+    { id: "ff8", name: "Pecas",      spriteKey: "face_ff8", tintable: false },
   ];
 
   const FACE_CATALOG_NAMEKIAN = [
-    { id: "fn0", name: "Sin cara",    spriteKey: null,          tintable: false },
-    { id: "fn1", name: "Ojos Nam",    spriteKey: "face_fn1",    tintable: true,  eyeColor: true  },
-    { id: "fn2", name: "Marcas Nam",  spriteKey: "face_fn2",    tintable: true  },
-    { id: "fn3", name: "Ira Nam",     spriteKey: "face_fn3",    tintable: false },
-    { id: "fn4", name: "Puntitos",    spriteKey: "face_fn4",    tintable: true  },
+    { id: "fn0", name: "Sin cara",   spriteKey: null,       tintable: false },
+    { id: "fn1", name: "Ojos Nam",   spriteKey: "face_fn1", tintable: true, eyeColor: true },
+    { id: "fn2", name: "Marcas Nam", spriteKey: "face_fn2", tintable: true },
+    { id: "fn3", name: "Ira Nam",    spriteKey: "face_fn3", tintable: false },
+    { id: "fn4", name: "Puntitos",   spriteKey: "face_fn4", tintable: true },
   ];
 
   const FACE_CATALOG_FRIEZA = [
-    { id: "fr0", name: "Sin cara",    spriteKey: null,          tintable: false },
-    { id: "fr1", name: "Ojos Arc",    spriteKey: "face_fr1",    tintable: true,  eyeColor: true  },
-    { id: "fr2", name: "Marca Arc",   spriteKey: "face_fr2",    tintable: true  },
-    { id: "fr3", name: "Lineas Arc",  spriteKey: "face_fr3",    tintable: true  },
-    { id: "fr4", name: "Máscara",     spriteKey: "face_fr4",    tintable: false },
+    { id: "fr0", name: "Sin cara",   spriteKey: null,       tintable: false },
+    { id: "fr1", name: "Ojos Arc",   spriteKey: "face_fr1", tintable: true, eyeColor: true },
+    { id: "fr2", name: "Marca Arc",  spriteKey: "face_fr2", tintable: true },
+    { id: "fr3", name: "Lineas Arc", spriteKey: "face_fr3", tintable: true },
+    { id: "fr4", name: "Máscara",    spriteKey: "face_fr4", tintable: false },
   ];
 
   // ═══════════════════════════════════════════════════════════════
@@ -476,14 +588,14 @@
   ];
 
   const BOTTOM_CATALOG_FRIEZA = [
-    { id: "pr1", name: "Arm Inf 1",  spriteKey: "bottom_pr1", color: "#7c4dff" },
-    { id: "pr2", name: "Arm Inf 2",  spriteKey: "bottom_pr2", color: "#e040fb" },
-    { id: "pr3", name: "Manto Arc",  spriteKey: "bottom_pr3", color: "#f0e0f0" },
-    { id: "pr4", name: "Escam Neg",  spriteKey: "bottom_pr4", color: "#1a1a1a" },
-    { id: "pr5", name: "Escam Bla",  spriteKey: "bottom_pr5", color: "#f5f5f5" },
-    { id: "pr6", name: "Pant Arc",   spriteKey: "bottom_pr6", color: "#9e9e9e" },
-    { id: "pr7", name: "Pant Dor",   spriteKey: "bottom_pr7", color: "#ffd700" },
-    { id: "pr8", name: "Arm Inf 3",  spriteKey: "bottom_pr8", color: "#311b92" },
+    { id: "pr1", name: "Arm Inf 1", spriteKey: "bottom_pr1", color: "#7c4dff" },
+    { id: "pr2", name: "Arm Inf 2", spriteKey: "bottom_pr2", color: "#e040fb" },
+    { id: "pr3", name: "Manto Arc", spriteKey: "bottom_pr3", color: "#f0e0f0" },
+    { id: "pr4", name: "Escam Neg", spriteKey: "bottom_pr4", color: "#1a1a1a" },
+    { id: "pr5", name: "Escam Bla", spriteKey: "bottom_pr5", color: "#f5f5f5" },
+    { id: "pr6", name: "Pant Arc",  spriteKey: "bottom_pr6", color: "#9e9e9e" },
+    { id: "pr7", name: "Pant Dor",  spriteKey: "bottom_pr7", color: "#ffd700" },
+    { id: "pr8", name: "Arm Inf 3", spriteKey: "bottom_pr8", color: "#311b92" },
   ];
 
   // ═══════════════════════════════════════════════════════════════
@@ -539,7 +651,7 @@
   // ═══════════════════════════════════════════════════════════════
 
   const GLOVES_CATALOG_MALE = [
-    { id: "gm0", name: "Sin guantes", spriteKey: null,         color: null      },
+    { id: "gm0", name: "Sin guantes", spriteKey: null,        color: null      },
     { id: "gm1", name: "Blancos",     spriteKey: "glove_gm1", color: "#f5f5f5" },
     { id: "gm2", name: "Negros",      spriteKey: "glove_gm2", color: "#212121" },
     { id: "gm3", name: "Rojos",       spriteKey: "glove_gm3", color: "#c62828" },
@@ -550,7 +662,7 @@
   ];
 
   const GLOVES_CATALOG_FEMALE = [
-    { id: "gf0", name: "Sin guantes", spriteKey: null,         color: null      },
+    { id: "gf0", name: "Sin guantes", spriteKey: null,        color: null      },
     { id: "gf1", name: "Blancos F",   spriteKey: "glove_gf1", color: "#f5f5f5" },
     { id: "gf2", name: "Negros F",    spriteKey: "glove_gf2", color: "#212121" },
     { id: "gf3", name: "Rojos F",     spriteKey: "glove_gf3", color: "#c62828" },
@@ -561,18 +673,18 @@
   ];
 
   const GLOVES_CATALOG_NAMEKIAN = [
-    { id: "gn0", name: "Sin guantes",  spriteKey: null,          color: null      },
-    { id: "gn1", name: "Guant Nam 1",  spriteKey: "glove_gn1",  color: "#4caf50" },
-    { id: "gn2", name: "Guant Nam 2",  spriteKey: "glove_gn2",  color: "#1b5e20" },
-    { id: "gn3", name: "Vendaje",      spriteKey: "glove_gn3",  color: "#8d6e63" },
-    { id: "gn4", name: "Guant Neg N",  spriteKey: "glove_gn4",  color: "#1a2a1a" },
-    { id: "gn5", name: "Guant Amar",   spriteKey: "glove_gn5",  color: "#f9a825" },
-    { id: "gn6", name: "Guant Azul N", spriteKey: "glove_gn6",  color: "#0d47a1" },
-    { id: "gn7", name: "Guant Bla N",  spriteKey: "glove_gn7",  color: "#c8e6c9" },
+    { id: "gn0", name: "Sin guantes",  spriteKey: null,         color: null      },
+    { id: "gn1", name: "Guant Nam 1",  spriteKey: "glove_gn1", color: "#4caf50" },
+    { id: "gn2", name: "Guant Nam 2",  spriteKey: "glove_gn2", color: "#1b5e20" },
+    { id: "gn3", name: "Vendaje",      spriteKey: "glove_gn3", color: "#8d6e63" },
+    { id: "gn4", name: "Guant Neg N",  spriteKey: "glove_gn4", color: "#1a2a1a" },
+    { id: "gn5", name: "Guant Amar",   spriteKey: "glove_gn5", color: "#f9a825" },
+    { id: "gn6", name: "Guant Azul N", spriteKey: "glove_gn6", color: "#0d47a1" },
+    { id: "gn7", name: "Guant Bla N",  spriteKey: "glove_gn7", color: "#c8e6c9" },
   ];
 
   const GLOVES_CATALOG_FRIEZA = [
-    { id: "gr0", name: "Sin guantes", spriteKey: null,         color: null      },
+    { id: "gr0", name: "Sin guantes", spriteKey: null,        color: null      },
     { id: "gr1", name: "Arm Mano 1",  spriteKey: "glove_gr1", color: "#7c4dff" },
     { id: "gr2", name: "Arm Mano 2",  spriteKey: "glove_gr2", color: "#f0e0f0" },
     { id: "gr3", name: "Garra Arc",   spriteKey: "glove_gr3", color: "#1a1a1a" },
@@ -588,17 +700,17 @@
 
   const AURAS_CATALOG = [
     { id: "a0", name: "Sin aura",  spriteKey: null,       color: null,      style: "none"     },
-    { id: "a1", name: "Amarilla",  spriteKey: "aura_a1", color: "#fdd835", style: "flames"   },
-    { id: "a2", name: "Azul",      spriteKey: "aura_a2", color: "#00b0ff", style: "flames"   },
-    { id: "a3", name: "Roja",      spriteKey: "aura_a3", color: "#ff1744", style: "flames"   },
-    { id: "a4", name: "Morada",    spriteKey: "aura_a4", color: "#aa00ff", style: "flames"   },
-    { id: "a5", name: "Verde",     spriteKey: "aura_a5", color: "#00e676", style: "flames"   },
-    { id: "a6", name: "Blanca",    spriteKey: "aura_a6", color: "#e8eaf6", style: "divine"   },
-    { id: "a7", name: "Eléctrica", spriteKey: "aura_a7", color: "#90a4ae", style: "electric" },
+    { id: "a1", name: "Amarilla",  spriteKey: "aura_a1",  color: "#fdd835", style: "flames"   },
+    { id: "a2", name: "Azul",      spriteKey: "aura_a2",  color: "#00b0ff", style: "flames"   },
+    { id: "a3", name: "Roja",      spriteKey: "aura_a3",  color: "#ff1744", style: "flames"   },
+    { id: "a4", name: "Morada",    spriteKey: "aura_a4",  color: "#aa00ff", style: "flames"   },
+    { id: "a5", name: "Verde",     spriteKey: "aura_a5",  color: "#00e676", style: "flames"   },
+    { id: "a6", name: "Blanca",    spriteKey: "aura_a6",  color: "#e8eaf6", style: "divine"   },
+    { id: "a7", name: "Eléctrica", spriteKey: "aura_a7",  color: "#90a4ae", style: "electric" },
   ];
 
   // ═══════════════════════════════════════════════════════════════
-  //  ACCESORIOS IMPORTADOS POR USUARIO
+  //  ACCESORIOS
   // ═══════════════════════════════════════════════════════════════
 
   const ACCESSORIES_CATALOG = [
@@ -606,44 +718,43 @@
   ];
 
   const ACCESSORY_TYPES = [
-    { id: "belt",    label: "Cinturón",  slot: "belt_slot",   icon: "🥋" },
-    { id: "cape",    label: "Capa",      slot: "under_shirt", icon: "🧣" },
-    { id: "bag",     label: "Mochila",   slot: "under_shirt", icon: "🎒" },
-    { id: "collar",  label: "Collar",    slot: "over_shirt",  icon: "📿" },
-    { id: "brace",   label: "Brazal",    slot: "over_shirt",  icon: "⌚" },
-    { id: "mask",    label: "Máscara",   slot: "over_shirt",  icon: "🥽" },
-    { id: "scouter", label: "Scouter",   slot: "over_shirt",  icon: "🔭" },
-    { id: "tail",    label: "Cola",      slot: "under_shirt", icon: "🐾" },
-    { id: "wings",   label: "Alas",      slot: "under_shirt", icon: "🦋" },
-    { id: "other",   label: "Otro",      slot: "over_shirt",  icon: "✨" },
+    { id: "belt",    label: "Cinturón", slot: "belt_slot",   icon: "🥋" },
+    { id: "cape",    label: "Capa",     slot: "under_shirt", icon: "🧣" },
+    { id: "bag",     label: "Mochila",  slot: "under_shirt", icon: "🎒" },
+    { id: "collar",  label: "Collar",   slot: "over_shirt",  icon: "📿" },
+    { id: "brace",   label: "Brazal",   slot: "over_shirt",  icon: "⌚" },
+    { id: "mask",    label: "Máscara",  slot: "over_shirt",  icon: "🥽" },
+    { id: "scouter", label: "Scouter",  slot: "over_shirt",  icon: "🔭" },
+    { id: "tail",    label: "Cola",     slot: "under_shirt", icon: "🐾" },
+    { id: "wings",   label: "Alas",     slot: "under_shirt", icon: "🦋" },
+    { id: "other",   label: "Otro",     slot: "over_shirt",  icon: "✨" },
   ];
 
-  // ═════════════════════════════════════════════════════════════════
-  //  ACCESORIOS NORMALES — items pequeños (user_acc_*)
-  // ═════════════════════════════════════════════════════════════════
-
-  function addUserAccessory({ name, type, color, userImage, dataURL, combatDataURL, combatUserImage, specialDataURL, specialUserImage, scale, animFrames, rowCount, combatScale, combatAnimFrames, combatRowCount, specialScale, specialAnimFrames, specialRowCount }) {
+  function addUserAccessory({ name, type, color, userImage, dataURL, combatDataURL, combatUserImage,
+    specialDataURL, specialUserImage, scale, animFrames, rowCount,
+    combatScale, combatAnimFrames, combatRowCount,
+    specialScale, specialAnimFrames, specialRowCount }) {
     const typeDef = ACCESSORY_TYPES.find(t => t.id === type) || ACCESSORY_TYPES[ACCESSORY_TYPES.length - 1];
     const entry = {
-      id:             "user_acc_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
-      name:           name || "Accesorio",
-      type:           typeDef.id,
-      slot:           typeDef.slot,
-      color:          color || "#888888",
-      userImage:      userImage || null,
-      dataURL:        dataURL || null,
-      combatDataURL:  combatDataURL || null,
+      id:              "user_acc_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
+      name:            name || "Accesorio",
+      type:            typeDef.id,
+      slot:            typeDef.slot,
+      color:           color || "#888888",
+      userImage:       userImage || null,
+      dataURL:         dataURL || null,
+      combatDataURL:   combatDataURL || null,
       combatUserImage: combatUserImage || null,
-      specialDataURL: specialDataURL || null,
-      specialUserImage: specialUserImage || null,
-      scale:          scale ?? 1,
-      animFrames:     animFrames ?? 6,
-      rowCount:       rowCount ?? 0,
-      combatScale:    combatScale ?? 1,
-      combatAnimFrames: combatAnimFrames ?? 6,
-      combatRowCount: combatRowCount ?? 0,
-      specialScale:   specialScale ?? 1,
-      specialAnimFrames: specialAnimFrames ?? 6,
+      specialDataURL:  specialDataURL || null,
+      specialUserImage:specialUserImage || null,
+      scale:           scale ?? 1,
+      animFrames:      animFrames ?? MAX_COLS,
+      rowCount:        rowCount ?? 0,
+      combatScale:     combatScale ?? 1,
+      combatAnimFrames:combatAnimFrames ?? COMBAT_MAX_COLS,
+      combatRowCount:  combatRowCount ?? 0,
+      specialScale:    specialScale ?? 1,
+      specialAnimFrames:specialAnimFrames ?? SPECIAL_MAX_COLS,
       specialRowCount: specialRowCount ?? 0,
       isFreeCustomization: false,
     };
@@ -651,11 +762,11 @@
     return entry;
   }
 
-  // ═════════════════════════════════════════════════════════════════
-  //  PERSONALIZACIÓN LIBRE — sheets completos (fc_*)
-  // ═════════════════════════════════════════════════════════════════
-
-  function addFreeCustomizationSheet({ name, raceName, userImage, dataURL, combatUserImage, combatDataURL, specialUserImage, specialDataURL, scale, animFrames, rowCount, combatScale, combatAnimFrames, combatRowCount, specialScale, specialAnimFrames, specialRowCount, yOffset }) {
+  function addFreeCustomizationSheet({ name, raceName, userImage, dataURL,
+    combatUserImage, combatDataURL, specialUserImage, specialDataURL,
+    scale, animFrames, rowCount,
+    combatScale, combatAnimFrames, combatRowCount,
+    specialScale, specialAnimFrames, specialRowCount, yOffset }) {
     const newId = "fc_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6);
     const entry = {
       id:              newId,
@@ -667,17 +778,17 @@
       dataURL:         dataURL || null,
       combatUserImage: combatUserImage || null,
       combatDataURL:   combatDataURL || null,
-      specialUserImage: specialUserImage || null,
+      specialUserImage:specialUserImage || null,
       specialDataURL:  specialDataURL || null,
       scale:           scale ?? 1,
-      animFrames:      animFrames ?? 6,
-      rowCount:        rowCount ?? 12,
+      animFrames:      animFrames ?? MAX_COLS,
+      rowCount:        rowCount ?? TOTAL_ROWS,
       combatScale:     combatScale ?? 1,
-      combatAnimFrames: combatAnimFrames ?? 6,
-      combatRowCount:  combatRowCount ?? 13,
+      combatAnimFrames:combatAnimFrames ?? COMBAT_MAX_COLS,
+      combatRowCount:  combatRowCount ?? COMBAT_TOTAL_ROWS,
       specialScale:    specialScale ?? 1,
-      specialAnimFrames: specialAnimFrames ?? 6,
-      specialRowCount: specialRowCount ?? 10,
+      specialAnimFrames:specialAnimFrames ?? SPECIAL_MAX_COLS,
+      specialRowCount: specialRowCount ?? SPECIAL_TOTAL_ROWS,
       yOffset:         yOffset ?? 0,
       raceName:        raceName || null,
       isFreeCustomization: true,
@@ -708,16 +819,16 @@
           color:     entry.color,
           userImage: img,
           dataURL:   entry.dataURL,
-          combatDataURL: entry.combatDataURL || null,
-          scale: entry.scale ?? 1,
-          animFrames: entry.animFrames ?? 6,
-          combatScale: entry.combatScale ?? 1,
-          combatAnimFrames: entry.combatAnimFrames ?? 6,
+          combatDataURL:    entry.combatDataURL || null,
+          scale:            entry.scale ?? 1,
+          animFrames:       entry.animFrames ?? MAX_COLS,
+          combatScale:      entry.combatScale ?? 1,
+          combatAnimFrames: entry.combatAnimFrames ?? COMBAT_MAX_COLS,
         };
         if (entry.combatDataURL) {
-          const cimg = new Image();
-          cimg.onload = () => { accEntry.combatUserImage = cimg; };
-          cimg.src = entry.combatDataURL;
+          const ci = new Image();
+          ci.onload = () => { accEntry.combatUserImage = ci; };
+          ci.src = entry.combatDataURL;
         }
         ACCESSORIES_CATALOG.push(accEntry);
         resolve();
@@ -796,16 +907,14 @@
 
   // ═══════════════════════════════════════════════════════════════
   //  MAPA DE SPRITES
-  //  — Ahora cada raza tiene 3 sheets: base, fight, special
   // ═══════════════════════════════════════════════════════════════
 
   const SPRITE_IMAGES = {
-    // Humano / Saiyan / Androide (comparten base body)
-    human_male:         "Skins/HumanIdle.png",
-    human_male_fight:   "Skins/HumanBattle.png",
-    human_male_special: "Skins/HumanSpecial.png",
-    human_female:       "Skins/MujerIdle.png",
-    human_female_fight: "Skins/MujerBattle.png",
+    human_male:          "Skins/HumanIdle.png",
+    human_male_fight:    "Skins/HumanBattle.png",
+    human_male_special:  "Skins/HumanSpecial.png",
+    human_female:        "Skins/MujerIdle.png",
+    human_female_fight:  "Skins/MujerBattle.png",
 
     saiyan_male:         "Skins/HumanIdle.png",
     saiyan_male_fight:   "Skins/HumanBattle.png",
@@ -830,76 +939,45 @@
     frieza_male_fight:   "Skins/ArcosianoBattle.png",
     frieza_male_special: "Skins/ArcasianoSpecial.png",
 
-    // Faces — sin cambios
-    face_fm1: "face/male/fm1_eyes_normal.png",
-    face_fm2: "face/male/fm2_eyes_fierce.png",
-    face_fm3: "face/male/fm3_scar1.png",
-    face_fm4: "face/male/fm4_scar2.png",
-    face_fm5: "face/male/fm5_war_marks.png",
-    face_fm6: "face/male/fm6_paint.png",
-    face_fm7: "face/male/fm7_tattoo.png",
-    face_fm8: "face/male/fm8_beard.png",
+    face_fm1: "face/male/fm1_eyes_normal.png",  face_fm2: "face/male/fm2_eyes_fierce.png",
+    face_fm3: "face/male/fm3_scar1.png",         face_fm4: "face/male/fm4_scar2.png",
+    face_fm5: "face/male/fm5_war_marks.png",     face_fm6: "face/male/fm6_paint.png",
+    face_fm7: "face/male/fm7_tattoo.png",        face_fm8: "face/male/fm8_beard.png",
 
-    face_ff1: "face/female/ff1_eyes_normal.png",
-    face_ff2: "face/female/ff2_eyes_cat.png",
-    face_ff3: "face/female/ff3_blush.png",
-    face_ff4: "face/female/ff4_paint.png",
-    face_ff5: "face/female/ff5_marks.png",
-    face_ff6: "face/female/ff6_scar.png",
-    face_ff7: "face/female/ff7_tattoo.png",
-    face_ff8: "face/female/ff8_freckles.png",
+    face_ff1: "face/female/ff1_eyes_normal.png", face_ff2: "face/female/ff2_eyes_cat.png",
+    face_ff3: "face/female/ff3_blush.png",        face_ff4: "face/female/ff4_paint.png",
+    face_ff5: "face/female/ff5_marks.png",        face_ff6: "face/female/ff6_scar.png",
+    face_ff7: "face/female/ff7_tattoo.png",       face_ff8: "face/female/ff8_freckles.png",
 
-    face_fn1: "face/namekian/fn1_eyes.png",
-    face_fn2: "face/namekian/fn2_marks.png",
-    face_fn3: "face/namekian/fn3_angry.png",
-    face_fn4: "face/namekian/fn4_dots.png",
+    face_fn1: "face/namekian/fn1_eyes.png",  face_fn2: "face/namekian/fn2_marks.png",
+    face_fn3: "face/namekian/fn3_angry.png", face_fn4: "face/namekian/fn4_dots.png",
 
-    face_fr1: "face/frieza/fr1_eyes.png",
-    face_fr2: "face/frieza/fr2_mark.png",
-    face_fr3: "face/frieza/fr3_lines.png",
-    face_fr4: "face/frieza/fr4_mask.png",
+    face_fr1: "face/frieza/fr1_eyes.png",  face_fr2: "face/frieza/fr2_mark.png",
+    face_fr3: "face/frieza/fr3_lines.png", face_fr4: "face/frieza/fr4_mask.png",
 
-    // Hair — sin cambios
-    hair_hm1: "hair/male/hm1_mondongo.png",
-    hair_hm2: "hair/male/BaseSpriteSheet.png",
-    hair_hm3: "hair/male/hm3_ssj.png",
-    hair_hm4: "hair/male/hm4_blue.png",
-    hair_hm5: "hair/male/hm5_trunks.png",
-    hair_hm6: "hair/male/hm6_corto.png",
-    hair_hm7: "hair/male/hm7_largo.png",
-    hair_hm8: "hair/male/hm8_mohawk.png",
+    hair_hm1: "hair/male/hm1_mondongo.png",    hair_hm2: "hair/male/BaseSpriteSheet.png",
+    hair_hm3: "hair/male/hm3_ssj.png",          hair_hm4: "hair/male/hm4_blue.png",
+    hair_hm5: "hair/male/hm5_trunks.png",       hair_hm6: "hair/male/hm6_corto.png",
+    hair_hm7: "hair/male/hm7_largo.png",        hair_hm8: "hair/male/hm8_mohawk.png",
 
-    hair_hf1: "hair/female/hf1_largo1.png",
-    hair_hf2: "hair/female/hf2_coleta.png",
-    hair_hf3: "hair/female/hf3_kefla.png",
-    hair_hf4: "hair/female/hf4_corto.png",
-    hair_hf5: "hair/female/hf5_trenzas.png",
-    hair_hf6: "hair/female/hf6_rizos.png",
-    hair_hf7: "hair/female/hf7_ssjf.png",
-    hair_hf8: "hair/female/hf8_calva.png",
+    hair_hf1: "hair/female/hf1_largo1.png",  hair_hf2: "hair/female/hf2_coleta.png",
+    hair_hf3: "hair/female/hf3_kefla.png",   hair_hf4: "hair/female/hf4_corto.png",
+    hair_hf5: "hair/female/hf5_trenzas.png", hair_hf6: "hair/female/hf6_rizos.png",
+    hair_hf7: "hair/female/hf7_ssjf.png",    hair_hf8: "hair/female/hf8_calva.png",
 
-    hair_hn1: "hair/namekian/hn1_antenas1.png",
-    hair_hn2: "hair/namekian/hn2_antenas2.png",
-    hair_hn3: "hair/namekian/hn3_cresta.png",
-    hair_hn4: "hair/namekian/hn4_cuernos.png",
-    hair_hn5: "hair/namekian/hn5_sin.png",
-    hair_hn6: "hair/namekian/hn6_picos.png",
-    hair_hn7: "hair/namekian/hn7_aletas.png",
-    hair_hn8: "hair/namekian/hn8_dientes.png",
+    hair_hn1: "hair/namekian/hn1_antenas1.png", hair_hn2: "hair/namekian/hn2_antenas2.png",
+    hair_hn3: "hair/namekian/hn3_cresta.png",    hair_hn4: "hair/namekian/hn4_cuernos.png",
+    hair_hn5: "hair/namekian/hn5_sin.png",       hair_hn6: "hair/namekian/hn6_picos.png",
+    hair_hn7: "hair/namekian/hn7_aletas.png",    hair_hn8: "hair/namekian/hn8_dientes.png",
 
-    hair_hr1: "hair/frieza/hr1_cuernos1.png",
-    hair_hr2: "hair/frieza/hr2_cuernos2.png",
-    hair_hr3: "hair/frieza/hr3_cresta.png",
-    hair_hr4: "hair/frieza/hr4_picos.png",
-    hair_hr5: "hair/frieza/hr5_sin.png",
-    hair_hr6: "hair/frieza/hr6_armadura.png",
-    hair_hr7: "hair/frieza/hr7_mascara.png",
-    hair_hr8: "hair/frieza/hr8_corona.png",
+    hair_hr1: "hair/frieza/hr1_cuernos1.png", hair_hr2: "hair/frieza/hr2_cuernos2.png",
+    hair_hr3: "hair/frieza/hr3_cresta.png",    hair_hr4: "hair/frieza/hr4_picos.png",
+    hair_hr5: "hair/frieza/hr5_sin.png",       hair_hr6: "hair/frieza/hr6_armadura.png",
+    hair_hr7: "hair/frieza/hr7_mascara.png",   hair_hr8: "hair/frieza/hr8_corona.png",
 
-    // Tops / Bottoms / Shoes / Gloves — sin cambios
-    top_sm1: "tops/male/sm1_gi_orange.png",    top_sm2: "tops/male/sm2_gi_blue.png",
-    top_sm3: "tops/male/sm3_armor.png",         top_sm4: "tops/male/sm4_gi_green.png",
-    top_sm5: "tops/male/sm5_gi_purple.png",     top_sm6: "tops/male/sm6_gi_red.png",
+    top_sm1: "tops/male/sm1_gi_orange.png",   top_sm2: "tops/male/sm2_gi_blue.png",
+    top_sm3: "tops/male/sm3_armor.png",        top_sm4: "tops/male/sm4_gi_green.png",
+    top_sm5: "tops/male/sm5_gi_purple.png",    top_sm6: "tops/male/sm6_gi_red.png",
     top_sm7: "tops/male/sm7_black_sleeves.png",
 
     top_sf1: "tops/female/sf1_gi_pink.png",    top_sf2: "tops/female/sf2_gi_blue.png",
@@ -927,15 +1005,15 @@
     bottom_pf5: "bottoms/female/pf5_skirt_purple.png", bottom_pf6: "bottoms/female/pf6_short_green.png",
     bottom_pf7: "bottoms/female/pf7_skirt_red.png",    bottom_pf8: "bottoms/female/pf8_short_black.png",
 
-    bottom_pn1: "bottoms/namekian/pn1_pants.png",       bottom_pn2: "bottoms/namekian/pn2_manto_inf.png",
-    bottom_pn3: "bottoms/namekian/pn3_faja.png",         bottom_pn4: "bottoms/namekian/pn4_short.png",
-    bottom_pn5: "bottoms/namekian/pn5_osc.png",          bottom_pn6: "bottoms/namekian/pn6_cla.png",
-    bottom_pn7: "bottoms/namekian/pn7_amar.png",         bottom_pn8: "bottoms/namekian/pn8_azul.png",
+    bottom_pn1: "bottoms/namekian/pn1_pants.png",     bottom_pn2: "bottoms/namekian/pn2_manto_inf.png",
+    bottom_pn3: "bottoms/namekian/pn3_faja.png",       bottom_pn4: "bottoms/namekian/pn4_short.png",
+    bottom_pn5: "bottoms/namekian/pn5_osc.png",        bottom_pn6: "bottoms/namekian/pn6_cla.png",
+    bottom_pn7: "bottoms/namekian/pn7_amar.png",       bottom_pn8: "bottoms/namekian/pn8_azul.png",
 
-    bottom_pr1: "bottoms/frieza/pr1_armor1.png",         bottom_pr2: "bottoms/frieza/pr2_armor2.png",
-    bottom_pr3: "bottoms/frieza/pr3_manto.png",           bottom_pr4: "bottoms/frieza/pr4_escamas_neg.png",
-    bottom_pr5: "bottoms/frieza/pr5_escamas_bla.png",     bottom_pr6: "bottoms/frieza/pr6_pants.png",
-    bottom_pr7: "bottoms/frieza/pr7_gold.png",            bottom_pr8: "bottoms/frieza/pr8_armor3.png",
+    bottom_pr1: "bottoms/frieza/pr1_armor1.png",      bottom_pr2: "bottoms/frieza/pr2_armor2.png",
+    bottom_pr3: "bottoms/frieza/pr3_manto.png",        bottom_pr4: "bottoms/frieza/pr4_escamas_neg.png",
+    bottom_pr5: "bottoms/frieza/pr5_escamas_bla.png",  bottom_pr6: "bottoms/frieza/pr6_pants.png",
+    bottom_pr7: "bottoms/frieza/pr7_gold.png",         bottom_pr8: "bottoms/frieza/pr8_armor3.png",
 
     shoes_shm1: "shoes/male/shm1_blue.png",    shoes_shm2: "shoes/male/shm2_black.png",
     shoes_shm3: "shoes/male/shm3_gold.png",    shoes_shm4: "shoes/male/shm4_purple.png",
@@ -967,9 +1045,9 @@
     glove_gf5: "gloves/female/gf5_gold.png",    glove_gf6: "gloves/female/gf6_crystal.png",
     glove_gf7: "gloves/female/gf7_purple.png",
 
-    glove_gn1: "gloves/namekian/gn1_green.png", glove_gn2: "gloves/namekian/gn2_dark.png",
-    glove_gn3: "gloves/namekian/gn3_vendaje.png",glove_gn4: "gloves/namekian/gn4_black.png",
-    glove_gn5: "gloves/namekian/gn5_yellow.png", glove_gn6: "gloves/namekian/gn6_blue.png",
+    glove_gn1: "gloves/namekian/gn1_green.png",   glove_gn2: "gloves/namekian/gn2_dark.png",
+    glove_gn3: "gloves/namekian/gn3_vendaje.png",  glove_gn4: "gloves/namekian/gn4_black.png",
+    glove_gn5: "gloves/namekian/gn5_yellow.png",   glove_gn6: "gloves/namekian/gn6_blue.png",
     glove_gn7: "gloves/namekian/gn7_white.png",
 
     glove_gr1: "gloves/frieza/gr1_armor1.png",  glove_gr2: "gloves/frieza/gr2_armor2.png",
@@ -977,199 +1055,31 @@
     glove_gr5: "gloves/frieza/gr5_black.png",    glove_gr6: "gloves/frieza/gr6_armor3.png",
     glove_gr7: "gloves/frieza/gr7_crystal.png",
 
-    aura_a1: "auras/a1_yellow.png", aura_a2: "auras/a2_blue.png",
-    aura_a3: "auras/a3_red.png",    aura_a4: "auras/a4_purple.png",
-    aura_a5: "auras/a5_green.png",  aura_a6: "auras/a6_white.png",
+    aura_a1: "auras/a1_yellow.png",  aura_a2: "auras/a2_blue.png",
+    aura_a3: "auras/a3_red.png",     aura_a4: "auras/a4_purple.png",
+    aura_a5: "auras/a5_green.png",   aura_a6: "auras/a6_white.png",
     aura_a7: "auras/a7_electric.png",
   };
 
   // ═══════════════════════════════════════════════════════════════
-  //  DETECCIÓN DE FRAME SIZE
-  //  Ahora detecta los 3 tipos de sheet: RP, COMBAT, SPECIAL
-  // ═══════════════════════════════════════════════════════════════
-
-  /** Detecta si es un sheet de combate (Brett_Pelea.png) */
-  function hasCombatGridLayout(img) {
-    if (!img || !img.naturalWidth || !img.naturalHeight) return false;
-    const gridAspect = COMBAT_MAX_COLS / COMBAT_TOTAL_ROWS;
-    const imgAspect  = img.naturalWidth / img.naturalHeight;
-    return img.naturalWidth  >= COMBAT_MAX_COLS * 8
-      && img.naturalHeight >= COMBAT_TOTAL_ROWS * 8
-      && Math.abs(imgAspect - gridAspect) < 0.08;
-  }
-
-  function getCombatFrameSize(img) {
-    if (!img || !img.naturalWidth) return { fw: FRAME_W, fh: FRAME_H };
-    if (hasCombatGridLayout(img)) {
-      const fw = Math.floor(img.naturalWidth  / COMBAT_MAX_COLS);
-      const fh = Math.floor(img.naturalHeight / COMBAT_TOTAL_ROWS);
-      return { fw: fw > 0 ? fw : FRAME_W, fh: fh > 0 ? fh : FRAME_H };
-    }
-    return { fw: FRAME_W, fh: FRAME_H };
-  }
-
-  function isBattleSheet(img) {
-    if (!img || !img.naturalWidth || !img.naturalHeight) return false;
-    return hasCombatGridLayout(img);
-  }
-
-  /** Detecta si es un sheet de especiales (Brett_special.png) */
-  function hasSpecialGridLayout(img) {
-    if (!img || !img.naturalWidth || !img.naturalHeight) return false;
-    const gridAspect = SPECIAL_MAX_COLS / SPECIAL_TOTAL_ROWS;
-    const imgAspect  = img.naturalWidth / img.naturalHeight;
-    return img.naturalWidth  >= SPECIAL_MAX_COLS * 8
-      && img.naturalHeight >= SPECIAL_TOTAL_ROWS * 8
-      && Math.abs(imgAspect - gridAspect) < 0.08;
-  }
-
-  function getSpecialFrameSize(img) {
-    if (!img || !img.naturalWidth) return { fw: FRAME_W, fh: FRAME_H };
-    if (hasSpecialGridLayout(img)) {
-      const fw = Math.floor(img.naturalWidth  / SPECIAL_MAX_COLS);
-      const fh = Math.floor(img.naturalHeight / SPECIAL_TOTAL_ROWS);
-      return { fw: fw > 0 ? fw : FRAME_W, fh: fh > 0 ? fh : FRAME_H };
-    }
-    return { fw: FRAME_W, fh: FRAME_H };
-  }
-
-  function isSpecialSheet(img) {
-    if (!img || !img.naturalWidth || !img.naturalHeight) return false;
-    return hasSpecialGridLayout(img);
-  }
-
-  /** Detecta si es un sheet de exploración/RP (Brett_Base.png) */
-  function hasFullGridLayout(img) {
-    if (!img || !img.naturalWidth || !img.naturalHeight) return false;
-    const gridAspect = MAX_COLS / TOTAL_ROWS;
-    const imgAspect  = img.naturalWidth / img.naturalHeight;
-    return img.naturalWidth  >= MAX_COLS * 8
-      && img.naturalHeight >= TOTAL_ROWS * 8
-      && Math.abs(imgAspect - gridAspect) < 0.08;
-  }
-
-  function detectFrameSize(img) {
-    if (!img || !img.naturalWidth) return { fw: FRAME_W, fh: FRAME_H };
-    if (isBattleSheet(img)) {
-      return getCombatFrameSize(img);
-    }
-    if (isSpecialSheet(img)) {
-      return getSpecialFrameSize(img);
-    }
-    if (hasFullGridLayout(img)) {
-      const fw = Math.floor(img.naturalWidth  / MAX_COLS);
-      const fh = Math.floor(img.naturalHeight / TOTAL_ROWS);
-      return { fw: fw > 0 ? fw : FRAME_W, fh: fh > 0 ? fh : FRAME_H };
-    }
-    return { fw: FRAME_W, fh: FRAME_H };
-  }
-
-  const _frameSizeCache = new Map();
-
-  function getFrameSize(img) {
-    if (!img) return { fw: FRAME_W, fh: FRAME_H };
-    const key = img.src || (img.naturalWidth + "x" + img.naturalHeight);
-    if (!_frameSizeCache.has(key)) _frameSizeCache.set(key, detectFrameSize(img));
-    return _frameSizeCache.get(key);
-  }
-
-  // Alias para compatibilidad con código antiguo
-  function getBattleFrameSize(img) { return getCombatFrameSize(img); }
-
-  function isCompatibleSheet(img) {
-    if (!img || !img.naturalWidth || !img.naturalHeight) return false;
-    return hasFullGridLayout(img);
-  }
-
-  function hasSheetLayout(img) {
-    if (!img || !img.naturalWidth || !img.naturalHeight) return false;
-    return hasFullGridLayout(img) || isBattleSheet(img) || isSpecialSheet(img);
-  }
-
-  function isFreeCustomizationEntry(accDef) {
-    return !!(accDef && accDef.id !== "ac_none" && (accDef.isFreeCustomization || String(accDef.id).startsWith("fc_")));
-  }
-
-  function _getAccessoryImage(accDef) {
-    if (!accDef || accDef.id === "ac_none") return null;
-    const img = accDef.userImage;
-    const isImported = !!(accDef.dataURL || accDef.isFreeCustomization || String(accDef.id).startsWith("fc_") || String(accDef.id).startsWith("user_acc_"));
-    if (img) img._dcImportedLayer = isImported;
-    if (img && img.complete && img.naturalWidth) return img;
-    if (!accDef.dataURL) return img || null;
-    if (!accDef._pendingImage) {
-      const pending = new Image();
-      pending._dcImportedLayer = isImported;
-      accDef._pendingImage = pending;
-      pending.onload = () => {
-        pending._dcImportedLayer = isImported;
-        accDef.userImage = pending;
-        accDef._pendingImage = null;
-      };
-      pending.onerror = () => { accDef._pendingImage = null; };
-      pending.src = accDef.dataURL;
-    }
-    return accDef.userImage || null;
-  }
-
-  function getIdleFrameCoords(img) {
-    const { fw, fh } = getFrameSize(img);
-    return { srcX: 0, srcY: IDLE_ROW * fh, fw, fh };
-  }
-
-  // ═══════════════════════════════════════════════════════════════
-  //  OBJETO PLAYER
-  // ═══════════════════════════════════════════════════════════════
-
-  const player = {
-    x: 0, y: 0, vx: 0, vy: 0,
-    direction: 1,
-    onGround: false,
-    state: "idle",
-    appearance: {
-      raceId:      "human",
-      gender:      "male",
-      variantId:   "base",
-      faceId:      "fm0",
-      faceColor:   null,
-      hairId:      "hm1",
-      hairColor:   "#1a1a1a",
-      topId:       "sm1",
-      bottomId:    "pm1",
-      shoesId:     "shm1",
-      glovesId:    "gm0",
-      auraId:      "a1",
-      auraColor:   "#fdd835",
-      skinColor:   "#e8c898",
-      eyeColor:    "#3a2a1a",
-      browColor:   null,
-      pupilColor:  null,
-      accessoryId: "ac_none",
-    },
-    _animator: null,
-  };
-
-  // ═══════════════════════════════════════════════════════════════
-  //  ANIMADOR — actualizado para los 3 tipos de sheet
+  //  ANIMADOR
   // ═══════════════════════════════════════════════════════════════
 
   class SpriteAnimator {
     constructor(action = "idle", options = {}) {
-      this.battleMode   = !!options.battleMode;
-      this.specialMode  = !!options.specialMode;
-      this.action       = this._resolveAction(action);
-      this.frame        = 0;
-      this.elapsed      = 0;
-      this._lastTime    = performance.now();
-      this._onComplete  = null;
-      this._queue       = [];
-      this.currentView  = null;
+      this.battleMode  = !!options.battleMode;
+      this.specialMode = !!options.specialMode;
+      this.action      = this._resolveAction(action);
+      this.frame       = 0;
+      this.elapsed     = 0;
+      this._lastTime   = performance.now();
+      this._onComplete = null;
+      this._queue      = [];
+      this.currentView = null;
     }
 
     _resolveAction(action) {
-      if (this.specialMode) {
-        return SPECIAL_ACTIONS_META[action] ? action : "sit";
-      }
+      if (this.specialMode) return SPECIAL_ACTIONS_META[action] ? action : "sit";
       return resolveCombatAction(action, this.battleMode);
     }
 
@@ -1183,38 +1093,34 @@
         return VIEW_META[this.currentView];
       }
       const map = this._actionsMeta();
-      const def = this.specialMode ? "sit"
-        : (this.battleMode ? "combat_idle" : "idle");
+      const def = this.specialMode ? "sit" : this.battleMode ? "combat_idle" : "idle";
       return map[this.action] || map[def];
     }
 
     setBattleMode(on) {
-      const next = !!on;
-      if (this.battleMode === next && !this.specialMode) return this;
-      this.battleMode  = next;
+      if (this.battleMode === !!on && !this.specialMode) return this;
+      this.battleMode  = !!on;
       this.specialMode = false;
       this.currentView = null;
-      this._queue = [];
+      this._queue      = [];
       this.action = resolveCombatAction(this.action, this.battleMode);
       this.frame = 0; this.elapsed = 0;
       return this;
     }
 
     setSpecialMode(on) {
-      const next = !!on;
-      if (this.specialMode === next) return this;
-      this.specialMode = next;
+      if (this.specialMode === !!on) return this;
+      this.specialMode = !!on;
       this.battleMode  = false;
       this.currentView = null;
-      this._queue = [];
-      this.action = next ? "sit" : "idle";
+      this._queue      = [];
+      this.action = this.specialMode ? "sit" : "idle";
       this.frame = 0; this.elapsed = 0;
       return this;
     }
 
     setView(viewKey) {
-      if (this.battleMode || this.specialMode) return this;
-      if (!VIEW_META[viewKey]) return this;
+      if (this.battleMode || this.specialMode || !VIEW_META[viewKey]) return this;
       this.currentView = viewKey; this.frame = 0; this.elapsed = 0;
       return this;
     }
@@ -1223,8 +1129,7 @@
 
     play(action, onComplete = null) {
       const resolved = this._resolveAction(action);
-      const map = this._actionsMeta();
-      const m = map[resolved];
+      const m = this._actionsMeta()[resolved];
       if (!m) return this;
       this.currentView = null;
       if (this.action === resolved && m.loop && !onComplete) return this;
@@ -1257,31 +1162,46 @@
       }
     }
 
+    /**
+     * Retorna las coordenadas de recorte del frame actual en el sheet.
+     * El tamaño de celda (fw, fh) se calcula desde el sheet real si se provee `img`.
+     */
     getFrameCoords(img = null) {
       const m = this.meta;
       let fw = FRAME_W, fh = FRAME_H;
       if (img) {
-        const sz = isBattleSheet(img) ? getCombatFrameSize(img)
-          : isSpecialSheet(img)       ? getSpecialFrameSize(img)
-          : getFrameSize(img);
+        // Usa el tamaño real del sheet — no asume 96×96
+        const type = _detectSheetType(img);
+        let sz;
+        if      (type === "combat")  sz = _computeFrameSize(img, COMBAT_MAX_COLS,  COMBAT_TOTAL_ROWS);
+        else if (type === "special") sz = _computeFrameSize(img, SPECIAL_MAX_COLS, SPECIAL_TOTAL_ROWS);
+        else if (type === "base")    sz = _computeFrameSize(img, MAX_COLS,         TOTAL_ROWS);
+        else                         sz = { fw: FRAME_W, fh: FRAME_H };
         fw = sz.fw; fh = sz.fh;
       }
       const frame = Math.min(this.frame, Math.max(0, m.frames - 1));
+      // Validación: el frame no puede exceder el ancho real del sheet
+      const maxFrameInRow = img ? Math.floor(img.naturalWidth / fw) : MAX_COLS;
+      const safeFrame = Math.min(frame, maxFrameInRow - 1);
       return {
-        srcX: frame * fw, srcY: m.row * fh,
+        srcX:   safeFrame * fw,
+        srcY:   m.row * fh,
         fw, fh,
         action: this.currentView || this.action,
-        frame,
-        label: m.label || "",
+        frame:  safeFrame,
+        label:  m.label || "",
       };
     }
 
-    /** Coordenadas para capas (ropa, pelo, etc.) — siempre sheet de exploración/RP */
+    /**
+     * Coordenadas para capas (ropa, pelo, accesorios).
+     * Siempre usa el sheet de exploración/base (MAX_COLS × TOTAL_ROWS).
+     * En modo combate o especial, mapea la acción al equivalente RP.
+     */
     getLayerFrameCoords(img = null) {
       let layerKey;
       if (this.specialMode) {
-        // Durante special, capas usan idle del sheet de exploración
-        layerKey = "idle";
+        layerKey = "idle"; // durante especiales, capas usan idle del sheet base
       } else if (this.battleMode) {
         layerKey = COMBAT_TO_IDLE_MAP[this.currentView || this.action] || "idle";
       } else {
@@ -1289,14 +1209,21 @@
       }
       const m = ACTIONS_META[layerKey] || ACTIONS_META.idle;
       let fw = FRAME_W, fh = FRAME_H;
-      if (img) { const sz = getFrameSize(img); fw = sz.fw; fh = sz.fh; }
+      if (img) {
+        // Capas siempre usan el sheet base
+        const sz = _computeFrameSize(img, MAX_COLS, TOTAL_ROWS);
+        fw = sz.fw; fh = sz.fh;
+      }
       const frame = Math.min(this.frame, Math.max(0, m.frames - 1));
+      const maxFrameInRow = img ? Math.floor(img.naturalWidth / fw) : MAX_COLS;
+      const safeFrame = Math.min(frame, maxFrameInRow - 1);
       return {
-        srcX: frame * fw, srcY: m.row * fh,
+        srcX:   safeFrame * fw,
+        srcY:   m.row * fh,
         fw, fh,
         action: layerKey,
-        frame,
-        label: m.label || "",
+        frame:  safeFrame,
+        label:  m.label || "",
       };
     }
 
@@ -1325,15 +1252,12 @@
     const quiet = !!options.quiet;
     const variantSuffixes = getVariantSuffixes();
     const entryMap = new Map(Object.entries(SPRITE_IMAGES));
-    for (const [key] of Object.entries(SPRITE_IMAGES)) {
+    for (const key of Object.keys(SPRITE_IMAGES)) {
       for (const suffix of variantSuffixes) {
-        const variantKey = `${key}${suffix}`;
-        if (Object.prototype.hasOwnProperty.call(SPRITE_IMAGES, variantKey)) {
-          entryMap.set(variantKey, SPRITE_IMAGES[variantKey]);
-        }
+        const vk = `${key}${suffix}`;
+        if (Object.prototype.hasOwnProperty.call(SPRITE_IMAGES, vk)) entryMap.set(vk, SPRITE_IMAGES[vk]);
       }
     }
-    const entries = Array.from(entryMap.entries());
     const loadOne = ([key, filename]) => new Promise((resolve) => {
       if (!filename) { resolve([key, null]); return; }
       const img = new Image();
@@ -1344,12 +1268,12 @@
       };
       img.src = basePath + filename;
     });
-    const results = await Promise.all(entries.map(loadOne));
+    const results = await Promise.all(Array.from(entryMap.entries()).map(loadOne));
     return Object.fromEntries(results);
   }
 
   // ═══════════════════════════════════════════════════════════════
-  //  UTILIDADES DE COLOR (sin cambios)
+  //  UTILIDADES DE COLOR
   // ═══════════════════════════════════════════════════════════════
 
   const _tintCache = new Map();
@@ -1391,12 +1315,39 @@
     };
   }
 
+  function _tintSprite(sheetImg, color, w, h, coords, fullImg, iw, ih) {
+    const off = document.createElement("canvas");
+    off.width = w; off.height = h;
+    const c = off.getContext("2d");
+    c.imageSmoothingEnabled = false;
+    if (sheetImg && coords) {
+      c.drawImage(sheetImg, coords.srcX, coords.srcY, coords.fw || FRAME_W, coords.fh || FRAME_H, 0, 0, w, h);
+    } else if (fullImg) {
+      c.imageSmoothingEnabled = true;
+      c.imageSmoothingQuality = "high";
+      c.drawImage(fullImg, 0, 0, iw, ih, 0, 0, w, h);
+    }
+    c.globalCompositeOperation = "multiply";
+    c.fillStyle = color; c.fillRect(0, 0, w, h);
+    c.globalCompositeOperation = "destination-in";
+    if (sheetImg && coords) {
+      c.imageSmoothingEnabled = false;
+      c.drawImage(sheetImg, coords.srcX, coords.srcY, coords.fw || FRAME_W, coords.fh || FRAME_H, 0, 0, w, h);
+    } else if (fullImg) {
+      c.imageSmoothingEnabled = true;
+      c.imageSmoothingQuality = "high";
+      c.drawImage(fullImg, 0, 0, iw, ih, 0, 0, w, h);
+    }
+    c.globalCompositeOperation = "source-over";
+    return off;
+  }
+
   function tintLayer(img, color, cacheKey, w = DISPLAY_W, h = DISPLAY_H, frameCoords = null) {
     if (!color) return null;
     const fc  = frameCoords ? `${frameCoords.srcX}_${frameCoords.srcY}_${frameCoords.fw}_${frameCoords.fh}` : "full";
     const key = `tint2|${cacheKey}|${w}|${h}|${color}|${fc}`;
     if (_tintCache.has(key)) return _tintCache.get(key);
-    if (_tintCache.size > 512) { const k = _tintCache.keys().next().value; _tintCache.delete(k); }
+    if (_tintCache.size > 512) _tintCache.delete(_tintCache.keys().next().value);
     const off = document.createElement("canvas");
     off.width = w; off.height = h;
     const ctx = off.getContext("2d");
@@ -1412,69 +1363,43 @@
     }
     try {
       const target = _hexToRgb(color);
-      const { h: targetH, s: targetS } = _rgbToHsl(target.r, target.g, target.b);
-      const imageData = ctx.getImageData(0, 0, w, h);
-      const data      = imageData.data;
-      for (let i = 0; i < data.length; i += 4) {
-        const alpha = data[i + 3];
-        if (alpha < 16) continue;
-        const pr = data[i], pg = data[i + 1], pb = data[i + 2];
-        const { l: origL, s: origS } = _rgbToHsl(pr, pg, pb);
-        if (origL < 0.14) continue;
-        if (origL > 0.86) {
-          if (targetS < 0.05) continue;
-          const { r, g, b } = _hslToRgb(targetH, targetS * 0.18, origL * 0.97);
-          data[i] = r; data[i + 1] = g; data[i + 2] = b; continue;
+      const { h: th, s: ts } = _rgbToHsl(target.r, target.g, target.b);
+      const id = ctx.getImageData(0, 0, w, h);
+      const d  = id.data;
+      for (let i = 0; i < d.length; i += 4) {
+        if (d[i+3] < 16) continue;
+        const { l: ol, s: os } = _rgbToHsl(d[i], d[i+1], d[i+2]);
+        if (ol < 0.14) continue;
+        if (ol > 0.86) {
+          if (ts < 0.05) continue;
+          const { r, g, b } = _hslToRgb(th, ts * 0.18, ol * 0.97);
+          d[i]=r; d[i+1]=g; d[i+2]=b; continue;
         }
-        if (origS < 0.12) {
-          const { r, g, b } = _hslToRgb(targetH, targetS * 0.55, origL);
-          data[i] = r; data[i + 1] = g; data[i + 2] = b; continue;
+        if (os < 0.12) {
+          const { r, g, b } = _hslToRgb(th, ts * 0.55, ol);
+          d[i]=r; d[i+1]=g; d[i+2]=b; continue;
         }
-        const { r, g, b } = _hslToRgb(targetH, Math.min(1, origS * 0.4 + targetS * 0.6), origL);
-        data[i] = r; data[i + 1] = g; data[i + 2] = b;
+        const { r, g, b } = _hslToRgb(th, Math.min(1, os * 0.4 + ts * 0.6), ol);
+        d[i]=r; d[i+1]=g; d[i+2]=b;
       }
-      ctx.putImageData(imageData, 0, 0);
+      ctx.putImageData(id, 0, 0);
     } catch (e) {
       ctx.globalCompositeOperation = "source-atop";
       ctx.globalAlpha = 0.5; ctx.fillStyle = color; ctx.fillRect(0, 0, w, h);
-      ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over";
+      ctx.globalAlpha = 1;   ctx.globalCompositeOperation = "source-over";
     }
     _tintCache.set(key, off); return off;
   }
 
   function invalidateHairCache() { _tintCache.clear(); }
 
-  function _tintSprite(sheetImg, color, w, h, coords, fullImg, iw, ih) {
-    const off = document.createElement("canvas"); off.width = w; off.height = h;
-    const c = off.getContext("2d");
-    c.imageSmoothingEnabled = false;
-    if (sheetImg && coords) {
-      c.drawImage(sheetImg, coords.srcX, coords.srcY, coords.fw || FRAME_W, coords.fh || FRAME_H, 0, 0, w, h);
-    } else if (fullImg) {
-      c.imageSmoothingEnabled = true; c.imageSmoothingQuality = "high";
-      c.drawImage(fullImg, 0, 0, iw, ih, 0, 0, w, h);
-    }
-    c.globalCompositeOperation = "multiply"; c.globalAlpha = 1;
-    c.fillStyle = color; c.fillRect(0, 0, w, h);
-    c.globalCompositeOperation = "destination-in"; c.globalAlpha = 1;
-    if (sheetImg && coords) {
-      c.imageSmoothingEnabled = false;
-      c.drawImage(sheetImg, coords.srcX, coords.srcY, coords.fw || FRAME_W, coords.fh || FRAME_H, 0, 0, w, h);
-    } else if (fullImg) {
-      c.imageSmoothingEnabled = true; c.imageSmoothingQuality = "high";
-      c.drawImage(fullImg, 0, 0, iw, ih, 0, 0, w, h);
-    }
-    c.globalCompositeOperation = "source-over";
-    return off;
-  }
-
   function tintHair(hairImg, hairColor, hairDef, w, h, frameCoords) {
     if (!hairImg || !hairImg.complete || !hairImg.naturalWidth) return null;
     const color = hairColor || "#1a1a1a";
-    const fc = frameCoords ? `${frameCoords.srcX}_${frameCoords.srcY}_${frameCoords.fw}_${frameCoords.fh}` : "full";
+    const fc  = frameCoords ? `${frameCoords.srcX}_${frameCoords.srcY}_${frameCoords.fw}_${frameCoords.fh}` : "full";
     const key = `hair2|${hairDef ? hairDef.id : "hair"}|${hairImg.src || ""}|${w}|${h}|${color}|${fc}`;
     if (_tintCache.has(key)) return _tintCache.get(key);
-    if (_tintCache.size > 512) { const k = _tintCache.keys().next().value; _tintCache.delete(k); }
+    if (_tintCache.size > 512) _tintCache.delete(_tintCache.keys().next().value);
     const result = _tintSprite(
       frameCoords ? hairImg : null, color, w, h,
       frameCoords || null,
@@ -1486,10 +1411,10 @@
 
   function tintFaceColor(faceImg, color, faceDef, w, h, frameCoords) {
     if (!faceImg || !faceImg.complete || !faceImg.naturalWidth) return null;
-    const fc = frameCoords ? `${frameCoords.srcX}_${frameCoords.srcY}_${frameCoords.fw}_${frameCoords.fh}` : "full";
+    const fc  = frameCoords ? `${frameCoords.srcX}_${frameCoords.srcY}_${frameCoords.fw}_${frameCoords.fh}` : "full";
     const key = `faceColor2|${faceDef ? faceDef.id : "face"}|${faceImg.src || ""}|${w}|${h}|${color}|${fc}`;
     if (_tintCache.has(key)) return _tintCache.get(key);
-    if (_tintCache.size > 512) { const k = _tintCache.keys().next().value; _tintCache.delete(k); }
+    if (_tintCache.size > 512) _tintCache.delete(_tintCache.keys().next().value);
     const result = _tintSprite(
       frameCoords ? faceImg : null, color, w, h,
       frameCoords || null,
@@ -1501,10 +1426,10 @@
 
   function tintFaceDetailed(faceImg, browColor, pupilColor, faceDef, w, h, frameCoords) {
     if (!faceImg || !faceImg.complete || !faceImg.naturalWidth) return null;
-    const fc = frameCoords ? `${frameCoords.srcX}_${frameCoords.srcY}_${frameCoords.fw}_${frameCoords.fh}` : "full";
+    const fc  = frameCoords ? `${frameCoords.srcX}_${frameCoords.srcY}_${frameCoords.fw}_${frameCoords.fh}` : "full";
     const key = `faceDetail|${faceDef ? faceDef.id : "face"}|${faceImg.src || ""}|${w}|${h}|${browColor}|${pupilColor}|${fc}`;
     if (_tintCache.has(key)) return _tintCache.get(key);
-    if (_tintCache.size > 512) { const k = _tintCache.keys().next().value; _tintCache.delete(k); }
+    if (_tintCache.size > 512) _tintCache.delete(_tintCache.keys().next().value);
     const off = document.createElement("canvas");
     off.width = w; off.height = h;
     const ctx = off.getContext("2d");
@@ -1518,31 +1443,29 @@
     try { imageData = ctx.getImageData(0, 0, w, h); }
     catch(e) { _tintCache.set(key, off); return off; }
     const data = imageData.data;
-    const browRgb  = _hexToRgb(browColor);
-    const pupilRgb = _hexToRgb(pupilColor);
-    const { h: browH, s: browS, l: browL }   = _rgbToHsl(browRgb.r,  browRgb.g,  browRgb.b);
-    const { h: pupilH, s: pupilS, l: pupilL } = _rgbToHsl(pupilRgb.r, pupilRgb.g, pupilRgb.b);
+    const bRgb = _hexToRgb(browColor),  pRgb = _hexToRgb(pupilColor);
+    const { h: bH, s: bS, l: bL }   = _rgbToHsl(bRgb.r, bRgb.g, bRgb.b);
+    const { h: pH, s: pS, l: pL }   = _rgbToHsl(pRgb.r, pRgb.g, pRgb.b);
     for (let i = 0; i < data.length; i += 4) {
-      const a = data[i + 3];
-      if (a < 16) continue;
+      if (data[i+3] < 16) continue;
       const r = data[i], g = data[i+1], b = data[i+2];
-      const isBrow = r > 10 && g < 20 && b < 20 && r > g * 3 && r > b * 3;
-      const isIris = b > 10 && r < 30 && g < 30 && b > r * 2 && b > g * 2;
+      const isBrow = r > 10 && g < 20 && b < 20 && r > g*3 && r > b*3;
+      const isIris = b > 10 && r < 30 && g < 30 && b > r*2 && b > g*2;
       if (!isBrow && !isIris) continue;
-      const srcL = isBrow ? (r / 255 * 0.5) : (b / 255 * 0.5);
-      let finalH, finalS, finalL;
+      const srcL = isBrow ? (r/255*0.5) : (b/255*0.5);
+      let fH, fS, fL;
       if (isBrow) {
-        finalH = browH; finalS = browS;
-        if (browS < 0.05) { finalS = 0; finalL = browL < 0.5 ? srcL * (browL * 2 + 0.1) : 0.5 + srcL * (browL - 0.5) * 2; }
-        else { finalL = Math.max(srcL * 0.8, 0.03); }
+        fH = bH; fS = bS;
+        if (bS < 0.05) { fS=0; fL = bL<0.5 ? srcL*(bL*2+0.1) : 0.5+srcL*(bL-0.5)*2; }
+        else { fL = Math.max(srcL*0.8, 0.03); }
       } else {
-        const srcLNorm = b / 255;
-        finalH = pupilH; finalS = pupilS;
-        if (pupilS < 0.05) { finalS = 0; finalL = pupilL < 0.5 ? srcLNorm * pupilL * 1.5 : pupilL * 0.5 + srcLNorm * (1 - pupilL) * 0.5; }
-        else { const darkL = Math.max(pupilL * 0.3, 0.04); const lightL = Math.min(pupilL * 1.6, 0.85); finalL = darkL + srcLNorm * (lightL - darkL); }
+        const sl = b/255;
+        fH = pH; fS = pS;
+        if (pS < 0.05) { fS=0; fL = pL<0.5 ? sl*pL*1.5 : pL*0.5+sl*(1-pL)*0.5; }
+        else { const dL=Math.max(pL*0.3,0.04), lL=Math.min(pL*1.6,0.85); fL=dL+sl*(lL-dL); }
       }
-      const { r: nr, g: ng, b: nb } = _hslToRgb(finalH, finalS, finalL);
-      data[i] = nr; data[i+1] = ng; data[i+2] = nb;
+      const { r: nr, g: ng, b: nb } = _hslToRgb(fH, fS, fL);
+      data[i]=nr; data[i+1]=ng; data[i+2]=nb;
     }
     ctx.putImageData(imageData, 0, 0);
     _tintCache.set(key, off); return off;
@@ -1554,225 +1477,239 @@
 
   function _drawLayerSprite(ctx, img, destX, destY, dw, dh, animator, importedScale = 1) {
     if (!img || !img.complete || !img.naturalWidth) return false;
-    const fullSheet    = isCompatibleSheet(img);
-    const partialSheet = !fullSheet && hasSheetLayout(img);
-    const useSheet     = fullSheet || partialSheet;
+    const type = _detectSheetType(img);
+    const isSheet = type !== null;
 
-    if (useSheet && animator) {
+    if (isSheet && animator) {
       ctx.imageSmoothingEnabled = false;
-      let srcX, srcY, fw, fh;
-      if (fullSheet) {
-        const useCombatCoords = animator.battleMode && !isBattleSheet(img) && animator.getLayerFrameCoords;
-        const useSpecialCoords = animator.specialMode && !isSpecialSheet(img) && animator.getLayerFrameCoords;
-        const coordsFn = (useCombatCoords || useSpecialCoords)
-          ? () => animator.getLayerFrameCoords(img)
-          : () => animator.getFrameCoords(img);
-        ({ srcX, srcY, fw, fh } = coordsFn());
+      let coords;
+      if (type === "base") {
+        // Capa sobre sheet base — usa layer coords (sincronizada con la animación RP)
+        const useLayers = animator.battleMode || animator.specialMode;
+        coords = useLayers ? animator.getLayerFrameCoords(img) : animator.getFrameCoords(img);
       } else {
-        ({ srcX, srcY, fw, fh } = getIdleFrameCoords(img));
+        // Sheet de combate/especial sobre capas — usa idle como fallback
+        coords = getIdleFrameCoords(img);
       }
+      const { srcX, srcY, fw, fh } = coords;
       if (srcX + fw <= img.naturalWidth && srcY + fh <= img.naturalHeight) {
         ctx.drawImage(img, srcX, srcY, fw, fh, destX, destY, dw, dh);
         return true;
       }
     }
 
+    // Imagen suelta (sin grid): escala libre
     const iw = img.naturalWidth, ih = img.naturalHeight;
     const scale = Math.min(dw / iw, dh / ih) * importedScale;
     const drawW = iw * scale, drawH = ih * scale;
-    const offsetX = destX + (dw - drawW) / 2;
-    const offsetY = destY + (dh - drawH) / 2;
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
-    ctx.drawImage(img, 0, 0, iw, ih, offsetX, offsetY, drawW, drawH);
+    ctx.drawImage(img, 0, 0, iw, ih,
+      destX + (dw - drawW) / 2,
+      destY + (dh - drawH) / 2,
+      drawW, drawH);
     return true;
+  }
+
+  function _getAccessoryImage(accDef) {
+    if (!accDef || accDef.id === "ac_none") return null;
+    const img = accDef.userImage;
+    const isImported = !!(accDef.dataURL || accDef.isFreeCustomization ||
+      String(accDef.id).startsWith("fc_") || String(accDef.id).startsWith("user_acc_"));
+    if (img) img._dcImportedLayer = isImported;
+    if (img && img.complete && img.naturalWidth) return img;
+    if (!accDef.dataURL) return img || null;
+    if (!accDef._pendingImage) {
+      const pending = new Image();
+      pending._dcImportedLayer = isImported;
+      accDef._pendingImage = pending;
+      pending.onload = () => {
+        pending._dcImportedLayer = isImported;
+        accDef.userImage = pending;
+        accDef._pendingImage = null;
+      };
+      pending.onerror = () => { accDef._pendingImage = null; };
+      pending.src = accDef.dataURL;
+    }
+    return accDef.userImage || null;
+  }
+
+  function isFreeCustomizationEntry(accDef) {
+    return !!(accDef && accDef.id !== "ac_none" &&
+      (accDef.isFreeCustomization || String(accDef.id).startsWith("fc_")));
+  }
+
+  function _pickSheetMode(battleMode, specialMode) {
+    if (specialMode) return "special";
+    if (battleMode)  return "combat";
+    return "explore";
   }
 
   function _pickSheetImage(cfg, mode) {
     if (!cfg) return null;
-    if (mode === "combat") {
-      return cfg.combatSpriteImage || cfg.combatUserImage
-        || (cfg.combatSheet && (cfg.combatSheet.spriteImage || cfg.combatSheet.userImage))
-        || null;
-    }
-    if (mode === "special") {
-      return cfg.specialSpriteImage || cfg.specialUserImage
-        || (cfg.specialSheet && (cfg.specialSheet.spriteImage || cfg.specialSheet.userImage))
-        || null;
-    }
-    return cfg.spriteImage || cfg.userImage
-      || (cfg.exploreSheet && (cfg.exploreSheet.spriteImage || cfg.exploreSheet.userImage))
-      || null;
+    if (mode === "combat")  return cfg.combatSpriteImage  || cfg.combatUserImage  || null;
+    if (mode === "special") return cfg.specialSpriteImage || cfg.specialUserImage || null;
+    return cfg.spriteImage || cfg.userImage || null;
   }
 
   function _pickSheetMeta(cfg, mode) {
     const isCombat  = mode === "combat";
     const isSpecial = mode === "special";
+    const defFrames = isCombat ? COMBAT_MAX_COLS : isSpecial ? SPECIAL_MAX_COLS : MAX_COLS;
+    const defRows   = isCombat ? COMBAT_TOTAL_ROWS : isSpecial ? SPECIAL_TOTAL_ROWS : TOTAL_ROWS;
     return {
-      scale:      Number(isCombat ? (cfg.combatScale ?? cfg.scale) : isSpecial ? (cfg.specialScale ?? cfg.scale) : cfg.scale) || 1,
-      animFrames: parseInt(isCombat ? (cfg.combatAnimFrames ?? cfg.animFrames) : isSpecial ? (cfg.specialAnimFrames ?? cfg.animFrames) : cfg.animFrames, 10) || 0,
-      rowCount:   parseInt(isCombat ? (cfg.combatRowCount ?? cfg.rowCount) : isSpecial ? (cfg.specialRowCount ?? cfg.rowCount) : cfg.rowCount, 10) || 0,
+      scale:      Number(isCombat  ? (cfg.combatScale  ?? cfg.scale)
+                       : isSpecial ? (cfg.specialScale ?? cfg.scale) : cfg.scale) || 1,
+      animFrames: parseInt(isCombat  ? (cfg.combatAnimFrames  ?? cfg.animFrames)
+                         : isSpecial ? (cfg.specialAnimFrames ?? cfg.animFrames) : cfg.animFrames, 10) || defFrames,
+      rowCount:   parseInt(isCombat  ? (cfg.combatRowCount  ?? cfg.rowCount)
+                         : isSpecial ? (cfg.specialRowCount ?? cfg.rowCount)   : cfg.rowCount,   10) || defRows,
       yOffset:    Number(cfg.yOffset) || 0,
-      sheetMode:  mode || "explore",
+      sheetMode:  mode,
     };
   }
 
   function resolveCustomSheetBundle(cfg, battleMode, specialMode) {
     if (!cfg) return null;
-    const mode = specialMode ? "special" : battleMode ? "combat" : "explore";
-    if (mode === "combat") {
-      const hasCombat = !!(cfg.combatSpriteDataURL || cfg.combatDataURL || cfg.combatSpriteImage || cfg.combatUserImage
-        || cfg.combatSheet?.spriteDataURL || cfg.combatSheet?.dataURL);
-      if (!hasCombat) return null;
-    } else if (mode === "special") {
-      const hasSpecial = !!(cfg.specialSpriteDataURL || cfg.specialDataURL || cfg.specialSpriteImage || cfg.specialUserImage
-        || cfg.specialSheet?.spriteDataURL || cfg.specialSheet?.dataURL);
-      if (!hasSpecial) return null;
-    } else {
-      const hasExplore = !!(cfg.spriteDataURL || cfg.dataURL || cfg.spriteImage || cfg.userImage
-        || cfg.exploreSheet?.spriteDataURL || cfg.exploreSheet?.dataURL);
-      if (!hasExplore) return null;
-    }
-    const img = _pickSheetImage(cfg, mode);
+    const mode = _pickSheetMode(battleMode, specialMode);
+    const img  = _pickSheetImage(cfg, mode);
     if (!img || !img.complete || !img.naturalWidth) return null;
     return { img, custom: _pickSheetMeta(cfg, mode) };
   }
 
   function resolveFreeCustomizationBundle(accDef, battleMode, specialMode) {
-    if (!accDef || (!accDef.isFreeCustomization && !String(accDef.id || "").startsWith("fc_"))) return null;
+    if (!isFreeCustomizationEntry(accDef)) return null;
     return resolveCustomSheetBundle(accDef, battleMode, specialMode);
   }
 
   function _drawVariantSheet(ctx, img, screenX, screenY, dw, dh, animator, custom) {
     if (!img || !img.complete || !img.naturalWidth) return false;
-    const scale = Math.max(0.25, Math.min(8, Number(custom?.scale) || 1));
-    const useCombat  = custom?.sheetMode === "combat"  || isBattleSheet(img);
-    const useSpecial = custom?.sheetMode === "special" || isSpecialSheet(img);
-    const rowCount   = useCombat ? COMBAT_TOTAL_ROWS : useSpecial ? SPECIAL_TOTAL_ROWS : TOTAL_ROWS;
-    const colCount   = useCombat ? COMBAT_MAX_COLS   : useSpecial ? SPECIAL_MAX_COLS   : MAX_COLS;
-    const metaMap    = useCombat ? COMBAT_ACTIONS_META : useSpecial ? SPECIAL_ACTIONS_META : ACTIONS_META;
-    const defaultKey = useCombat ? "combat_idle" : useSpecial ? "sit" : "idle";
-    const userFrames = parseInt(custom?.animFrames, 10);
-    const userRows   = parseInt(custom?.rowCount,   10);
-    const frameCount    = Math.max(1, Math.min(48, userFrames > 0 ? userFrames : colCount));
-    const effectiveRows = Math.max(1, Math.min(64, userRows   > 0 ? userRows   : rowCount));
-    const fw = Math.max(1, Math.floor(img.naturalWidth  / frameCount));
-    const fh = Math.max(1, Math.floor(img.naturalHeight / effectiveRows));
-    let meta = animator?.meta || metaMap[defaultKey];
-    if (!metaMap[animator?.action]) meta = metaMap[defaultKey];
-    const row   = Math.max(0, Math.min(effectiveRows - 1, meta?.row || 0));
-    const frame = animator ? (animator.frame % frameCount) : 0;
+    const scale   = Math.max(0.25, Math.min(8, Number(custom?.scale) || 1));
+    const mode    = custom?.sheetMode || "explore";
+    const defCols = mode === "combat" ? COMBAT_MAX_COLS  : mode === "special" ? SPECIAL_MAX_COLS  : MAX_COLS;
+    const defRows = mode === "combat" ? COMBAT_TOTAL_ROWS : mode === "special" ? SPECIAL_TOTAL_ROWS : TOTAL_ROWS;
+    const metaMap = mode === "combat" ? COMBAT_ACTIONS_META : mode === "special" ? SPECIAL_ACTIONS_META : ACTIONS_META;
+    const defKey  = mode === "combat" ? "combat_idle" : mode === "special" ? "sit" : "idle";
+    const uFrames = parseInt(custom?.animFrames, 10);
+    const uRows   = parseInt(custom?.rowCount,   10);
+    const frameCols  = Math.max(1, Math.min(48, uFrames > 0 ? uFrames : defCols));
+    const effectRows = Math.max(1, Math.min(64, uRows   > 0 ? uRows   : defRows));
+    const fw = Math.max(1, Math.floor(img.naturalWidth  / frameCols));
+    const fh = Math.max(1, Math.floor(img.naturalHeight / effectRows));
+    const meta  = (animator && metaMap[animator.action]) ? animator.meta : metaMap[defKey];
+    const row   = Math.max(0, Math.min(effectRows - 1, meta?.row || 0));
+    const frame = animator ? Math.min(animator.frame, frameCols - 1) : 0;
     const drawW = dw * scale, drawH = dh * scale;
-    const destX = screenX - drawW / 2;
-    const destY = screenY - drawH + (Number(custom?.yOffset) || 0);
     ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(img, frame * fw, row * fh, fw, fh, destX, destY, drawW, drawH);
+    ctx.drawImage(img, frame * fw, row * fh, fw, fh,
+      screenX - drawW / 2,
+      screenY - drawH + (Number(custom?.yOffset) || 0),
+      drawW, drawH);
     return true;
   }
 
   function _drawProceduralAura(ctx, screenX, screenY, dw, dh, auraEntry, color, phase) {
     if (!auraEntry || auraEntry.style === "none" || !color) return;
     const rgba = (hex, a) => {
-      const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+      const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
       return `rgba(${r},${g},${b},${a})`;
     };
     const cx = screenX, cy = screenY - dh * 0.55;
     const grd = ctx.createRadialGradient(cx, cy, 4, cx, cy, dw * 0.9);
     grd.addColorStop(0, rgba(color, 0.28));
     grd.addColorStop(0.5, rgba(color, 0.10));
-    grd.addColorStop(1, rgba(color, 0));
+    grd.addColorStop(1,   rgba(color, 0));
     ctx.fillStyle = grd;
     ctx.beginPath();
-    ctx.ellipse(cx, cy, dw * 0.6, dh * 0.55, 0, 0, Math.PI * 2);
+    ctx.ellipse(cx, cy, dw*0.6, dh*0.55, 0, 0, Math.PI*2);
     ctx.fill();
     for (let i = 0; i < 10; i++) {
-      const ang = (i / 10) * Math.PI * 2 + phase * 0.05;
-      const rad = dw * 0.28 + Math.sin(phase * 0.08 + i) * 6;
-      const fx = cx + Math.cos(ang) * rad, fy = cy + Math.sin(ang) * rad * 0.5;
-      const fh2 = 10 + Math.sin(phase * 0.1 + i * 0.8) * 5;
+      const ang = (i/10)*Math.PI*2 + phase*0.05;
+      const rad = dw*0.28 + Math.sin(phase*0.08+i)*6;
+      const fx  = cx + Math.cos(ang)*rad, fy = cy + Math.sin(ang)*rad*0.5;
+      const fh2 = 10 + Math.sin(phase*0.1+i*0.8)*5;
       ctx.fillStyle = rgba(color, 0.52);
       ctx.beginPath();
-      ctx.moveTo(fx - 2, fy + 3);
-      ctx.lineTo(fx, fy - fh2);
-      ctx.lineTo(fx + 2, fy + 3);
+      ctx.moveTo(fx-2, fy+3); ctx.lineTo(fx, fy-fh2); ctx.lineTo(fx+2, fy+3);
       ctx.fill();
     }
   }
 
-  function _drawAccessoryLayer(ctx, accDef, screenX, screenY, dw, dh, animator, inCombatSheet, inSpecialSheet) {
+  function _drawAccessoryLayer(ctx, accDef, screenX, screenY, dw, dh, animator, inCombat, inSpecial) {
     if (!accDef || accDef.id === "ac_none") return;
-    const bundle = resolveCustomSheetBundle(accDef, !!inCombatSheet, !!inSpecialSheet);
+    const bundle = resolveCustomSheetBundle(accDef, inCombat, inSpecial);
     if (bundle?.img?.complete && bundle.img.naturalWidth) {
       _drawVariantSheet(ctx, bundle.img, screenX, screenY, dw, dh, animator, bundle.custom);
       return;
     }
     const img = _getAccessoryImage(accDef);
     if (img && img.complete && img.naturalWidth) {
-      const destX = screenX - dw / 2, destY = screenY - dh;
-      _drawLayerSprite(ctx, img, destX, destY, dw, dh, animator, IMPORTED_LAYER_SCALE);
+      _drawLayerSprite(ctx, img, screenX - dw/2, screenY - dh, dw, dh, animator, IMPORTED_LAYER_SCALE);
     }
   }
 
   // ═══════════════════════════════════════════════════════════════
-  //  drawPlayer — actualizado para soportar los 3 sheets
+  //  drawPlayer
   // ═══════════════════════════════════════════════════════════════
 
   function drawPlayer(ctx, screenX, screenY, playerObj, imageMap, animator, charState) {
     const p       = playerObj || player;
     const baseApp = p.appearance || player.appearance;
     const dir     = p.direction || 1;
-    const gender  = baseApp.gender || "male";
-    const raceId  = baseApp.raceId || "human";
+    const gender  = baseApp.gender  || "male";
+    const raceId  = baseApp.raceId  || "human";
     const raceDef = RACE_CATALOG.find((r) => r.id === raceId) || RACE_CATALOG[0];
 
-    const raceVariants    = raceDef.variants || [{ id: "base", label: "Base", suffix: "" }];
-    const customVariants  = baseApp.variantCustomizations || {};
+    const raceVariants      = raceDef.variants || [{ id: "base", label: "Base", suffix: "" }];
+    const customVariants    = baseApp.variantCustomizations || {};
     const hasCatalogVariant = raceVariants.some((v) => v.id === baseApp.variantId);
     const hasCustomVariant  = !!customVariants[baseApp.variantId];
-    const variantId       = (hasCatalogVariant || hasCustomVariant) ? baseApp.variantId : "base";
-    const variantCustom   = getVariantCustomization(baseApp, variantId);
-    const app             = getVariantAppearance(baseApp, variantId);
+    const variantId         = (hasCatalogVariant || hasCustomVariant) ? baseApp.variantId : "base";
+    const variantCustom     = getVariantCustomization(baseApp, variantId);
+    const app               = getVariantAppearance(baseApp, variantId);
 
     const spriteVariantId = (charState && charState.spriteVariantId) || variantId;
-    const inCombatSheet   = spriteVariantId === "fight";
-    const inSpecialSheet  = spriteVariantId === "special";
+    const inCombat        = spriteVariantId === "fight";
+    const inSpecial       = spriteVariantId === "special";
 
-    if (animator && animator.setBattleMode) {
-      if (inCombatSheet  && !animator.battleMode)  animator.setBattleMode(true);
-      else if (inSpecialSheet && !animator.specialMode) animator.setSpecialMode(true);
-      else if (!inCombatSheet && !inSpecialSheet && (animator.battleMode || animator.specialMode)) {
+    // Sincronizar modo del animador
+    if (animator) {
+      if      (inCombat  && !animator.battleMode)  animator.setBattleMode(true);
+      else if (inSpecial && !animator.specialMode)  animator.setSpecialMode(true);
+      else if (!inCombat && !inSpecial && (animator.battleMode || animator.specialMode)) {
         animator.setBattleMode(false);
         animator.setSpecialMode(false);
       }
     }
 
-    const combatCustom  = inCombatSheet  ? baseApp.combatCustomization  : null;
-    const specialCustom = inSpecialSheet ? baseApp.specialCustomization : null;
+    const combatCustom  = inCombat  ? baseApp.combatCustomization  : null;
+    const specialCustom = inSpecial ? baseApp.specialCustomization  : null;
 
-    const getVariantImg = (baseKey) => {
+    const getImg = (baseKey) => {
       if (!imageMap || !baseKey) return null;
-      const spriteKey = getSpriteKey(baseKey, spriteVariantId);
-      return imageMap[spriteKey] || imageMap[baseKey] || null;
+      const sk = getSpriteKey(baseKey, spriteVariantId);
+      return imageMap[sk] || imageMap[baseKey] || null;
     };
 
+    // Vista fija (previsualización)
     const viewKey = charState && charState.viewKey;
-    if (animator && viewKey && VIEW_META[viewKey]) animator.setView(viewKey);
+    if      (animator && viewKey && VIEW_META[viewKey]) animator.setView(viewKey);
     else if (animator && !viewKey && animator.currentView) animator.clearView();
 
-    const faceCatalog = getCatalogFor("face",   raceId, gender);
-    const hairCatalog = getCatalogFor("hair",   raceId, gender);
-    const topCatalog  = getCatalogFor("shirt",  raceId, gender);
-    const btmCatalog  = getCatalogFor("pants",  raceId, gender);
-    const shoeCatalog = getCatalogFor("shoes",  raceId, gender);
-    const glvCatalog  = getCatalogFor("gloves", raceId, gender);
+    const faceCat  = getCatalogFor("face",   raceId, gender);
+    const hairCat  = getCatalogFor("hair",   raceId, gender);
+    const topCat   = getCatalogFor("shirt",  raceId, gender);
+    const btmCat   = getCatalogFor("pants",  raceId, gender);
+    const shoeCat  = getCatalogFor("shoes",  raceId, gender);
+    const glvCat   = getCatalogFor("gloves", raceId, gender);
 
-    const faceDef  = faceCatalog.find((f) => f.id === app.faceId)   || faceCatalog[0];
-    const hairDef  = hairCatalog.find((h) => h.id === app.hairId)   || hairCatalog[0];
-    const topDef   = topCatalog.find((t)  => t.id === app.topId)    || topCatalog[0];
-    const btmDef   = btmCatalog.find((b)  => b.id === app.bottomId) || btmCatalog[0];
-    const shoesDef = shoeCatalog.find((s) => s.id === app.shoesId)  || shoeCatalog[0];
-    const glovesId = app.glovesId || (charState && charState.glovesId) || glvCatalog[0].id;
-    const glovesDef = glvCatalog.find((g) => g.id === glovesId) || glvCatalog[0];
+    const faceDef  = faceCat.find((f) => f.id === app.faceId)   || faceCat[0];
+    const hairDef  = hairCat.find((h) => h.id === app.hairId)   || hairCat[0];
+    const topDef   = topCat.find((t)  => t.id === app.topId)    || topCat[0];
+    const btmDef   = btmCat.find((b)  => b.id === app.bottomId) || btmCat[0];
+    const shoesDef = shoeCat.find((s) => s.id === app.shoesId)  || shoeCat[0];
+    const glovesId = app.glovesId || (charState && charState.glovesId) || glvCat[0].id;
+    const glvDef   = glvCat.find((g) => g.id === glovesId) || glvCat[0];
 
     const auraId    = app.auraId    || (charState && charState.auraId)    || "a0";
     const auraColor = app.auraColor || (charState && charState.auraColor) || "#fdd835";
@@ -1781,90 +1718,74 @@
 
     const accessoryId = app.accessoryId || (charState && charState.accessoryId) || "ac_none";
     const accDef      = ACCESSORIES_CATALOG.find((a) => a.id === accessoryId) || ACCESSORIES_CATALOG[0];
-    const accImg      = _getAccessoryImage(accDef);
     const accSlot     = accDef ? accDef.slot : "over_shirt";
     const freeCustom  = isFreeCustomizationEntry(accDef);
 
     const bodyGender = raceDef.genderless ? "male" : gender;
-    const bodyImg    = getVariantImg(`${raceDef.id}_${bodyGender}`);
+    const bodyImg    = getImg(`${raceDef.id}_${bodyGender}`);
 
     const dw = DISPLAY_W, dh = DISPLAY_H;
-    const destX = screenX - dw / 2, destY = screenY - dh;
+    const destX = screenX - dw/2, destY = screenY - dh;
 
     ctx.save();
-    if (dir === -1) { ctx.translate(screenX * 2, 0); ctx.scale(-1, 1); }
+    if (dir === -1) { ctx.translate(screenX*2, 0); ctx.scale(-1, 1); }
 
-    // 1. AURA
-    const auraImg = getVariantImg(auraDef.spriteKey);
+    // ── 1. AURA ────────────────────────────────────────────────
+    const auraImg = getImg(auraDef.spriteKey);
     if (auraImg && auraImg.complete && auraImg.naturalWidth) {
-      const aw = dw * 1.8, ah = dh * 1.2;
-      const auraSheet = isCompatibleSheet(auraImg);
+      const aw = dw*1.8, ah = dh*1.2;
       ctx.globalAlpha = 0.65;
-      if (auraSheet && animator) {
-        const { srcX, srcY, fw, fh } = (animator.battleMode || animator.specialMode) && animator.getLayerFrameCoords
+      if (isCompatibleSheet(auraImg) && animator) {
+        const { srcX, srcY, fw, fh } = animator.battleMode || animator.specialMode
           ? animator.getLayerFrameCoords(auraImg)
           : animator.getFrameCoords(auraImg);
         ctx.imageSmoothingEnabled = false;
-        if (srcX + fw <= auraImg.naturalWidth && srcY + fh <= auraImg.naturalHeight) {
-          ctx.drawImage(auraImg, srcX, srcY, fw, fh, screenX - aw / 2, destY - ah * 0.1, aw, ah);
+        if (srcX+fw <= auraImg.naturalWidth && srcY+fh <= auraImg.naturalHeight) {
+          ctx.drawImage(auraImg, srcX, srcY, fw, fh, screenX-aw/2, destY-ah*0.1, aw, ah);
         } else {
-          ctx.drawImage(auraImg, 0, 0, auraImg.naturalWidth, auraImg.naturalHeight, screenX - aw / 2, destY - ah * 0.1, aw, ah);
+          ctx.drawImage(auraImg, 0, 0, auraImg.naturalWidth, auraImg.naturalHeight, screenX-aw/2, destY-ah*0.1, aw, ah);
         }
       } else {
         ctx.imageSmoothingEnabled = true;
-        ctx.drawImage(auraImg, screenX - aw / 2, destY - ah * 0.1, aw, ah);
+        ctx.drawImage(auraImg, screenX-aw/2, destY-ah*0.1, aw, ah);
       }
       ctx.globalAlpha = 1;
     } else {
       _drawProceduralAura(ctx, screenX, screenY, dw, dh, auraDef, auraColor, auraPhase);
     }
 
-    // Plantilla global de combate importada
-    if (inCombatSheet) {
-      const globalCombat = resolveCustomSheetBundle(combatCustom, true, false);
-      if (globalCombat) {
-        _drawVariantSheet(ctx, globalCombat.img, screenX, screenY, dw, dh, animator, globalCombat.custom);
-        ctx.restore(); return;
-      }
+    // ── Plantillas globales de combate/especial importadas ─────
+    if (inCombat) {
+      const gb = resolveCustomSheetBundle(combatCustom, true, false);
+      if (gb) { _drawVariantSheet(ctx, gb.img, screenX, screenY, dw, dh, animator, gb.custom); ctx.restore(); return; }
+    }
+    if (inSpecial) {
+      const gb = resolveCustomSheetBundle(specialCustom, false, true);
+      if (gb) { _drawVariantSheet(ctx, gb.img, screenX, screenY, dw, dh, animator, gb.custom); ctx.restore(); return; }
     }
 
-    // Plantilla global de especiales importada
-    if (inSpecialSheet) {
-      const globalSpecial = resolveCustomSheetBundle(specialCustom, false, true);
-      if (globalSpecial) {
-        _drawVariantSheet(ctx, globalSpecial.img, screenX, screenY, dw, dh, animator, globalSpecial.custom);
-        ctx.restore(); return;
-      }
-    }
-
-    // Variante (transformación) con sheet propio
+    // ── Variante con sheet propio ──────────────────────────────
     if (variantId !== "base") {
-      const variantBundle = resolveCustomSheetBundle(variantCustom, inCombatSheet, inSpecialSheet);
-      if (variantBundle) {
-        _drawVariantSheet(ctx, variantBundle.img, screenX, screenY, dw, dh, animator, variantBundle.custom);
-        ctx.restore(); return;
-      }
+      const vb = resolveCustomSheetBundle(variantCustom, inCombat, inSpecial);
+      if (vb) { _drawVariantSheet(ctx, vb.img, screenX, screenY, dw, dh, animator, vb.custom); ctx.restore(); return; }
     }
 
-    // Personalización libre — dibuja el sheet importado si existe, pero
-    // no retorna para permitir que las capas (ropa/accesorios) se sigan dibujando.
+    // ── Personalización libre (sheet completo) ─────────────────
     if (freeCustom) {
-      const freeBundle = resolveFreeCustomizationBundle(accDef, inCombatSheet, inSpecialSheet);
-      if (freeBundle) {
-        _drawVariantSheet(ctx, freeBundle.img, screenX, screenY, dw, dh, animator, freeBundle.custom);
-        // Continuar: no hacemos restore/return para que el accesorio y capas siguientes se rendericen
-      }
-      // Si no hay sheet completo, se seguirá el flujo normal y el accesorio se dibujará más abajo
+      const fb = resolveFreeCustomizationBundle(accDef, inCombat, inSpecial);
+      if (fb) _drawVariantSheet(ctx, fb.img, screenX, screenY, dw, dh, animator, fb.custom);
+      // no return — continuar para renderizar capas encima
     }
 
-    // 2. ACCESORIO under_shirt
+    // ── 2. Accesorio under_shirt ───────────────────────────────
     if (accSlot === "under_shirt") {
-      _drawAccessoryLayer(ctx, accDef, screenX, screenY, dw, dh, animator, inCombatSheet, inSpecialSheet);
+      _drawAccessoryLayer(ctx, accDef, screenX, screenY, dw, dh, animator, inCombat, inSpecial);
     }
 
-    // 3. CUERPO con tinte de piel
+    // ── 3. CUERPO con tinte de piel ───────────────────────────
     if (bodyImg && bodyImg.complete && bodyImg.naturalWidth) {
-      const sheet = isBattleSheet(bodyImg) || isCompatibleSheet(bodyImg);
+      const type  = _detectSheetType(bodyImg);
+      const sheet = type !== null;
       ctx.imageSmoothingEnabled = !sheet;
       if (app.skinColor) {
         const coords = sheet && animator ? animator.getFrameCoords(bodyImg) : null;
@@ -1878,31 +1799,31 @@
       }
     }
 
-    // 4. ROPA INFERIOR
-    _drawLayerSprite(ctx, getVariantImg(btmDef?.spriteKey),   destX, destY, dw, dh, animator);
-    // 5. CALZADO
-    _drawLayerSprite(ctx, getVariantImg(shoesDef?.spriteKey), destX, destY, dw, dh, animator);
-    // 6. CINTURÓN
+    // ── 4. Ropa inferior ──────────────────────────────────────
+    _drawLayerSprite(ctx, getImg(btmDef?.spriteKey),   destX, destY, dw, dh, animator);
+    // ── 5. Calzado ────────────────────────────────────────────
+    _drawLayerSprite(ctx, getImg(shoesDef?.spriteKey), destX, destY, dw, dh, animator);
+    // ── 6. Cinturón ───────────────────────────────────────────
     if (accSlot === "belt_slot") {
-      _drawAccessoryLayer(ctx, accDef, screenX, screenY, dw, dh, animator, inCombatSheet, inSpecialSheet);
+      _drawAccessoryLayer(ctx, accDef, screenX, screenY, dw, dh, animator, inCombat, inSpecial);
     }
-    // 7. ROPA SUPERIOR
-    _drawLayerSprite(ctx, getVariantImg(topDef?.spriteKey),    destX, destY, dw, dh, animator);
-    // 8. GUANTES
-    _drawLayerSprite(ctx, getVariantImg(glovesDef?.spriteKey), destX, destY, dw, dh, animator);
+    // ── 7. Ropa superior ──────────────────────────────────────
+    _drawLayerSprite(ctx, getImg(topDef?.spriteKey),   destX, destY, dw, dh, animator);
+    // ── 8. Guantes ────────────────────────────────────────────
+    _drawLayerSprite(ctx, getImg(glvDef?.spriteKey),   destX, destY, dw, dh, animator);
 
-    // 9. CARA
-    const faceImg = getVariantImg(faceDef?.spriteKey);
+    // ── 9. CARA ───────────────────────────────────────────────
+    const faceImg = getImg(faceDef?.spriteKey);
     if (faceImg && faceImg.complete && faceImg.naturalWidth) {
       if (faceDef && faceDef.tintable) {
         const faceSheet = isCompatibleSheet(faceImg);
         let frameCoords = null;
         if (faceSheet && animator) {
-          const { srcX, srcY, fw, fh } = (animator.battleMode || animator.specialMode) && animator.getLayerFrameCoords
+          const r = animator.battleMode || animator.specialMode
             ? animator.getLayerFrameCoords(faceImg)
             : animator.getFrameCoords(faceImg);
-          if (srcX + fw <= faceImg.naturalWidth && srcY + fh <= faceImg.naturalHeight)
-            frameCoords = { srcX, srcY, fw, fh };
+          if (r.srcX+r.fw <= faceImg.naturalWidth && r.srcY+r.fh <= faceImg.naturalHeight)
+            frameCoords = r;
         }
         if (faceDef.eyeColor) {
           const browColor  = app.browColor  || null;
@@ -1910,19 +1831,18 @@
           const eyeColor   = app.eyeColor   || null;
           let tinted = null;
           if (browColor || pupilColor) {
-            tinted = tintFaceDetailed(faceImg, browColor || eyeColor || "#1a1a1a", pupilColor || eyeColor || "#1a1a1a", faceDef, dw, dh, frameCoords);
+            tinted = tintFaceDetailed(faceImg, browColor||eyeColor||"#1a1a1a", pupilColor||eyeColor||"#1a1a1a", faceDef, dw, dh, frameCoords);
           } else if (eyeColor) {
             tinted = tintFaceColor(faceImg, eyeColor, faceDef, dw, dh, frameCoords);
           }
-          if (tinted) { ctx.imageSmoothingEnabled = false; ctx.drawImage(tinted, destX, destY, dw, dh); }
-          else { _drawLayerSprite(ctx, faceImg, destX, destY, dw, dh, animator); }
+          if (tinted) { ctx.imageSmoothingEnabled=false; ctx.drawImage(tinted, destX, destY, dw, dh); }
+          else _drawLayerSprite(ctx, faceImg, destX, destY, dw, dh, animator);
         } else {
           const faceColor = app.faceColor || null;
           if (faceColor) {
-            const cacheKey = (faceDef.id || "face") + "|" + (faceImg.src || "");
-            const tinted = tintLayer(faceImg, faceColor, cacheKey, dw, dh, frameCoords);
-            if (tinted) { ctx.imageSmoothingEnabled = false; ctx.drawImage(tinted, destX, destY, dw, dh); }
-            else { _drawLayerSprite(ctx, faceImg, destX, destY, dw, dh, animator); }
+            const tinted = tintLayer(faceImg, faceColor, (faceDef.id||"face")+"|"+(faceImg.src||""), dw, dh, frameCoords);
+            if (tinted) { ctx.imageSmoothingEnabled=false; ctx.drawImage(tinted, destX, destY, dw, dh); }
+            else _drawLayerSprite(ctx, faceImg, destX, destY, dw, dh, animator);
           } else {
             _drawLayerSprite(ctx, faceImg, destX, destY, dw, dh, animator);
           }
@@ -1932,42 +1852,68 @@
       }
     }
 
-    // 10. CABELLO
-    const hairImg = getVariantImg(hairDef?.spriteKey);
+    // ── 10. CABELLO ───────────────────────────────────────────
+    const hairImg = getImg(hairDef?.spriteKey);
     if (hairImg && hairImg.complete && hairImg.naturalWidth) {
       const sheet = isCompatibleSheet(hairImg) && animator;
-      const coords = sheet ? (() => {
-        const { srcX, srcY, fw, fh } = (animator.battleMode || animator.specialMode) && animator.getLayerFrameCoords
+      let coords  = null;
+      if (sheet) {
+        const r = animator.battleMode || animator.specialMode
           ? animator.getLayerFrameCoords(hairImg)
           : animator.getFrameCoords(hairImg);
-        if (srcX + fw <= hairImg.naturalWidth && srcY + fh <= hairImg.naturalHeight)
-          return { srcX, srcY, fw, fh };
-        return null;
-      })() : null;
-      const tinted = tintHair(hairImg, app.hairColor || "#1a1a1a", hairDef, dw, dh, coords);
-      if (tinted) { ctx.imageSmoothingEnabled = false; ctx.drawImage(tinted, destX, destY, dw, dh); }
+        if (r.srcX+r.fw <= hairImg.naturalWidth && r.srcY+r.fh <= hairImg.naturalHeight)
+          coords = r;
+      }
+      const tinted = tintHair(hairImg, app.hairColor||"#1a1a1a", hairDef, dw, dh, coords);
+      if (tinted) { ctx.imageSmoothingEnabled=false; ctx.drawImage(tinted, destX, destY, dw, dh); }
     }
 
-    // 11. ACCESORIO over_shirt
+    // ── 11. Accesorio over_shirt ──────────────────────────────
     if (accSlot === "over_shirt") {
-      _drawAccessoryLayer(ctx, accDef, screenX, screenY, dw, dh, animator, inCombatSheet, inSpecialSheet);
+      _drawAccessoryLayer(ctx, accDef, screenX, screenY, dw, dh, animator, inCombat, inSpecial);
     }
 
     ctx.restore();
   }
 
   // ═══════════════════════════════════════════════════════════════
-  //  UTILIDADES
+  //  PLAYER & UTILIDADES
   // ═══════════════════════════════════════════════════════════════
 
-  function getById(catalog, id)           { return catalog.find((e) => e.id === id) || catalog[0]; }
+  const player = {
+    x: 0, y: 0, vx: 0, vy: 0,
+    direction: 1,
+    onGround: false,
+    state: "idle",
+    appearance: {
+      raceId:      "human",
+      gender:      "male",
+      variantId:   "base",
+      faceId:      "fm0",
+      faceColor:   null,
+      hairId:      "hm1",
+      hairColor:   "#1a1a1a",
+      topId:       "sm1",
+      bottomId:    "pm1",
+      shoesId:     "shm1",
+      glovesId:    "gm0",
+      auraId:      "a1",
+      auraColor:   "#fdd835",
+      skinColor:   "#e8c898",
+      eyeColor:    "#3a2a1a",
+      browColor:   null,
+      pupilColor:  null,
+      accessoryId: "ac_none",
+    },
+    _animator: null,
+  };
 
+  function getById(catalog, id)          { return catalog.find((e) => e.id === id) || catalog[0]; }
   function cycleId(catalog, currentId, delta = 1) {
     const idx  = catalog.findIndex((e) => e.id === currentId);
     const next = ((idx === -1 ? 0 : idx) + delta + catalog.length) % catalog.length;
     return catalog[next].id;
   }
-
   function initPlayer(overrides = {}) {
     Object.assign(player, overrides);
     player._animator = new SpriteAnimator("idle");
@@ -1984,6 +1930,7 @@
     ACCESSORIES_CATALOG,
     ACCESSORY_TYPES,
     addUserAccessory,
+    addFreeCustomizationSheet,
     removeUserAccessory,
     restoreUserAccessories,
 
@@ -2010,13 +1957,17 @@
     COMBAT_TO_IDLE_MAP, LEGACY_TO_COMBAT_MAP,
     resolveCombatAction, resolveCustomSheetBundle, resolveFreeCustomizationBundle,
 
-    // Constantes de grid
-    FRAME_W, FRAME_H, DISPLAY_W, DISPLAY_H, IMPORTED_LAYER_SCALE,
-    MAX_COLS, TOTAL_ROWS, IDLE_ROW,
-    COMBAT_MAX_COLS, COMBAT_TOTAL_ROWS, COMBAT_IDLE_ROW,
+    // ── Constantes de grilla ────────────────────────────────────
+    // RP/Base
+    FRAME_W, FRAME_H,           // fallback de display
+    DISPLAY_W, DISPLAY_H, IMPORTED_LAYER_SCALE,
+    MAX_COLS,   TOTAL_ROWS,   IDLE_ROW,
+    // Combate
+    COMBAT_MAX_COLS,  COMBAT_TOTAL_ROWS,  COMBAT_IDLE_ROW,
+    // Especiales
     SPECIAL_MAX_COLS, SPECIAL_TOTAL_ROWS,
 
-    // Alias de capas
+    // ── Alias de metas de capas ─────────────────────────────────
     HAIR_VIEW_META,    HAIR_ACTIONS_META,
     FACE_VIEW_META,    FACE_ACTIONS_META,
     TOP_VIEW_META,     TOP_ACTIONS_META,
@@ -2030,10 +1981,12 @@
     tintHair, tintLayer, tintFaceColor, tintFaceDetailed, invalidateHairCache,
     _hexToRgb, _rgbToHsl, _hslToRgb, _tintSprite,
 
+    // ── Detección de sheet ──────────────────────────────────────
     detectFrameSize, getFrameSize,
     getBattleFrameSize, getCombatFrameSize, getSpecialFrameSize,
-    isCompatibleSheet, isBattleSheet, isSpecialSheet, getIdleFrameCoords,
+    isCompatibleSheet, isBattleSheet, isSpecialSheet,
     hasFullGridLayout, hasCombatGridLayout, hasSpecialGridLayout,
+    getIdleFrameCoords,
 
     getById, cycleId,
 
