@@ -300,37 +300,32 @@
 
   /**
    * Obtiene (y cachea) { fw, fh } para el sheet.
-   * El frame size se calcula a partir de la imagen real, no de constantes fijas.
+   * SIEMPRE usa la grilla estándar de 6 columnas × 14 filas (MAX_COLS × TOTAL_ROWS).
+   * El frame size se calcula a partir de la imagen real dividida por esta grilla fija.
    */
   function getFrameSize(img) {
     if (!img) return { fw: FRAME_W, fh: FRAME_H };
     const key = (img.src || "") + "|" + img.naturalWidth + "x" + img.naturalHeight;
     if (_frameSizeCache.has(key)) return _frameSizeCache.get(key);
 
-    const type = _detectSheetType(img);
-    let result;
-    switch (type) {
-      case "combat":  result = _computeFrameSize(img, COMBAT_MAX_COLS,  COMBAT_TOTAL_ROWS);  break;
-      case "special": result = _computeFrameSize(img, SPECIAL_MAX_COLS, SPECIAL_TOTAL_ROWS); break;
-      case "base":    result = _computeFrameSize(img, MAX_COLS,         TOTAL_ROWS);         break;
-      default:        result = { fw: FRAME_W, fh: FRAME_H };
-    }
+    // Siempre usa la grilla de 6 columnas × 14 filas
+    const result = _computeFrameSize(img, MAX_COLS, TOTAL_ROWS);
     _frameSizeCache.set(key, result);
     return result;
   }
 
   function detectFrameSize(img)      { return getFrameSize(img); }
-  function getCombatFrameSize(img)   { return _computeFrameSize(img, COMBAT_MAX_COLS,  COMBAT_TOTAL_ROWS); }
-  function getSpecialFrameSize(img)  { return _computeFrameSize(img, SPECIAL_MAX_COLS, SPECIAL_TOTAL_ROWS); }
-  function getBattleFrameSize(img)   { return getCombatFrameSize(img); }  // alias legacy
+  function getCombatFrameSize(img)   { return getFrameSize(img); }
+  function getSpecialFrameSize(img)  { return getFrameSize(img); }
+  function getBattleFrameSize(img)   { return getFrameSize(img); }  // alias legacy
 
-  function isCompatibleSheet(img)  { return _detectSheetType(img) === "base"; }
-  function isBattleSheet(img)      { return _detectSheetType(img) === "combat"; }
-  function isSpecialSheet(img)     { return _detectSheetType(img) === "special"; }
-  function hasFullGridLayout(img)  { return isCompatibleSheet(img); }
-  function hasCombatGridLayout(img){ return isBattleSheet(img); }
-  function hasSpecialGridLayout(img){ return isSpecialSheet(img); }
-  function hasSheetLayout(img)     { return _detectSheetType(img) !== null; }
+  function isCompatibleSheet(img)  { return !!img && img.naturalWidth > 0 && img.naturalHeight > 0; }
+  function isBattleSheet(img)      { return !!img && img.naturalWidth > 0 && img.naturalHeight > 0; }
+  function isSpecialSheet(img)     { return !!img && img.naturalWidth > 0 && img.naturalHeight > 0; }
+  function hasFullGridLayout(img)  { return !!img && img.naturalWidth > 0 && img.naturalHeight > 0; }
+  function hasCombatGridLayout(img){ return !!img && img.naturalWidth > 0 && img.naturalHeight > 0; }
+  function hasSpecialGridLayout(img){ return !!img && img.naturalWidth > 0 && img.naturalHeight > 0; }
+  function hasSheetLayout(img)     { return !!img && img.naturalWidth > 0 && img.naturalHeight > 0; }
 
   /** Coordenadas del primer frame de idle (para thumbnails / fallback) */
   function getIdleFrameCoords(img) {
@@ -1177,24 +1172,19 @@
 
     /**
      * Retorna las coordenadas de recorte del frame actual en el sheet.
-     * El tamaño de celda (fw, fh) se calcula desde el sheet real si se provee `img`.
+     * El tamaño de celda (fw, fh) se calcula SIEMPRE usando la grilla estándar de 6×14.
      */
     getFrameCoords(img = null) {
       const m = this.meta;
       let fw = FRAME_W, fh = FRAME_H;
       if (img) {
-        // Usa el tamaño real del sheet — no asume 96×96
-        const type = _detectSheetType(img);
-        let sz;
-        if      (type === "combat")  sz = _computeFrameSize(img, COMBAT_MAX_COLS,  COMBAT_TOTAL_ROWS);
-        else if (type === "special") sz = _computeFrameSize(img, SPECIAL_MAX_COLS, SPECIAL_TOTAL_ROWS);
-        else if (type === "base")    sz = _computeFrameSize(img, MAX_COLS,         TOTAL_ROWS);
-        else                         sz = { fw: FRAME_W, fh: FRAME_H };
+        // Usa SIEMPRE la grilla de 6 columnas × 14 filas
+        const sz = _computeFrameSize(img, MAX_COLS, TOTAL_ROWS);
         fw = sz.fw; fh = sz.fh;
       }
       const frame = Math.min(this.frame, Math.max(0, m.frames - 1));
-      // Validación: el frame no puede exceder el ancho real del sheet
-      const maxFrameInRow = img ? Math.floor(img.naturalWidth / fw) : MAX_COLS;
+      // Validación: el frame no puede exceder el ancho real del sheet (6 columnas máximo)
+      const maxFrameInRow = Math.min(img ? Math.floor(img.naturalWidth / fw) : MAX_COLS, MAX_COLS);
       const safeFrame = Math.min(frame, maxFrameInRow - 1);
       return {
         srcX:   safeFrame * fw,
