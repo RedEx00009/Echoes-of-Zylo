@@ -1216,13 +1216,17 @@
 
       function _applyImportedCharacter(payload) {
         if (!payload || typeof payload !== "object") return false;
-        const appearance = payload.appearance || {};
+        const appearance = (payload.appearance && typeof payload.appearance === "object") ? payload.appearance : payload;
         player.appearance.raceId = appearance.raceId || player.appearance.raceId;
         player.appearance.gender = appearance.gender || player.appearance.gender;
         player.appearance.variantId = appearance.variantId || player.appearance.variantId;
         hydrateVariantCustomizations(appearance.variantCustomizations || {});
         hydrateCombatCustomization(appearance.combatCustomization || {});
         normalizeSlotSheetUrls(appearance);
+        player.spriteSheets = player.spriteSheets || {};
+        player.spriteSheets.base = appearance.spriteSheets?.base || appearance.base || "";
+        player.spriteSheets.pelea = appearance.spriteSheets?.pelea || appearance.pelea || appearance.combat || "";
+        player.spriteSheets.especial = appearance.spriteSheets?.especial || appearance.especial || appearance.special || "";
         applySlotSpriteUrls(appearance);
         player.appearance.faceId = appearance.faceId || player.appearance.faceId;
         player.appearance.faceColor = appearance.faceColor ?? player.appearance.faceColor;
@@ -2535,9 +2539,14 @@
         try {
           const d = savedSlots[i]; if (!d) throw new Error("Slot vacío o inválido");
           normalizeSlotSheetUrls(d);
-          const baseSprite = d?.spriteSheets?.base || d?.base || d?.sprites?.base || "";
-          const peleaSprite = d?.spriteSheets?.pelea || d?.spriteSheets?.combat || d?.pelea || d?.combat || d?.sprites?.combat || "";
-          const especialSprite = d?.spriteSheets?.especial || d?.spriteSheets?.special || d?.especial || d?.special || d?.sprites?.special || "";
+          const bSrc = d?.spriteSheets?.base || d?.base || d?.sprites?.base || "";
+          const pSrc = d?.spriteSheets?.pelea || d?.spriteSheets?.combat || d?.pelea || d?.combat || d?.sprites?.combat || "";
+          const eSrc = d?.spriteSheets?.especial || d?.spriteSheets?.special || d?.especial || d?.special || d?.sprites?.special || "";
+
+          player.spriteSheets = player.spriteSheets || {};
+          player.spriteSheets.base = bSrc;
+          player.spriteSheets.pelea = pSrc;
+          player.spriteSheets.especial = eSrc;
 
           player.appearance.raceId    = d.race      || "human";
           player.appearance.gender    = d.gender    || "male";
@@ -2547,25 +2556,37 @@
           const variantCustomizations = Object.assign({}, d.variantCustomizations || {});
           variantCustomizations[customVariantId] = Object.assign({}, variantCustomizations[customVariantId] || {});
 
-          if (baseSprite) {
-            variantCustomizations[customVariantId].spriteDataURL = baseSprite;
+          if (bSrc) {
+            variantCustomizations[customVariantId].spriteDataURL = bSrc;
             variantCustomizations[customVariantId].spriteImage = null;
             if (imageMap) {
-              const raceKey = `${player.appearance.raceId}_${player.appearance.gender}`;
-              const customImg = new Image();
-              customImg.onload = () => { imageMap[raceKey] = customImg; };
-              customImg.src = baseSprite;
+              const baseKey = `${player.appearance.raceId}_${player.appearance.gender}`;
+              const baseImg = new Image();
+              baseImg.onload = () => { imageMap[baseKey] = baseImg; };
+              baseImg.src = bSrc;
             }
           }
-          if (especialSprite) {
-            variantCustomizations[customVariantId].specialSpriteDataURL = especialSprite;
+          if (eSrc) {
+            variantCustomizations[customVariantId].specialSpriteDataURL = eSrc;
             variantCustomizations[customVariantId].specialSpriteImage = null;
+            if (imageMap) {
+              const specialKey = `${player.appearance.raceId}_${player.appearance.gender}_special`;
+              const specialImg = new Image();
+              specialImg.onload = () => { imageMap[specialKey] = specialImg; };
+              specialImg.src = eSrc;
+            }
           }
 
           const combatCustomization = Object.assign({}, d.combatCustomization || {});
-          if (peleaSprite) {
-            combatCustomization.spriteDataURL = peleaSprite;
+          if (pSrc) {
+            combatCustomization.spriteDataURL = pSrc;
             combatCustomization.spriteImage = null;
+            if (imageMap) {
+              const combatKey = `${player.appearance.raceId}_${player.appearance.gender}_combat`;
+              const combatImg = new Image();
+              combatImg.onload = () => { imageMap[combatKey] = combatImg; };
+              combatImg.src = pSrc;
+            }
           }
 
           hydrateVariantCustomizations(variantCustomizations);
