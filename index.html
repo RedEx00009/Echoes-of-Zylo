@@ -872,18 +872,18 @@
           list.forEach(item => {
             if (ACCESSORIES_CATALOG.find(a => a.id === item.id)) return;
             const img = new Image();
-            img.onload = () => { entry.userImage = img; entry.spriteImage = img; };
-            img.src = item.dataURL;
             const entry = {
               id: item.id, name: item.name, type: item.type || "other",
               slot: item.slot || "over_shirt", color: item.color || null, userImage: img,
-              spriteImage: null,
+              spriteImage: img,
               dataURL: item.dataURL, combatDataURL: item.combatDataURL || null, specialDataURL: item.specialDataURL || null,
               scale: item.scale ?? 1, animFrames: item.animFrames ?? 6, rowCount: item.rowCount ?? 0,
               combatScale: item.combatScale ?? 1, combatAnimFrames: item.combatAnimFrames ?? 6, combatRowCount: item.combatRowCount ?? 0,
               specialScale: item.specialScale ?? 1, specialAnimFrames: item.specialAnimFrames ?? 6, specialRowCount: item.specialRowCount ?? 0,
               raceName: item.raceName || null, isFreeCustomization: true,
             };
+            img.onload = () => { entry.userImage = img; entry.spriteImage = img; };
+            img.src = item.dataURL;
             if (item.combatDataURL) {
               const cimg = new Image();
               cimg.onload = () => { entry.combatUserImage = cimg; entry.combatSpriteImage = cimg; };
@@ -1257,7 +1257,8 @@
                 charState.accessoryId = "ac_none";
                 player.appearance.accessoryId = "ac_none";
               }
-              if (cat === "free") {
+              const isFree = item.isFreeCustomization || String(item.id).startsWith("fc_");
+              if (isFree) {
                 const idx = FREE_CUSTOMIZATION_CATALOG.findIndex(x => x.id === item.id);
                 if (idx !== -1) FREE_CUSTOMIZATION_CATALOG.splice(idx, 1);
                 _saveFreeCustomizationToLS();

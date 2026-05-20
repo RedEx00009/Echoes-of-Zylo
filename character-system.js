@@ -63,7 +63,7 @@
 
   const DISPLAY_W = 180;
   const DISPLAY_H = 220;
-  const IMPORTED_LAYER_SCALE = 1.22;
+  const IMPORTED_LAYER_SCALE = 1.0;
 
   // Fallback si no se puede leer el sheet (96×96 era el valor antiguo)
   const FRAME_W = 96;
@@ -802,10 +802,20 @@
 
   function removeUserAccessory(id) {
     if (id === "ac_none") return false;
+    let removed = false;
     const idx = ACCESSORIES_CATALOG.findIndex(a => a.id === id);
-    if (idx === -1) return false;
-    ACCESSORIES_CATALOG.splice(idx, 1);
-    return true;
+    if (idx !== -1) {
+      ACCESSORIES_CATALOG.splice(idx, 1);
+      removed = true;
+    }
+    if (typeof FREE_CUSTOMIZATION_CATALOG !== "undefined" && Array.isArray(FREE_CUSTOMIZATION_CATALOG)) {
+      const freeIdx = FREE_CUSTOMIZATION_CATALOG.findIndex(a => a.id === id);
+      if (freeIdx !== -1) {
+        FREE_CUSTOMIZATION_CATALOG.splice(freeIdx, 1);
+        removed = true;
+      }
+    }
+    return removed;
   }
 
   async function restoreUserAccessories(storedList) {
