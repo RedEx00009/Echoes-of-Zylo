@@ -1,0 +1,2778 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>Dragon World Z</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet"/>
+    <style>
+      :root {
+        --accent: #f5c400;
+        --accent2: #ff6a00;
+        --ki: #2979ff;
+        --hp: #00e676;
+        --danger: #ff1744;
+        --ui-bg: rgba(8, 9, 15, 0.92);
+        --font-head: "Orbitron", monospace;
+        --font-body: "Rajdhani", sans-serif;
+        --btn-size: 64px;
+        --btn-icon: 24px;
+        --menu-w: 260px;
+      }
+      *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; user-select:none; -webkit-user-select:none; }
+      html, body { width:100%; height:100%; overflow:hidden; background:#000; }
+      body { font-family:var(--font-body); touch-action:none; }
+
+      #screenLoading, #screenDead {
+        position:fixed; inset:0; display:flex; flex-direction:column;
+        align-items:center; justify-content:center;
+        background:radial-gradient(ellipse at 50% 30%,#0a1535 0%,#08090f 70%);
+        z-index:200;
+      }
+      #screenDead { background:radial-gradient(ellipse at 50% 30%,#350a0a 0%,#08090f 70%); display:none; }
+      .screen-title { font-family:var(--font-head); font-size:clamp(22px,5vw,48px); font-weight:900; letter-spacing:4px; color:var(--accent); text-shadow:0 0 30px var(--accent),0 0 60px var(--accent2); margin-bottom:12px; }
+      .screen-sub { font-family:var(--font-head); font-size:11px; letter-spacing:3px; color:#8892b0; margin-bottom:40px; }
+      .loading-bar-wrap { width:280px; height:4px; background:#1a2040; border-radius:2px; overflow:hidden; }
+      .loading-bar { height:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); border-radius:2px; width:0%; transition:width .3s ease; box-shadow:0 0 10px var(--accent); }
+      .loading-label { font-family:var(--font-head); font-size:9px; letter-spacing:2px; color:#3d4a6b; margin-top:12px; }
+      #respawnBtn { margin-top:24px; padding:16px 44px; background:linear-gradient(135deg,#b71c1c,#d32f2f); border:2px solid #ff5252; border-radius:6px; color:white; font-family:var(--font-head); font-size:13px; letter-spacing:3px; cursor:pointer; transition:all .2s; min-height:52px; touch-action:manipulation; }
+
+      #gameCanvas { display:block; position:fixed; top:0; left:0; width:100vw; height:100vh; }
+      #hud { position:fixed; inset:0; pointer-events:none; z-index:10; }
+
+      /* ── HAMBURGER ── */
+      #menuToggleBtn {
+        position:fixed; top:12px; left:12px; z-index:120;
+        width:44px; height:44px; background:var(--ui-bg); border:1px solid #2a3560;
+        border-radius:8px; display:flex; flex-direction:column;
+        align-items:center; justify-content:center; gap:5px;
+        cursor:pointer; pointer-events:auto; touch-action:manipulation;
+        backdrop-filter:blur(8px);
+      }
+      #menuToggleBtn span { display:block; width:20px; height:2px; background:var(--accent); border-radius:2px; transition:all .25s; }
+      #menuToggleBtn.open span:nth-child(1) { transform:translateY(7px) rotate(45deg); }
+      #menuToggleBtn.open span:nth-child(2) { opacity:0; }
+      #menuToggleBtn.open span:nth-child(3) { transform:translateY(-7px) rotate(-45deg); }
+
+      #menuBackdrop { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:100; opacity:0; transition:opacity .3s ease; pointer-events:none; }
+      #menuBackdrop.open { opacity:1; pointer-events:auto; }
+
+      #leftMenu {
+        position:fixed; top:0; left:0; width:var(--menu-w); height:100vh;
+        background:var(--ui-bg); border-right:1px solid #2a3560;
+        display:flex; flex-direction:column; backdrop-filter:blur(12px);
+        box-shadow:4px 0 24px rgba(0,0,0,.5); z-index:110;
+        transform:translateX(calc(-1 * var(--menu-w) - 10px));
+        transition:transform .3s cubic-bezier(.4,0,.2,1);
+        overflow-y:auto; overflow-x:hidden;
+      }
+      #leftMenu.open { transform:translateX(0); }
+      .menu-header { display:flex; align-items:center; justify-content:center; padding:16px 16px 10px; border-bottom:1px solid #2a3560; flex-shrink:0; }
+      .menu-header-title { font-family:var(--font-head); font-size:11px; letter-spacing:3px; color:var(--accent); }
+      .menu-section { padding:10px 12px; border-bottom:1px solid rgba(42,53,96,.5); flex-shrink:0; }
+      .menu-section-label { font-family:var(--font-head); font-size:7px; letter-spacing:2px; color:#3d4a6b; margin-bottom:8px; }
+      .menu-btn { width:100%; padding:11px 13px; margin-bottom:6px; background:linear-gradient(135deg,rgba(245,196,0,.08),rgba(245,196,0,.16)); border:1px solid rgba(245,196,0,.2); border-radius:8px; color:#fff; font-family:var(--font-head); font-size:11px; letter-spacing:1px; text-align:left; cursor:pointer; transition:transform .15s,box-shadow .15s; touch-action:manipulation; display:flex; align-items:center; gap:9px; pointer-events:auto; }
+      .menu-btn:hover { transform:translateY(-1px); box-shadow:0 0 14px rgba(245,196,0,.2); }
+      .menu-btn .btn-ic { font-size:15px; }
+      .slot-list { display:flex; flex-direction:column; gap:5px; }
+      .slot-item { display:flex; align-items:center; gap:8px; background:rgba(255,255,255,.04); border:1px solid #2a3560; border-radius:7px; padding:8px 10px; cursor:pointer; transition:all .15s; pointer-events:auto; touch-action:manipulation; }
+      .slot-item:hover { border-color:var(--accent); background:rgba(245,196,0,.08); }
+      .slot-item.active { border-color:var(--accent); background:rgba(245,196,0,.1); }
+      .slot-num { font-family:var(--font-head); font-size:14px; color:var(--accent); width:18px; flex-shrink:0; text-align:center; }
+      .slot-info { flex:1; min-width:0; }
+      .slot-name { font-family:var(--font-head); font-size:10px; color:#e8eaf6; letter-spacing:.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+      .slot-race { font-size:9px; color:#4a5880; letter-spacing:.5px; margin-top:1px; }
+      .slot-load-lbl { font-family:var(--font-head); font-size:8px; color:var(--accent); opacity:.7; }
+      .slot-empty-label { font-family:var(--font-head); font-size:9px; color:#3d4a6b; text-align:center; padding:6px 0; }
+
+      /* ── HUD TOP ── */
+      .hud-top { position:absolute; top:12px; left:64px; right:12px; display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+      .player-hud { background:var(--ui-bg); border:1px solid #2a3560; border-radius:8px; padding:8px 12px; min-width:180px; backdrop-filter:blur(8px); }
+      .player-name { font-family:var(--font-head); font-size:11px; letter-spacing:2px; color:var(--accent); margin-bottom:6px; }
+      .bar-row { display:flex; align-items:center; gap:6px; margin-bottom:4px; }
+      .bar-icon { font-size:11px; width:14px; text-align:center; }
+      .bar-track { flex:1; height:8px; background:rgba(255,255,255,.07); border-radius:3px; overflow:hidden; border:1px solid rgba(255,255,255,.08); }
+      .bar-fill { height:100%; border-radius:2px; transition:width .2s ease; position:relative; }
+      .bar-fill::after { content:""; position:absolute; top:0; left:0; right:0; height:50%; background:rgba(255,255,255,.2); border-radius:2px; }
+      #barHp { background:linear-gradient(90deg,#00c853,var(--hp)); box-shadow:0 0 6px rgba(0,230,118,.5); }
+      #barKi { background:linear-gradient(90deg,#1565c0,var(--ki)); box-shadow:0 0 6px rgba(41,121,255,.5); }
+      .bar-val { font-family:var(--font-head); font-size:9px; color:#8892b0; min-width:32px; text-align:right; }
+      .level-badge { display:flex; align-items:center; gap:6px; margin-top:5px; }
+      .level-num { font-family:var(--font-head); font-size:9px; letter-spacing:1px; color:var(--accent); background:rgba(245,196,0,.1); border:1px solid rgba(245,196,0,.3); border-radius:3px; padding:1px 5px; }
+      .xp-track { flex:1; height:4px; background:rgba(255,255,255,.07); border-radius:2px; overflow:hidden; }
+      .xp-fill { height:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); border-radius:2px; transition:width .4s ease; }
+      .variant-panel { display:none; align-items:center; gap:7px; background:var(--ui-bg); border:1px solid #2a3560; border-radius:8px; padding:8px 10px; backdrop-filter:blur(8px); pointer-events:auto; }
+      .variant-label { font-family:var(--font-head); font-size:8px; letter-spacing:2px; color:#3d4a6b; white-space:nowrap; }
+      .variant-select { min-width:110px; background:#12172e; border:1px solid rgba(245,196,0,.35); border-radius:6px; color:var(--accent); font-family:var(--font-head); font-size:9px; letter-spacing:1px; padding:6px 8px; outline:none; cursor:pointer; }
+
+      /* ── MINIMAP ── */
+      .minimap-wrap { position:absolute; top:12px; right:12px; width:90px; height:90px; background:var(--ui-bg); border:1px solid #2a3560; border-radius:6px; overflow:hidden; backdrop-filter:blur(8px); }
+      #minimapCanvas { width:100%; height:100%; image-rendering:pixelated; }
+      .minimap-label { position:absolute; bottom:4px; left:0; right:0; text-align:center; font-family:var(--font-head); font-size:7px; letter-spacing:2px; color:#3d4a6b; }
+
+      /* ── REGION / ZONA ── */
+      .region-label { font-family:var(--font-head); font-size:10px; letter-spacing:3px; color:rgba(255,255,255,.4); pointer-events:none; }
+
+      /* ── PORTAL PANEL ── */
+      #portalPanel {
+        position:absolute; bottom:100px; left:50%; transform:translateX(-50%);
+        background:var(--ui-bg); border:1px solid rgba(0,229,255,.4); border-radius:12px;
+        padding:14px 20px; display:none; backdrop-filter:blur(12px); pointer-events:auto;
+        min-width:280px; text-align:center; z-index:20;
+      }
+      #portalPanel.visible { display:block; }
+      .portal-title { font-family:var(--font-head); font-size:10px; letter-spacing:3px; color:#00e5ff; margin-bottom:10px; }
+      .portal-btns { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+      .portal-btn {
+        padding:9px 16px; border-radius:6px; font-family:var(--font-head); font-size:10px;
+        letter-spacing:1px; cursor:pointer; border:1px solid; transition:all .15s;
+        touch-action:manipulation; pointer-events:auto;
+      }
+      .portal-btn-earth { background:rgba(30,120,30,.2); border-color:#00e676; color:#00e676; }
+      .portal-btn-space { background:rgba(50,50,180,.2); border-color:#2979ff; color:#2979ff; }
+      .portal-btn-sky { background:rgba(120,180,255,.2); border-color:#81d4fa; color:#81d4fa; }
+      .portal-btn-earth:hover { background:rgba(30,120,30,.4); box-shadow:0 0 10px rgba(0,230,118,.3); }
+      .portal-btn-space:hover { background:rgba(50,50,180,.4); box-shadow:0 0 10px rgba(41,121,255,.3); }
+      .portal-btn-sky:hover { background:rgba(120,180,255,.4); box-shadow:0 0 10px rgba(129,212,250,.35); }
+
+      /* ── TRAILER PANEL ── */
+      #trailerPanel {
+        position:absolute; bottom:100px; left:50%; transform:translateX(-50%);
+        background:var(--ui-bg); border:1px solid rgba(245,196,0,.4); border-radius:12px;
+        padding:14px 20px; display:none; backdrop-filter:blur(12px); pointer-events:auto;
+        min-width:320px; text-align:center; z-index:20;
+      }
+      #trailerPanel.visible { display:block; }
+      .trailer-title { font-family:var(--font-head); font-size:10px; letter-spacing:3px; color:var(--accent); margin-bottom:10px; }
+      .trailer-info { font-size:12px; color:#c8cfe8; margin-bottom:12px; line-height:1.5; }
+      .trailer-btns { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+      .trailer-btn {
+        padding:9px 16px; border-radius:6px; font-family:var(--font-head); font-size:10px;
+        letter-spacing:1px; cursor:pointer; border:1px solid; transition:all .15s;
+        touch-action:manipulation; pointer-events:auto;
+      }
+      .trailer-btn-enter { background:rgba(245,196,0,.15); border-color:var(--accent); color:var(--accent); }
+      .trailer-btn-invite { background:rgba(0,229,255,.1); border-color:#00e5ff; color:#00e5ff; }
+      .trailer-btn-close { background:rgba(255,255,255,.05); border-color:rgba(255,255,255,.2); color:#8892b0; }
+      .trailer-btn-enter:hover { background:rgba(245,196,0,.3); box-shadow:0 0 10px rgba(245,196,0,.3); }
+
+      /* ── INTERIOR TRAILER ── */
+      #trailerInterior {
+        position:fixed; inset:0; display:none; z-index:50;
+        background:#0a0510;
+      }
+      #trailerInterior.visible { display:flex; flex-direction:column; }
+      #trailerCanvas { flex:1; display:block; width:100%; }
+      .trailer-hud-bar {
+        display:flex; align-items:center; gap:10px; padding:8px 16px;
+        background:rgba(8,9,15,.95); border-top:1px solid #2a3560;
+        pointer-events:auto; flex-shrink:0;
+      }
+      .trailer-exit-btn {
+        padding:8px 18px; background:rgba(255,23,68,.15); border:1px solid var(--danger);
+        border-radius:6px; color:var(--danger); font-family:var(--font-head); font-size:9px;
+        letter-spacing:2px; cursor:pointer; touch-action:manipulation;
+      }
+      .trailer-chat-input {
+        flex:1; background:#12172e; border:1px solid #2a3560; border-radius:4px;
+        padding:6px 10px; color:#e8eaf6; font-size:12px; outline:none; font-family:var(--font-body); pointer-events:auto;
+      }
+      .trailer-send-btn {
+        padding:8px 14px; background:rgba(0,229,255,.15); border:1px solid #00e5ff;
+        border-radius:4px; color:#00e5ff; font-family:var(--font-head); font-size:9px;
+        cursor:pointer; touch-action:manipulation;
+      }
+      .trailer-name-label { font-family:var(--font-head); font-size:9px; letter-spacing:2px; color:var(--accent); }
+
+      /* ── SKILLS BAR (PC) ── */
+      .skills-bar { position:absolute; bottom:20px; left:50%; transform:translateX(-50%); display:flex; gap:10px; }
+      .skill-btn { width:var(--btn-size); height:var(--btn-size); background:var(--ui-bg); border:2px solid #2a3560; border-radius:10px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; backdrop-filter:blur(8px); position:relative; pointer-events:auto; cursor:pointer; transition:border-color .15s; touch-action:manipulation; }
+      .skill-btn:active,.skill-btn.active { border-color:var(--accent); box-shadow:0 0 14px rgba(245,196,0,.4); }
+      .skill-btn.run-active { border-color:#00e676; box-shadow:0 0 14px rgba(0,230,118,.4); }
+      .skill-icon { font-size:var(--btn-icon); }
+      .skill-key { font-family:var(--font-head); font-size:8px; letter-spacing:1px; color:#3d4a6b; }
+
+      /* ── MOBILE CONTROLS ── */
+      .mobile-controls { position:absolute; bottom:0; left:0; right:0; height:230px; display:none; align-items:flex-end; justify-content:space-between; padding:0 16px 16px; pointer-events:auto; }
+      .joystick-wrap { position:relative; width:120px; height:120px; flex-shrink:0; }
+      #joystickBase { position:absolute; inset:0; background:rgba(255,255,255,.06); border:2px solid rgba(255,255,255,.15); border-radius:50%; backdrop-filter:blur(4px); }
+      #joystickKnob { position:absolute; width:52px; height:52px; background:radial-gradient(circle,rgba(245,196,0,.85),rgba(245,196,0,.45)); border:2px solid rgba(245,196,0,.7); border-radius:50%; top:34px; left:34px; box-shadow:0 0 14px rgba(245,196,0,.5); }
+      .action-grid { display:grid; grid-template-columns:repeat(2,var(--btn-size)); grid-auto-rows:var(--btn-size); gap:8px; align-items:center; justify-items:center; }
+      .action-btn { width:var(--btn-size); height:var(--btn-size); border-radius:50%; border:2px solid; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; cursor:pointer; backdrop-filter:blur(8px); transition:all .12s; touch-action:manipulation; pointer-events:auto; }
+      .action-btn:active { transform:scale(.88); }
+      .btn-interact { background:rgba(0,229,255,.2); border-color:rgba(0,229,255,.7); }
+      .btn-trailer  { background:rgba(245,196,0,.15); border-color:rgba(245,196,0,.6); }
+      .btn-emote    { background:rgba(170,0,255,.2); border-color:rgba(170,0,255,.7); }
+      .btn-run      { background:rgba(0,230,118,.15); border-color:rgba(0,230,118,.6); transition:all .2s; }
+      .btn-run.run-active { background:rgba(0,230,118,.4); border-color:#00e676; box-shadow:0 0 14px rgba(0,230,118,.5); }
+      .action-btn .btn-icon  { font-size:var(--btn-icon); }
+      .action-btn .btn-label { font-family:var(--font-head); font-size:7px; letter-spacing:.5px; color:rgba(255,255,255,.65); }
+
+      /* ── DIALOG ── */
+      .dialog-box { position:absolute; bottom:185px; left:50%; transform:translateX(-50%); background:var(--ui-bg); border:1px solid #2a3560; border-radius:8px; padding:16px 18px; max-width:350px; width:92vw; backdrop-filter:blur(12px); pointer-events:auto; display:none; }
+      .dialog-box.visible { display:block; }
+      .dialog-name { font-family:var(--font-head); font-size:10px; letter-spacing:2px; color:var(--accent); margin-bottom:6px; }
+      .dialog-text { font-size:15px; color:#c8cfe8; line-height:1.5; margin-bottom:10px; }
+      .dialog-opts { display:flex; flex-direction:column; gap:8px; }
+      .dialog-opt { background:rgba(74,106,255,.1); border:1px solid rgba(74,106,255,.3); border-radius:4px; padding:10px 12px; font-size:13px; color:#c8cfe8; cursor:pointer; transition:all .15s; min-height:44px; display:flex; align-items:center; touch-action:manipulation; }
+      .dialog-opt:hover { background:rgba(74,106,255,.25); border-color:rgba(74,106,255,.6); }
+
+      /* ── TOASTS ── */
+      #toastHud { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); pointer-events:none; }
+      .hud-toast { font-family:var(--font-head); font-size:14px; letter-spacing:3px; color:white; text-shadow:0 0 10px var(--accent); text-align:center; animation:toastPop 2s forwards; white-space:nowrap; position:absolute; }
+      .hud-toast.xp  { color:var(--accent); text-shadow:0 0 10px var(--accent); }
+      .hud-toast.lvl { color:#00e676; font-size:20px; text-shadow:0 0 20px #00e676; }
+      .hud-toast.dmg { color:var(--danger); }
+      .hud-toast.info { color:#00e5ff; }
+      @keyframes toastPop { 0%{opacity:0;transform:translateY(10px) scale(.8);} 15%{opacity:1;transform:translateY(-10px) scale(1);} 70%{opacity:1;transform:translateY(-20px);} 100%{opacity:0;transform:translateY(-30px);} }
+
+      /* ── INVENTARIO ── */
+      #inventoryPanel {
+        display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+        width:min(340px,92vw); max-height:min(480px,78vh); z-index:130;
+        background:var(--ui-bg); border:1px solid #2a3560; border-radius:10px;
+        flex-direction:column; backdrop-filter:blur(14px); box-shadow:0 8px 40px rgba(0,0,0,.6);
+        pointer-events:auto; overflow:hidden;
+      }
+      #inventoryPanel.open { display:flex; }
+      .inv-header { display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border-bottom:1px solid #2a3560; flex-shrink:0; }
+      .inv-title { font-family:var(--font-head); font-size:11px; letter-spacing:2px; color:var(--accent); }
+      .inv-close { background:none; border:none; color:#8892b0; font-size:18px; cursor:pointer; padding:4px 8px; }
+      .inv-body { display:flex; flex:1; min-height:0; overflow:hidden; }
+      .inv-list { width:42%; border-right:1px solid #2a3560; overflow-y:auto; padding:8px; }
+      .inv-item-row {
+        display:flex; align-items:center; gap:8px; padding:8px; margin-bottom:4px;
+        border:1px solid #2a3560; border-radius:6px; cursor:pointer; transition:all .15s;
+      }
+      .inv-item-row:hover, .inv-item-row.sel { border-color:var(--accent); background:rgba(245,196,0,.08); }
+      .inv-item-canvas { width:32px; height:32px; flex-shrink:0; image-rendering:pixelated; }
+      .inv-item-name { font-family:var(--font-head); font-size:8px; color:#e8eaf6; letter-spacing:.5px; flex:1; min-width:0; }
+      .inv-item-qty { font-size:9px; color:var(--accent); }
+      .inv-detail { flex:1; padding:12px; display:flex; flex-direction:column; overflow-y:auto; }
+      .inv-detail-name { font-family:var(--font-head); font-size:12px; color:var(--accent); letter-spacing:1px; margin-bottom:6px; }
+      .inv-detail-desc { font-size:12px; color:#8892b0; line-height:1.4; margin-bottom:12px; flex:1; }
+      .inv-preview { width:64px; height:64px; margin:0 auto 10px; image-rendering:pixelated; }
+      .inv-actions { display:flex; flex-direction:column; gap:6px; }
+      .inv-action-btn {
+        padding:10px; border-radius:6px; border:1px solid rgba(245,196,0,.25);
+        background:rgba(245,196,0,.1); color:#fff; font-family:var(--font-head);
+        font-size:9px; letter-spacing:1px; cursor:pointer; transition:all .15s;
+      }
+      .inv-action-btn:hover { background:rgba(245,196,0,.22); border-color:var(--accent); }
+      .inv-action-btn.danger { border-color:rgba(255,23,68,.4); background:rgba(255,23,68,.12); }
+      .inv-empty { font-size:11px; color:#3d4a6b; text-align:center; padding:20px 8px; }
+      .inv-balls-hint { font-size:9px; color:#4a5880; margin-top:8px; text-align:center; }
+
+      #shenronOverlay {
+        display:none; position:fixed; inset:0; z-index:180;
+        background:radial-gradient(ellipse at 50% 40%,rgba(20,80,20,.85),rgba(0,0,0,.92));
+        flex-direction:column; align-items:center; justify-content:center; pointer-events:auto;
+      }
+      #shenronOverlay.open { display:flex; }
+      .shenron-title { font-family:var(--font-head); font-size:clamp(18px,4vw,36px); color:#7fff00; letter-spacing:4px; text-shadow:0 0 30px #7fff00; animation:shenronPulse 1.5s ease-in-out infinite; }
+      .shenron-sub { font-size:14px; color:#c8e6c9; margin-top:12px; letter-spacing:2px; }
+      @keyframes shenronPulse { 0%,100%{opacity:.85;transform:scale(1);} 50%{opacity:1;transform:scale(1.03);} }
+
+      /* ── RESPONSIVE ── */
+      @media (pointer:coarse), (max-width:768px) {
+        :root { --btn-size:52px; --btn-icon:19px; }
+        #menuBackdrop { display:block; }
+        .mobile-controls { display:flex; height:286px; }
+        .skills-bar { display:none; }
+        .region-label { position:absolute; bottom:182px; left:50%; transform:translateX(-50%); }
+        .dialog-box { bottom:190px; }
+        .minimap-wrap { top:12px; right:12px; width:80px; height:80px; }
+        .hud-top { left:64px; right:100px; }
+        .variant-panel { padding:7px 8px; }
+        .variant-label { display:none; }
+        .variant-select { min-width:88px; max-width:96px; font-size:8px; padding:5px 6px; }
+      }
+      @media (pointer:fine) and (min-width:769px) {
+        .mobile-controls { display:none !important; }
+        .skills-bar { display:flex; }
+        .region-label { position:absolute; bottom:92px; left:50%; transform:translateX(-50%); }
+        .dialog-box { bottom:120px; }
+        .hud-top { left:64px; }
+      }
+      @media (max-width:400px) { :root { --btn-size:44px; --btn-icon:17px; } .mobile-controls { height:250px; } .joystick-wrap { width:100px; height:100px; } #joystickKnob { width:40px; height:40px; top:30px; left:30px; } }
+      @media (max-height:460px) and (orientation:landscape) {
+        :root { --btn-size:44px; --btn-icon:16px; }
+        .mobile-controls { height:130px; padding:0 10px 8px; }
+        .action-grid { grid-template-columns:repeat(5,var(--btn-size)); }
+        .joystick-wrap { width:90px; height:90px; }
+        #joystickKnob { width:36px; height:36px; top:27px; left:27px; }
+        .minimap-wrap { width:68px; height:68px; top:8px; right:8px; }
+        .dialog-box { bottom:140px; }
+      }
+    </style>
+  </head>
+  <body>
+
+    <div id="screenLoading">
+      <div class="screen-title">DRAGON WORLD Z</div>
+      <div class="screen-sub">CARGANDO LOBBY...</div>
+      <div class="loading-bar-wrap"><div class="loading-bar" id="loadBar"></div></div>
+      <div class="loading-label" id="loadLabel">INICIALIZANDO</div>
+    </div>
+
+    <div id="screenDead">
+      <div class="screen-title">¿QUÉ HACÉS ACÁ?</div>
+      <div class="screen-sub">ESTO ES EL LOBBY, NO TE PODÉS MORIR</div>
+      <button id="respawnBtn" onclick="respawn()">⚡ VOLVER</button>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- INTERIOR TRAILER -->
+    <div id="trailerInterior">
+      <canvas id="trailerCanvas"></canvas>
+      <div class="trailer-hud-bar">
+        <span class="trailer-name-label" id="trailerOwnerLabel">🏠 TU CASA RODANTE</span>
+        <input class="trailer-chat-input" id="trailerChatInput" type="text" maxlength="60" placeholder="Chat privado..." onkeydown="if(event.key==='Enter')sendTrailerChat()"/>
+        <button class="trailer-send-btn" onclick="sendTrailerChat()">➤</button>
+        <button class="trailer-exit-btn" onclick="exitTrailer()">✕ SALIR</button>
+      </div>
+    </div>
+
+    <div id="hud">
+      <div id="menuBackdrop"></div>
+
+      <button id="menuToggleBtn" onclick="toggleMenu()">
+        <span></span><span></span><span></span>
+      </button>
+
+      <div id="leftMenu">
+        <div style="height:64px;flex-shrink:0;"></div>
+        <div class="menu-header"><span class="menu-header-title">⚡ DRAGON WORLD Z</span></div>
+
+        <div class="menu-section">
+          <div class="menu-section-label">Navegación</div>
+          <button class="menu-btn" onclick="goBack()"><span class="btn-ic">🎨</span> CREAR PERSONAJE</button>
+        </div>
+
+        <div class="menu-section">
+          <div class="menu-section-label">Mundos</div>
+          <button class="menu-btn" onclick="travelTo('lobby');closeMenu()"><span class="btn-ic">🏠</span> LOBBY BASE</button>
+          <button class="menu-btn" onclick="travelTo('earth');closeMenu()"><span class="btn-ic">🌍</span> PLANETA TIERRA</button>
+          <button class="menu-btn" onclick="travelTo('sky');closeMenu()"><span class="btn-ic">☁️</span> MAPA DEL CIELO</button>
+          <button class="menu-btn" onclick="travelTo('space');closeMenu()"><span class="btn-ic">🌌</span> ESPACIO</button>
+        </div>
+
+        <div class="menu-section">
+          <div class="menu-section-label">Tu casa rodante</div>
+          <button class="menu-btn" onclick="openMyTrailer();closeMenu()"><span class="btn-ic">🚐</span> ENTRAR A MI TRAILER</button>
+        </div>
+
+        <div class="menu-section">
+          <div class="menu-section-label">Inventario</div>
+          <button class="menu-btn" onclick="openInventoryPanel();closeMenu()"><span class="btn-ic">🎒</span> INVENTARIO</button>
+        </div>
+
+        <div class="menu-section">
+          <div class="menu-section-label">Party / PvP</div>
+          <button class="menu-btn" onclick="PvpSystem&&PvpSystem.togglePartyPanel();closeMenu()"><span class="btn-ic">👥</span> PARTY Y DESAFÍOS</button>
+        </div>
+
+        <div class="menu-section">
+          <div class="menu-section-label">Cargar personaje</div>
+          <div class="slot-list" id="menuSlotList"><div class="slot-empty-label">Cargando...</div></div>
+        </div>
+      </div>
+
+      <!-- HUD TOP -->
+      <div class="hud-top">
+        <div class="player-hud">
+          <div class="player-name" id="hudPlayerName">GUERRERO Z</div>
+          <div class="bar-row"><span class="bar-icon">❤️</span><div class="bar-track"><div class="bar-fill" id="barHp" style="width:100%"></div></div><span class="bar-val" id="valHp">100/100</span></div>
+          <div class="bar-row"><span class="bar-icon">💧</span><div class="bar-track"><div class="bar-fill" id="barKi" style="width:100%"></div></div><span class="bar-val" id="valKi">100/100</span></div>
+          <div class="level-badge"><span class="level-num" id="hudLevel">LV 1</span><div class="xp-track"><div class="xp-fill" id="xpFill" style="width:0%"></div></div></div>
+        </div>
+        <div class="variant-panel" id="variantPanel">
+          <span class="variant-label">FORMA</span>
+          <select class="variant-select" id="variantSelect" onchange="setPlayerVariant(this.value)"></select>
+        </div>
+      </div>
+
+      <div class="minimap-wrap">
+        <canvas id="minimapCanvas" width="90" height="90"></canvas>
+        <div class="minimap-label" id="minimapLabel">LOBBY</div>
+      </div>
+
+      <div class="region-label" id="regionLabel">BASE LOBBY</div>
+
+      <!-- Portal Panel -->
+      <div id="portalPanel">
+        <div class="portal-title">✦ PORTAL DE VIAJE</div>
+        <div class="portal-btns" id="portalBtns"></div>
+      </div>
+
+      <!-- Trailer Panel -->
+      <div id="trailerPanel">
+        <div class="trailer-title">🚐 CASA RODANTE</div>
+        <div class="trailer-info" id="trailerPanelInfo">Tu espacio privado</div>
+        <div class="trailer-btns">
+          <button class="trailer-btn trailer-btn-enter" id="trailerEnterBtn" onclick="enterTrailerFromPanel()">🚪 ENTRAR</button>
+          <button class="trailer-btn trailer-btn-invite" id="trailerInviteBtn" onclick="inviteToTrailer()">📨 INVITAR</button>
+          <button class="trailer-btn trailer-btn-close" onclick="closeTrailerPanel()">✕</button>
+        </div>
+      </div>
+
+      <!-- Skills bar PC -->
+      <div class="skills-bar" id="skillsBar">
+        <div class="skill-btn" onclick="interactNearby()" title="Interactuar [Z]"><span class="skill-icon">💬</span><span class="skill-key">Z</span></div>
+        <div class="skill-btn" onclick="openMyTrailer()" title="Mi Trailer [Q]"><span class="skill-icon">🚐</span><span class="skill-key">Q</span></div>
+        <div class="skill-btn" onclick="openInventoryPanel()" title="Inventario [I]"><span class="skill-icon">🎒</span><span class="skill-key">I</span></div>
+        <div class="skill-btn" onclick="sendEmote('wave')" title="Saludar [E]"><span class="skill-icon">👋</span><span class="skill-key">E</span></div>
+        <div class="skill-btn" onclick="sendEmote('bow')" title="Reverencia [R]"><span class="skill-icon">🙇</span><span class="skill-key">R</span></div>
+        <div class="skill-btn" id="skillRun" onclick="toggleRunPC()"><span class="skill-icon">🏃</span><span class="skill-key">SHIFT</span></div>
+      </div>
+
+      <!-- Mobile controls -->
+      <div class="mobile-controls">
+        <div class="joystick-wrap" id="joystickWrap">
+          <div id="joystickBase"></div>
+          <div id="joystickKnob"></div>
+        </div>
+        <div class="action-grid" id="actionGrid">
+          <div class="action-btn btn-interact" onclick="interactNearby()"><span class="btn-icon">💬</span><span class="btn-label">HABLAR</span></div>
+          <div class="action-btn btn-trailer" onclick="openMyTrailer()"><span class="btn-icon">🚐</span><span class="btn-label">TRAILER</span></div>
+          <div class="action-btn btn-emote" onclick="sendEmote('wave')"><span class="btn-icon">👋</span><span class="btn-label">SALUDAR</span></div>
+          <div class="action-btn btn-emote" onclick="sendEmote('bow')"><span class="btn-icon">🙇</span><span class="btn-label">REVERENC.</span></div>
+          <div class="action-btn btn-run" id="mobileRunBtn" onclick="toggleRunMobile()" style="border-radius:12px;width:100%;grid-column:span 2;height:calc(var(--btn-size)*0.7);">
+            <span class="btn-icon">🏃</span><span class="btn-label" id="runBtnLabel">CORRER: OFF</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dialog -->
+      <div class="dialog-box" id="dialogBox">
+        <div class="dialog-name" id="dialogName">NPC</div>
+        <div class="dialog-text" id="dialogText"></div>
+        <div class="dialog-opts" id="dialogOpts"></div>
+      </div>
+
+      <div id="toastHud"></div>
+
+      <div id="inventoryPanel">
+        <div class="inv-header">
+          <span class="inv-title">🎒 INVENTARIO</span>
+          <button class="inv-close" onclick="closeInventoryPanel()" type="button">✕</button>
+        </div>
+        <div class="inv-body">
+          <div class="inv-list" id="invList"></div>
+          <div class="inv-detail" id="invDetail">
+            <div class="inv-empty">Seleccioná un objeto</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="shenronOverlay">
+        <div class="shenron-title">🐉 SHENRON</div>
+        <div class="shenron-sub" id="shenronWishText">¡Tus deseos se han concedido!</div>
+      </div>
+    </div>
+
+    <script src="items-system.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="character-system.js"></script>
+
+    <script>
+    "use strict";
+
+    // ══ MENÚ ══
+    let menuOpen = false;
+    function toggleMenu() {
+      menuOpen = !menuOpen;
+      document.getElementById("leftMenu").classList.toggle("open", menuOpen);
+      document.getElementById("menuToggleBtn").classList.toggle("open", menuOpen);
+      document.getElementById("menuBackdrop").classList.toggle("open", menuOpen);
+      if (menuOpen) renderMenuSlots();
+    }
+    window.toggleMenu = toggleMenu;
+    document.getElementById("menuBackdrop").addEventListener("click", () => closeMenu());
+    document.addEventListener("click", (e) => {
+      if (!menuOpen) return;
+      const menu = document.getElementById("leftMenu"), btn = document.getElementById("menuToggleBtn");
+      if (!menu.contains(e.target) && !btn.contains(e.target)) closeMenu();
+    });
+    function closeMenu() {
+      menuOpen = false;
+      document.getElementById("leftMenu").classList.remove("open");
+      document.getElementById("menuToggleBtn").classList.remove("open");
+      document.getElementById("menuBackdrop").classList.remove("open");
+    }
+    window.closeMenu = closeMenu;
+
+    function getActiveRaceVariants(CS) {
+      const app = CS?.player?.appearance;
+      const raceId = app?.raceId || "human";
+      const race = CS?.RACE_CATALOG?.find(r => r.id === raceId);
+      const catalogVariants = race?.variants?.length ? race.variants : [{ id: "base", label: "Base", suffix: "" }];
+      const customVariants = Object.entries(app?.variantCustomizations || {})
+        .filter(([id]) => !catalogVariants.some(v => v.id === id))
+        .map(([id, cfg]) => ({ id, label: cfg.label || cfg.name || id, suffix: "" }));
+      return catalogVariants.concat(customVariants);
+    }
+
+    function renderVariantSelector() {
+      const CS = window.CharacterSystem;
+      const panel = document.getElementById("variantPanel");
+      const select = document.getElementById("variantSelect");
+      if (!CS || !panel || !select) return;
+      const app = CS.player.appearance;
+      const variants = getActiveRaceVariants(CS);
+      const current = variants.some(v => v.id === app.variantId) ? app.variantId : "base";
+      app.variantId = current;
+      if (variants.length <= 1) { panel.style.display = "none"; return; }
+      select.innerHTML = variants.map(v => `<option value="${v.id}">${v.label}</option>`).join("");
+      select.value = current;
+      panel.style.display = "flex";
+    }
+
+    function setPlayerVariant(variantId) {
+      const CS = window.CharacterSystem;
+      if (!CS?.player?.appearance) return;
+      const variants = getActiveRaceVariants(CS);
+      CS.player.appearance.variantId = variants.some(v => v.id === variantId) ? variantId : "base";
+      CS.invalidateHairCache && CS.invalidateHairCache();
+      publishMyAppearance(true);
+    }
+    window.setPlayerVariant = setPlayerVariant;
+
+    function renderMenuSlots() {
+      const list = document.getElementById("menuSlotList");
+      if (!list) return;
+      let slots = [];
+      try { const raw = localStorage.getItem("dragonCreatorZ_slots"); if (raw) slots = JSON.parse(raw); } catch(e) {}
+      if (!Array.isArray(slots)) slots = [];
+      let activeSlot = 0;
+      try { activeSlot = parseInt(localStorage.getItem("dragonCreatorZ_activeSlot") || "0", 10); } catch(e) {}
+      const RACE_LABELS = { human:"Humano", saiyan:"Saiyan", namekian:"Namekiano", android:"Androide", kaioshin:"Kaioshin", frieza:"Frieza" };
+      const filled = slots.filter(s => s);
+      if (filled.length === 0) { list.innerHTML = '<div class="slot-empty-label">Sin personajes guardados</div>'; return; }
+      list.innerHTML = "";
+      slots.forEach((s, i) => {
+        if (!s) return;
+        const displayName = s.name || "Sin nombre";
+        const div = document.createElement("div");
+        div.className = "slot-item" + (i === activeSlot ? " active" : "");
+        div.innerHTML = `<div class="slot-num">${i+1}</div><div class="slot-info"><div class="slot-name">${displayName}</div><div class="slot-race">LV ${s.level||1} · ${RACE_LABELS[s.race]||s.race||"?"}</div></div><span class="slot-load-lbl">▶</span>`;
+        div.addEventListener("click", () => { loadSlotInGame(i, s); });
+        list.appendChild(div);
+      });
+    }
+
+    function restoreAccImageForSlot(slotData, CS) {
+      if (!slotData || !CS) return;
+      const accId = slotData.accessory || slotData.accessoryId || "ac_none";
+      if (accId === "ac_none") return;
+      const existing = CS.ACCESSORIES_CATALOG.find(a => a.id === accId);
+      if (existing && existing.userImage && existing.userImage.complete && existing.userImage.naturalWidth > 0) return;
+      const dataURL = slotData.accessoryDataURL || existing?.dataURL || null;
+      const combatDataURL = slotData.accessoryCombatDataURL || existing?.combatDataURL || null;
+      if (!dataURL) return;
+      const isFree = !!(slotData.accessoryIsFreeCustomization || String(accId).startsWith("fc_"));
+      const img = new Image();
+      img.onload = () => {
+        if (existing) {
+          existing.userImage = img;
+          existing.spriteImage = img;
+          if (!existing.dataURL) existing.dataURL = dataURL;
+          if (!existing.combatDataURL && combatDataURL) existing.combatDataURL = combatDataURL;
+          if (!existing.specialDataURL && slotData.accessorySpecialDataURL) existing.specialDataURL = slotData.accessorySpecialDataURL;
+          existing.isFreeCustomization = existing.isFreeCustomization || isFree;
+          existing.slot = existing.slot || slotData.accessorySlot || "over_shirt";
+          existing.type = existing.type || slotData.accessoryType || "other";
+        } else {
+          CS.ACCESSORIES_CATALOG.push({
+            id: accId, name: slotData.accessoryName || "Personalización",
+            type: slotData.accessoryType || "other",
+            slot: slotData.accessorySlot || "over_shirt",
+            color: null,
+            userImage: img, spriteImage: img, dataURL: dataURL, combatDataURL: combatDataURL,
+            specialDataURL: slotData.accessorySpecialDataURL || null,
+            isFreeCustomization: isFree,
+          });
+        }
+        CS.invalidateHairCache && CS.invalidateHairCache();
+      };
+      img.onerror = () => console.warn("[game] No se pudo cargar imagen de accesorio:", accId);
+      img.src = dataURL;
+    }
+
+    function loadSlotInGame(slotIndex, slotData) {
+      if (!slotData) return;
+      try { localStorage.setItem("dragonCreatorZ_activeSlot", String(slotIndex)); } catch(e) {}
+      const newRaceId = slotData.race || "human";
+      const raceS = RACE_BASE_STATS[newRaceId] || RACE_BASE_STATS.human;
+      const lv = slotData.level || 1;
+      player.name = slotData.name || "Guerrero Z";
+      player.race = newRaceId; player.level = lv; player.xp = 0;
+      player.xpToNext = Math.floor(100 * Math.pow(1.4, lv - 1));
+      player.maxHp = Math.floor(raceS.health * 10 * Math.pow(1.15, lv - 1));
+      player.maxKi = Math.floor(raceS.ki * 8 * Math.pow(1.12, lv - 1));
+      player.hp = player.maxHp; player.ki = player.maxKi;
+      player.strength = raceS.strength; player.defense = raceS.defense;
+      player.speed = 2.2 + (raceS.speed / 100) * 1.8;
+      player.auraColor = slotData.auraColor || "#fdd835";
+      player.charColor = BASE_RACE_COLORS[newRaceId] || "#f5c400";
+      const startPos = MAP_STARTS[currentMap] || MAP_STARTS.lobby;
+      player.x = startPos.x * TILE; player.y = startPos.y * TILE;
+      const CS = window.CharacterSystem;
+      if (CS && slotData) {
+        CS.player.appearance.raceId = slotData.race || "human";
+        CS.player.appearance.gender = slotData.gender || "male";
+        CS.player.appearance.variantId = slotData.variantId || "base";
+        hydrateVariantCustomizations(CS.player.appearance, slotData.variantCustomizations || {});
+        hydrateCombatCustomization(CS.player.appearance, slotData.combatCustomization || {});
+        CS.player.appearance.faceId = slotData.faceId || "fm0";
+        CS.player.appearance.faceColor = slotData.faceColor || null;
+        CS.player.appearance.browColor = slotData.browColor || null;
+        CS.player.appearance.pupilColor = slotData.pupilColor || null;
+        CS.player.appearance.hairId = slotData.hair || "hm1";
+        CS.player.appearance.hairColor = slotData.hairColor || "#1a1a1a";
+        CS.player.appearance.topId = slotData.shirt || "sm1";
+        CS.player.appearance.bottomId = slotData.pants || "pm1";
+        CS.player.appearance.shoesId = slotData.shoes || "shm1";
+        CS.player.appearance.glovesId = slotData.gloves || "gm0";
+        CS.player.appearance.skinColor = slotData.skinColor || "#e8c898";
+        CS.player.appearance.eyeColor = slotData.eyeColor || "#3a2a1a";
+        CS.player.appearance.auraId = slotData.aura || "a0";
+        CS.player.appearance.auraColor = slotData.auraColor || "#fdd835";
+        CS.player.appearance.accessoryId = slotData.accessory || slotData.accessoryId || "ac_none";
+        CS.player.appearance.accessoryDataURL = slotData.accessoryDataURL || CS.player.appearance.accessoryDataURL || null;
+        CS.player.appearance.accessoryCombatDataURL = slotData.accessoryCombatDataURL || CS.player.appearance.accessoryCombatDataURL || null;
+        CS.player.appearance.accessoryIsFreeCustomization = !!(
+          slotData.accessoryIsFreeCustomization ||
+          String(CS.player.appearance.accessoryId).startsWith("fc_") ||
+          slotData.race === "Custom"
+        );
+        CS.player.appearance.accessorySlot = slotData.accessorySlot || CS.player.appearance.accessorySlot || "over_shirt";
+        restoreAccImageForSlot(slotData, CS);
+        CS.invalidateHairCache && CS.invalidateHairCache();
+        renderVariantSelector();
+      }
+      updatePlayerHud();
+      publishMyAppearance(true);
+      showHudToast(`✅ ${player.name} cargado`, "xp");
+      closeMenu();
+    }
+
+    // ══ SPRINT ══
+    let isRunning = false;
+    function setRunState(val) {
+      isRunning = val;
+      document.getElementById("skillRun")?.classList.toggle("run-active", isRunning);
+      document.getElementById("mobileRunBtn")?.classList.toggle("run-active", isRunning);
+      const lbl = document.getElementById("runBtnLabel");
+      if (lbl) lbl.textContent = isRunning ? "CORRER: ON" : "CORRER: OFF";
+      renderActionBars();
+    }
+    function toggleRunPC()     { setRunState(!isRunning); }
+    function toggleRunMobile() { setRunState(!isRunning); }
+    window.toggleRunPC = toggleRunPC; window.toggleRunMobile = toggleRunMobile;
+
+    function makePcSkill({ icon, key, title, action, id, cls }) {
+      return `<div class="skill-btn ${cls || ""}" ${id ? `id="${id}"` : ""} onclick="${action}" title="${title}"><span class="skill-icon">${icon}</span><span class="skill-key">${key}</span></div>`;
+    }
+
+    function makeMobileAction({ icon, label, action, cls }) {
+      return `<div class="action-btn ${cls || "btn-emote"}" onclick="${action}"><span class="btn-icon">${icon}</span><span class="btn-label">${label}</span></div>`;
+    }
+
+    // ══ RP ACTIONS — ahora incluye acciones del sheet "special" ══
+    const RP_ACTIONS = [
+      { id:"wave",      icon:"👋", key:"Z", label:"SALUDAR",  title:"Saludar",    anim:"idle",         text:"SALUDO",   color:"#f5c400", sheet:"base" },
+      { id:"train",     icon:"🥋", key:"Q", label:"ENTRENAR", title:"Entrenar",   anim:"training",     text:"ENTRENA",  color:"#ff7043", sheet:"special", hold:2200 },
+      { id:"meditate",  icon:"🧘", key:"E", label:"MEDITAR",  title:"Meditar",    anim:"meditate",     text:"MEDITA",   color:"#00e5ff", sheet:"base",    hold:2200 },
+      { id:"sit",       icon:"🪑", key:"R", label:"SENTARSE", title:"Sentarse",   anim:"sit",          text:"SENTADO",  color:"#c8cfe8", sheet:"special", hold:1800 },
+      { id:"warmup",    icon:"🔥", key:"F", label:"CALENTAR", title:"Calentar",   anim:"run",          text:"CALIENTA", color:"#ffca28", sheet:"base",    hold:1600 },
+      { id:"emote",     icon:"✨", key:"C", label:"EMOTE",    title:"Emote",      anim:"emote",        text:"EMOTE",    color:"#aa00ff", sheet:"special" },
+      { id:"eat",       icon:"🍙", key:"V", label:"COMER",    title:"Comer",      anim:"eat_drink",    text:"COME",     color:"#66bb6a", sheet:"special", objectIcon:"🍙", hold:1300 },
+      { id:"object",    icon:"🎒", key:"B", label:"OBJETO",   title:"Objeto",     anim:"hold_item",    text:"OBJETO",   color:"#90caf9", sheet:"special", objectIcon:"🎒", hold:1300 },
+    ];
+
+    // ══ Resolución de animación por sheet para el animator ══
+    // Ahora setSpecialMode es soportado
+    function _setAnimatorSheet(sheet) {
+      if (!csAnimator) return;
+      if (sheet === "special") {
+        csAnimator.setSpecialMode(true);
+      } else if (sheet === "combat") {
+        csAnimator.setBattleMode(true);
+        csAnimator.setSpecialMode(false);
+      } else {
+        csAnimator.setBattleMode(false);
+        csAnimator.setSpecialMode(false);
+      }
+    }
+
+    function renderActionBars() {
+      const skills = document.getElementById("skillsBar");
+      const grid = document.getElementById("actionGrid");
+      const PS = window.PvpSystem;
+      if (skills) {
+        if (controlMode === "pvp" && PS && PS.isFighter()) {
+          skills.innerHTML = PS.getPcSkillsHtml();
+        } else if (controlMode === "combat") {
+          skills.innerHTML = [
+            makePcSkill({ icon:"🥊", key:"Z", title:"Combo 1", action:"performCombatAction('combo1')" }),
+            makePcSkill({ icon:"💥", key:"Q", title:"Combo 2", action:"performCombatAction('combo2')" }),
+            makePcSkill({ icon:"🔵", key:"E", title:"Ataque especial 1", action:"performCombatAction('special1')" }),
+            makePcSkill({ icon:"🟣", key:"R", title:"Ataque especial 2", action:"performCombatAction('special2')" }),
+            makePcSkill({ icon:"🪽", key:"F", title:"Volar", action:"performCombatAction('fly')", id:"skillFly", cls:isFlying?"run-active":"" }),
+            makePcSkill({ icon:"✨", key:"C", title:"Z-Vanish", action:"performCombatAction('vanish')" }),
+            makePcSkill({ icon:"💬", key:"RP", title:"Volver a rol", action:"setControlMode('rp')" }),
+          ].join("");
+        } else {
+          skills.innerHTML = RP_ACTIONS.map(a =>
+            makePcSkill({ icon:a.icon, key:a.key, title:`${a.title} [${a.key}]`, action:`performRpAction('${a.id}')` })
+          ).concat([
+            makePcSkill({ icon:"⚔️", key:"X", title:"Modo combate [X]", action:"setControlMode('combat')" }),
+            makePcSkill({ icon:"🏃", key:"SHIFT", title:"Correr", action:"toggleRunPC()", id:"skillRun", cls:isRunning?"run-active":"" }),
+          ]).join("");
+        }
+      }
+      if (grid) {
+        if (controlMode === "pvp" && PS && PS.isFighter()) {
+          grid.innerHTML = PS.getMobileActionsHtml();
+        } else if (controlMode === "combat") {
+          grid.innerHTML = [
+            makeMobileAction({ icon:"🥊", label:"COMBO 1", action:"performCombatAction('combo1')", cls:"btn-emote" }),
+            makeMobileAction({ icon:"💥", label:"COMBO 2", action:"performCombatAction('combo2')", cls:"btn-emote" }),
+            makeMobileAction({ icon:"🔵", label:"ESP. 1", action:"performCombatAction('special1')", cls:"btn-interact" }),
+            makeMobileAction({ icon:"🟣", label:"ESP. 2", action:"performCombatAction('special2')", cls:"btn-interact" }),
+            makeMobileAction({ icon:"🪽", label:isFlying?"VUELO ON":"VOLAR", action:"performCombatAction('fly')", cls:"btn-run" + (isFlying ? " run-active" : "") }),
+            makeMobileAction({ icon:"✨", label:"Z-VANISH", action:"performCombatAction('vanish')", cls:"btn-trailer" }),
+            `<div class="action-btn btn-run" onclick="setControlMode('rp')" style="border-radius:12px;width:100%;grid-column:span 2;height:calc(var(--btn-size)*0.7);"><span class="btn-icon">💬</span><span class="btn-label">VOLVER A RP</span></div>`,
+          ].join("");
+        } else {
+          grid.innerHTML = RP_ACTIONS.map((a, idx) =>
+            makeMobileAction({ icon:a.icon, label:a.label, action:`performRpAction('${a.id}')`, cls:idx % 2 ? "btn-trailer" : "btn-emote" })
+          ).concat([
+            makeMobileAction({ icon:"⚔️", label:"COMBATE", action:"setControlMode('combat')", cls:"btn-interact" }),
+            `<div class="action-btn btn-run ${isRunning ? "run-active" : ""}" id="mobileRunBtn" onclick="toggleRunMobile()" style="border-radius:12px;width:100%;height:calc(var(--btn-size)*0.7);"><span class="btn-icon">🏃</span><span class="btn-label" id="runBtnLabel">CORRER: ${isRunning ? "ON" : "OFF"}</span></div>`,
+          ]).join("");
+        }
+      }
+    }
+
+    // ══ CONTROL MODE — actualizado con setSpecialMode ══
+    function setControlMode(mode) {
+      if (mode === "pvp") {
+        controlMode = "pvp";
+        isCombatMode = true;
+      } else {
+        controlMode = mode === "combat" ? "combat" : "rp";
+        isCombatMode = controlMode === "combat";
+      }
+      const CS = window.CharacterSystem;
+      if (csAnimator && csAnimator.setBattleMode) {
+        if (isCombatMode) {
+          csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
+          csAnimator.setBattleMode(true);
+          csAnimator.play("combat_idle");
+        } else {
+          csAnimator.setBattleMode(false);
+          csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
+          csAnimator.play(isFlying ? "fly" : "idle");
+        }
+      }
+      renderActionBars();
+      const msg = controlMode === "pvp" ? "⚔️ Duelo PvP — controles de combate" : (isCombatMode ? "Modo combate (práctica)" : "Modo rol");
+      showHudToast(msg, "info");
+      publishMyAppearance(true);
+    }
+
+    function combatEndAnim() {
+      if (!csAnimator) return;
+      if (csAnimator.battleMode) csAnimator.play(isFlying ? "fly_combat" : "combat_idle");
+      else csAnimator.play(isFlying ? "fly" : "idle");
+    }
+    window.setControlMode = setControlMode;
+
+    // ══ FIREBASE ══
+    const firebaseConfig = {
+      apiKey: "AIzaSyBYZwK41XAUkLeRlWQRms0oEyJ1QXMQVg8",
+      authDomain: "dragon-world-z.firebaseapp.com",
+      databaseURL: "https://dragon-world-z-default-rtdb.firebaseio.com",
+      projectId: "dragon-world-z",
+      storageBucket: "dragon-world-z.firebasestorage.app",
+      messagingSenderId: "994414993412",
+      appId: "1:994414993412:web:66813401c499f41e46d551"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // ══ CANVAS ══
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const minimapCanvas = document.getElementById("minimapCanvas");
+    const mmCtx = minimapCanvas.getContext("2d");
+    const trailerCanvas = document.getElementById("trailerCanvas");
+    const tCtx = trailerCanvas.getContext("2d");
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+      trailerCanvas.width = trailerCanvas.offsetWidth || window.innerWidth;
+      trailerCanvas.height = trailerCanvas.offsetHeight || window.innerHeight - 60;
+    }
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+
+    // ══ MULTIPLAYER ══
+    const otherPlayers = {}, otherPlayerAnimators = {}, otherPlayerAccessoryImages = {};
+    const otherPlayerVariantImages = {};
+    const otherPlayerPreviewImages = {};
+    const otherPlayerAccessoryLoading = new Set();
+    const otherPlayerPreviewLoading = new Set();
+    let myPlayerId = null, mpConnected = false, mpLastSend = 0, mpLastAppearance = 0;
+    const MP_SEND_RATE = 80;
+    const MP_APPEARANCE_RATE = 2500;
+    const chatMessages = [], CHAT_MAX = 8;
+
+    function canvasToBestDataURL(canvas, sourceDataURL, quality) {
+      const isPng = typeof sourceDataURL === "string" && sourceDataURL.startsWith("data:image/png");
+      return canvas.toDataURL(isPng ? "image/png" : "image/jpeg", quality || 0.86);
+    }
+
+    function getNetworkGridTarget(img, maxDim) {
+      const CS = window.CharacterSystem;
+      const cols = CS?.MAX_COLS || 5;
+      const rows = CS?.TOTAL_ROWS || 12;
+      const aspect = cols / rows;
+      const imgAspect = img.naturalWidth / img.naturalHeight;
+      const isGrid = img.naturalWidth >= cols * 8 && img.naturalHeight >= rows * 8 && Math.abs(imgAspect - aspect) < 0.08;
+      if (!isGrid) return null;
+      const maxFrame = Math.max(32, Math.min(96, Math.floor((maxDim || 384) / cols)));
+      const originalFrame = Math.floor(Math.min(img.naturalWidth / cols, img.naturalHeight / rows));
+      const frame = Math.max(8, Math.min(originalFrame, maxFrame));
+      return { w: cols * frame, h: rows * frame };
+    }
+
+    function getNetworkVariantGridTarget(img, frameCount, maxDim) {
+      const cols = Math.max(1, Math.min(24, parseInt(frameCount || 6, 10) || 6));
+      const CS = window.CharacterSystem;
+      const rows = CS?.TOTAL_ROWS || 12;
+      const aspect = cols / rows;
+      const imgAspect = img.naturalWidth / img.naturalHeight;
+      const isGrid = img.naturalWidth >= cols * 8 && img.naturalHeight >= rows * 8 && Math.abs(imgAspect - aspect) < 0.08;
+      if (!isGrid) return null;
+      const maxFrame = Math.max(32, Math.min(96, Math.floor((maxDim || 384) / cols)));
+      const originalFrame = Math.floor(Math.min(img.naturalWidth / cols, img.naturalHeight / rows));
+      const frame = Math.max(8, Math.min(originalFrame, maxFrame));
+      return { w: cols * frame, h: rows * frame };
+    }
+
+    async function compressDataURLForNetwork(dataURL, maxDim) {
+      if (!dataURL) return null;
+      if (dataURL.length < 90000) return dataURL;
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          try {
+            const max = maxDim || 384;
+            const gridTarget = getNetworkGridTarget(img, max);
+            const ratio = gridTarget ? 1 : Math.min(max / img.naturalWidth, max / img.naturalHeight, 1);
+            const w = gridTarget ? gridTarget.w : Math.max(1, Math.round(img.naturalWidth * ratio));
+            const h = gridTarget ? gridTarget.h : Math.max(1, Math.round(img.naturalHeight * ratio));
+            const c = document.createElement("canvas");
+            c.width = w; c.height = h;
+            c.getContext("2d").drawImage(img, 0, 0, w, h);
+            resolve(canvasToBestDataURL(c, dataURL, 0.86));
+          } catch (e) { resolve(dataURL); }
+        };
+        img.onerror = () => resolve(dataURL.length < 120000 ? dataURL : null);
+        img.src = dataURL;
+      });
+    }
+
+    async function compressVariantSheetForNetwork(dataURL, frameCount, maxDim) {
+      if (!dataURL) return null;
+      if (dataURL.length < 90000) return dataURL;
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          try {
+            const max = maxDim || 384;
+            const gridTarget = getNetworkVariantGridTarget(img, frameCount, max);
+            const ratio = gridTarget ? 1 : Math.min(max / img.naturalWidth, max / img.naturalHeight, 1);
+            const w = gridTarget ? gridTarget.w : Math.max(1, Math.round(img.naturalWidth * ratio));
+            const h = gridTarget ? gridTarget.h : Math.max(1, Math.round(img.naturalHeight * ratio));
+            const c = document.createElement("canvas");
+            c.width = w; c.height = h;
+            c.getContext("2d").drawImage(img, 0, 0, w, h);
+            resolve(canvasToBestDataURL(c, dataURL, 0.86));
+          } catch (e) { resolve(dataURL); }
+        };
+        img.onerror = () => resolve(dataURL.length < 120000 ? dataURL : null);
+        img.src = dataURL;
+      });
+    }
+
+    function compressAccessoryForNetwork(acc) {
+      if (!acc) return null;
+      if (acc.dataURL && acc.dataURL.length < 180000) return acc.dataURL;
+      const src = acc.userImage;
+      if (!src || !src.naturalWidth) return acc.dataURL || null;
+      try {
+        const max = 384;
+        const gridTarget = getNetworkGridTarget(src, max);
+        const ratio = gridTarget ? 1 : Math.min(max / src.naturalWidth, max / src.naturalHeight, 1);
+        const w = gridTarget ? gridTarget.w : Math.max(1, Math.round(src.naturalWidth * ratio));
+        const h = gridTarget ? gridTarget.h : Math.max(1, Math.round(src.naturalHeight * ratio));
+        const c = document.createElement("canvas");
+        c.width = w; c.height = h;
+        c.getContext("2d").drawImage(src, 0, 0, w, h);
+        return canvasToBestDataURL(c, acc.dataURL, 0.88);
+      } catch (e) { return acc.dataURL || null; }
+    }
+
+    function serializeVariantCustomizations(customs) {
+      const out = {};
+      Object.entries(customs || {}).forEach(([id, cfg]) => {
+        out[id] = Object.assign({}, cfg);
+        delete out[id].spriteImage; delete out[id].userImage;
+        delete out[id].combatSpriteImage; delete out[id].combatUserImage;
+        delete out[id].specialSpriteImage; delete out[id].specialUserImage;
+      });
+      return out;
+    }
+
+    function serializeCombatCustomization(cfg) {
+      const out = Object.assign({}, cfg || {});
+      delete out.spriteImage; delete out.userImage;
+      return out;
+    }
+
+    function _hydrateSheetField(cfg, urlKey, imgKey) {
+      const url = cfg?.[urlKey];
+      if (!url) return;
+      const img = new Image();
+      img.onload = () => { cfg[imgKey] = img; window.CharacterSystem?.invalidateHairCache?.(); };
+      img.onerror = () => {};
+      img.src = url;
+    }
+
+    function hydrateVariantCustomizations(app, customizations) {
+      app.variantCustomizations = customizations || {};
+      Object.values(app.variantCustomizations).forEach((cfg) => {
+        _hydrateSheetField(cfg, "spriteDataURL", "spriteImage");
+        _hydrateSheetField(cfg, "combatSpriteDataURL", "combatSpriteImage");
+        _hydrateSheetField(cfg, "specialSpriteDataURL", "specialSpriteImage");
+      });
+    }
+
+    function hydrateCombatCustomization(app, cfg) {
+      app.combatCustomization = cfg || {};
+      _hydrateSheetField(app.combatCustomization, "spriteDataURL", "spriteImage");
+    }
+
+    async function restoreAllAccessoriesForGame(CS) {
+      if (!CS) return;
+
+      // 1. Free Customizations
+      try {
+        const rawFree = localStorage.getItem("dragonCreatorZ_freeCustomization");
+        if (rawFree) {
+          const list = JSON.parse(rawFree);
+          if (Array.isArray(list)) {
+            await Promise.all(list.map((item) => new Promise((resolve) => {
+              if (!item?.dataURL) { resolve(); return; }
+              const existing = CS.ACCESSORIES_CATALOG.find(a => a.id === item.id);
+              if (existing) {
+                if (!existing.dataURL) existing.dataURL = item.dataURL;
+                existing.combatDataURL = item.combatDataURL || existing.combatDataURL;
+                existing.scale = item.scale ?? existing.scale ?? 1;
+                existing.animFrames = item.animFrames ?? existing.animFrames ?? 6;
+                existing.combatScale = item.combatScale ?? existing.combatScale ?? 1;
+                existing.combatAnimFrames = item.combatAnimFrames ?? existing.combatAnimFrames ?? 6;
+                if (existing.combatUserImage && !existing.combatSpriteImage) existing.combatSpriteImage = existing.combatUserImage;
+                if (existing.specialUserImage && !existing.specialSpriteImage) existing.specialSpriteImage = existing.specialUserImage;
+                if (item.combatDataURL && !existing.combatUserImage) {
+                  const cimg = new Image();
+                  cimg.onload = () => { existing.combatUserImage = cimg; existing.combatSpriteImage = cimg; CS.invalidateHairCache?.(); };
+                  cimg.onerror = () => {};
+                  cimg.src = item.combatDataURL;
+                }
+                if (item.specialDataURL && !existing.specialUserImage) {
+                  const simg = new Image();
+                  simg.onload = () => { existing.specialUserImage = simg; existing.specialSpriteImage = simg; CS.invalidateHairCache?.(); };
+                  simg.onerror = () => {};
+                  simg.src = item.specialDataURL;
+                }
+                if (!existing.userImage || !existing.userImage.complete || !existing.userImage.naturalWidth) {
+                  const img = new Image();
+                  img.onload = () => { existing.userImage = img; existing.spriteImage = img; existing.isFreeCustomization = true; CS.invalidateHairCache?.(); resolve(); };
+                  img.onerror = resolve;
+                  img.src = item.dataURL;
+                } else { resolve(); }
+                return;
+              }
+              const img = new Image();
+              img.onload = () => {
+                const entry = {
+                  id: item.id, name: item.name || "Personalización",
+                  type: item.type || "other", slot: item.slot || "over_shirt",
+                  color: item.color || null, userImage: img, spriteImage: img, dataURL: item.dataURL,
+                  combatDataURL: item.combatDataURL || null, specialDataURL: item.specialDataURL || null,
+                  scale: item.scale ?? 1, animFrames: item.animFrames ?? 6,
+                  combatScale: item.combatScale ?? 1, combatAnimFrames: item.combatAnimFrames ?? 6,
+                  specialScale: item.specialScale ?? 1, specialAnimFrames: item.specialAnimFrames ?? 6,
+                  raceName: item.raceName || null, isFreeCustomization: true,
+                };
+                if (item.combatDataURL) {
+                  const cimg = new Image();
+                  cimg.onload = () => { entry.combatUserImage = cimg; entry.combatSpriteImage = cimg; CS.invalidateHairCache?.(); };
+                  cimg.onerror = () => {};
+                  cimg.src = item.combatDataURL;
+                }
+                if (item.specialDataURL) {
+                  const simg = new Image();
+                  simg.onload = () => { entry.specialUserImage = simg; entry.specialSpriteImage = simg; CS.invalidateHairCache?.(); };
+                  simg.onerror = () => {};
+                  simg.src = item.specialDataURL;
+                }
+                CS.ACCESSORIES_CATALOG.push(entry);
+                resolve();
+              };
+              img.onerror = resolve;
+              img.src = item.dataURL;
+            })));
+          }
+        }
+      } catch (e) { console.warn("[game] Error restaurando freeCustomization:", e); }
+
+      // 2. Accesorios normales
+      try {
+        const rawAcc = localStorage.getItem("dragonCreatorZ_accessories");
+        if (rawAcc) {
+          const accList = JSON.parse(rawAcc);
+          if (Array.isArray(accList)) {
+            await Promise.all(accList.map((entry) => new Promise((resolve) => {
+              if (!entry?.dataURL) { resolve(); return; }
+              const existing = CS.ACCESSORIES_CATALOG.find(a => a.id === entry.id);
+              if (existing) {
+                Object.assign(existing, {
+                  combatDataURL: entry.combatDataURL || existing.combatDataURL,
+                  scale: entry.scale ?? existing.scale ?? 1,
+                  animFrames: entry.animFrames ?? existing.animFrames ?? 6,
+                  combatScale: entry.combatScale ?? existing.combatScale ?? 1,
+                  combatAnimFrames: entry.combatAnimFrames ?? existing.combatAnimFrames ?? 6,
+                });
+                if (existing.combatUserImage && !existing.combatSpriteImage) existing.combatSpriteImage = existing.combatUserImage;
+                if (!existing.userImage || !existing.userImage.complete || !existing.userImage.naturalWidth) {
+                  const img = new Image();
+                  img.onload = () => { existing.userImage = img; existing.spriteImage = img; resolve(); };
+                  img.onerror = resolve;
+                  img.src = entry.dataURL;
+                } else { resolve(); }
+                if (entry.combatDataURL && !existing.combatUserImage) {
+                  const cimg = new Image();
+                  cimg.onload = () => { existing.combatUserImage = cimg; existing.combatSpriteImage = cimg; CS.invalidateHairCache?.(); };
+                  cimg.onerror = () => {};
+                  cimg.src = entry.combatDataURL;
+                }
+                return;
+              }
+              const img = new Image();
+              img.onload = () => {
+                const accEntry = {
+                  id: entry.id, name: entry.name || "Accesorio", type: entry.type || "other",
+                  slot: (CS.ACCESSORY_TYPES?.find(t => t.id === entry.type) || { slot: "over_shirt" }).slot,
+                  color: entry.color || null, userImage: img, spriteImage: img, dataURL: entry.dataURL,
+                  combatDataURL: entry.combatDataURL || null,
+                  scale: entry.scale ?? 1, animFrames: entry.animFrames ?? 6,
+                  combatScale: entry.combatScale ?? 1, combatAnimFrames: entry.combatAnimFrames ?? 6,
+                  isFreeCustomization: false,
+                };
+                if (entry.combatDataURL) {
+                  const cimg = new Image();
+                  cimg.onload = () => { accEntry.combatUserImage = cimg; accEntry.combatSpriteImage = cimg; CS.invalidateHairCache?.(); };
+                  cimg.onerror = () => {};
+                  cimg.src = entry.combatDataURL;
+                }
+                CS.ACCESSORIES_CATALOG.push(accEntry);
+                resolve();
+              };
+              img.onerror = resolve;
+              img.src = entry.dataURL;
+            })));
+          }
+        }
+      } catch (e) { console.warn("[game] Error restaurando accessories:", e); }
+
+      // 3. Slot activo
+      try {
+        const sc = savedChar || {};
+        const accId = sc.accessory || sc.accessoryId;
+        if (accId && accId !== "ac_none" && sc.accessoryDataURL) {
+          const existing = CS.ACCESSORIES_CATALOG.find(a => a.id === accId);
+          if (!existing || !existing.userImage || !existing.userImage.complete || !existing.userImage.naturalWidth) {
+            await new Promise((resolve) => {
+              const img = new Image();
+              img.onload = () => {
+                const isFree = !!(sc.accessoryIsFreeCustomization || sc.race === "Custom" || String(accId).startsWith("fc_"));
+                if (existing) {
+                  existing.userImage = img;
+                  existing.spriteImage = img;
+                  if (!existing.dataURL) existing.dataURL = sc.accessoryDataURL;
+                  if (!existing.combatDataURL && sc.accessoryCombatDataURL) existing.combatDataURL = sc.accessoryCombatDataURL;
+                  existing.isFreeCustomization = existing.isFreeCustomization || isFree;
+                  CS.invalidateHairCache?.();
+                } else {
+                  CS.ACCESSORIES_CATALOG.push({
+                    id: accId, name: sc.accessoryName || "Personalización",
+                    type: "other", slot: "over_shirt", color: null,
+                    userImage: img, spriteImage: img, dataURL: sc.accessoryDataURL, combatDataURL: sc.accessoryCombatDataURL || null,
+                    isFreeCustomization: isFree,
+                  });
+                }
+                resolve();
+              };
+              img.onerror = resolve;
+              img.src = sc.accessoryDataURL;
+            });
+          }
+        }
+      } catch (e) { console.warn("[game] Error restaurando acc desde slot:", e); }
+    }
+
+    function renderAppearancePreview(CS) {
+      if (!CS || !csImageMap || !csAnimator) return null;
+      try {
+        const pw = 144, ph = Math.round(SPRITE_DRAW_H * (144 / SPRITE_DRAW_W));
+        const c = document.createElement("canvas");
+        c.width = pw; c.height = ph;
+        const cctx = c.getContext("2d");
+        cctx.clearRect(0, 0, pw, ph);
+        const sx = pw / 2, sy = ph - 4;
+        const scaleX = pw / CS.FRAME_W, scaleY = ph / CS.FRAME_H;
+        cctx.save();
+        cctx.translate(sx, sy);
+        cctx.scale(scaleX, scaleY);
+        cctx.translate(-sx, -sy);
+        CS.drawPlayer(cctx, sx, sy, CS.player, csImageMap, csAnimator, {
+          glovesId: CS.player.appearance.glovesId || "gm0",
+          auraId: "a0",
+          auraColor: CS.player.appearance.auraColor || "#fdd835",
+          accessoryId: CS.player.appearance.accessoryId || "ac_none",
+          auraPhase: 0,
+          viewKey: null,
+          spriteVariantId: isCombatMode ? "fight" : null,
+        });
+        cctx.restore();
+        return c.toDataURL("image/png");
+      } catch (e) { return null; }
+    }
+
+    function buildMyAppearancePayload(includePreview) {
+      const CS = window.CharacterSystem;
+      const app = CS?.player?.appearance;
+      const sc = savedChar || {};
+      const raceId = app?.raceId || sc.race || player.race || "human";
+      const gender = app?.gender || sc.gender || "male";
+      const variantId = app?.variantId || sc.variantId || "base";
+      const variantCustomizations = serializeVariantCustomizations(app?.variantCustomizations || sc.variantCustomizations || {});
+      const combatCustomization = serializeCombatCustomization(app?.combatCustomization || sc.combatCustomization || {});
+      const defs = CS ? CS.getDefaultIds(raceId, gender) : {};
+      const accessoryId = app?.accessoryId || sc.accessory || sc.accessoryId || "ac_none";
+      let accessoryDataURL = app?.accessoryDataURL || sc.accessoryDataURL || null;
+      let accessoryIsFreeCustomization = !!(app?.accessoryIsFreeCustomization || sc.accessoryIsFreeCustomization || raceId === "Custom" || String(accessoryId).startsWith("fc_"));
+      let accessorySlot = app?.accessorySlot || sc.accessorySlot || "over_shirt";
+      let accessoryCombatDataURL = app?.accessoryCombatDataURL || sc.accessoryCombatDataURL || null;
+      if (CS && accessoryId !== "ac_none") {
+        const acc = CS.ACCESSORIES_CATALOG.find((a) => a.id === accessoryId);
+        if (acc) {
+          accessoryDataURL = accessoryDataURL || compressAccessoryForNetwork(acc);
+          if (!accessoryCombatDataURL && acc.combatDataURL && acc.combatDataURL.length < 180000) accessoryCombatDataURL = acc.combatDataURL;
+          accessoryIsFreeCustomization = accessoryIsFreeCustomization || !!(acc.isFreeCustomization || CS.isFreeCustomizationEntry?.(acc));
+          accessorySlot = acc.slot || accessorySlot;
+        }
+      }
+      if (!accessoryDataURL && sc.accessoryDataURL && (sc.accessory === accessoryId || sc.accessoryId === accessoryId)) {
+        accessoryDataURL = sc.accessoryDataURL.length < 180000 ? sc.accessoryDataURL : compressAccessoryForNetwork({ dataURL: sc.accessoryDataURL, userImage: null });
+      }
+      const payload = {
+        raceId, gender, variantId, variantCustomizations, combatCustomization,
+        faceId: app?.faceId || sc.faceId || defs.faceId || null,
+        faceColor: app?.faceColor ?? sc.faceColor ?? null,
+        eyeColor: app?.eyeColor || sc.eyeColor || "#3a2a1a",
+        browColor: app?.browColor ?? sc.browColor ?? null,
+        pupilColor: app?.pupilColor ?? sc.pupilColor ?? null,
+        hairId: app?.hairId || sc.hair || defs.hairId || null,
+        hairColor: app?.hairColor || sc.hairColor || "#1a1a1a",
+        topId: app?.topId || sc.shirt || defs.topId || null,
+        bottomId: app?.bottomId || sc.pants || defs.bottomId || null,
+        shoesId: app?.shoesId || sc.shoes || defs.shoesId || null,
+        glovesId: app?.glovesId || sc.gloves || defs.glovesId || "gm0",
+        skinColor: app?.skinColor || sc.skinColor || "#e8c898",
+        auraId: app?.auraId || sc.aura || "a0",
+        auraColor: app?.auraColor || sc.auraColor || player.auraColor || "#fdd835",
+        accessoryId, accessoryDataURL, accessoryCombatDataURL,
+        accessoryIsFreeCustomization, accessorySlot,
+        clothColor: sc.clothColor || "#ff6a00",
+      };
+      if (includePreview) payload.previewDataURL = renderAppearancePreview(CS);
+      return payload;
+    }
+
+    function normalizeRemoteAppearance(app, CS, p) {
+      const raceId = app?.raceId || p?.race || "human";
+      const gender = app?.gender || "male";
+      const variantId = app?.variantId || "base";
+      const variantCustomizations = app?.variantCustomizations || {};
+      const combatCustomization = app?.combatCustomization || {};
+      const defs = CS ? CS.getDefaultIds(raceId, gender) : {};
+      return {
+        raceId, gender, variantId, variantCustomizations, combatCustomization,
+        faceId: app?.faceId || defs.faceId || null,
+        faceColor: app?.faceColor ?? null,
+        eyeColor: app?.eyeColor || "#3a2a1a",
+        browColor: app?.browColor ?? null,
+        pupilColor: app?.pupilColor ?? null,
+        hairId: app?.hairId || defs.hairId || null,
+        hairColor: app?.hairColor || "#1a1a1a",
+        topId: app?.topId || defs.topId || null,
+        bottomId: app?.bottomId || defs.bottomId || null,
+        shoesId: app?.shoesId || defs.shoesId || null,
+        glovesId: app?.glovesId || defs.glovesId || "gm0",
+        skinColor: app?.skinColor || "#e8c898",
+        auraId: app?.auraId || "a0",
+        auraColor: app?.auraColor || p?.auraColor || "#fdd835",
+        accessoryId: app?.accessoryId || "ac_none",
+        accessoryDataURL: app?.accessoryDataURL || null,
+        accessoryCombatDataURL: app?.accessoryCombatDataURL || null,
+        accessoryIsFreeCustomization: !!(app?.accessoryIsFreeCustomization || raceId === "Custom" || String(app?.accessoryId || "").startsWith("fc_")),
+        accessorySlot: app?.accessorySlot || "over_shirt",
+        previewDataURL: app?.previewDataURL || null,
+        clothColor: app?.clothColor || "#ff6a00",
+      };
+    }
+
+    let lastAppearanceSig = "";
+    async function publishMyAppearance(force) {
+      if (!mpConnected || !myPlayerId) return;
+      const base = buildMyAppearancePayload(false);
+      const sig = JSON.stringify(base);
+      if (!force && sig === lastAppearanceSig) return;
+      lastAppearanceSig = sig;
+      let appearance = buildMyAppearancePayload(true);
+      if (appearance.previewDataURL && appearance.previewDataURL.length > 90000) {
+        appearance.previewDataURL = await compressDataURLForNetwork(appearance.previewDataURL, 144);
+      }
+      if (appearance.accessoryDataURL && appearance.accessoryDataURL.length > 90000) {
+        appearance.accessoryDataURL = await compressDataURLForNetwork(appearance.accessoryDataURL, 384);
+      }
+      if (appearance.accessoryCombatDataURL && appearance.accessoryCombatDataURL.length > 90000) {
+        appearance.accessoryCombatDataURL = await compressDataURLForNetwork(appearance.accessoryCombatDataURL, 384);
+      }
+      if (appearance.variantCustomizations) {
+        for (const cfg of Object.values(appearance.variantCustomizations)) {
+          if (cfg?.spriteDataURL && cfg.spriteDataURL.length > 90000) {
+            cfg.spriteDataURL = await compressVariantSheetForNetwork(cfg.spriteDataURL, cfg.animFrames || 6, 384);
+          }
+          if (cfg?.combatSpriteDataURL && cfg.combatSpriteDataURL.length > 90000) {
+            cfg.combatSpriteDataURL = await compressVariantSheetForNetwork(cfg.combatSpriteDataURL, cfg.combatAnimFrames || 6, 384);
+          }
+          if (cfg?.specialSpriteDataURL && cfg.specialSpriteDataURL.length > 90000) {
+            cfg.specialSpriteDataURL = await compressVariantSheetForNetwork(cfg.specialSpriteDataURL, cfg.specialAnimFrames || 6, 384);
+          }
+        }
+      }
+      if (appearance.combatCustomization?.spriteDataURL && appearance.combatCustomization.spriteDataURL.length > 90000) {
+        appearance.combatCustomization.spriteDataURL = await compressVariantSheetForNetwork(
+          appearance.combatCustomization.spriteDataURL,
+          appearance.combatCustomization.animFrames || 6, 384
+        );
+      }
+      db.ref("players/" + myPlayerId).update({ appearance, t: Date.now() });
+    }
+
+    function initMultiplayer() {
+      myPlayerId = "player_" + Math.random().toString(36).substr(2, 9) + "_" + Date.now();
+      const myRef = db.ref("players/" + myPlayerId);
+      myRef.onDisconnect().remove();
+      mpConnected = true;
+      myRef.set({
+        name:player.name, x:Math.floor(player.x), y:Math.floor(player.y), facing:player.facing,
+        animAction:"idle", combatMode:isCombatMode, flying:isFlying, race:player.race,
+        auraColor:player.auraColor, charColor:player.charColor, level:player.level,
+        hp:player.hp, maxHp:player.maxHp, strength:player.strength, defense:player.defense,
+        appearance:buildMyAppearancePayload(false), map:currentMap, t:Date.now(),
+      });
+      exportGameGlobals();
+      db.ref("players").on("value", (snapshot) => {
+        const allPlayers = snapshot.val() || {};
+        for (const id in otherPlayers) {
+          if (!allPlayers[id]) {
+            delete otherPlayers[id]; delete otherPlayerAnimators[id];
+            delete otherPlayerAccessoryImages[id]; delete otherPlayerPreviewImages[id];
+            otherPlayerAccessoryLoading.delete(id); otherPlayerPreviewLoading.delete(id);
+          }
+        }
+        for (const [id, data] of Object.entries(allPlayers)) {
+          if (id === myPlayerId) continue;
+          if (Date.now() - (data.t||0) > 15000) {
+            delete otherPlayers[id]; delete otherPlayerAnimators[id];
+            delete otherPlayerAccessoryImages[id]; delete otherPlayerPreviewImages[id];
+            otherPlayerAccessoryLoading.delete(id); otherPlayerPreviewLoading.delete(id);
+            continue;
+          }
+          const prev = otherPlayers[id];
+          const prevAccURL = prev?.appearance?.accessoryDataURL || null;
+          const prevPreviewURL = prev?.appearance?.previewDataURL || null;
+          otherPlayers[id] = data;
+          if (!otherPlayerAnimators[id]) {
+            const CS = window.CharacterSystem;
+            if (CS) otherPlayerAnimators[id] = new CS.SpriteAnimator("idle");
+          }
+          if (otherPlayerAnimators[id]) {
+            const anim = otherPlayerAnimators[id];
+            // Sincronizar modo del animador remoto
+            if (data.specialMode && anim.setSpecialMode) anim.setSpecialMode(true);
+            else if (anim.setBattleMode) anim.setBattleMode(!!data.combatMode);
+            if (data.animAction) anim.play(data.animAction);
+          }
+          const newAccURL = data.appearance?.accessoryDataURL || null;
+          if (newAccURL && newAccURL !== prevAccURL) {
+            const img = new Image();
+            img.onload = () => { otherPlayerAccessoryImages[id] = img; };
+            img.onerror = () => { otherPlayerAccessoryImages[id] = null; };
+            img.src = newAccURL;
+          } else if (!newAccURL) { otherPlayerAccessoryImages[id] = null; }
+          const newPreviewURL = data.appearance?.previewDataURL || null;
+          if (newPreviewURL && newPreviewURL !== prevPreviewURL) {
+            const pimg = new Image();
+            pimg.onload = () => { otherPlayerPreviewImages[id] = pimg; };
+            pimg.onerror = () => { delete otherPlayerPreviewImages[id]; };
+            pimg.src = newPreviewURL;
+          } else if (!newPreviewURL) { delete otherPlayerPreviewImages[id]; }
+        }
+        updateMpHud();
+      });
+      db.ref("chat").limitToLast(1).on("child_added", (snap) => {
+        const msg = snap.val(); if (!msg || msg.id === myPlayerId) return;
+        addChatMsg(msg.name, msg.text, "#00e5ff");
+      });
+    }
+
+    function sendPlayerUpdate() {
+      if (!mpConnected || !myPlayerId) return;
+      const now = performance.now();
+      if (now - mpLastSend < MP_SEND_RATE) return;
+      mpLastSend = now;
+      let animAction;
+      // Determinar animación actual incluyendo special mode
+      if (csAnimator?.specialMode) {
+        animAction = csAnimator.action || "sit";
+      } else if (isCombatMode && csAnimator?.battleMode) {
+        animAction = isFlying ? "knockback_fly" : (player.moving ? "dash" : "combat_idle");
+      } else {
+        animAction = isFlying ? "fly" : (player.moving ? (isRunning ? "run" : "walk") : "idle");
+      }
+      if (performance.now() < rpActionUntil && csAnimator) animAction = csAnimator.action || animAction;
+      db.ref("players/" + myPlayerId).update({
+        x:Math.floor(player.x), y:Math.floor(player.y), facing:player.facing, animAction,
+        combatMode:isCombatMode, specialMode:!!(csAnimator?.specialMode),
+        flying:isFlying, hp:player.hp, maxHp:player.maxHp,
+        strength:player.strength, defense:player.defense,
+        level:player.level, map:currentMap, t:Date.now(),
+      });
+      if (now - mpLastAppearance >= MP_APPEARANCE_RATE) {
+        mpLastAppearance = now;
+        publishMyAppearance(false);
+      }
+    }
+
+    function _drawRemotePreviewSprite(sx, sy, img, facing, p) {
+      ctx.fillStyle = "rgba(0,0,0,0.3)";
+      ctx.beginPath();
+      ctx.ellipse(sx, sy + 3, 16, 5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      const dw = SPRITE_DRAW_W, dh = SPRITE_DRAW_H;
+      const dx = sx - dw / 2, dy = sy - dh;
+      ctx.save();
+      if ((facing || 1) === -1) { ctx.translate(sx, 0); ctx.scale(-1, 1); ctx.translate(-sx, 0); }
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(img, dx, dy, dw, dh);
+      ctx.restore();
+      _drawRemotePlayerLabel(p, sx, sy);
+    }
+
+    function drawOtherPlayers() {
+      const CS = window.CharacterSystem, now = performance.now();
+      for (const [id, p] of Object.entries(otherPlayers)) {
+        if (p.map && p.map !== currentMap) continue;
+        const sx = p.x - cam.x, sy = p.y - cam.y;
+        if (sx < -100 || sx > canvas.width+100 || sy < -120 || sy > canvas.height+120) continue;
+        const anim = otherPlayerAnimators[id];
+        if (anim) anim.update(now);
+        const app = normalizeRemoteAppearance(p.appearance, CS, p);
+        const previewImg = otherPlayerPreviewImages[id];
+        if ((!CS || !csImageMap || !anim) && previewImg && previewImg.complete && previewImg.naturalWidth > 0) {
+          _drawRemotePreviewSprite(sx, sy, previewImg, p.facing, p);
+          continue;
+        }
+        if (app.previewDataURL && !previewImg && !otherPlayerPreviewLoading.has(id)) {
+          otherPlayerPreviewLoading.add(id);
+          const pimg = new Image();
+          pimg.onload = () => { otherPlayerPreviewImages[id] = pimg; otherPlayerPreviewLoading.delete(id); };
+          pimg.onerror = () => { otherPlayerPreviewLoading.delete(id); };
+          pimg.src = app.previewDataURL;
+        }
+        if (CS && csImageMap && anim) {
+          try {
+            const remoteAccId = app.accessoryId || "ac_none";
+            const remoteAccImg = otherPlayerAccessoryImages[id] || null;
+            let injectedAcc = null;
+            if (remoteAccId !== "ac_none" && !remoteAccImg && app.accessoryDataURL && !otherPlayerAccessoryLoading.has(id)) {
+              otherPlayerAccessoryLoading.add(id);
+              const img = new Image();
+              img.onload = () => { otherPlayerAccessoryImages[id] = img; otherPlayerAccessoryLoading.delete(id); };
+              img.onerror = () => { otherPlayerAccessoryLoading.delete(id); };
+              img.src = app.accessoryDataURL;
+            }
+            if (remoteAccId !== "ac_none" && remoteAccImg) {
+              const ex = CS.ACCESSORIES_CATALOG.find((a) => a.id === remoteAccId);
+              if (!ex) {
+                injectedAcc = {
+                  id: remoteAccId, name: "Remoto", type: "other",
+                  slot: app.accessorySlot || "over_shirt", color: null,
+                  userImage: remoteAccImg, dataURL: app.accessoryDataURL || null,
+                  combatDataURL: app.accessoryCombatDataURL || null,
+                  isFreeCustomization: !!app.accessoryIsFreeCustomization,
+                };
+                CS.ACCESSORIES_CATALOG.push(injectedAcc);
+              } else if (!ex.userImage) {
+                ex.userImage = remoteAccImg;
+                if (!ex.dataURL && app.accessoryDataURL) ex.dataURL = app.accessoryDataURL;
+                if (app.accessoryIsFreeCustomization) ex.isFreeCustomization = true;
+                if (app.accessorySlot) ex.slot = app.accessorySlot;
+              }
+            }
+            const remoteVariantId = app.variantId || "base";
+            const remoteVariantCfg = app.variantCustomizations?.[remoteVariantId];
+            // Cargar sheets de variante (exploración, combate y especial)
+            ["spriteDataURL:spriteImage", "combatSpriteDataURL:combatSpriteImage", "specialSpriteDataURL:specialSpriteImage"].forEach(pair => {
+              const [urlKey, imgKey] = pair.split(":");
+              if (remoteVariantCfg?.[urlKey]) {
+                const suffix = urlKey.replace("SpriteDataURL","").replace("DataURL","");
+                const cacheKey = `${id}:${remoteVariantId}:${suffix || "explore"}`;
+                if (!otherPlayerVariantImages[cacheKey]) {
+                  const vimg = new Image();
+                  vimg.onload = () => { otherPlayerVariantImages[cacheKey] = vimg; };
+                  vimg.src = remoteVariantCfg[urlKey];
+                } else {
+                  remoteVariantCfg[imgKey] = otherPlayerVariantImages[cacheKey];
+                }
+              }
+            });
+            const remoteCombatCfg = app.combatCustomization;
+            if (remoteCombatCfg?.spriteDataURL) {
+              const cacheKey = `${id}:combat`;
+              if (!otherPlayerVariantImages[cacheKey]) {
+                const cimg = new Image();
+                cimg.onload = () => { otherPlayerVariantImages[cacheKey] = cimg; };
+                cimg.src = remoteCombatCfg.spriteDataURL;
+              } else { remoteCombatCfg.spriteImage = otherPlayerVariantImages[cacheKey]; }
+            }
+            const remApp = Object.assign({}, app, { accessoryId: remoteAccId });
+            const remCSPlayer = { appearance: remApp, direction: p.facing || 1 };
+            // Determinar spriteVariantId remoto
+            let remSpriteVariantId = null;
+            if (p.specialMode) remSpriteVariantId = "special";
+            else if (p.combatMode) remSpriteVariantId = "fight";
+            const remState = {
+              glovesId: remApp.glovesId, auraId: remApp.auraId, auraColor: remApp.auraColor,
+              accessoryId: remoteAccId, auraPhase: (now * 0.003) % (Math.PI * 2),
+              viewKey: null, spriteVariantId: remSpriteVariantId,
+            };
+            ctx.fillStyle = "rgba(0,0,0,0.3)";
+            ctx.beginPath();
+            ctx.ellipse(sx, sy + 3, 16, 5, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.save();
+            const remoteMobileScale = (window.matchMedia?.("(pointer:coarse)").matches && window.innerHeight < 520) ? 0.84 : 1;
+            ctx.translate(sx, sy);
+            ctx.scale((SPRITE_DRAW_W * remoteMobileScale) / CS.FRAME_W, (SPRITE_DRAW_H * remoteMobileScale) / CS.FRAME_H);
+            ctx.translate(-sx, -sy);
+            ctx.imageSmoothingEnabled = true;
+            CS.drawPlayer(ctx, sx, sy, remCSPlayer, csImageMap, anim, remState);
+            ctx.restore();
+            if (injectedAcc) { const idx = CS.ACCESSORIES_CATALOG.indexOf(injectedAcc); if (idx !== -1) CS.ACCESSORIES_CATALOG.splice(idx, 1); }
+            _drawRemotePlayerLabel(p, sx, sy);
+            continue;
+          } catch (e) { console.warn("[game] remote draw:", e); }
+        }
+        _drawRemotePlayerFallback(p, sx, sy);
+      }
+    }
+
+    function _drawRemotePlayerLabel(p,sx,sy){ctx.save();ctx.font="bold 9px Orbitron,monospace";ctx.textAlign="center";const nm=(p.name||"?")+(p.level?` Lv.${p.level}`:"");const nw=ctx.measureText(nm).width+10;ctx.fillStyle="rgba(8,9,15,0.8)";ctx.fillRect(sx-nw/2,sy-SPRITE_DRAW_H-18,nw,16);ctx.fillStyle=(p.appearance?.auraColor)||(p.charColor)||"#00e5ff";ctx.fillText(nm,sx,sy-SPRITE_DRAW_H-6);ctx.restore();}
+    function _drawRemotePlayerFallback(p,sx,sy){const color=(p.appearance?.auraColor)||p.charColor||"#00e5ff";const sk=p.appearance?.skinColor||"#e8c898";ctx.fillStyle="rgba(0,0,0,0.3)";ctx.beginPath();ctx.ellipse(sx,sy+3,16,5,0,0,Math.PI*2);ctx.fill();ctx.save();if((p.facing||1)===-1){ctx.translate(sx*2,0);ctx.scale(-1,1);}ctx.fillStyle=color;ctx.fillRect(sx-10,sy-36,20,22);ctx.fillStyle=sk;ctx.fillRect(sx-16,sy-36,7,16);ctx.fillRect(sx+9,sy-36,7,16);ctx.beginPath();ctx.arc(sx,sy-44,10,0,Math.PI*2);ctx.fill();ctx.restore();_drawRemotePlayerLabel(p,sx,sy);}
+
+    function addChatMsg(name,text,color){chatMessages.push({name,text,color:color||"#e8eaf6",time:performance.now()});if(chatMessages.length>CHAT_MAX)chatMessages.shift();renderChatMessages();}
+    function renderChatMessages(){const box=document.getElementById("mpChatBox");if(!box)return;box.innerHTML=chatMessages.map(m=>`<div><span style="color:${m.color};font-weight:700">${m.name}:</span> ${m.text}</div>`).join("");box.scrollTop=box.scrollHeight;}
+    function sendChatMsg(){const inp=document.getElementById("mpChatInput");if(!inp)return;const text=inp.value.trim();if(!text)return;inp.value="";addChatMsg("Tú",text,"#f5c400");if(!mpConnected)return;const ref=db.ref("chat").push();ref.set({id:myPlayerId,name:player.name,text,t:Date.now()});}
+    window.sendChatMsg=sendChatMsg;
+    function updateMpHud(){const el=document.getElementById("mpPlayerCount");if(!el)return;const count=Object.keys(otherPlayers).length+1;el.textContent=mpConnected?`${count} online`:"Offline";el.style.color=mpConnected?"#f5c400":"#ff1744";}
+    function toggleMpChat(){const panel=document.getElementById("mpHudPanel");if(!panel)return;panel.classList.toggle("chat-open");}
+    window.toggleMpChat=toggleMpChat;
+    function buildMpHud(){
+      const hud=document.getElementById("hud");
+      if(!hud||document.getElementById("mpHudPanel"))return;
+      const style=document.createElement("style");
+      style.textContent=`#mpHudPanel{position:absolute;top:12px;left:260px;width:150px;background:rgba(8,9,15,.88);border:1px solid #2a3560;border-radius:8px;backdrop-filter:blur(8px);z-index:11;pointer-events:auto;overflow:hidden}#mpHudHead{height:34px;display:flex;align-items:center;gap:7px;padding:0 8px;font-family:'Orbitron',monospace;font-size:8px;letter-spacing:1.5px;color:#00e5ff;cursor:pointer}#mpPlayerCount{margin-left:auto;font-size:8px;color:#f5c400;letter-spacing:1px;white-space:nowrap}#mpChatBody{display:none;padding:0 8px 8px}#mpHudPanel.chat-open #mpChatBody{display:block}#mpChatBox{height:44px;overflow-y:auto;font-size:10px;color:#c8cfe8;line-height:1.25;margin-bottom:5px;scrollbar-width:none}#mpChatInput{flex:1;min-width:0;background:#12172e;border:1px solid #2a3560;border-radius:4px;padding:3px 6px;color:#e8eaf6;font-size:10px;outline:none;font-family:'Rajdhani',sans-serif;pointer-events:auto}#mpChatSend{background:rgba(0,229,255,.15);border:1px solid #00e5ff;border-radius:4px;color:#00e5ff;font-size:9px;padding:3px 7px;cursor:pointer;font-family:'Orbitron',monospace;pointer-events:auto}@media (pointer:coarse),(max-width:768px){#mpHudPanel{top:12px;left:clamp(252px,34vw,calc(100vw - 260px));width:132px}#mpHudPanel.chat-open{width:min(200px,calc(100vw - 360px))}#mpChatBox{height:38px;font-size:9px}#mpHudHead{height:30px;font-size:7px;padding:0 7px}}@media (max-width:560px){#mpHudPanel{left:64px;top:96px;width:126px}#mpHudPanel.chat-open{width:min(188px,calc(100vw - 184px))}}`;
+      document.head.appendChild(style);
+      const panel=document.createElement("div");
+      panel.id="mpHudPanel";
+      panel.innerHTML=`<div id="mpHudHead" onclick="toggleMpChat()"><span>CHAT</span><span id="mpPlayerCount">...</span><span>▾</span></div><div id="mpChatBody"><div id="mpChatBox"></div><div style="display:flex;gap:4px;"><input id="mpChatInput" type="text" maxlength="60" placeholder="Mensaje..." onkeydown="if(event.key==='Enter')sendChatMsg()"/><button id="mpChatSend" onclick="sendChatMsg()">➤</button></div></div>`;
+      hud.appendChild(panel);
+    }
+
+    const TILE=48, CAM_LERP=0.12, SPRITE_DRAW_W=56, SPRITE_DRAW_H=82;
+
+    // ══ MAP DEFINITIONS ══
+    const MAPS = {
+      lobby:  { w:80, h:60, name:"BASE LOBBY",     bgColor:"#0a1020" },
+      earth:  { w:120, h:80, name:"PLANETA TIERRA", bgColor:"#0a1510" },
+      sky:    { w:120, h:80, name:"MAPA DEL CIELO", bgColor:"#87CEEB", alwaysFly:true },
+      space:  { w:120, h:80, name:"ESPACIO",        bgColor:"#08090f" },
+    };
+
+    const MAP_STARTS = {
+      lobby: { x:40, y:30 },
+      earth: { x:60, y:40 },
+      sky:   { x:60, y:40 },
+      space: { x:60, y:40 },
+    };
+
+    const PORTAL_DESTINATIONS = {
+      lobby: [
+        { map:"earth", label:"🌍 TIERRA", cls:"portal-btn-earth" },
+        { map:"space", label:"🌌 ESPACIO", cls:"portal-btn-space" },
+      ],
+      earth: [
+        { map:"sky", label:"☁️ CIELO", cls:"portal-btn-sky" },
+      ],
+      sky: [
+        { map:"earth", label:"🌍 TIERRA", cls:"portal-btn-earth" },
+      ],
+    };
+
+    let currentMap = "lobby";
+    const worldMaps = {};
+
+    function generateLobbyMap() {
+      const { w, h } = MAPS.lobby;
+      const map = [];
+      for (let y=0;y<h;y++){map[y]=[];for(let x=0;x<w;x++)map[y][x]=0;}
+      for (let y=22;y<38;y++) for (let x=28;x<52;x++) map[y][x]=2;
+      for (let y=28;y<32;y++) for (let x=37;x<43;x++) map[y][x]=1;
+      for (let y=14;y<22;y++) for (let x=32;x<48;x++) map[y][x]=5;
+      for (let y=24;y<36;y++) for (let x=14;x<22;x++) map[y][x]=5;
+      for (let y=24;y<36;y++) for (let x=58;x<66;x++) map[y][x]=5;
+      for (let y=38;y<42;y++) for (let x=37;x<43;x++) map[y][x]=3;
+      for (let y=44;y<54;y++) for (let x=20;x<60;x++) map[y][x]=6;
+      for (let y=0;y<h;y++) map[y][40]=2;
+      for (let x=0;x<w;x++) map[30][x]=2;
+      for (let i=0;i<20;i++){const tx=Math.floor(Math.random()*w),ty=Math.floor(Math.random()*h);if(map[ty][tx]===0)map[ty][tx]=7;}
+      return map;
+    }
+
+    function generateEarthMap() {
+      const { w, h } = MAPS.earth;
+      const map = [];
+      for (let y=0;y<h;y++){map[y]=[];for(let x=0;x<w;x++)map[y][x]=0;}
+      for (let y=0;y<h;y++) for (let x=0;x<20;x++) map[y][x]=1;
+      for (let y=25;y<55;y++) for (let x=30;x<70;x++) map[y][x]=2;
+      for (let y=10;y<40;y++) for (let x=80;x<100;x++) if(Math.sin(x*.3)*Math.cos(y*.4)>.1) map[y][x]=7;
+      for (let y=50;y<h;y++) for (let x=70;x<w;x++) map[y][x]=8;
+      for (let y=35;y<45;y++) for (let x=20;x<30;x++) map[y][x]=1;
+      for (let y=5;y<20;y++) for (let x=25;x<60;x++) if(Math.sin(x*.4)*Math.cos(y*.5)>.2) map[y][x]=9;
+      for (let y=0;y<h;y++) map[y][40]=2;
+      for (let x=20;x<w;x++) map[40][x]=2;
+      for (let y=8;y<12;y++) for (let x=54;x<58;x++) map[y][x]=3;
+      return map;
+    }
+
+    function generateSkyMap() {
+      const { w, h } = MAPS.sky;
+      const map = [];
+      for (let y=0;y<h;y++){map[y]=[];for(let x=0;x<w;x++)map[y][x]=14;}
+      for (let i=0;i<45;i++){const tx=Math.floor(Math.random()*w),ty=Math.floor(Math.random()*h);if(map[ty][tx]===14)map[ty][tx]=15;}
+      for (let y=55;y<62;y++) for (let x=52;x<68;x++) map[y][x]=2;
+      for (let y=72;y<76;y++) for (let x=58;x<62;x++) map[y][x]=3;
+      return map;
+    }
+
+    function generateSpaceMap() {
+      const { w, h } = MAPS.space;
+      const map = [];
+      for (let y=0;y<h;y++){map[y]=[];for(let x=0;x<w;x++)map[y][x]=10;}
+      for (let y=15;y<30;y++) for (let x=20;x<45;x++) map[y][x]=11;
+      for (let y=35;y<55;y++) for (let x=55;x<80;x++) { const cx=67,cy=45,r=12; if(Math.hypot(x-cx,y-cy)<r) map[y][x]=12; }
+      for (let y=10;y<25;y++) for (let x=75;x<100;x++) map[y][x]=11;
+      [[15,55,8],[40,20,7],[60,70,6],[90,50,9],[100,30,8]].forEach(([cx,cy,r])=>{
+        for(let y=cy-r;y<cy+r;y++) for(let x=cx-r;x<cx+r;x++) if(y>=0&&y<h&&x>=0&&x<w&&Math.hypot(x-cx,y-cy)<r) map[y][x]=13;
+      });
+      return map;
+    }
+
+    const TILE_COLORS = {
+      0:"#2d5a27",1:"#1565c0",2:"#5a5a6e",3:"#8b1fff",4:"#c9a84c",5:"#08090f",
+      6:"#3a3040",7:"#1a3a18",8:"#c9a84c",9:"#616161",10:"#04080f",11:"#2a2a3a",12:"#3a1a0a",13:"#1a1a3a",
+      14:"#87CEEB",15:"#b8e4f8",
+    };
+
+    function isWalkable(tx, ty, mapKey) {
+      const key = mapKey || currentMap;
+      const map = worldMaps[key];
+      if (!map) return false;
+      const mapDef = MAPS[key];
+      if (tx<0||ty<0||tx>=mapDef.w||ty>=mapDef.h) return false;
+      if (mapDef.alwaysFly) return true;
+      const t = map[ty]?.[tx];
+      return t !== 5 && t !== 11;
+    }
+
+    function loadCharacterData(){let slot=0;try{const qs=new URLSearchParams(window.location.search);const rs=qs.get("slot");if(rs!=null)slot=parseInt(rs,10);else{const ra=localStorage.getItem("dragonCreatorZ_activeSlot");if(ra!=null)slot=parseInt(ra,10);}}catch(e){}if(!Number.isFinite(slot))slot=0;slot=Math.max(0,Math.min(10,slot));try{const raw=localStorage.getItem("dragonCreatorZ_slots");if(raw){const slots=JSON.parse(raw);const d=Array.isArray(slots)?slots[slot]:null;if(d&&d.name)return d;if(Array.isArray(slots)){const any=slots.find(s=>s&&s.name);if(any)return any;}}}catch(e){}return null;}
+
+    const RACE_BASE_STATS={saiyan:{health:80,ki:90,strength:95,defense:70,speed:85},human:{health:85,ki:75,strength:80,defense:80,speed:80},namekian:{health:90,ki:85,strength:85,defense:90,speed:70},android:{health:95,ki:100,strength:90,defense:95,speed:75},kaioshin:{health:70,ki:100,strength:75,defense:80,speed:90},frieza:{health:85,ki:95,strength:88,defense:85,speed:95}};
+    const BASE_RACE_COLORS={saiyan:"#f5c400",human:"#00e5ff",namekian:"#00ff9d",android:"#00e5ff",kaioshin:"#9c88ff",frieza:"#e040fb"};
+    const savedChar = loadCharacterData();
+    const raceId = savedChar?.race || "human";
+    const raceStats = RACE_BASE_STATS[raceId] || RACE_BASE_STATS.human;
+    const auraColor = savedChar?.auraColor || "#fdd835";
+    const charColor = BASE_RACE_COLORS[raceId] || "#f5c400";
+
+    const player = {
+      name:savedChar?.name||"Guerrero Z", race:raceId, auraColor, charColor,
+      x:40*TILE, y:30*TILE, w:28, h:44, vx:0, vy:0,
+      speed:2.2+(raceStats.speed/100)*1.8,
+      facing:1, moving:false,
+      level:savedChar?.level||1, xp:0, xpToNext:100,
+      maxHp:Math.floor(raceStats.health*10*Math.pow(1.15,(savedChar?.level||1)-1)),
+      maxKi:Math.floor(raceStats.ki*8*Math.pow(1.12,(savedChar?.level||1)-1)),
+      hp:0, ki:0, strength:raceStats.strength, defense:raceStats.defense,
+      auraPhase:0, animFrame:0, animTimer:0,
+    };
+    player.hp = player.maxHp; player.ki = player.maxKi;
+
+    const cam = { x:0, y:0, tx:0, ty:0 };
+    const keys = {};
+    const joystick = { active:false, dx:0, dy:0, startX:0, startY:0 };
+    let csImageMap = null, csAnimator = null;
+    let controlMode = "rp";
+    let isCombatMode = false;
+    let isFlying = false;
+    let rpActionUntil = 0;
+
+    function runActionSlot(slot) {
+      if (controlMode === "pvp" && window.PvpSystem?.isFighter()) {
+        const actions = ["light", "heavy", "special", "block", "dash", "jump"];
+        const act = actions[slot];
+        if (act) window.performPvpAction(act);
+        return;
+      }
+      if (controlMode === "combat") {
+        const actions = ["combo1", "combo2", "special1", "special2", "fly", "vanish"];
+        performCombatAction(actions[slot] || "combo1");
+        return;
+      }
+      const action = RP_ACTIONS[slot];
+      if (action) performRpAction(action.id);
+    }
+
+    window.addEventListener("keydown", (e) => {
+      const active = document.activeElement;
+      if (active && (active.tagName==="INPUT"||active.tagName==="TEXTAREA")) return;
+      keys[e.code] = true;
+      if (e.code==="KeyZ") { e.preventDefault(); runActionSlot(0); }
+      if (e.code==="KeyQ") { e.preventDefault(); runActionSlot(1); }
+      if (e.code==="KeyE") { e.preventDefault(); runActionSlot(2); }
+      if (e.code==="KeyR") { e.preventDefault(); runActionSlot(3); }
+      if (e.code==="KeyF") { e.preventDefault(); runActionSlot(4); }
+      if (e.code==="KeyC") { e.preventDefault(); runActionSlot(5); }
+      if (e.code==="KeyV") { e.preventDefault(); runActionSlot(6); }
+      if (e.code==="KeyB") { e.preventDefault(); runActionSlot(7); }
+      if (e.code==="KeyX") {
+        e.preventDefault();
+        if (window.PvpSystem?.isFighter()) return;
+        setControlMode("combat");
+      }
+      if (e.code==="KeyP") { e.preventDefault(); window.PvpSystem?.togglePartyPanel(); }
+      if (e.code==="KeyI") { e.preventDefault(); openInventoryPanel(); }
+      if (e.code==="Escape") { closeInventoryPanel(); if (window.PvpSystem?.isFighter()) window.requestMutualEnd?.(); }
+      if (e.code==="ShiftLeft"||e.code==="ShiftRight") setRunState(true);
+    });
+    window.addEventListener("keyup", (e) => {
+      const active = document.activeElement;
+      if (active && (active.tagName==="INPUT"||active.tagName==="TEXTAREA")) return;
+      keys[e.code] = false;
+      if (e.code==="KeyR" && controlMode === "pvp") window.releasePvpBlock?.();
+      if (e.code==="ShiftLeft"||e.code==="ShiftRight") setRunState(false);
+    });
+
+    const jw = document.getElementById("joystickWrap"), jk = document.getElementById("joystickKnob");
+    jw.addEventListener("touchstart", (e) => { e.preventDefault(); const r=jw.getBoundingClientRect(); joystick.active=true; joystick.startX=r.left+r.width/2; joystick.startY=r.top+r.height/2; }, {passive:false});
+    window.addEventListener("touchmove", (e) => { e.preventDefault(); if(!joystick.active)return; const t=e.touches[0]; const dx=t.clientX-joystick.startX,dy=t.clientY-joystick.startY; const maxR=40,dist=Math.sqrt(dx*dx+dy*dy); const nx=dist>maxR?(dx/dist)*maxR:dx,ny=dist>maxR?(dy/dist)*maxR:dy; joystick.dx=nx/maxR; joystick.dy=ny/maxR; jk.style.transform=`translate(${nx}px,${ny}px)`; }, {passive:false});
+    window.addEventListener("touchend", () => { if(!joystick.active)return; joystick.active=false; joystick.dx=0; joystick.dy=0; jk.style.transform="translate(0,0)"; });
+
+    // ══ NPCs ══
+    const NPC_DEFS = {
+      lobby: [
+        { id:"director",name:"DIRECTOR Z",x:40*TILE,y:20*TILE,color:"#f5c400",dialogs:[{text:"¡Bienvenido a la Base! Este es el punto de encuentro de todos los guerreros. Aquí planifican sus aventuras antes de viajar.",opts:[{label:"¿A dónde puedo viajar?",next:1},{label:"¡Gracias!",next:-1}]},{text:"Tenés dos destinos: la Tierra, con sus ciudades y zonas emblemáticas, y el Espacio, con naves y planetas. Usá el portal al sur.",opts:[{label:"Entendido.",next:-1}]}]},
+        { id:"mecanico",name:"MECÁNICO",x:18*TILE,y:30*TILE,color:"#9e9e9e",dialogs:[{text:"Eh, ¿tu casa rodante está bien? Las trailers son el espacio personal de cada guerrero. Podés decorarla e invitar gente.",opts:[{label:"¿Cómo la invoco?",next:1},{label:"Ok.",next:-1}]},{text:"Presioná Q (o el botón TRAILER) para invocarla. Va a aparecer en el mapa. ¡Nadie puede entrar sin que vos los invites!",opts:[{label:"Genial.",next:-1}]}]},
+        { id:"portero",name:"GUARDIÁN DEL PORTAL",x:40*TILE,y:40*TILE,color:"#8b1fff",dialogs:[{text:"Este portal conecta con los otros mundos. Tierra y Espacio. ¿Listo para partir?",opts:[{label:"Ir a la Tierra",next:-2},{label:"Ir al Espacio",next:-3},{label:"No, quedo acá.",next:-1}]}]},
+      ],
+      earth: [
+        { id:"bulma",name:"BULMA",x:45*TILE,y:38*TILE,color:"#2979ff",dialogs:[{text:"¡Estás en Ciudad Oeste! Capsule Corp está aquí cerca.",opts:[{label:"¿Qué hay en el bosque?",next:1},{label:"Gracias.",next:-1}]},{text:"En el bosque encontrarás la Kame-House si cruzás el océano.",opts:[{label:"Entendido.",next:-1}]}]},
+        { id:"krillin",name:"KRILLIN",x:38*TILE,y:42*TILE,color:"#ff9800",dialogs:[{text:"¡Oe! Este es el planeta Tierra. Zona de roleplay libre.",opts:[{label:"¡Perfecto!",next:-1}]}]},
+      ],
+      space: [
+        { id:"ginyu",name:"CAP. GINYU",x:32*TILE,y:22*TILE,color:"#e040fb",dialogs:[{text:"Bienvenido a la nave de Frieza... El Planeta Central está al sureste.",opts:[{label:"¿Qué es el Planeta Central?",next:1},{label:"Gracias.",next:-1}]},{text:"Es la sede de la Patrulla Intergaláctica.",opts:[{label:"Interesante.",next:-1}]}]},
+        { id:"jaco",name:"JACO",x:82*TILE,y:17*TILE,color:"#00e5ff",dialogs:[{text:"¡Alto! Esta es la base de la Patrulla Intergaláctica.",opts:[{label:"¿Cómo los reclamo?",next:1},{label:"Ok.",next:-1}]},{text:"En el roleplay, simplemente declarás tu planeta.",opts:[{label:"Perfecto.",next:-1}]}]},
+      ],
+      sky: [
+        { id:"cloud_sage",name:"SABIO DE LAS NUBES",x:60*TILE,y:58*TILE,color:"#81d4fa",dialogs:[{text:"Bienvenido al Mapa del Cielo. Aquí todos vuelan por defecto. El portal al sur te lleva de vuelta a la Tierra.",opts:[{label:"¡Entendido!",next:-1}]}]},
+      ],
+    };
+
+    let npcs = NPC_DEFS.lobby;
+    let activeNpc = null, dialogPage = 0;
+    let particles = [], combatEffects = [];
+
+    // ══ TRAILERS ══
+    const trailers = {};
+    let myTrailerSpawned = false;
+    let inTrailer = false;
+    let trailerOwner = null;
+    const TRAILER_W = 6*TILE, TRAILER_H = 4*TILE;
+    const trailerPanelTarget = { id:null, owner:null };
+
+    function spawnMyTrailer() {
+      if (!myPlayerId) return;
+      const tx = Math.floor(player.x/TILE), ty = Math.floor(player.y/TILE)+4;
+      const snapX = Math.max(5,Math.min(tx, (MAPS[currentMap].w||80)-8));
+      const snapY = Math.max(5,Math.min(ty, (MAPS[currentMap].h||60)-6));
+      trailers[myPlayerId] = {
+        x: snapX*TILE, y: snapY*TILE,
+        ownerId: myPlayerId, ownerName: player.name,
+        map: currentMap, invited: new Set(),
+      };
+      myTrailerSpawned = true;
+      showHudToast("🚐 Casa rodante invocada","xp");
+      if (mpConnected) {
+        db.ref("trailers/" + myPlayerId).set({ x:snapX*TILE, y:snapY*TILE, ownerName:player.name, map:currentMap, t:Date.now() });
+        db.ref("trailers/" + myPlayerId).onDisconnect().remove();
+      }
+    }
+
+    function openMyTrailer() {
+      if (!myTrailerSpawned) { spawnMyTrailer(); return; }
+      trailerPanelTarget.id = myPlayerId;
+      trailerPanelTarget.owner = player.name;
+      document.getElementById("trailerPanelInfo").textContent = "Tu espacio privado";
+      document.getElementById("trailerEnterBtn").textContent = "🚪 ENTRAR";
+      document.getElementById("trailerInviteBtn").style.display = "inline-flex";
+      document.getElementById("trailerPanel").classList.add("visible");
+      gameState = "menu";
+    }
+    window.openMyTrailer = openMyTrailer;
+
+    function enterTrailerFromPanel() {
+      document.getElementById("trailerPanel").classList.remove("visible");
+      const tid = trailerPanelTarget.id; if (!tid) return;
+      enterTrailer(tid);
+    }
+    window.enterTrailerFromPanel = enterTrailerFromPanel;
+
+    function enterTrailer(ownerId) {
+      inTrailer = true; trailerOwner = ownerId;
+      document.getElementById("trailerInterior").classList.add("visible");
+      document.getElementById("trailerOwnerLabel").textContent = ownerId === myPlayerId ? "🏠 TU CASA RODANTE" : `🏠 CASA DE ${trailers[ownerId]?.ownerName||"?"}`;
+      resizeCanvas(); gameState = "trailer";
+      showHudToast("🚐 Dentro de la casa rodante","info");
+    }
+
+    function exitTrailer() {
+      inTrailer = false; trailerOwner = null;
+      document.getElementById("trailerInterior").classList.remove("visible");
+      gameState = "playing";
+    }
+    window.exitTrailer = exitTrailer;
+
+    function inviteToTrailer() {
+      if (!myPlayerId || !trailers[myPlayerId]) return;
+      const msg = `💌 ${player.name} te invita a su casa rodante.`;
+      if (mpConnected) {
+        db.ref("chat").push().set({id:myPlayerId,name:"SISTEMA",text:msg,t:Date.now()});
+        db.ref("trailerInvites/" + myPlayerId).set({ ownerName:player.name, t:Date.now() });
+      }
+      showHudToast("📨 Invitación enviada","info");
+      document.getElementById("trailerPanel").classList.remove("visible");
+      gameState = "playing";
+    }
+    window.inviteToTrailer = inviteToTrailer;
+
+    function closeTrailerPanel() {
+      document.getElementById("trailerPanel").classList.remove("visible");
+      gameState = "playing";
+    }
+    window.closeTrailerPanel = closeTrailerPanel;
+
+    function sendTrailerChat() {
+      const inp = document.getElementById("trailerChatInput"); if (!inp) return;
+      const text = inp.value.trim(); if (!text) return; inp.value = "";
+      if (!mpConnected) return;
+      const prefix = trailerOwner===myPlayerId ? "[TRAILER]" : `[TRAILER DE ${trailers[trailerOwner]?.ownerName||"?"}]`;
+      db.ref("chat").push().set({id:myPlayerId,name:player.name,text:`${prefix} ${text}`,t:Date.now()});
+    }
+    window.sendTrailerChat = sendTrailerChat;
+
+    function drawTrailerInterior() {
+      const w = trailerCanvas.width || window.innerWidth;
+      const h = trailerCanvas.height || window.innerHeight - 60;
+      tCtx.fillStyle = "#1a0f2e"; tCtx.fillRect(0, 0, w, h);
+      tCtx.fillStyle = "#2a1a40";
+      for (let y=0;y<h;y+=48) for (let x=0;x<w;x+=48) { if(((x/48+y/48)%2)===0){tCtx.fillStyle="#2a1a40";}else{tCtx.fillStyle="#231535";}tCtx.fillRect(x,y,48,48); }
+      tCtx.fillStyle = "#3a2a55";
+      tCtx.fillRect(0,0,w,80); tCtx.fillRect(0,h-80,w,80); tCtx.fillRect(0,0,80,h); tCtx.fillRect(w-80,0,80,h);
+      tCtx.fillStyle = "#0a2040"; tCtx.fillRect(120,20,140,50);
+      tCtx.strokeStyle = "#3a6090"; tCtx.lineWidth = 4; tCtx.strokeRect(120,20,140,50);
+      tCtx.fillStyle = "#ffffff";
+      for (let i=0;i<20;i++) { const sx=120+Math.sin(i*1.7)*50+70, sy=20+Math.sin(i*2.3)*15+25; tCtx.beginPath(); tCtx.arc(sx,sy,1,0,Math.PI*2); tCtx.fill(); }
+      tCtx.fillStyle = "#5d3a1a"; tCtx.fillRect(w/2-80,h/2-20,160,40);
+      tCtx.fillStyle = "#6d4a2a"; tCtx.fillRect(w/2-80,h/2-30,160,10);
+      for (const ox of [-50,50]) { tCtx.fillStyle = "#4a2a0a"; tCtx.fillRect(w/2+ox-15,h/2+18,30,30); }
+      tCtx.fillStyle = "rgba(245,196,0,0.8)"; tCtx.font = "bold 14px Orbitron,monospace"; tCtx.textAlign = "center";
+      tCtx.fillText(trailerOwner===myPlayerId ? "TU CASA RODANTE" : `CASA DE ${trailers[trailerOwner]?.ownerName||"?"}`, w/2, h-100);
+      tCtx.textAlign = "left";
+    }
+
+    function interactNearby() {
+      if (activeNpc) { closeDialog(); return; }
+      const ptx = Math.floor(player.x/TILE), pty = Math.floor(player.y/TILE);
+      const tile = worldMaps[currentMap]?.[pty]?.[ptx];
+      if (tile === 3) { openPortalPanel(); return; }
+      for (const [tid, tr] of Object.entries(trailers)) {
+        if (tid === myPlayerId) continue;
+        if (Math.hypot(tr.x - player.x, tr.y - player.y) < 80 && tr.map === currentMap) {
+          trailerPanelTarget.id = tid; trailerPanelTarget.owner = tr.ownerName;
+          document.getElementById("trailerPanelInfo").textContent = `Casa de ${tr.ownerName}`;
+          document.getElementById("trailerEnterBtn").textContent = "🚪 ENTRAR";
+          document.getElementById("trailerInviteBtn").style.display = "none";
+          document.getElementById("trailerPanel").classList.add("visible");
+          gameState = "menu"; return;
+        }
+      }
+      if (myTrailerSpawned && trailers[myPlayerId] && trailers[myPlayerId].map === currentMap) {
+        if (Math.hypot(trailers[myPlayerId].x - player.x, trailers[myPlayerId].y - player.y) < 80) {
+          openMyTrailer(); return;
+        }
+      }
+      const npc = npcs.find(n => Math.hypot(n.x-player.x, n.y-player.y) < 65);
+      if (npc) openDialog(npc);
+    }
+    window.interactNearby = interactNearby;
+
+    function openPortalPanel() {
+      const container = document.getElementById("portalBtns");
+      if (container) {
+        container.innerHTML = "";
+        const destinations = PORTAL_DESTINATIONS[currentMap] || [];
+        destinations.forEach(d => {
+          const btn = document.createElement("button");
+          btn.className = `portal-btn ${d.cls || ""}`;
+          btn.textContent = d.label;
+          btn.onclick = () => travelTo(d.map);
+          container.appendChild(btn);
+        });
+        const closeBtn = document.createElement("button");
+        closeBtn.className = "portal-btn";
+        closeBtn.style.cssText = "background:rgba(245,196,0,.1);border-color:var(--accent);color:var(--accent)";
+        closeBtn.textContent = "✕ CERRAR";
+        closeBtn.onclick = () => { document.getElementById("portalPanel").classList.remove("visible"); gameState = "playing"; };
+        container.appendChild(closeBtn);
+      }
+      document.getElementById("portalPanel").classList.add("visible");
+      gameState = "menu";
+    }
+
+    function openDialog(npc) { activeNpc = npc; dialogPage = 0; gameState = "dialog"; showDialogPage(npc, 0); }
+
+    function showDialogPage(npc, page) {
+      const d = npc.dialogs[page];
+      document.getElementById("dialogBox").classList.add("visible");
+      document.getElementById("dialogName").textContent = npc.name;
+      document.getElementById("dialogText").textContent = d.text;
+      const opts = document.getElementById("dialogOpts");
+      opts.innerHTML = "";
+      d.opts.forEach(o => {
+        const btn = document.createElement("div");
+        btn.className = "dialog-opt"; btn.textContent = o.label;
+        btn.onclick = () => {
+          if (o.next === -1) closeDialog();
+          else if (o.next === -2) { closeDialog(); travelTo("earth"); }
+          else if (o.next === -3) { closeDialog(); travelTo("space"); }
+          else showDialogPage(npc, o.next);
+        };
+        opts.appendChild(btn);
+      });
+    }
+
+    function closeDialog() {
+      activeNpc = null; gameState = "playing";
+      document.getElementById("dialogBox").classList.remove("visible");
+    }
+
+    // ══ performRpAction — actualizado para 3 sheets ══
+    function performRpAction(actionId) {
+      const action = RP_ACTIONS.find(a => a.id === actionId) || RP_ACTIONS[0];
+      const hold = action.hold || 900;
+      rpActionUntil = performance.now() + hold;
+
+      if (csAnimator) {
+        const sheet = action.sheet || "base";
+        // Configurar el modo del animador según el sheet de la acción
+        if (sheet === "special") {
+          csAnimator.setSpecialMode && csAnimator.setSpecialMode(true);
+          csAnimator.play(action.anim || "sit", () => {
+            csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
+            csAnimator.play(isFlying ? "fly" : "idle");
+          });
+        } else if (sheet === "combat") {
+          // Acciones RP en sheet de combate (si las hubiera)
+          csAnimator.setBattleMode && csAnimator.setBattleMode(true);
+          csAnimator.play(action.anim || "combat_idle", () => {
+            if (!isCombatMode) {
+              csAnimator.setBattleMode && csAnimator.setBattleMode(false);
+              csAnimator.play(isFlying ? "fly" : "idle");
+            }
+          });
+        } else {
+          // Sheet base — asegurar que no esté en modo special
+          if (csAnimator.specialMode) csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
+          if (!isCombatMode && csAnimator.battleMode) csAnimator.setBattleMode && csAnimator.setBattleMode(false);
+          const anim = action.anim || "idle";
+          if (anim === "attack_1" || anim === "attack_2" || anim === "jump") {
+            csAnimator.play(anim, () => csAnimator.play(isFlying ? "fly" : "idle"));
+          } else {
+            csAnimator.play(anim || "idle");
+            setTimeout(() => {
+              if (performance.now() >= rpActionUntil && csAnimator && !player.moving) {
+                csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
+                csAnimator.play(isFlying ? "fly" : "idle");
+              }
+            }, hold);
+          }
+        }
+      }
+
+      const fx = player.x + player.facing * 18;
+      combatEffects.push({ x: fx, y: player.y - 52, text: action.icon, timer: 1.4, color: action.color || "#f5c400" });
+      if (action.objectIcon) {
+        combatEffects.push({ x: player.x + player.facing * 28, y: player.y - 30, text: action.objectIcon, timer: 1.2, color: "#ffffff" });
+      }
+      showHudToast(`${action.icon} ${action.title}`, "info");
+      if (mpConnected && myPlayerId) {
+        db.ref("players/" + myPlayerId).update({
+          animAction: action.anim || "idle",
+          specialMode: (action.sheet === "special"),
+          t: Date.now()
+        });
+        db.ref("emotes/" + myPlayerId).set({ type:action.id, icon:action.icon, name:player.name, x:player.x, y:player.y, t:Date.now() });
+      }
+    }
+    window.performRpAction = performRpAction;
+
+    function sendEmote(type) {
+      const map = { wave:"wave", bow:"sit", laugh:"emote", power:"warmup" };
+      performRpAction(map[type] || type || "emote");
+    }
+    window.sendEmote = sendEmote;
+
+    function performCombatAction(action) {
+      if (window.PvpSystem?.isFighter()) return;
+      if (controlMode !== "combat" && controlMode !== "pvp" && action !== "fly") setControlMode("combat");
+      const labels = { combo1:"COMBO 1", combo2:"COMBO 2", special1:"ESPECIAL 1", special2:"ESPECIAL 2", fly:"VOLAR", vanish:"Z-VANISH" };
+      if (action === "fly") {
+        if (MAPS[currentMap]?.alwaysFly) {
+          isFlying = true;
+          if (csAnimator) { csAnimator.setSpecialMode && csAnimator.setSpecialMode(false); csAnimator.play("fly"); }
+          showHudToast("En el cielo siempre volás", "info"); return;
+        }
+        isFlying = !isFlying;
+        if (csAnimator) {
+          csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
+          csAnimator.play(isFlying ? (csAnimator.battleMode ? "knockback_fly" : "fly") : (csAnimator.battleMode ? "combat_idle" : "idle"));
+        }
+        showHudToast(isFlying ? "Vuelo activado" : "Vuelo desactivado", "info");
+        renderActionBars(); publishMyAppearance(true); return;
+      }
+      if (action === "vanish") {
+        const dist = 84;
+        player.x += player.facing * dist;
+        combatEffects.push({ x: player.x - player.facing * 30, y: player.y - 35, text: "Z-VANISH", timer: 0.9, color: "#00e5ff" });
+        showHudToast("Z-Vanish", "info");
+        if (csAnimator) { csAnimator.setSpecialMode && csAnimator.setSpecialMode(false); csAnimator.play("dash", combatEndAnim); }
+        return;
+      }
+      const combatAnims = { combo1:"light_combo", combo2:"heavy_combo", special1:"special", special2:"special" };
+      const anim = combatAnims[action] || (action === "combo2" || action === "special2" ? "heavy_combo" : "light_combo");
+      const color = action.startsWith("special") ? "#00e5ff" : "#f5c400";
+      combatEffects.push({ x: player.x + player.facing * 24, y: player.y - 44, text: labels[action] || "ATAQUE", timer: 0.9, color });
+      if (csAnimator) { csAnimator.setSpecialMode && csAnimator.setSpecialMode(false); csAnimator.play(anim, combatEndAnim); }
+      showHudToast(labels[action] || "Ataque", action.startsWith("special") ? "info" : "xp");
+    }
+    window.performCombatAction = performCombatAction;
+
+    function applyMapFlightMode(prevMap) {
+      if (MAPS[currentMap]?.alwaysFly) {
+        isFlying = true;
+        if (csAnimator) {
+          csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
+          csAnimator.play("fly");
+        }
+      } else if (prevMap && MAPS[prevMap]?.alwaysFly) {
+        isFlying = false;
+        if (csAnimator && !player.moving) {
+          csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
+          csAnimator.play("idle");
+        }
+      }
+    }
+
+    function travelTo(mapKey) {
+      if (!MAPS[mapKey]) return;
+      const prevMap = currentMap;
+      document.getElementById("portalPanel").classList.remove("visible");
+      gameState = "loading_map";
+      const loadScreen = document.getElementById("screenLoading");
+      loadScreen.style.display = "flex";
+      document.getElementById("loadLabel").textContent = `VIAJANDO A ${MAPS[mapKey].name}...`;
+      document.getElementById("loadBar").style.width = "0%";
+      setTimeout(() => {
+        currentMap = mapKey;
+        npcs = NPC_DEFS[mapKey] || [];
+        activeNpc = null;
+        document.getElementById("dialogBox").classList.remove("visible");
+        const start = MAP_STARTS[mapKey];
+        player.x = start.x * TILE; player.y = start.y * TILE;
+        document.getElementById("regionLabel").textContent = MAPS[mapKey].name;
+        document.getElementById("minimapLabel").textContent = mapKey.toUpperCase();
+        applyMapFlightMode(prevMap);
+        document.getElementById("loadBar").style.width = "100%";
+        if (mpConnected && myPlayerId) {
+          db.ref("players/" + myPlayerId).update({ map:currentMap, x:Math.floor(player.x), y:Math.floor(player.y), flying:isFlying });
+        }
+        setTimeout(() => {
+          loadScreen.style.display = "none";
+          gameState = "playing";
+          const toastIcon = mapKey === "sky" ? "☁️" : mapKey === "space" ? "🌌" : "🌍";
+          showHudToast(`${toastIcon} ${MAPS[mapKey].name}`, "info");
+          if (MAPS[mapKey]?.alwaysFly) showHudToast("Modo vuelo activado", "info");
+        }, 400);
+      }, 800);
+    }
+    window.travelTo = travelTo;
+
+    function updatePlayerHud() {
+      document.getElementById("barHp").style.width = `${(player.hp/player.maxHp)*100}%`;
+      document.getElementById("valHp").textContent = `${player.hp}/${player.maxHp}`;
+      document.getElementById("barKi").style.width = `${(player.ki/player.maxKi)*100}%`;
+      document.getElementById("valKi").textContent = `${Math.floor(player.ki)}/${player.maxKi}`;
+      document.getElementById("hudLevel").textContent = `LV ${player.level}`;
+      document.getElementById("xpFill").style.width = `${(player.xp/player.xpToNext)*100}%`;
+      document.getElementById("hudPlayerName").textContent = player.name;
+    }
+
+    function showHudToast(msg, type="xp") {
+      const wrap = document.getElementById("toastHud");
+      const el = document.createElement("div");
+      el.className = `hud-toast ${type}`; el.textContent = msg;
+      el.style.top = `${-50-Math.random()*30}px`;
+      el.style.left = `${-80+Math.random()*160}px`;
+      wrap.appendChild(el);
+      setTimeout(() => el.remove(), 2000);
+    }
+
+    // ══ INVENTARIO ══
+    let invSelectedId = null;
+
+    function getItemCtx() {
+      return {
+        player, savedChar,
+        CS: window.CharacterSystem,
+        showToast: (msg, type) => showHudToast(msg, type || "info"),
+        updateHud: updatePlayerHud,
+        publishAppearance: () => publishMyAppearance(true),
+        onShenron: showShenronOverlay,
+      };
+    }
+
+    function showShenronOverlay() {
+      const ov = document.getElementById("shenronOverlay");
+      document.getElementById("shenronWishText").textContent = "¡Vida y ki restaurados al máximo!";
+      ov.classList.add("open");
+      showHudToast("🐉 ¡SHENRON INVOCADO!", "lvl");
+      setTimeout(() => ov.classList.remove("open"), 4500);
+    }
+
+    function openInventoryPanel() {
+      invSelectedId = null;
+      document.getElementById("inventoryPanel").classList.add("open");
+      renderInventoryList(); renderInventoryDetail(null);
+    }
+    window.openInventoryPanel = openInventoryPanel;
+
+    function closeInventoryPanel() { document.getElementById("inventoryPanel").classList.remove("open"); }
+    window.closeInventoryPanel = closeInventoryPanel;
+
+    function drawItemIconCanvas(itemId, canvas) {
+      const IS = window.ItemSystem;
+      if (!IS || !canvas) return;
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      IS.drawItemSprite(ctx, itemId, canvas.width / 2, canvas.height / 2, canvas.width);
+    }
+
+    function renderInventoryList() {
+      const IS = window.ItemSystem;
+      const listEl = document.getElementById("invList");
+      if (!IS || !listEl) return;
+      const inv = IS.getInventory();
+      if (!inv.length) { listEl.innerHTML = '<div class="inv-empty">Vacío</div>'; return; }
+      listEl.innerHTML = "";
+      inv.forEach((entry) => {
+        const def = IS.ITEM_DEFS[entry.id]; if (!def) return;
+        const row = document.createElement("div");
+        row.className = "inv-item-row" + (invSelectedId === entry.id ? " sel" : "");
+        row.onclick = () => { invSelectedId = entry.id; renderInventoryList(); renderInventoryDetail(entry.id); };
+        const cvs = document.createElement("canvas"); cvs.className = "inv-item-canvas"; cvs.width = 32; cvs.height = 32;
+        drawItemIconCanvas(entry.id, cvs);
+        const name = document.createElement("span"); name.className = "inv-item-name"; name.textContent = def.name;
+        const qty = document.createElement("span"); qty.className = "inv-item-qty"; qty.textContent = "×" + entry.qty;
+        row.appendChild(cvs); row.appendChild(name); row.appendChild(qty);
+        listEl.appendChild(row);
+      });
+    }
+
+    function renderInventoryDetail(itemId) {
+      const IS = window.ItemSystem;
+      const detail = document.getElementById("invDetail"); if (!detail) return;
+      if (!itemId || !IS) { detail.innerHTML = '<div class="inv-empty">Seleccioná un objeto</div>'; return; }
+      const def = IS.ITEM_DEFS[itemId];
+      const entry = IS.getInventory().find((e) => e.id === itemId);
+      if (!def || !entry) { detail.innerHTML = '<div class="inv-empty">Objeto no disponible</div>'; return; }
+      const actions = IS.getAvailableActions(itemId);
+      detail.innerHTML = "";
+      const preview = document.createElement("canvas"); preview.className = "inv-preview"; preview.width = 64; preview.height = 64;
+      drawItemIconCanvas(itemId, preview); detail.appendChild(preview);
+      const title = document.createElement("div"); title.className = "inv-detail-name"; title.textContent = def.name + " ×" + entry.qty; detail.appendChild(title);
+      const desc = document.createElement("div"); desc.className = "inv-detail-desc"; desc.textContent = def.desc || ""; detail.appendChild(desc);
+      const actionsWrap = document.createElement("div"); actionsWrap.className = "inv-actions";
+      actions.forEach((act) => {
+        const btn = document.createElement("button"); btn.type = "button";
+        btn.className = "inv-action-btn" + (act === "destroy" ? " danger" : "");
+        btn.textContent = IS.ACTION_LABELS[act] || act;
+        btn.onclick = () => performInventoryAction(itemId, act);
+        actionsWrap.appendChild(btn);
+      });
+      detail.appendChild(actionsWrap);
+      if (IS.countDragonBalls() > 0) {
+        const hint = document.createElement("div"); hint.className = "inv-balls-hint";
+        hint.textContent = `Esferas del dragón: ${IS.countDragonBalls()}/7`;
+        detail.appendChild(hint);
+      }
+    }
+
+    function performInventoryAction(itemId, action) {
+      const IS = window.ItemSystem; if (!IS) return;
+      const res = IS.useItem(itemId, getItemCtx(), action);
+      showHudToast(res.msg, res.ok ? "info" : "dmg");
+      if (res.ok) {
+        renderInventoryList();
+        if (IS.getInventory().some((e) => e.id === itemId)) renderInventoryDetail(itemId);
+        else { invSelectedId = null; renderInventoryDetail(null); }
+      }
+    }
+
+    let gameState = "loading";
+
+    // ══ updatePlayer — actualizado para manejar special mode correctamente ══
+    function updatePlayer(dt) {
+      if (gameState !== "playing") return;
+      if (window.PvpSystem) window.PvpSystem.update(dt);
+      let mx=0, my=0;
+      if (keys["ArrowLeft"]||keys["KeyA"]) mx-=1;
+      if (keys["ArrowRight"]||keys["KeyD"]) mx+=1;
+      if (keys["ArrowUp"]||keys["KeyW"]) my-=1;
+      if (keys["ArrowDown"]||keys["KeyS"]) my+=1;
+      if (joystick.active) { mx=joystick.dx; my=joystick.dy; }
+      if (mx!==0||my!==0) { const len=Math.sqrt(mx*mx+my*my); mx/=len; my/=len; }
+      player.moving = mx!==0||my!==0;
+      if (mx!==0) player.facing = mx>0?1:-1;
+      player.ki = Math.min(player.maxKi, player.ki + dt*3);
+
+      const CS = window.CharacterSystem;
+      if (CS && csAnimator) {
+        CS.player.direction = player.facing;
+        const rpLocked = performance.now() < rpActionUntil;
+        const atkLocked = csAnimator.meta && !csAnimator.meta.loop;
+        if (!rpLocked && !atkLocked) {
+          if (csAnimator.specialMode) {
+            // En modo special: si el jugador se mueve, salir del special mode
+            if (player.moving) {
+              csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
+              csAnimator.play(isRunning ? "run" : "walk");
+            }
+            // Si está quieto en special mode, dejar que la animación siga
+          } else if ((controlMode === "pvp" || isCombatMode) && csAnimator.battleMode) {
+            if (isFlying) csAnimator.play("knockback_fly");
+            else if (player.moving) csAnimator.play("dash");
+            else csAnimator.play("combat_idle");
+          } else if (isFlying) {
+            csAnimator.play("fly");
+          } else if (player.moving && isRunning) {
+            csAnimator.play("run");
+          } else if (player.moving) {
+            csAnimator.play("walk");
+          } else {
+            csAnimator.play("idle");
+          }
+        }
+      }
+
+      const speedMult = isRunning ? 2.0 : 1.0;
+      const vx = mx*player.speed*speedMult, vy = my*player.speed*speedMult;
+      const nx = player.x + vx, ny = player.y + vy;
+      const hw=player.w/2, hh=player.h/2;
+      const cx1=Math.floor((nx-hw)/TILE), cx2=Math.floor((nx+hw)/TILE);
+      const cy1=Math.floor((ny-hh*.3)/TILE), cy2=Math.floor((ny+hh*.5)/TILE);
+      if (isWalkable(cx1,cy1)&&isWalkable(cx2,cy1)&&isWalkable(cx1,cy2)&&isWalkable(cx2,cy2)) {
+        player.x=nx; player.y=ny;
+      } else {
+        if (isWalkable(Math.floor((nx-hw)/TILE),Math.floor((player.y-hh*.3)/TILE))&&isWalkable(Math.floor((nx+hw)/TILE),Math.floor((player.y+hh*.5)/TILE))) player.x=nx;
+        if (isWalkable(Math.floor((player.x-hw)/TILE),Math.floor((ny-hh*.3)/TILE))&&isWalkable(Math.floor((player.x+hw)/TILE),Math.floor((ny+hh*.5)/TILE))) player.y=ny;
+      }
+
+      const mapDef = MAPS[currentMap];
+      player.x = Math.max(TILE, Math.min(player.x, (mapDef.w-1)*TILE));
+      player.y = Math.max(TILE, Math.min(player.y, (mapDef.h-1)*TILE));
+      player.auraPhase += dt*3; player.animTimer += dt;
+      if (player.animTimer >= 1/8) { player.animTimer=0; player.animFrame=(player.animFrame+1)%4; }
+
+      const ptx=Math.floor(player.x/TILE), pty=Math.floor(player.y/TILE);
+      const tile=worldMaps[currentMap]?.[pty]?.[ptx];
+      if (tile===3 && !document.getElementById("portalPanel").classList.contains("visible") && gameState==="playing") {
+        showHudToast("⭐ Portal — presioná Z","info");
+      }
+    }
+
+    function updateCamera() {
+      const mapDef = MAPS[currentMap];
+      cam.tx = player.x - canvas.width/2; cam.ty = player.y - canvas.height/2;
+      cam.tx = Math.max(0, Math.min(cam.tx, mapDef.w*TILE - canvas.width));
+      cam.ty = Math.max(0, Math.min(cam.ty, mapDef.h*TILE - canvas.height));
+      cam.x += (cam.tx-cam.x)*CAM_LERP; cam.y += (cam.ty-cam.y)*CAM_LERP;
+    }
+
+    function drawWorld() {
+      const map = worldMaps[currentMap]; if (!map) return;
+      const mapDef = MAPS[currentMap];
+      const startX=Math.floor(cam.x/TILE), startY=Math.floor(cam.y/TILE);
+      const endX=Math.min(mapDef.w, startX+Math.ceil(canvas.width/TILE)+2);
+      const endY=Math.min(mapDef.h, startY+Math.ceil(canvas.height/TILE)+2);
+      for (let ty=startY;ty<endY;ty++) for (let tx=startX;tx<endX;tx++) {
+        const tile = map[ty]?.[tx]??0;
+        const color = TILE_COLORS[tile]||"#2d5a27";
+        const sx=tx*TILE-cam.x, sy=ty*TILE-cam.y;
+        ctx.fillStyle = color; ctx.fillRect(sx,sy,TILE+1,TILE+1);
+        if (tile===0||tile===7) {
+          ctx.fillStyle = tile===7?"rgba(0,100,0,0.2)":"rgba(255,255,255,0.03)";
+          if ((tx+ty)%3===0) ctx.fillRect(sx+8,sy+8,4,4);
+        } else if (tile===2) {
+          ctx.fillStyle = "rgba(255,255,255,0.04)";
+          ctx.fillRect(sx,sy,TILE,1); ctx.fillRect(sx,sy,1,TILE);
+        } else if (tile===3) {
+          const phase = Date.now()*.002;
+          ctx.fillStyle = `rgba(139,31,255,${0.3+0.2*Math.sin(phase)})`;
+          ctx.fillRect(sx,sy,TILE,TILE);
+          ctx.strokeStyle = `rgba(180,100,255,${0.5+0.3*Math.sin(phase*2)})`;
+          ctx.lineWidth=2; ctx.strokeRect(sx+4,sy+4,TILE-8,TILE-8);
+        } else if (tile===6) {
+          ctx.fillStyle = "rgba(255,255,255,0.06)";
+          if (tx%3===0) ctx.fillRect(sx,sy,2,TILE);
+        } else if (tile===10) {
+          ctx.fillStyle = "rgba(255,255,255,0.5)";
+          if ((tx*17+ty*13)%20===0) ctx.fillRect(sx+(tx*7)%40,sy+(ty*11)%40,1.5,1.5);
+          if ((tx*11+ty*19)%30===0) ctx.fillRect(sx+(tx*13)%40,sy+(ty*7)%40,1,1);
+        } else if (tile===14) {
+          ctx.fillStyle = "rgba(255,255,255,0.06)";
+          if ((tx+ty)%5===0) ctx.fillRect(sx+20,sy+20,6,3);
+        } else if (tile===15) {
+          const cx=sx+TILE/2, cy=sy+TILE/2;
+          ctx.fillStyle = "rgba(255,255,255,0.85)";
+          ctx.beginPath();
+          ctx.arc(cx-TILE*.2,cy,TILE*.22,0,Math.PI*2);
+          ctx.arc(cx,cy-TILE*.08,TILE*.2,0,Math.PI*2);
+          ctx.arc(cx+TILE*.22,cy,TILE*.22,0,Math.PI*2);
+          ctx.fill();
+        }
+      }
+      drawWorldObjects();
+      drawTrailers();
+      drawNpcs();
+    }
+
+    function drawWorldObjects() {
+      ctx.textAlign = "center";
+      if (currentMap==="lobby") {
+        const bx=32*TILE-cam.x, by=14*TILE-cam.y;
+        ctx.fillStyle="#0d1525"; ctx.fillRect(bx,by,16*TILE,8*TILE);
+        ctx.fillStyle="#00e5ff"; ctx.fillRect(bx,by,16*TILE,4);
+        ctx.fillStyle="rgba(255,255,255,.7)"; ctx.font="bold 10px Orbitron,monospace";
+        ctx.fillText("SALA DE REUNIONES",bx+8*TILE,by-6);
+        const ex=14*TILE-cam.x, ey=24*TILE-cam.y;
+        ctx.fillStyle="#0d1020"; ctx.fillRect(ex,ey,8*TILE,12*TILE);
+        ctx.fillStyle="#ff6a00"; ctx.fillRect(ex,ey,8*TILE,4);
+        ctx.fillStyle="rgba(255,255,255,.7)"; ctx.font="bold 9px Orbitron,monospace";
+        ctx.fillText("ENTRENAMIENTO",ex+4*TILE,ey-6);
+        const fx=58*TILE-cam.x, fy=24*TILE-cam.y;
+        ctx.fillStyle="#0d1020"; ctx.fillRect(fx,fy,8*TILE,12*TILE);
+        ctx.fillStyle="#aa00ff"; ctx.fillRect(fx,fy,8*TILE,4);
+        ctx.fillText("ESTRATEGIA",fx+4*TILE,fy-6);
+        const fx2=37*TILE-cam.x, fy2=28*TILE-cam.y;
+        ctx.fillStyle="#1565c0"; ctx.beginPath(); ctx.ellipse(fx2+2*TILE,fy2+2*TILE,2.5*TILE,2*TILE,0,0,Math.PI*2); ctx.fill();
+      } else if (currentMap==="earth") {
+        const bx=40*TILE-cam.x, by=30*TILE-cam.y;
+        ctx.fillStyle="#1565c0"; ctx.fillRect(bx,by,8*TILE,5*TILE);
+        ctx.fillStyle="#00e5ff"; ctx.fillRect(bx,by,8*TILE,4);
+        ctx.fillStyle="rgba(255,255,255,.7)"; ctx.font="bold 9px Orbitron,monospace";
+        ctx.fillText("CAPSULE CORP",bx+4*TILE,by-6);
+        const kx=8*TILE-cam.x, ky=38*TILE-cam.y;
+        ctx.fillStyle="#e53935"; ctx.beginPath(); ctx.arc(kx,ky,22,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle="rgba(255,255,255,.7)"; ctx.fillText("KAME-HOUSE",kx,ky-28);
+        const skyPx=56*TILE-cam.x, skyPy=10*TILE-cam.y;
+        const skyPhase=Date.now()*.002;
+        ctx.fillStyle=`rgba(129,212,250,${0.25+0.15*Math.sin(skyPhase)})`;
+        ctx.beginPath(); ctx.ellipse(skyPx+2*TILE,skyPy+2*TILE,2*TILE,1.5*TILE,0,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle="rgba(255,255,255,.75)"; ctx.fillText("PORTAL AL CIELO",skyPx+2*TILE,skyPy-6);
+      } else if (currentMap==="space") {
+        const bx=20*TILE-cam.x, by=15*TILE-cam.y;
+        ctx.fillStyle="#1a1a3a"; ctx.fillRect(bx,by,25*TILE,15*TILE);
+        ctx.fillStyle="#e040fb"; ctx.fillRect(bx,by,25*TILE,4);
+        ctx.fillStyle="rgba(255,255,255,.7)"; ctx.font="bold 9px Orbitron,monospace";
+        ctx.fillText("NAVE DE FRIEZA",bx+12*TILE,by-6);
+        const cx=67*TILE-cam.x, cy=45*TILE-cam.y;
+        const grd=ctx.createRadialGradient(cx,cy,2,cx,cy,12*TILE);
+        grd.addColorStop(0,"#4a2010"); grd.addColorStop(1,"#1a0808");
+        ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(cx,cy,12*TILE,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle="rgba(255,255,255,.7)"; ctx.fillText("PLANETA CENTRAL",cx,cy-13*TILE-6);
+      } else if (currentMap==="sky") {
+        const px=58*TILE-cam.x, py=72*TILE-cam.y;
+        const phase=Date.now()*.002;
+        ctx.fillStyle=`rgba(129,212,250,${0.35+0.15*Math.sin(phase)})`;
+        ctx.beginPath(); ctx.ellipse(px+2*TILE,py+2*TILE,2.5*TILE,2*TILE,0,0,Math.PI*2); ctx.fill();
+        ctx.strokeStyle=`rgba(255,255,255,${0.5+0.3*Math.sin(phase*2)})`;
+        ctx.lineWidth=2; ctx.stroke();
+        ctx.fillStyle="rgba(255,255,255,.85)"; ctx.font="bold 9px Orbitron,monospace";
+        ctx.fillText("PORTAL A TIERRA",px+2*TILE,py-8);
+      }
+      ctx.textAlign = "left";
+    }
+
+    function drawTrailers() {
+      for (const [tid, tr] of Object.entries(trailers)) {
+        if (tr.map !== currentMap) continue;
+        const sx = tr.x - cam.x, sy = tr.y - cam.y;
+        if (sx<-200||sx>canvas.width+200||sy<-200||sy>canvas.height+200) continue;
+        ctx.fillStyle = "rgba(0,0,0,.25)"; ctx.fillRect(sx+8,sy+6,TRAILER_W,TRAILER_H);
+        ctx.fillStyle = tid===myPlayerId ? "#3a2a10" : "#1a2a3a";
+        ctx.fillRect(sx,sy,TRAILER_W,TRAILER_H);
+        ctx.fillStyle = tid===myPlayerId ? "#f5c400" : "#00e5ff";
+        ctx.fillRect(sx,sy,TRAILER_W,4);
+        ctx.fillStyle="#1a1a1a";
+        ctx.beginPath(); ctx.arc(sx+TILE*.8,sy+TRAILER_H+5,10,0,Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(sx+TRAILER_W-TILE*.8,sy+TRAILER_H+5,10,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle="rgba(100,180,255,.4)"; ctx.fillRect(sx+12,sy+14,24,18); ctx.fillRect(sx+TRAILER_W-36,sy+14,24,18);
+        ctx.fillStyle="rgba(255,255,255,.15)"; ctx.fillRect(sx+TRAILER_W/2-10,sy+TRAILER_H-30,20,30);
+        ctx.fillStyle="rgba(255,255,255,.8)"; ctx.font="bold 9px Orbitron,monospace"; ctx.textAlign="center";
+        ctx.fillText(`🚐 ${tr.ownerName}`, sx+TRAILER_W/2, sy-8);
+        if (Math.hypot(tr.x-player.x, tr.y-player.y) < 80) {
+          const phase=Date.now()*.003;
+          ctx.fillStyle=`rgba(245,196,0,${.5+.5*Math.sin(phase*4)})`;
+          ctx.font="bold 12px Orbitron,monospace";
+          ctx.fillText("[Z]",sx+TRAILER_W/2,sy-22+Math.sin(phase*3)*3);
+        }
+        ctx.textAlign="left";
+      }
+    }
+
+    function drawNpcs() {
+      const t = Date.now()*.003;
+      npcs.forEach(npc => {
+        const sx=npc.x-cam.x, sy=npc.y-cam.y;
+        if (sx<-40||sx>canvas.width+40||sy<-40||sy>canvas.height+40) return;
+        ctx.shadowColor=npc.color; ctx.shadowBlur=10;
+        ctx.fillStyle="rgba(0,0,0,.3)"; ctx.beginPath(); ctx.ellipse(sx,sy+4,12,4,0,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle=npc.color; ctx.fillRect(sx-8,sy-24,16,28);
+        ctx.beginPath(); ctx.arc(sx,sy-28,10,0,Math.PI*2); ctx.fill();
+        ctx.shadowBlur=0;
+        ctx.fillStyle="rgba(255,255,255,.8)"; ctx.font="bold 9px Orbitron,monospace"; ctx.textAlign="center";
+        ctx.fillText(npc.name, sx, sy-40);
+        if (Math.hypot(npc.x-player.x,npc.y-player.y)<80) {
+          ctx.fillStyle=`rgba(245,196,0,${.5+.5*Math.sin(t*4)})`;
+          ctx.font="bold 12px Orbitron,monospace";
+          ctx.fillText("[Z]",sx,sy-54+Math.sin(t*3)*3);
+        }
+        ctx.textAlign="left";
+      });
+    }
+
+    // ══ drawPlayerChar — actualizado para spriteVariantId con "special" ══
+    function drawPlayerChar() {
+      const sx=player.x-cam.x, sy=player.y-cam.y;
+      const CS=window.CharacterSystem;
+      const useCS=CS&&csImageMap&&csAnimator&&(
+        Object.values(csImageMap).some(img=>img&&img.complete&&img.naturalWidth>0) ||
+        CS.player.appearance.accessoryId !== "ac_none"
+      );
+      if (useCS) {
+        const accId = CS.player.appearance.accessoryId || "ac_none";
+        // Determinar spriteVariantId según el modo del animador
+        let spriteVariantId = null;
+        if (csAnimator.specialMode) spriteVariantId = "special";
+        else if (isCombatMode) spriteVariantId = "fight";
+
+        const csState = {
+          glovesId:CS.player.appearance.glovesId||"gm0",
+          auraId:CS.player.appearance.auraId||"a0",
+          auraColor:CS.player.appearance.auraColor||"#fdd835",
+          accessoryId:accId,
+          auraPhase:player.auraPhase||0,
+          viewKey:null,
+          spriteVariantId,
+        };
+        ctx.fillStyle="rgba(0,0,0,0.3)"; ctx.beginPath(); ctx.ellipse(sx,sy+3,16,5,0,0,Math.PI*2); ctx.fill();
+        const mobileSpriteScale = (window.matchMedia?.("(pointer:coarse)").matches && window.innerHeight < 520) ? 0.84 : 1;
+        ctx.save();
+        ctx.translate(sx,sy);
+        ctx.scale((SPRITE_DRAW_W*mobileSpriteScale)/CS.FRAME_W,(SPRITE_DRAW_H*mobileSpriteScale)/CS.FRAME_H);
+        ctx.translate(-sx,-sy);
+        ctx.imageSmoothingEnabled=true;
+        CS.drawPlayer(ctx,sx,sy,CS.player,csImageMap,csAnimator,csState);
+        ctx.restore();
+        return;
+      }
+      // Fallback procedural
+      ctx.fillStyle="rgba(0,0,0,.35)"; ctx.beginPath(); ctx.ellipse(sx,sy+2,16,5,0,0,Math.PI*2); ctx.fill();
+      if (player.facing===-1){ctx.save();ctx.scale(-1,1);ctx.translate(-sx*2,0);}
+      const skinColor=savedChar?.skinColor||"#d4a574";
+      ctx.fillStyle=savedChar?.clothColor||"#ff6a00"; ctx.fillRect(sx-7,sy-16,7,18); ctx.fillRect(sx+1,sy-16,7,18);
+      ctx.fillStyle="#1a1a1a"; ctx.fillRect(sx-8,sy+2,8,6); ctx.fillRect(sx+1,sy+2,8,6);
+      ctx.fillStyle=charColor; ctx.fillRect(sx-10,sy-36,20,22);
+      ctx.fillStyle=skinColor; ctx.fillRect(sx-16,sy-36,7,16); ctx.fillRect(sx+9,sy-36,7,16);
+      ctx.beginPath(); ctx.arc(sx,sy-44,10,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle=savedChar?.hairColor||"#1a1a1a"; ctx.beginPath(); ctx.arc(sx,sy-50,9,Math.PI,Math.PI*2); ctx.fill();
+      if (player.facing===-1) ctx.restore();
+    }
+
+    function drawCombatEffects(dt) {
+      combatEffects = combatEffects.filter(e => {
+        e.timer -= dt; if (e.timer<=0) return false;
+        const sx=e.x-cam.x, sy=e.y-cam.y-(1-e.timer)*30;
+        ctx.globalAlpha=Math.min(1,e.timer*2);
+        ctx.fillStyle=e.color; ctx.font="bold 16px Orbitron,monospace"; ctx.textAlign="center"; ctx.textBaseline="middle";
+        ctx.fillText(e.text,sx,sy);
+        ctx.globalAlpha=1; ctx.textAlign="left"; ctx.textBaseline="alphabetic";
+        return true;
+      });
+    }
+
+    function drawMinimap() {
+      const mw=minimapCanvas.width, mh=minimapCanvas.height;
+      const mapDef=MAPS[currentMap];
+      const scaleX=mw/mapDef.w, scaleY=mh/mapDef.h;
+      const map=worldMaps[currentMap];
+      const radarOn = window.ItemSystem?.isRadarActive?.();
+      mmCtx.fillStyle="#08090f"; mmCtx.fillRect(0,0,mw,mh);
+      if (map) {
+        for(let ty=0;ty<mapDef.h;ty+=2) for(let tx=0;tx<mapDef.w;tx+=2){
+          const tile=map[ty]?.[tx]??0;
+          mmCtx.fillStyle=TILE_COLORS[tile]||"#2d5a27";
+          mmCtx.fillRect(tx*scaleX,ty*scaleY,scaleX*2+1,scaleY*2+1);
+        }
+      }
+      if (radarOn) {
+        mmCtx.fillStyle="#ff6ec7";
+        npcs.forEach(npc => {
+          mmCtx.beginPath(); mmCtx.arc((npc.x/TILE)*scaleX, (npc.y/TILE)*scaleY, 3, 0, Math.PI*2); mmCtx.fill();
+        });
+      }
+      mmCtx.fillStyle=radarOn ? "#00ffff" : "#00e5ff";
+      for (const p of Object.values(otherPlayers)) {
+        if (p.map && p.map!==currentMap) continue;
+        const r = radarOn ? 3.5 : 2;
+        mmCtx.beginPath(); mmCtx.arc((p.x/TILE)*scaleX,(p.y/TILE)*scaleY,r,0,Math.PI*2); mmCtx.fill();
+      }
+      mmCtx.fillStyle="#f5c400";
+      for (const tr of Object.values(trailers)) {
+        if (tr.map!==currentMap) continue;
+        mmCtx.fillRect((tr.x/TILE)*scaleX,(tr.y/TILE)*scaleY,4,3);
+      }
+      const px=(player.x/TILE)*scaleX, py=(player.y/TILE)*scaleY;
+      mmCtx.fillStyle=charColor; mmCtx.shadowColor=charColor; mmCtx.shadowBlur=4;
+      mmCtx.beginPath(); mmCtx.arc(px,py,2.5,0,Math.PI*2); mmCtx.fill(); mmCtx.shadowBlur=0;
+    }
+
+    function drawCloudShape(x, y, size) {
+      ctx.fillStyle = "rgba(255,255,255,0.78)";
+      ctx.beginPath();
+      ctx.arc(x, y, size * 0.38, 0, Math.PI * 2);
+      ctx.arc(x + size * 0.32, y - size * 0.12, size * 0.32, 0, Math.PI * 2);
+      ctx.arc(x + size * 0.62, y, size * 0.34, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawAmbient() {
+      if (currentMap==="space") {
+        const grd=ctx.createRadialGradient(canvas.width*.5,canvas.height*.3,10,canvas.width*.5,canvas.height*.3,canvas.width*.8);
+        grd.addColorStop(0,"rgba(20,0,40,0.2)"); grd.addColorStop(1,"transparent");
+        ctx.fillStyle=grd; ctx.fillRect(0,0,canvas.width,canvas.height*.6);
+      } else if (currentMap==="sky") {
+        const grd=ctx.createLinearGradient(0, 0, 0, canvas.height);
+        grd.addColorStop(0, "#b8e4f8"); grd.addColorStop(0.45, "#87CEEB"); grd.addColorStop(1, "#d4effa");
+        ctx.fillStyle = grd; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        for (let i = 0; i < 10; i++) {
+          const cx = ((i * 173 + cam.x * 0.12 + cam.y * 0.05) % (canvas.width + 220)) - 110;
+          const cy = 30 + (i * 89 + cam.y * 0.08) % (canvas.height * 0.75);
+          drawCloudShape(cx, cy, 36 + (i % 4) * 14);
+        }
+      }
+    }
+
+    window.respawn = function() {
+      const start=MAP_STARTS[currentMap];
+      player.x=start.x*TILE; player.y=start.y*TILE;
+      gameState="playing";
+      document.getElementById("screenDead").style.display="none";
+    };
+
+    function goBack() { window.location.href="index.html"; }
+    window.goBack=goBack;
+
+    // ══ LOAD GAME ══
+    async function loadGame() {
+      const steps=[
+        ["GENERANDO MUNDOS...", ()=>{
+          worldMaps.lobby = generateLobbyMap();
+          worldMaps.earth = generateEarthMap();
+          worldMaps.sky = generateSkyMap();
+          worldMaps.space = generateSpaceMap();
+        }],
+        ["INVENTARIO...", ()=>{
+          if (window.ItemSystem) {
+            window.ItemSystem.loadInventory();
+            window.ItemSystem.ensureScouterAccessory(window.CharacterSystem);
+          }
+        }],
+        ["CARGANDO PERSONAJE...", async()=>{
+          const CS=window.CharacterSystem;
+          if (CS) {
+            try {
+              await restoreAllAccessoriesForGame(CS);
+              if (window.ItemSystem) window.ItemSystem.ensureScouterAccessory(CS);
+
+              csImageMap=await CS.preloadAssets("");
+              CS.initPlayer();
+
+              if(savedChar){
+                const rid=savedChar.race||"human",gen=savedChar.gender||"male";
+                const defs=CS.getDefaultIds(rid,gen);
+                CS.player.appearance.raceId=rid;
+                CS.player.appearance.gender=gen;
+                CS.player.appearance.variantId=savedChar.variantId||"base";
+                hydrateVariantCustomizations(CS.player.appearance, savedChar.variantCustomizations || {});
+                hydrateCombatCustomization(CS.player.appearance, savedChar.combatCustomization || {});
+                CS.player.appearance.faceId=savedChar.faceId||defs.faceId;
+                CS.player.appearance.faceColor=savedChar.faceColor||null;
+                CS.player.appearance.eyeColor=savedChar.eyeColor||"#3a2a1a";
+                CS.player.appearance.browColor=savedChar.browColor||null;
+                CS.player.appearance.pupilColor=savedChar.pupilColor||null;
+                CS.player.appearance.hairId=savedChar.hair||defs.hairId;
+                CS.player.appearance.hairColor=savedChar.hairColor||"#1a1a1a";
+                CS.player.appearance.topId=savedChar.shirt||defs.topId;
+                CS.player.appearance.bottomId=savedChar.pants||defs.bottomId;
+                CS.player.appearance.shoesId=savedChar.shoes||defs.shoesId;
+                CS.player.appearance.glovesId=savedChar.gloves||defs.glovesId;
+                CS.player.appearance.skinColor=savedChar.skinColor||"#e8c898";
+                CS.player.appearance.auraId=savedChar.aura||"a0";
+                CS.player.appearance.auraColor=savedChar.auraColor||"#fdd835";
+
+                const savedAccId = savedChar.accessory || savedChar.accessoryId || "ac_none";
+                CS.player.appearance.accessoryId = savedAccId;
+                CS.player.appearance.accessoryDataURL = savedChar.accessoryDataURL || CS.player.appearance.accessoryDataURL || null;
+                CS.player.appearance.accessoryCombatDataURL = savedChar.accessoryCombatDataURL || CS.player.appearance.accessoryCombatDataURL || null;
+                CS.player.appearance.accessoryIsFreeCustomization = !!(
+                  CS.player.appearance.accessoryIsFreeCustomization ||
+                  savedChar.accessoryIsFreeCustomization ||
+                  savedChar.race === "Custom" ||
+                  String(savedAccId).startsWith("fc_")
+                );
+                CS.player.appearance.accessorySlot = savedChar.accessorySlot || CS.player.appearance.accessorySlot || "over_shirt";
+
+                if (savedAccId !== "ac_none") {
+                  const accInCatalog = CS.ACCESSORIES_CATALOG.find(a => a.id === savedAccId);
+                  if (!accInCatalog || !accInCatalog.userImage || !accInCatalog.userImage.complete || !accInCatalog.userImage.naturalWidth) {
+                    let dataURL = savedChar.accessoryDataURL || null;
+                    if (!dataURL) {
+                      try {
+                        const rawFree = localStorage.getItem("dragonCreatorZ_freeCustomization");
+                        if (rawFree) { const freeList = JSON.parse(rawFree); const found = freeList.find(x => x.id === savedAccId); if (found) dataURL = found.dataURL; }
+                      } catch(e) {}
+                    }
+                    if (!dataURL) {
+                      try {
+                        const rawAcc = localStorage.getItem("dragonCreatorZ_accessories");
+                        if (rawAcc) { const accList = JSON.parse(rawAcc); const found = accList.find(x => x.id === savedAccId); if (found) dataURL = found.dataURL; }
+                      } catch(e) {}
+                    }
+                    if (dataURL) {
+                      await new Promise(resolve => {
+                        const img = new Image();
+                        img.onload = () => {
+                          const isFree = !!(savedChar.accessoryIsFreeCustomization || String(savedAccId).startsWith("fc_"));
+                          if (accInCatalog) {
+                            accInCatalog.userImage = img;
+                            accInCatalog.spriteImage = img;
+                            if (!accInCatalog.dataURL) accInCatalog.dataURL = dataURL;
+                            if (!accInCatalog.combatDataURL && savedChar.accessoryCombatDataURL) accInCatalog.combatDataURL = savedChar.accessoryCombatDataURL;
+                            accInCatalog.isFreeCustomization = accInCatalog.isFreeCustomization || isFree;
+                          } else {
+                            CS.ACCESSORIES_CATALOG.push({
+                              id: savedAccId, name: savedChar.accessoryName || "Personalización",
+                              type: "other", slot: "over_shirt", color: null,
+                              userImage: img, spriteImage: img, dataURL: dataURL, combatDataURL: savedChar.accessoryCombatDataURL || null,
+                              isFreeCustomization: isFree,
+                            });
+                          }
+                          CS.invalidateHairCache?.();
+                          resolve();
+                        };
+                        img.onerror = resolve;
+                        img.src = dataURL;
+                      });
+                    }
+                  }
+                }
+              }
+
+              await new Promise(r => setTimeout(r, 500));
+              CS.invalidateHairCache?.();
+              CS.player.direction=player.facing;
+              // Crear animador con las nuevas capacidades del CS v2
+              csAnimator=new CS.SpriteAnimator("idle");
+              renderVariantSelector();
+            } catch(err){ console.warn("[game]",err); csImageMap=null; csAnimator=null; }
+          }
+          document.getElementById("hudPlayerName").textContent=player.name;
+          updatePlayerHud();
+        }],
+        ["CONECTANDO AL SERVIDOR...", async()=>{
+          buildMpHud();
+          initMultiplayer();
+          await new Promise(r=>setTimeout(r,300));
+          publishMyAppearance(true);
+          db.ref("trailers").on("value", snap => {
+            const all=snap.val()||{};
+            for (const [tid,tr] of Object.entries(all)) {
+              if (tid===myPlayerId) continue;
+              if (!trailers[tid]) trailers[tid]={};
+              Object.assign(trailers[tid],tr,{ownerId:tid,ownerName:tr.ownerName||"?",map:tr.map||"lobby",invited:trailers[tid].invited||new Set()});
+            }
+            for (const tid in trailers) { if (!all[tid] && tid!==myPlayerId) delete trailers[tid]; }
+          });
+          await new Promise(r=>setTimeout(r,300));
+        }],
+        ["¡LISTO!", ()=>{}],
+      ];
+
+      const bar=document.getElementById("loadBar"), label=document.getElementById("loadLabel");
+      for (let i=0;i<steps.length;i++) {
+        label.textContent=steps[i][0];
+        bar.style.width=`${((i+1)/steps.length)*100}%`;
+        await Promise.resolve(steps[i][1]());
+        await new Promise(r=>setTimeout(r,250));
+      }
+      await new Promise(r=>setTimeout(r,300));
+      document.getElementById("screenLoading").style.display="none";
+      gameState="playing";
+      updatePlayerHud();
+
+      setTimeout(() => { publishMyAppearance(true); }, 1000);
+    }
+
+    let lastTime=0;
+    function gameLoop(timestamp) {
+      const dt=Math.min((timestamp-lastTime)/1000,.05);
+      lastTime=timestamp;
+
+      const CS=window.CharacterSystem;
+
+      if (gameState==="playing") {
+        updatePlayer(dt);
+        updateCamera();
+      }
+
+      if (gameState==="trailer") {
+        drawTrailerInterior();
+        requestAnimationFrame(gameLoop);
+        return;
+      }
+
+      ctx.fillStyle=MAPS[currentMap]?.bgColor||"#08090f";
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+
+      if (gameState==="playing"&&CS&&csAnimator) csAnimator.update(timestamp);
+      drawAmbient();
+      drawWorld();
+      sendPlayerUpdate();
+      drawOtherPlayers();
+      drawPlayerChar();
+      drawCombatEffects(dt);
+      drawMinimap();
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    function exportGameGlobals() {
+      window.db = db;
+      window.myPlayerId = myPlayerId;
+      window.player = player;
+      window.otherPlayers = otherPlayers;
+      window.otherPlayerAnimators = otherPlayerAnimators;
+      window.combatEffects = combatEffects;
+      window.csAnimator = csAnimator;
+      window.cam = cam;
+      Object.defineProperty(window, "isFlying", { get: () => isFlying, configurable: true });
+      window.mpConnected = mpConnected;
+      window.sendPlayerUpdate = sendPlayerUpdate;
+      window.showHudToast = showHudToast;
+      window.updatePlayerHud = updatePlayerHud;
+      window.publishMyAppearance = publishMyAppearance;
+      Object.defineProperty(window, "currentMap", { get: () => currentMap, configurable: true });
+    }
+    exportGameGlobals();
+
+    loadGame().then(()=>{ exportGameGlobals(); lastTime=performance.now(); requestAnimationFrame(gameLoop); });
+    renderActionBars();
+    </script>
+    <script src="pvp-system.js"></script>
+  </body>
+</html>
