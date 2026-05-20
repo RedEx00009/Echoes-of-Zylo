@@ -14,16 +14,15 @@
  *   Row  1 → idle        (3 frames)
  *   Row  2 → walk        (4 frames)
  *   Row  3 → run         (4 frames)
- *   Row  4 → run2        (4 frames)   ← segunda variante de carrera
- *   Row  5 → jump        (3 frames)
- *   Row  6 → fall        (2 frames)
- *   Row  7 → fly         (4 frames)
- *   Row  8 → hover       (2 frames)
- *   Row  9 → meditate    (3 frames)
- *   Row 10 → sleep       (3 frames)
- *   Row 11 → interaction (3 frames)
+ *   Row  4 → jump        (3 frames)
+ *   Row  5 → fall        (2 frames)
+ *   Row  6 → fly         (4 frames)
+ *   Row  7 → hover       (2 frames)
+ *   Row  8 → meditate    (3 frames)
+ *   Row  9 → sleep       (3 frames)
+ *   Row 10 → interaction (3 frames)
+ *   Row 11 → (reservada / futura)
  *   Row 12 → (reservada / futura)
- *   Row 13 → (reservada / futura)
  *
  *  ── *_Pelea.png  (Combate) ── COMBAT_MAX_COLS=4, COMBAT_TOTAL_ROWS=13
  *   Row  0 → combat_view   (1 frame)
@@ -93,9 +92,9 @@
     idle:        { row:  1, frames: 3, fps: 3,  loop: true,  label: "Idle"        },
     walk:        { row:  2, frames: 4, fps: 6,  loop: true,  label: "Walk"        },
     run:         { row:  3, frames: 4, fps: 12, loop: true,  label: "Run"         },
-    run2:        { row:  4, frames: 4, fps: 14, loop: true,  label: "Run 2"       },
-    jump:        { row:  5, frames: 3, fps: 8,  loop: false, label: "Jump"        },
-    fall:        { row:  6, frames: 2, fps: 6,  loop: false, label: "Fall"        },
+    jump:        { row:  4, frames: 3, fps: 8,  loop: false, label: "Jump"        },
+    fall:        { row:  5, frames: 1, fps: 6,  loop: false, label: "Fall"        },
+    Land:        { row:  6, frames: 3, fps: 6,  loop: false, label: "Land"        },
     fly:         { row:  7, frames: 4, fps: 6,  loop: true,  label: "Fly"         },
     hover:       { row:  8, frames: 2, fps: 4,  loop: true,  label: "Hover"       },
     meditate:    { row:  9, frames: 3, fps: 2,  loop: true,  label: "Meditar"     },
