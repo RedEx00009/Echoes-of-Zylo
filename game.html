@@ -475,7 +475,11 @@
     <script src="items-system.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
     <script src="character-system.js"></script>
+    <script src="firebase-character-service.js"></script>
 
     <script>
     "use strict";
@@ -807,6 +811,7 @@
       appId: "1:994414993412:web:66813401c499f41e46d551"
     };
     firebase.initializeApp(firebaseConfig);
+    FirebaseCharacterService.initFirebase(firebaseConfig);
     const db = firebase.database();
 
     // ══ CANVAS ══

@@ -389,7 +389,7 @@
   }
 
   function getVariantCustomization(app, variantId) {
-    if (!app || !variantId || variantId === "base") return null;
+    if (!app || !variantId) return null;
     return app.variantCustomizations?.[variantId] || null;
   }
 
@@ -1785,7 +1785,7 @@
     }
 
     // ── Variante con sheet propio ──────────────────────────────
-    if (variantId !== "base") {
+    if (variantCustom) {
       const vb = resolveCustomSheetBundle(variantCustom, inCombat, inSpecial);
       if (vb) { _drawVariantSheet(ctx, vb.img, screenX, screenY, dw, dh, animator, vb.custom); ctx.restore(); return; }
     }

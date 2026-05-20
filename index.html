@@ -742,6 +742,11 @@
     <div id="toastContainer"></div>
 
     <script src="character-system.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    <script src="firebase-character-service.js"></script>
     <script>
       "use strict";
 
@@ -760,6 +765,66 @@
         getCatalogFor, getDefaultIds, GENDERLESS_RACES,
         isCompatibleSheet, getIdleFrameCoords,
       } = window.CharacterSystem;
+
+      const FIREBASE_CONFIG = {
+        apiKey: "AIzaSyBYZwK41XAUkLeRlWQRms0oEyJ1QXMQVg8",
+        authDomain: "dragon-world-z.firebaseapp.com",
+        databaseURL: "https://dragon-world-z-default-rtdb.firebaseio.com",
+        projectId: "dragon-world-z",
+        storageBucket: "dragon-world-z.firebasestorage.app",
+        messagingSenderId: "994414993412",
+        appId: "1:994414993412:web:66813401c499f41e46d551"
+      };
+      try { FirebaseCharacterService.initFirebase(FIREBASE_CONFIG); } catch (err) { console.warn("[DC] Firebase no se pudo inicializar:", err); }
+
+      async function _ensureFirebaseUserId() {
+        if (!window.FirebaseCharacterService) return null;
+        try {
+          const current = FirebaseCharacterService.getCurrentUserId();
+          if (current) return current;
+          const user = await FirebaseCharacterService.signInAnonymously();
+          return user ? user.uid : null;
+        } catch (error) {
+          console.warn("[DC] No se pudo autenticar anónimamente en Firebase:", error);
+          return null;
+        }
+      }
+
+      function _getSlotUploadSources(app) {
+        const variantId = app?.variantId || "base";
+        const variantCfg = app?.variantCustomizations?.[variantId] || {};
+        return {
+          base: variantCfg.spriteDataURL || variantCfg.spriteImage?.src || null,
+          pelea: app?.combatCustomization?.spriteDataURL || app?.combatCustomization?.spriteImage?.src || null,
+          especial: variantCfg.specialSpriteDataURL || variantCfg.specialSpriteImage?.src || null,
+        };
+      }
+
+      async function _syncSlotToFirebase(slotIndex, slotData) {
+        const userId = await _ensureFirebaseUserId();
+        if (!userId) return null;
+        try {
+          const sources = _getSlotUploadSources(player.appearance);
+          return await FirebaseCharacterService.uploadCharacterSlot(
+            userId,
+            slotIndex,
+            sources.base,
+            sources.pelea,
+            sources.especial,
+            slotData
+          );
+        } catch (error) {
+          console.warn("[DC] Sync Firebase del slot falló:", error);
+          return null;
+        }
+      }
+
+      async function loadSlotFromFirebase(userId, slotIndex) {
+        if (!window.FirebaseCharacterService) {
+          throw new Error("FirebaseCharacterService no disponible.");
+        }
+        return await FirebaseCharacterService.getCharacterSlot(userId, slotIndex);
+      }
 
       /* ══ Paletas ══ */
       const SKIN_PALETTE  = ["#f5d5a8","#e8c898","#d4a574","#c07840","#8d5524","#4caf50","#9c88ff","#c0c0c0","#f0e0f0"];
@@ -1016,6 +1081,7 @@
           variantId: player.appearance.variantId,
           variantCustomizations: serializableVariantCustomizations(player.appearance.variantCustomizations),
           combatCustomization: serializableCombatCustomization(player.appearance.combatCustomization),
+          spriteSheets: getSpriteSheetExportData(player.appearance),
           faceId: player.appearance.faceId,
           faceColor: player.appearance.faceColor || null,
           browColor: player.appearance.browColor || null,
@@ -1156,6 +1222,8 @@
         player.appearance.variantId = appearance.variantId || player.appearance.variantId;
         hydrateVariantCustomizations(appearance.variantCustomizations || {});
         hydrateCombatCustomization(appearance.combatCustomization || {});
+        normalizeSlotSheetUrls(appearance);
+        applySlotSpriteUrls(appearance);
         player.appearance.faceId = appearance.faceId || player.appearance.faceId;
         player.appearance.faceColor = appearance.faceColor ?? player.appearance.faceColor;
         player.appearance.browColor = appearance.browColor ?? player.appearance.browColor;
@@ -1820,6 +1888,53 @@
         _hydrateSheetField(player.appearance.combatCustomization, "spriteDataURL", "spriteImage");
       }
 
+      function normalizeSlotSheetUrls(slot) {
+        if (!slot || typeof slot !== "object") return;
+        if (!slot.spriteSheets) {
+          const sheetKeys = {};
+          if (slot.base) sheetKeys.base = slot.base;
+          if (slot.pelea) sheetKeys.pelea = slot.pelea;
+          if (slot.especial) sheetKeys.especial = slot.especial;
+          if (Object.keys(sheetKeys).length) slot.spriteSheets = sheetKeys;
+        }
+        if (!slot.spriteSheets || typeof slot.spriteSheets !== "object") return;
+        const { base, pelea, especial, explore, combat, special } = slot.spriteSheets;
+        slot.spriteSheets = {
+          ...(base || explore ? { base: base || explore } : {}),
+          ...(pelea || combat ? { pelea: pelea || combat } : {}),
+          ...(especial || special ? { especial: especial || special } : {}),
+        };
+      }
+
+      function getSpriteSheetExportData(app) {
+        const currentVariant = app?.variantCustomizations?.[app?.variantId] || {};
+        return {
+          base: currentVariant.spriteDataURL || null,
+          pelea: app?.combatCustomization?.spriteDataURL || null,
+          especial: currentVariant.specialSpriteDataURL || null,
+        };
+      }
+
+      function applySlotSpriteUrls(slot) {
+        normalizeSlotSheetUrls(slot);
+        const sheets = slot?.spriteSheets || {};
+        if (sheets.base || sheets.especial) {
+          const variantId = player.appearance.variantId || "base";
+          player.appearance.variantCustomizations = player.appearance.variantCustomizations || {};
+          const cfg = player.appearance.variantCustomizations[variantId] || {};
+          if (sheets.base) cfg.spriteDataURL = sheets.base;
+          if (sheets.especial) cfg.specialSpriteDataURL = sheets.especial;
+          player.appearance.variantCustomizations[variantId] = cfg;
+          _hydrateSheetField(cfg, "spriteDataURL", "spriteImage");
+          _hydrateSheetField(cfg, "specialSpriteDataURL", "specialSpriteImage");
+        }
+        if (sheets.pelea) {
+          player.appearance.combatCustomization = player.appearance.combatCustomization || {};
+          player.appearance.combatCustomization.spriteDataURL = sheets.pelea;
+          _hydrateSheetField(player.appearance.combatCustomization, "spriteDataURL", "spriteImage");
+        }
+      }
+
       function buildSheetImportSection(opts) {
         const { title, exploreLabel, combatLabel, specialLabel, exploreCfg, combatCfg, specialCfg,
                 exploreDisabled, combatDisabled, specialDisabled,
@@ -2287,8 +2402,16 @@
         try {
           const raw=localStorage.getItem(LS_KEY);
           const parsed=raw?JSON.parse(raw):null;
-          savedSlots=Array.isArray(parsed)?Array.from({length:11},(_,i)=>parsed[i]??null):Array(11).fill(null);
-        } catch { savedSlots=Array(11).fill(null); }
+          savedSlots = Array.isArray(parsed)
+            ? Array.from({length:11},(_,i)=>{
+                const slot = parsed[i] ?? null;
+                if (slot) normalizeSlotSheetUrls(slot);
+                return slot;
+              })
+            : Array(11).fill(null);
+        } catch {
+          savedSlots=Array(11).fill(null);
+        }
         const si=parseInt(localStorage.getItem(LS_SLOT)||"0",10);
         activeSlotIndex=Number.isFinite(si)?Math.max(0,Math.min(10,si)):0;
       }
@@ -2304,6 +2427,11 @@
             // Remove top-level large dataURLs
             if(copy.accessoryDataURL && copy.accessoryDataURL.length>MAX_DATAURL_BYTES) delete copy.accessoryDataURL;
             if(copy.previewDataURL && copy.previewDataURL.length>MAX_DATAURL_BYTES) delete copy.previewDataURL;
+            if(copy.spriteSheets && typeof copy.spriteSheets === 'object') {
+              if(copy.spriteSheets.base && copy.spriteSheets.base.length>MAX_DATAURL_BYTES) delete copy.spriteSheets.base;
+              if(copy.spriteSheets.pelea && copy.spriteSheets.pelea.length>MAX_DATAURL_BYTES) delete copy.spriteSheets.pelea;
+              if(copy.spriteSheets.especial && copy.spriteSheets.especial.length>MAX_DATAURL_BYTES) delete copy.spriteSheets.especial;
+            }
             // Trim variant customizations large sheets
             if(copy.variantCustomizations && typeof copy.variantCustomizations === 'object') {
               Object.values(copy.variantCustomizations).forEach(cfg => {
@@ -2376,10 +2504,12 @@
             accessoryIsFreeCustomization,
             accessoryName:    accEntry?.name||null,
           };
+          d.spriteSheets = getSpriteSheetExportData(player.appearance);
           savedSlots[i]=d; activeSlotIndex=i;
           localStorage.setItem(LS_SLOT,String(i));
           saveSlots(); renderSlots();
           showToast(`"${d.name}" guardado en slot ${i+1}`,"success");
+          void _syncSlotToFirebase(i, d);
         } catch(err) {
           console.error("[DC] saveToSlot error:",err);
           showToast("Error al guardar — revisá la consola","error");
@@ -2393,6 +2523,8 @@
         player.appearance.variantId   =d.variantId  ||"base";
         hydrateVariantCustomizations(d.variantCustomizations||{});
         hydrateCombatCustomization(d.combatCustomization||{});
+        normalizeSlotSheetUrls(d);
+        applySlotSpriteUrls(d);
         player.appearance.faceId      =d.faceId     ||"fm0";
         player.appearance.faceColor   =d.faceColor  ||null;
         player.appearance.browColor   =d.browColor  ||null;
