@@ -863,6 +863,7 @@
           combatScale: a.combatScale ?? 1, combatAnimFrames: a.combatAnimFrames ?? 6, combatRowCount: a.combatRowCount ?? 0,
           specialScale: a.specialScale ?? 1, specialAnimFrames: a.specialAnimFrames ?? 6, specialRowCount: a.specialRowCount ?? 0,
           raceName: a.raceName || null,
+          isFreeCustomization: a.isFreeCustomization ?? true,
         }));
         try { localStorage.setItem(LS_FREE_KEY, JSON.stringify(toStore)); } catch(e) {
           console.warn("[DC] No se pudo guardar free customization en LS:", e);
@@ -874,18 +875,32 @@
           const raw = localStorage.getItem(LS_FREE_KEY);
           if (!raw) return;
           const list = JSON.parse(raw);
+          if (!Array.isArray(list)) return;
           list.forEach(item => {
-            if (ACCESSORIES_CATALOG.find(a => a.id === item.id)) return;
+            if (!item?.id || ACCESSORIES_CATALOG.some(a => a.id === item.id)) return;
             const img = new Image();
             const entry = {
-              id: item.id, name: item.name, type: item.type || "other",
-              slot: item.slot || "over_shirt", color: item.color || null, userImage: img,
+              id: item.id,
+              name: item.name || "Personalización",
+              type: item.type || "other",
+              slot: item.slot || "over_shirt",
+              color: item.color || null,
+              userImage: img,
               spriteImage: img,
-              dataURL: item.dataURL, combatDataURL: item.combatDataURL || null, specialDataURL: item.specialDataURL || null,
-              scale: item.scale ?? 1, animFrames: item.animFrames ?? 6, rowCount: item.rowCount ?? 0,
-              combatScale: item.combatScale ?? 1, combatAnimFrames: item.combatAnimFrames ?? 6, combatRowCount: item.combatRowCount ?? 0,
-              specialScale: item.specialScale ?? 1, specialAnimFrames: item.specialAnimFrames ?? 6, specialRowCount: item.specialRowCount ?? 0,
-              raceName: item.raceName || null, isFreeCustomization: true,
+              dataURL: item.dataURL,
+              combatDataURL: item.combatDataURL || null,
+              specialDataURL: item.specialDataURL || null,
+              scale: item.scale ?? 1,
+              animFrames: item.animFrames ?? 6,
+              rowCount: item.rowCount ?? 0,
+              combatScale: item.combatScale ?? 1,
+              combatAnimFrames: item.combatAnimFrames ?? 6,
+              combatRowCount: item.combatRowCount ?? 0,
+              specialScale: item.specialScale ?? 1,
+              specialAnimFrames: item.specialAnimFrames ?? 6,
+              specialRowCount: item.specialRowCount ?? 0,
+              raceName: item.raceName || null,
+              isFreeCustomization: item.isFreeCustomization ?? true,
             };
             img.onload = () => { entry.userImage = img; entry.spriteImage = img; };
             img.src = item.dataURL;
@@ -1444,12 +1459,22 @@
         shoes:     { label:"SELECCIONA EL CALZADO",                                    prop:"shoesId" },
         accessory: {
           label: "ACCESORIOS IMPORTADOS",
-          catalog: () => ACCESSORIES_CATALOG.filter(a => !a.isFreeCustomization && !a.id.startsWith("fc_")),
+          catalog: () => ACCESSORIES_CATALOG.filter(a =>
+            !a.isFreeCustomization &&
+            !String(a.id).startsWith("fc_") &&
+            !String(a.id).startsWith("free_custom_") &&
+            !String(a.id).startsWith("custom_")
+          ),
           prop:"accessoryId", isExtra:true, isAccImport:true
         },
         free: {
           label: "PERSONALIZACIÓN LIBRE",
-          catalog: () => ACCESSORIES_CATALOG.filter(a => a.isFreeCustomization || a.id.startsWith("fc_")),
+          catalog: () => ACCESSORIES_CATALOG.filter(a =>
+            a.isFreeCustomization ||
+            String(a.id).startsWith("fc_") ||
+            String(a.id).startsWith("free_custom_") ||
+            String(a.id).startsWith("custom_")
+          ),
           prop:"accessoryId", isExtra:true, isAccImport:true
         },
         aura:      { label:"SELECCIONA EL AURA",          catalog: AURAS_CATALOG,      prop:"auraId",       isExtra:true, needsColor:true, colorProp:"auraColor", colorLabel:"COLOR AURA", palette:AURA_PALETTE },
@@ -1522,7 +1547,7 @@
 
         items.forEach(item => {
           const thumb = document.createElement("div");
-          thumb.className = "item-thumb";
+          thumb.className = "item-thumb item-card";
           const currentId = cfg.isExtra
             ? (charState[cfg.prop] || player.appearance[cfg.prop])
             : player.appearance[cfg.prop];
@@ -1532,6 +1557,7 @@
           cv.width = 52; cv.height = 52;
           cv.style.imageRendering = "pixelated";
           cv.style.mozImageRendering = "crisp-edges";
+          cv.getContext("2d").imageSmoothingEnabled = false;
           drawThumbCanvas(cv, cat, item);
           thumb.appendChild(cv);
 
