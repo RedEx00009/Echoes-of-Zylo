@@ -1530,6 +1530,8 @@
 
           const cv = document.createElement("canvas");
           cv.width = 52; cv.height = 52;
+          cv.style.imageRendering = "pixelated";
+          cv.style.mozImageRendering = "crisp-edges";
           drawThumbCanvas(cv, cat, item);
           thumb.appendChild(cv);
 
@@ -2077,7 +2079,7 @@
           const name=nameInput.value.trim()||(isFreeCat?"Personalización":"Accesorio");
           const type=isFreeCat?"other":typeSelect.value;
           const typeDef=ACCESSORY_TYPES.find(td=>td.id===type)||ACCESSORY_TYPES[ACCESSORY_TYPES.length-1];
-          const uniqueId = `${isFreeCat ? "fc" : "user_acc"}_${Date.now()}_${Math.random().toString(36).slice(2,5)}`;
+          const uniqueId = `${isFreeCat ? "free_custom" : "user_acc"}_${Date.now()}_${Math.random().toString(36).slice(2,5)}`;
           const entry = {
             id: uniqueId,
             name,
