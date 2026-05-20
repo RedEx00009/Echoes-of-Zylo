@@ -912,6 +912,55 @@
         return ACCESSORIES_CATALOG.find(a => a.id === accId) || null;
       }
 
+      function _getImportedAccessoriesExportData() {
+        return ACCESSORIES_CATALOG
+          .filter(a => a.id !== "ac_none" && a.dataURL && !a.isFreeCustomization)
+          .map(entry => ({
+            id: entry.id,
+            name: entry.name,
+            type: entry.type,
+            slot: entry.slot,
+            color: entry.color || null,
+            isFreeCustomization: false,
+            dataURL: entry.dataURL || null,
+            combatDataURL: entry.combatDataURL || null,
+            specialDataURL: entry.specialDataURL || null,
+            scale: entry.scale ?? 1,
+            animFrames: entry.animFrames ?? 6,
+            rowCount: entry.rowCount ?? 0,
+            combatScale: entry.combatScale ?? 1,
+            combatAnimFrames: entry.combatAnimFrames ?? 6,
+            combatRowCount: entry.combatRowCount ?? 0,
+            specialScale: entry.specialScale ?? 1,
+            specialAnimFrames: entry.specialAnimFrames ?? 6,
+            specialRowCount: entry.specialRowCount ?? 0,
+          }));
+      }
+
+      function _getImportedFreeCustomizationExportData() {
+        return FREE_CUSTOMIZATION_CATALOG.map(entry => ({
+          id: entry.id,
+          name: entry.name,
+          type: entry.type,
+          slot: entry.slot,
+          color: entry.color || null,
+          raceName: entry.raceName || null,
+          isFreeCustomization: true,
+          dataURL: entry.dataURL || null,
+          combatDataURL: entry.combatDataURL || null,
+          specialDataURL: entry.specialDataURL || null,
+          scale: entry.scale ?? 1,
+          animFrames: entry.animFrames ?? 6,
+          rowCount: entry.rowCount ?? 0,
+          combatScale: entry.combatScale ?? 1,
+          combatAnimFrames: entry.combatAnimFrames ?? 6,
+          combatRowCount: entry.combatRowCount ?? 0,
+          specialScale: entry.specialScale ?? 1,
+          specialAnimFrames: entry.specialAnimFrames ?? 6,
+          specialRowCount: entry.specialRowCount ?? 0,
+        }));
+      }
+
       function _getCurrentAccessoryExportData() {
         const entry = _getCurrentAccessoryEntry();
         if (!entry || entry.id === "ac_none") return null;
@@ -976,6 +1025,8 @@
           name: document.getElementById("charName").value || "Guerrero Z",
           appearance: _serializeAppearanceForExport(),
           accessory: _getCurrentAccessoryExportData(),
+          accessories: _getImportedAccessoriesExportData(),
+          freeCustomizations: _getImportedFreeCustomizationExportData(),
         };
         const safeName = (payload.name || "personaje").replace(/[^a-zA-Z0-9-_]/g, "_");
         const fileName = `${safeName}_dragonCreatorZ.json`;
@@ -1105,6 +1156,12 @@
         player.appearance.accessoryCombatDataURL = appearance.accessoryCombatDataURL || player.appearance.accessoryCombatDataURL || null;
         player.appearance.accessorySpecialDataURL = appearance.accessorySpecialDataURL || player.appearance.accessorySpecialDataURL || null;
 
+        if (Array.isArray(payload.accessories)) {
+          payload.accessories.forEach(_registerImportedAccessory);
+        }
+        if (Array.isArray(payload.freeCustomizations)) {
+          payload.freeCustomizations.forEach(_registerImportedAccessory);
+        }
         if (payload.accessory) {
           const accessoryEntry = _registerImportedAccessory(payload.accessory);
           if (accessoryEntry) {
@@ -1114,6 +1171,8 @@
           }
         }
 
+        _saveAccessoriesToLS();
+        _saveFreeCustomizationToLS();
         invalidateHairCache();
         renderItemsPanel(activeCategory);
         renderSlots();
