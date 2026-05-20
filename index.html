@@ -1890,20 +1890,26 @@
 
       function normalizeSlotSheetUrls(slot) {
         if (!slot || typeof slot !== "object") return;
-        if (!slot.spriteSheets) {
-          const sheetKeys = {};
-          if (slot.base) sheetKeys.base = slot.base;
-          if (slot.pelea) sheetKeys.pelea = slot.pelea;
-          if (slot.especial) sheetKeys.especial = slot.especial;
-          if (Object.keys(sheetKeys).length) slot.spriteSheets = sheetKeys;
-        }
-        if (!slot.spriteSheets || typeof slot.spriteSheets !== "object") return;
-        const { base, pelea, especial, explore, combat, special } = slot.spriteSheets;
-        slot.spriteSheets = {
-          ...(base || explore ? { base: base || explore } : {}),
-          ...(pelea || combat ? { pelea: pelea || combat } : {}),
-          ...(especial || special ? { especial: especial || special } : {}),
+
+        const extractValue = (value) => {
+          if (!value) return null;
+          if (typeof value === "string") return value;
+          if (value.src && typeof value.src === "string") return value.src;
+          return null;
         };
+
+        const source = slot.spriteSheets || slot.sprites || {};
+        const sheetBase = extractValue(source.base || slot.base || source.explore || slot.explore);
+        const sheetCombate = extractValue(
+          source.pelea || slot.pelea || source.combat || slot.combat || source.combate || slot.combate
+        );
+        const sheetEspecial = extractValue(source.especial || slot.especial || source.special || slot.special);
+
+        const normalized = {};
+        if (sheetBase) normalized.base = sheetBase;
+        if (sheetCombate) normalized.pelea = sheetCombate;
+        if (sheetEspecial) normalized.especial = sheetEspecial;
+        if (Object.keys(normalized).length) slot.spriteSheets = normalized;
       }
 
       function getSpriteSheetExportData(app) {
@@ -2427,6 +2433,9 @@
             // Remove top-level large dataURLs
             if(copy.accessoryDataURL && copy.accessoryDataURL.length>MAX_DATAURL_BYTES) delete copy.accessoryDataURL;
             if(copy.previewDataURL && copy.previewDataURL.length>MAX_DATAURL_BYTES) delete copy.previewDataURL;
+            ["base","pelea","especial","combate","special"].forEach(key => {
+              if(copy[key] && typeof copy[key] === 'string' && copy[key].length>MAX_DATAURL_BYTES) delete copy[key];
+            });
             if(copy.spriteSheets && typeof copy.spriteSheets === 'object') {
               if(copy.spriteSheets.base && copy.spriteSheets.base.length>MAX_DATAURL_BYTES) delete copy.spriteSheets.base;
               if(copy.spriteSheets.pelea && copy.spriteSheets.pelea.length>MAX_DATAURL_BYTES) delete copy.spriteSheets.pelea;
@@ -2504,7 +2513,13 @@
             accessoryIsFreeCustomization,
             accessoryName:    accEntry?.name||null,
           };
-          d.spriteSheets = getSpriteSheetExportData(player.appearance);
+          const sheetUrls = getSpriteSheetExportData(player.appearance);
+          d.spriteSheets = sheetUrls;
+          d.base = sheetUrls.base || null;
+          d.pelea = sheetUrls.pelea || null;
+          d.especial = sheetUrls.especial || null;
+          d.combate = sheetUrls.pelea || null;
+          d.special = sheetUrls.especial || null;
           savedSlots[i]=d; activeSlotIndex=i;
           localStorage.setItem(LS_SLOT,String(i));
           saveSlots(); renderSlots();
@@ -2517,13 +2532,43 @@
       }
 
       function loadFromSlot(i) {
-        const d=savedSlots[i]; if(!d) return;
-        player.appearance.raceId      =d.race       ||"human";
-        player.appearance.gender      =d.gender     ||"male";
-        player.appearance.variantId   =d.variantId  ||"base";
-        hydrateVariantCustomizations(d.variantCustomizations||{});
-        hydrateCombatCustomization(d.combatCustomization||{});
+        const d = savedSlots[i]; if(!d) return;
         normalizeSlotSheetUrls(d);
+        const sBase = d.base || d.spriteSheets?.base || "";
+        const sCombate = d.combate || d.pelea || d.spriteSheets?.pelea || "";
+        const sEspecial = d.special || d.especial || d.spriteSheets?.especial || "";
+
+        player.appearance.raceId    = d.race      || "human";
+        player.appearance.gender    = d.gender    || "male";
+        player.appearance.variantId = d.variantId || "base";
+
+        const customVariantId = player.appearance.variantId || "base";
+        const variantCustomizations = Object.assign({}, d.variantCustomizations || {});
+        variantCustomizations[customVariantId] = Object.assign({}, variantCustomizations[customVariantId] || {});
+
+        if (sBase) {
+          variantCustomizations[customVariantId].spriteDataURL = sBase;
+          variantCustomizations[customVariantId].spriteImage = null;
+          if (imageMap) {
+            const baseKey = `${player.appearance.raceId}_${player.appearance.gender}`;
+            const customImg = new Image();
+            customImg.onload = () => { imageMap[baseKey] = customImg; };
+            customImg.src = sBase;
+          }
+        }
+        if (sEspecial) {
+          variantCustomizations[customVariantId].specialSpriteDataURL = sEspecial;
+          variantCustomizations[customVariantId].specialSpriteImage = null;
+        }
+
+        const combatCustomization = Object.assign({}, d.combatCustomization || {});
+        if (sCombate) {
+          combatCustomization.spriteDataURL = sCombate;
+          combatCustomization.spriteImage = null;
+        }
+
+        hydrateVariantCustomizations(variantCustomizations);
+        hydrateCombatCustomization(combatCustomization);
         applySlotSpriteUrls(d);
         player.appearance.faceId      =d.faceId     ||"fm0";
         player.appearance.faceColor   =d.faceColor  ||null;
@@ -2714,8 +2759,14 @@
           const loaded=Object.values(imageMap).filter(Boolean).length;
           showToast(loaded>0?`${loaded} sprites cargados`:"Modo procedimental activo",loaded>0?"success":"warning");
           if(savedSlots[activeSlotIndex]){
-            try{loadFromSlot(activeSlotIndex);}
-            catch(err){console.warn("Slot corrupto:",err);showToast("Datos de slot inválidos","warning");}
+            try {
+              loadFromSlot(activeSlotIndex);
+            } catch(err) {
+              console.warn("Slot corrupto:",err);
+              savedSlots[activeSlotIndex] = null;
+              saveSlots();
+              showToast("Slot inicializado por defecto","warning");
+            }
           }
           renderItemsPanel("race"); renderSlots(); updateStats();
         } catch(err){
