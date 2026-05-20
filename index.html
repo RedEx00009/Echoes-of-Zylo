@@ -854,17 +854,19 @@
 
       /* ══ Persistencia Free Customization ══ */
       function _saveFreeCustomizationToLS() {
-        const toStore = FREE_CUSTOMIZATION_CATALOG.map(a => ({
-          id:       a.id,  name:     a.name,  type:     a.type,
-          slot:     a.slot, color:    a.color, dataURL:  a.dataURL,
-          combatDataURL: a.combatDataURL || null,
-          specialDataURL: a.specialDataURL || null,
-          scale: a.scale ?? 1, animFrames: a.animFrames ?? 6, rowCount: a.rowCount ?? 0,
-          combatScale: a.combatScale ?? 1, combatAnimFrames: a.combatAnimFrames ?? 6, combatRowCount: a.combatRowCount ?? 0,
-          specialScale: a.specialScale ?? 1, specialAnimFrames: a.specialAnimFrames ?? 6, specialRowCount: a.specialRowCount ?? 0,
-          raceName: a.raceName || null,
-          isFreeCustomization: a.isFreeCustomization ?? true,
-        }));
+        const toStore = FREE_CUSTOMIZATION_CATALOG
+          .filter(a => String(a.id).startsWith("custom_file_"))
+          .map(a => ({
+            id:       a.id,  name:     a.name,  type:     a.type,
+            slot:     a.slot, color:    a.color, dataURL:  a.dataURL,
+            combatDataURL: a.combatDataURL || null,
+            specialDataURL: a.specialDataURL || null,
+            scale: a.scale ?? 1, animFrames: a.animFrames ?? 6, rowCount: a.rowCount ?? 0,
+            combatScale: a.combatScale ?? 1, combatAnimFrames: a.combatAnimFrames ?? 6, combatRowCount: a.combatRowCount ?? 0,
+            specialScale: a.specialScale ?? 1, specialAnimFrames: a.specialAnimFrames ?? 6, specialRowCount: a.specialRowCount ?? 0,
+            raceName: a.raceName || null,
+            isFreeCustomization: a.isFreeCustomization ?? true,
+          }));
         try { localStorage.setItem(LS_FREE_KEY, JSON.stringify(toStore)); } catch(e) {
           console.warn("[DC] No se pudo guardar free customization en LS:", e);
         }
@@ -1473,7 +1475,8 @@
             a.isFreeCustomization ||
             String(a.id).startsWith("fc_") ||
             String(a.id).startsWith("free_custom_") ||
-            String(a.id).startsWith("custom_")
+            String(a.id).startsWith("custom_") ||
+            String(a.id).startsWith("custom_file_")
           ),
           prop:"accessoryId", isExtra:true, isAccImport:true
         },
@@ -2105,7 +2108,7 @@
           const name=nameInput.value.trim()||(isFreeCat?"Personalización":"Accesorio");
           const type=isFreeCat?"other":typeSelect.value;
           const typeDef=ACCESSORY_TYPES.find(td=>td.id===type)||ACCESSORY_TYPES[ACCESSORY_TYPES.length-1];
-          const uniqueId = `${isFreeCat ? "free_custom" : "user_acc"}_${Date.now()}_${Math.random().toString(36).slice(2,5)}`;
+          const uniqueId = `custom_file_${Date.now()}_${Math.random().toString(36).slice(2,5)}`;
           const entry = {
             id: uniqueId,
             name,
