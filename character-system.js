@@ -15,14 +15,15 @@
  *   Row  2 → walk        (4 frames)
  *   Row  3 → run         (4 frames)
  *   Row  4 → jump        (3 frames)
- *   Row  5 → fall        (2 frames)
- *   Row  6 → fly         (4 frames)
- *   Row  7 → hover       (2 frames)
- *   Row  8 → meditate    (3 frames)
- *   Row  9 → sleep       (3 frames)
- *   Row 10 → interaction (3 frames)
- *   Row 11 → (reservada / futura)
+ *   Row  5 → fall        (1 frame)
+ *   Row  6 → Land        (3 frames)
+ *   Row  7 → fly         (4 frames)
+ *   Row  8 → hover       (2 frames)
+ *   Row  9 → meditate    (3 frames)
+ *   Row 10 → sleep       (3 frames)
+ *   Row 11 → interaction (3 frames)
  *   Row 12 → (reservada / futura)
+ *   Row 13 → (reservada / futura)
  *
  *  ── *_Pelea.png  (Combate) ── COMBAT_MAX_COLS=4, COMBAT_TOTAL_ROWS=13
  *   Row  0 → combat_view   (1 frame)
@@ -183,9 +184,8 @@
     idle:        "combat_idle",
     walk:        "combat_idle",
     run:         "dash",
-    run2:        "dash",
-    jump:        "dash",
     fall:        "dash",
+    jump:        "dash",
     fly:         "knockback_fly",
     hover:       "combat_idle",
     meditate:    "charge",
