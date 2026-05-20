@@ -828,15 +828,28 @@
           userImage: img,
           dataURL:   entry.dataURL,
           combatDataURL:    entry.combatDataURL || null,
+          specialDataURL:   entry.specialDataURL || null,
           scale:            entry.scale ?? 1,
           animFrames:       entry.animFrames ?? MAX_COLS,
+          rowCount:         entry.rowCount ?? 0,
           combatScale:      entry.combatScale ?? 1,
           combatAnimFrames: entry.combatAnimFrames ?? COMBAT_MAX_COLS,
+          combatRowCount:   entry.combatRowCount ?? 0,
+          specialScale:     entry.specialScale ?? 1,
+          specialAnimFrames:entry.specialAnimFrames ?? SPECIAL_MAX_COLS,
+          specialRowCount:  entry.specialRowCount ?? 0,
+          yOffset:          entry.yOffset ?? 0,
+          isFreeCustomization: entry.isFreeCustomization ?? false,
         };
         if (entry.combatDataURL) {
           const ci = new Image();
           ci.onload = () => { accEntry.combatUserImage = ci; };
           ci.src = entry.combatDataURL;
+        }
+        if (entry.specialDataURL) {
+          const si = new Image();
+          si.onload = () => { accEntry.specialUserImage = si; };
+          si.src = entry.specialDataURL;
         }
         ACCESSORIES_CATALOG.push(accEntry);
         resolve();

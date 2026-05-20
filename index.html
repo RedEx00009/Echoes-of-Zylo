@@ -799,6 +799,8 @@
       let _importPendingDataURL = null;
       let _importPendingCombatImg = null;
       let _importPendingCombatDataURL = null;
+      let _importPendingSpecialImg = null;
+      let _importPendingSpecialDataURL = null;
 
       const charState = {
         name:        "Guerrero Z",
@@ -833,10 +835,13 @@
           .map(a => ({
             id: a.id, name: a.name, type: a.type, color: a.color, dataURL: a.dataURL,
             combatDataURL: a.combatDataURL || null,
+            specialDataURL: a.specialDataURL || null,
             scale: a.scale ?? 1, animFrames: a.animFrames ?? 6,
             rowCount: a.rowCount ?? 0,
             combatScale: a.combatScale ?? 1, combatAnimFrames: a.combatAnimFrames ?? 6,
             combatRowCount: a.combatRowCount ?? 0,
+            specialScale: a.specialScale ?? 1, specialAnimFrames: a.specialAnimFrames ?? 6,
+            specialRowCount: a.specialRowCount ?? 0,
           }));
         try { localStorage.setItem(LS_ACC_KEY, JSON.stringify(toStore)); } catch(e) {
           console.warn("[DC] No se pudo guardar accesorios en LS:", e);
@@ -2101,7 +2106,25 @@
         });
         combatLabel2.appendChild(combatInput); combatLabel2.appendChild(document.createTextNode("⚔️ COMBATE (13 filas, opcional)"));
         row2.appendChild(combatLabel2);
-        ip.appendChild(combatPreview);
+        row2.appendChild(combatPreview);
+        // Especial (sheet opcional)
+        const specialLabel = document.createElement("label"); specialLabel.className = "import-file-label";
+        const specialInput = document.createElement("input"); specialInput.type = "file"; specialInput.accept = "image/*";
+        const specialPreview = document.createElement("img"); specialPreview.className = "import-preview";
+        specialInput.addEventListener("change", e => {
+          const file = e.target.files[0]; if(!file) return;
+          const reader = new FileReader();
+          reader.onload = ev => {
+            _importPendingSpecialDataURL = ev.target.result; const img = new Image();
+            img.onload = () => { _importPendingSpecialImg = img; specialPreview.src = _importPendingSpecialDataURL; specialPreview.classList.add("visible"); };
+            img.onerror = () => showToast("No se pudo cargar la imagen","error");
+            img.src = _importPendingSpecialDataURL;
+          };
+          reader.readAsDataURL(file);
+        });
+        specialLabel.appendChild(specialInput); specialLabel.appendChild(document.createTextNode("✨ ESPECIAL (opcional)"));
+        row2.appendChild(specialLabel);
+        row2.appendChild(specialPreview);
         const addBtn = document.createElement("button"); addBtn.className="import-add-btn"; addBtn.disabled=!_importPendingImg; addBtn.innerHTML="✚ AÑADIR";
         addBtn.addEventListener("click", () => {
           if(!_importPendingImg||!_importPendingDataURL){showToast("Primero seleccioná un archivo PNG","warning");return;}
@@ -2119,10 +2142,15 @@
             dataURL: _importPendingDataURL,
             combatUserImage: _importPendingCombatImg || null,
             combatDataURL: _importPendingCombatDataURL || null,
+            specialUserImage: _importPendingSpecialImg || null,
+            specialDataURL: _importPendingSpecialDataURL || null,
             scale: 1,
             animFrames: 6,
             combatScale: 1,
             combatAnimFrames: 6,
+            specialScale: 1,
+            specialAnimFrames: 6,
+            specialRowCount: 0,
             raceName: isFreeCat ? (raceInput.value.trim() || null) : null,
             isFreeCustomization: isFreeCat,
           };
@@ -2134,11 +2162,13 @@
             _saveAccessoriesToLS();
           }
           charState.accessoryId=entry.id; player.appearance.accessoryId=entry.id;
-          _importPendingImg=null; _importPendingDataURL=null; _importPendingCombatImg=null; _importPendingCombatDataURL=null;
+          _importPendingImg=null; _importPendingDataURL=null; _importPendingCombatImg=null; _importPendingCombatDataURL=null; _importPendingSpecialImg=null; _importPendingSpecialDataURL=null;
           fileInput.value = "";
           combatInput.value = "";
+          specialInput.value = "";
           preview.classList.remove("visible");
           combatPreview.classList.remove("visible");
+          specialPreview.classList.remove("visible");
           addBtn.disabled = true;
           nameInput.value = "";
           if (isFreeCat) raceInput.value = "";

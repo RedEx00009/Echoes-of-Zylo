@@ -731,6 +731,8 @@
           ).concat([
             makePcSkill({ icon:"⚔️", key:"X", title:"Modo combate [X]", action:"setControlMode('combat')" }),
             makePcSkill({ icon:"🏃", key:"SHIFT", title:"Correr", action:"toggleRunPC()", id:"skillRun", cls:isRunning?"run-active":"" }),
+          ]).concat([
+            makePcSkill({ icon:"💬", key:"G", title:"Interactuar [G]", action:"interactNearby()", id:"skillInteract" }),
           ]).join("");
         }
       }
@@ -751,7 +753,9 @@
           grid.innerHTML = RP_ACTIONS.map((a, idx) =>
             makeMobileAction({ icon:a.icon, label:a.label, action:`performRpAction('${a.id}')`, cls:idx % 2 ? "btn-trailer" : "btn-emote" })
           ).concat([
-            makeMobileAction({ icon:"⚔️", label:"COMBATE", action:"setControlMode('combat')", cls:"btn-interact" }),
+              makeMobileAction({ icon:"⚔️", label:"COMBATE", action:"setControlMode('combat')", cls:"btn-interact" }),
+          ]).concat([
+            makeMobileAction({ icon:"💬", label:"HABLAR", action:"interactNearby()", cls:"btn-interact" }),
             `<div class="action-btn btn-run ${isRunning ? "run-active" : ""}" id="mobileRunBtn" onclick="toggleRunMobile()" style="border-radius:12px;width:100%;height:calc(var(--btn-size)*0.7);"><span class="btn-icon">🏃</span><span class="btn-label" id="runBtnLabel">CORRER: ${isRunning ? "ON" : "OFF"}</span></div>`,
           ]).join("");
         }
@@ -1699,6 +1703,7 @@
       if (e.code==="KeyC") { e.preventDefault(); runActionSlot(5); }
       if (e.code==="KeyV") { e.preventDefault(); runActionSlot(6); }
       if (e.code==="KeyB") { e.preventDefault(); runActionSlot(7); }
+      if (e.code==="KeyG") { e.preventDefault(); interactNearby(); }
       if (e.code==="KeyX") {
         e.preventDefault();
         if (window.PvpSystem?.isFighter()) return;
