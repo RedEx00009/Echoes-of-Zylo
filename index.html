@@ -2532,88 +2532,114 @@
       }
 
       function loadFromSlot(i) {
-        const d = savedSlots[i]; if(!d) return;
-        normalizeSlotSheetUrls(d);
-        const sBase = d.base || d.spriteSheets?.base || "";
-        const sCombate = d.combate || d.pelea || d.spriteSheets?.pelea || "";
-        const sEspecial = d.special || d.especial || d.spriteSheets?.especial || "";
+        try {
+          const d = savedSlots[i]; if (!d) throw new Error("Slot vacío o inválido");
+          normalizeSlotSheetUrls(d);
+          const baseSprite = d?.spriteSheets?.base || d?.base || d?.sprites?.base || "";
+          const peleaSprite = d?.spriteSheets?.pelea || d?.spriteSheets?.combat || d?.pelea || d?.combat || d?.sprites?.combat || "";
+          const especialSprite = d?.spriteSheets?.especial || d?.spriteSheets?.special || d?.especial || d?.special || d?.sprites?.special || "";
 
-        player.appearance.raceId    = d.race      || "human";
-        player.appearance.gender    = d.gender    || "male";
-        player.appearance.variantId = d.variantId || "base";
+          player.appearance.raceId    = d.race      || "human";
+          player.appearance.gender    = d.gender    || "male";
+          player.appearance.variantId = d.variantId || "base";
 
-        const customVariantId = player.appearance.variantId || "base";
-        const variantCustomizations = Object.assign({}, d.variantCustomizations || {});
-        variantCustomizations[customVariantId] = Object.assign({}, variantCustomizations[customVariantId] || {});
+          const customVariantId = player.appearance.variantId || "base";
+          const variantCustomizations = Object.assign({}, d.variantCustomizations || {});
+          variantCustomizations[customVariantId] = Object.assign({}, variantCustomizations[customVariantId] || {});
 
-        if (sBase) {
-          variantCustomizations[customVariantId].spriteDataURL = sBase;
-          variantCustomizations[customVariantId].spriteImage = null;
-          if (imageMap) {
-            const baseKey = `${player.appearance.raceId}_${player.appearance.gender}`;
-            const customImg = new Image();
-            customImg.onload = () => { imageMap[baseKey] = customImg; };
-            customImg.src = sBase;
+          if (baseSprite) {
+            variantCustomizations[customVariantId].spriteDataURL = baseSprite;
+            variantCustomizations[customVariantId].spriteImage = null;
+            if (imageMap) {
+              const raceKey = `${player.appearance.raceId}_${player.appearance.gender}`;
+              const customImg = new Image();
+              customImg.onload = () => { imageMap[raceKey] = customImg; };
+              customImg.src = baseSprite;
+            }
           }
-        }
-        if (sEspecial) {
-          variantCustomizations[customVariantId].specialSpriteDataURL = sEspecial;
-          variantCustomizations[customVariantId].specialSpriteImage = null;
-        }
-
-        const combatCustomization = Object.assign({}, d.combatCustomization || {});
-        if (sCombate) {
-          combatCustomization.spriteDataURL = sCombate;
-          combatCustomization.spriteImage = null;
-        }
-
-        hydrateVariantCustomizations(variantCustomizations);
-        hydrateCombatCustomization(combatCustomization);
-        applySlotSpriteUrls(d);
-        player.appearance.faceId      =d.faceId     ||"fm0";
-        player.appearance.faceColor   =d.faceColor  ||null;
-        player.appearance.browColor   =d.browColor  ||null;
-        player.appearance.pupilColor  =d.pupilColor ||null;
-        player.appearance.hairId      =d.hair       ||"hm1";
-        player.appearance.hairColor   =d.hairColor  ||"#1a1a1a";
-        player.appearance.topId       =d.shirt      ||"sm1";
-        player.appearance.bottomId    =d.pants      ||"pm1";
-        player.appearance.shoesId     =d.shoes      ||"shm1";
-        player.appearance.skinColor   =d.skinColor  ||"#e8c898";
-        player.appearance.eyeColor    =d.eyeColor   ||"#3a2a1a";
-        charState.glovesId            =d.gloves     ||"gm0";
-        charState.auraId              =d.aura       ||"a0";
-        charState.auraColor           =d.auraColor  ||"#fdd835";
-        charState.clothColor          =d.clothColor ||"#ff6a00";
-        player.appearance.glovesId    =charState.glovesId;
-        player.appearance.auraId      =charState.auraId;
-        player.appearance.auraColor   =charState.auraColor;
-        const accId=d.accessory||"ac_none";
-        const existing=ACCESSORIES_CATALOG.find(a=>a.id===accId);
-        if(!existing&&d.accessoryDataURL&&accId!=="ac_none"){
-          const img=new Image(); img.src=d.accessoryDataURL;
-          const isFreeCat=!!(d.accessoryIsFreeCustomization||d.race==="Custom"||accId.startsWith("fc_"));
-          const entry={id:accId,name:d.accessoryName||"Personalización",type:"other",slot:"over_shirt",color:null,userImage:img,dataURL:d.accessoryDataURL,raceName:null,isFreeCustomization:isFreeCat};
-          if (d.accessoryCombatDataURL) {
-            const ci = new Image(); ci.src = d.accessoryCombatDataURL;
-            entry.combatUserImage = ci;
-            entry.combatDataURL = d.accessoryCombatDataURL;
+          if (especialSprite) {
+            variantCustomizations[customVariantId].specialSpriteDataURL = especialSprite;
+            variantCustomizations[customVariantId].specialSpriteImage = null;
           }
-          if (d.accessorySpecialDataURL) {
-            const si = new Image(); si.src = d.accessorySpecialDataURL;
-            entry.specialUserImage = si;
-            entry.specialDataURL = d.accessorySpecialDataURL;
+
+          const combatCustomization = Object.assign({}, d.combatCustomization || {});
+          if (peleaSprite) {
+            combatCustomization.spriteDataURL = peleaSprite;
+            combatCustomization.spriteImage = null;
           }
-          ACCESSORIES_CATALOG.push(entry);
-          if(isFreeCat&&!FREE_CUSTOMIZATION_CATALOG.find(x=>x.id===accId)) FREE_CUSTOMIZATION_CATALOG.push(entry);
+
+          hydrateVariantCustomizations(variantCustomizations);
+          hydrateCombatCustomization(combatCustomization);
+          applySlotSpriteUrls(d);
+
+          player.appearance.faceId      = d.faceId     || "fm0";
+          player.appearance.faceColor   = d.faceColor  || null;
+          player.appearance.browColor   = d.browColor  || null;
+          player.appearance.pupilColor  = d.pupilColor || null;
+          player.appearance.hairId      = d.hair       || "hm1";
+          player.appearance.hairColor   = d.hairColor  || "#1a1a1a";
+          player.appearance.topId       = d.shirt      || "sm1";
+          player.appearance.bottomId    = d.pants      || "pm1";
+          player.appearance.shoesId     = d.shoes      || "shm1";
+          player.appearance.skinColor   = d.skinColor  || "#e8c898";
+          player.appearance.eyeColor    = d.eyeColor   || "#3a2a1a";
+          charState.glovesId            = d.gloves     || "gm0";
+          charState.auraId              = d.aura       || "a0";
+          charState.auraColor           = d.auraColor  || "#fdd835";
+          charState.clothColor          = d.clothColor || "#ff6a00";
+          player.appearance.glovesId    = charState.glovesId;
+          player.appearance.auraId      = charState.auraId;
+          player.appearance.auraColor   = charState.auraColor;
+
+          const accId = d.accessory || "ac_none";
+          const existing = ACCESSORIES_CATALOG.find(a => a.id === accId);
+          if (!existing && d.accessoryDataURL && accId !== "ac_none") {
+            const img = new Image(); img.src = d.accessoryDataURL;
+            const isFreeCat = !!(d.accessoryIsFreeCustomization || d.race === "Custom" || accId.startsWith("fc_"));
+            const entry = { id: accId, name: d.accessoryName || "Personalización", type: "other", slot: "over_shirt", color: null, userImage: img, spriteImage: img, dataURL: d.accessoryDataURL, raceName: null, isFreeCustomization: isFreeCat };
+            if (d.accessoryCombatDataURL) {
+              const ci = new Image(); ci.src = d.accessoryCombatDataURL;
+              entry.combatUserImage = ci;
+              entry.combatDataURL = d.accessoryCombatDataURL;
+            }
+            if (d.accessorySpecialDataURL) {
+              const si = new Image(); si.src = d.accessorySpecialDataURL;
+              entry.specialUserImage = si;
+              entry.specialDataURL = d.accessorySpecialDataURL;
+            }
+            ACCESSORIES_CATALOG.push(entry);
+            if (isFreeCat && !FREE_CUSTOMIZATION_CATALOG.find(x => x.id === accId)) FREE_CUSTOMIZATION_CATALOG.push(entry);
+          }
+          charState.accessoryId         = accId;
+          player.appearance.accessoryId = accId;
+          document.getElementById("charName").value = d.name || "Guerrero Z";
+          invalidateHairCache();
+          activeSlotIndex = i; localStorage.setItem(LS_SLOT, String(i));
+          renderSlots(); renderItemsPanel(activeCategory); updateStats();
+          showToast(`"${d.name}" cargado`, "success");
+        } catch (err) {
+          console.warn("loadFromSlot falló:", err);
+          player.appearance.raceId = "human";
+          player.appearance.gender = "male";
+          player.appearance.variantId = "base";
+          player.appearance.variantCustomizations = {};
+          player.appearance.combatCustomization = {};
+          player.appearance.faceId = "fm0";
+          player.appearance.hairId = "hm1";
+          player.appearance.topId = "sm1";
+          player.appearance.bottomId = "pm1";
+          player.appearance.shoesId = "shm1";
+          player.appearance.skinColor = "#e8c898";
+          player.appearance.eyeColor = "#3a2a1a";
+          charState.glovesId = "gm0";
+          charState.auraId = "a0";
+          charState.auraColor = "#fdd835";
+          player.appearance.glovesId = charState.glovesId;
+          player.appearance.auraId = charState.auraId;
+          player.appearance.auraColor = charState.auraColor;
+          invalidateHairCache();
+          showToast("Slot inicializado por defecto", "warning");
         }
-        charState.accessoryId         =accId;
-        player.appearance.accessoryId =accId;
-        document.getElementById("charName").value=d.name||"Guerrero Z";
-        invalidateHairCache();
-        activeSlotIndex=i; localStorage.setItem(LS_SLOT,String(i));
-        renderSlots(); renderItemsPanel(activeCategory); updateStats();
-        showToast(`"${d.name}" cargado`,"success");
       }
 
       function deleteSlot(i) {
