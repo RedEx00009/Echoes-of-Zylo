@@ -275,7 +275,8 @@
     const ratioCombat  = COMBAT_MAX_COLS   / COMBAT_TOTAL_ROWS;
     const ratioSpecial = SPECIAL_MAX_COLS  / SPECIAL_TOTAL_ROWS;
 
-    const TOL = 0.15;  // más permisivo con spritesheets no estándar
+    // Tolerancia ampliada a 0.15
+    const TOL = 0.15;
 
     if (Math.abs(ratio - ratioCombat)  < TOL &&
         iw >= COMBAT_MAX_COLS   * 8 &&
@@ -289,8 +290,7 @@
         iw >= MAX_COLS   * 8 &&
         ih >= TOTAL_ROWS * 8) return "base";
 
-    // Si la imagen tiene dimensiones razonables para un sheet base,
-    // asumirla como base aunque el aspect ratio no sea exacto.
+    // NUEVO: fallback — si tiene suficientes pixeles para ser un sheet base, aceptarlo
     if (iw >= MAX_COLS * 8 && ih >= TOTAL_ROWS * 8) return "base";
 
     return null;
