@@ -40,7 +40,6 @@
       #gameCanvas { display:block; position:fixed; top:0; left:0; width:100vw; height:100vh; }
       #hud { position:fixed; inset:0; pointer-events:none; z-index:10; }
 
-      /* ── HAMBURGER ── */
       #menuToggleBtn {
         position:fixed; top:12px; left:12px; z-index:120;
         width:44px; height:44px; background:var(--ui-bg); border:1px solid #2a3560;
@@ -85,7 +84,6 @@
       .slot-load-lbl { font-family:var(--font-head); font-size:8px; color:var(--accent); opacity:.7; }
       .slot-empty-label { font-family:var(--font-head); font-size:9px; color:#3d4a6b; text-align:center; padding:6px 0; }
 
-      /* ── HUD TOP ── */
       .hud-top { position:absolute; top:12px; left:64px; right:12px; display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
       .player-hud { background:var(--ui-bg); border:1px solid #2a3560; border-radius:8px; padding:8px 12px; min-width:180px; backdrop-filter:blur(8px); }
       .player-name { font-family:var(--font-head); font-size:11px; letter-spacing:2px; color:var(--accent); margin-bottom:6px; }
@@ -105,15 +103,12 @@
       .variant-label { font-family:var(--font-head); font-size:8px; letter-spacing:2px; color:#3d4a6b; white-space:nowrap; }
       .variant-select { min-width:110px; background:#12172e; border:1px solid rgba(245,196,0,.35); border-radius:6px; color:var(--accent); font-family:var(--font-head); font-size:9px; letter-spacing:1px; padding:6px 8px; outline:none; cursor:pointer; }
 
-      /* ── MINIMAP ── */
       .minimap-wrap { position:absolute; top:12px; right:12px; width:90px; height:90px; background:var(--ui-bg); border:1px solid #2a3560; border-radius:6px; overflow:hidden; backdrop-filter:blur(8px); }
       #minimapCanvas { width:100%; height:100%; image-rendering:pixelated; }
       .minimap-label { position:absolute; bottom:4px; left:0; right:0; text-align:center; font-family:var(--font-head); font-size:7px; letter-spacing:2px; color:#3d4a6b; }
 
-      /* ── REGION / ZONA ── */
       .region-label { font-family:var(--font-head); font-size:10px; letter-spacing:3px; color:rgba(255,255,255,.4); pointer-events:none; }
 
-      /* ── PORTAL PANEL ── */
       #portalPanel {
         position:absolute; bottom:100px; left:50%; transform:translateX(-50%);
         background:var(--ui-bg); border:1px solid rgba(0,229,255,.4); border-radius:12px;
@@ -123,11 +118,7 @@
       #portalPanel.visible { display:block; }
       .portal-title { font-family:var(--font-head); font-size:10px; letter-spacing:3px; color:#00e5ff; margin-bottom:10px; }
       .portal-btns { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
-      .portal-btn {
-        padding:9px 16px; border-radius:6px; font-family:var(--font-head); font-size:10px;
-        letter-spacing:1px; cursor:pointer; border:1px solid; transition:all .15s;
-        touch-action:manipulation; pointer-events:auto;
-      }
+      .portal-btn { padding:9px 16px; border-radius:6px; font-family:var(--font-head); font-size:10px; letter-spacing:1px; cursor:pointer; border:1px solid; transition:all .15s; touch-action:manipulation; pointer-events:auto; }
       .portal-btn-earth { background:rgba(30,120,30,.2); border-color:#00e676; color:#00e676; }
       .portal-btn-space { background:rgba(50,50,180,.2); border-color:#2979ff; color:#2979ff; }
       .portal-btn-sky { background:rgba(120,180,255,.2); border-color:#81d4fa; color:#81d4fa; }
@@ -135,7 +126,6 @@
       .portal-btn-space:hover { background:rgba(50,50,180,.4); box-shadow:0 0 10px rgba(41,121,255,.3); }
       .portal-btn-sky:hover { background:rgba(120,180,255,.4); box-shadow:0 0 10px rgba(129,212,250,.35); }
 
-      /* ── TRAILER PANEL ── */
       #trailerPanel {
         position:absolute; bottom:100px; left:50%; transform:translateX(-50%);
         background:var(--ui-bg); border:1px solid rgba(245,196,0,.4); border-radius:12px;
@@ -146,45 +136,21 @@
       .trailer-title { font-family:var(--font-head); font-size:10px; letter-spacing:3px; color:var(--accent); margin-bottom:10px; }
       .trailer-info { font-size:12px; color:#c8cfe8; margin-bottom:12px; line-height:1.5; }
       .trailer-btns { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
-      .trailer-btn {
-        padding:9px 16px; border-radius:6px; font-family:var(--font-head); font-size:10px;
-        letter-spacing:1px; cursor:pointer; border:1px solid; transition:all .15s;
-        touch-action:manipulation; pointer-events:auto;
-      }
+      .trailer-btn { padding:9px 16px; border-radius:6px; font-family:var(--font-head); font-size:10px; letter-spacing:1px; cursor:pointer; border:1px solid; transition:all .15s; touch-action:manipulation; pointer-events:auto; }
       .trailer-btn-enter { background:rgba(245,196,0,.15); border-color:var(--accent); color:var(--accent); }
       .trailer-btn-invite { background:rgba(0,229,255,.1); border-color:#00e5ff; color:#00e5ff; }
       .trailer-btn-close { background:rgba(255,255,255,.05); border-color:rgba(255,255,255,.2); color:#8892b0; }
       .trailer-btn-enter:hover { background:rgba(245,196,0,.3); box-shadow:0 0 10px rgba(245,196,0,.3); }
 
-      /* ── INTERIOR TRAILER ── */
-      #trailerInterior {
-        position:fixed; inset:0; display:none; z-index:50;
-        background:#0a0510;
-      }
+      #trailerInterior { position:fixed; inset:0; display:none; z-index:50; background:#0a0510; }
       #trailerInterior.visible { display:flex; flex-direction:column; }
       #trailerCanvas { flex:1; display:block; width:100%; }
-      .trailer-hud-bar {
-        display:flex; align-items:center; gap:10px; padding:8px 16px;
-        background:rgba(8,9,15,.95); border-top:1px solid #2a3560;
-        pointer-events:auto; flex-shrink:0;
-      }
-      .trailer-exit-btn {
-        padding:8px 18px; background:rgba(255,23,68,.15); border:1px solid var(--danger);
-        border-radius:6px; color:var(--danger); font-family:var(--font-head); font-size:9px;
-        letter-spacing:2px; cursor:pointer; touch-action:manipulation;
-      }
-      .trailer-chat-input {
-        flex:1; background:#12172e; border:1px solid #2a3560; border-radius:4px;
-        padding:6px 10px; color:#e8eaf6; font-size:12px; outline:none; font-family:var(--font-body); pointer-events:auto;
-      }
-      .trailer-send-btn {
-        padding:8px 14px; background:rgba(0,229,255,.15); border:1px solid #00e5ff;
-        border-radius:4px; color:#00e5ff; font-family:var(--font-head); font-size:9px;
-        cursor:pointer; touch-action:manipulation;
-      }
+      .trailer-hud-bar { display:flex; align-items:center; gap:10px; padding:8px 16px; background:rgba(8,9,15,.95); border-top:1px solid #2a3560; pointer-events:auto; flex-shrink:0; }
+      .trailer-exit-btn { padding:8px 18px; background:rgba(255,23,68,.15); border:1px solid var(--danger); border-radius:6px; color:var(--danger); font-family:var(--font-head); font-size:9px; letter-spacing:2px; cursor:pointer; touch-action:manipulation; }
+      .trailer-chat-input { flex:1; background:#12172e; border:1px solid #2a3560; border-radius:4px; padding:6px 10px; color:#e8eaf6; font-size:12px; outline:none; font-family:var(--font-body); pointer-events:auto; }
+      .trailer-send-btn { padding:8px 14px; background:rgba(0,229,255,.15); border:1px solid #00e5ff; border-radius:4px; color:#00e5ff; font-family:var(--font-head); font-size:9px; cursor:pointer; touch-action:manipulation; }
       .trailer-name-label { font-family:var(--font-head); font-size:9px; letter-spacing:2px; color:var(--accent); }
 
-      /* ── SKILLS BAR (PC) ── */
       .skills-bar { position:absolute; bottom:20px; left:50%; transform:translateX(-50%); display:flex; gap:10px; }
       .skill-btn { width:var(--btn-size); height:var(--btn-size); background:var(--ui-bg); border:2px solid #2a3560; border-radius:10px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; backdrop-filter:blur(8px); position:relative; pointer-events:auto; cursor:pointer; transition:border-color .15s; touch-action:manipulation; }
       .skill-btn:active,.skill-btn.active { border-color:var(--accent); box-shadow:0 0 14px rgba(245,196,0,.4); }
@@ -192,7 +158,6 @@
       .skill-icon { font-size:var(--btn-icon); }
       .skill-key { font-family:var(--font-head); font-size:8px; letter-spacing:1px; color:#3d4a6b; }
 
-      /* ── MOBILE CONTROLS ── */
       .mobile-controls { position:absolute; bottom:0; left:0; right:0; height:230px; display:none; align-items:flex-end; justify-content:space-between; padding:0 16px 16px; pointer-events:auto; }
       .joystick-wrap { position:relative; width:120px; height:120px; flex-shrink:0; }
       #joystickBase { position:absolute; inset:0; background:rgba(255,255,255,.06); border:2px solid rgba(255,255,255,.15); border-radius:50%; backdrop-filter:blur(4px); }
@@ -208,7 +173,6 @@
       .action-btn .btn-icon  { font-size:var(--btn-icon); }
       .action-btn .btn-label { font-family:var(--font-head); font-size:7px; letter-spacing:.5px; color:rgba(255,255,255,.65); }
 
-      /* ── DIALOG ── */
       .dialog-box { position:absolute; bottom:185px; left:50%; transform:translateX(-50%); background:var(--ui-bg); border:1px solid #2a3560; border-radius:8px; padding:16px 18px; max-width:350px; width:92vw; backdrop-filter:blur(12px); pointer-events:auto; display:none; }
       .dialog-box.visible { display:block; }
       .dialog-name { font-family:var(--font-head); font-size:10px; letter-spacing:2px; color:var(--accent); margin-bottom:6px; }
@@ -217,7 +181,6 @@
       .dialog-opt { background:rgba(74,106,255,.1); border:1px solid rgba(74,106,255,.3); border-radius:4px; padding:10px 12px; font-size:13px; color:#c8cfe8; cursor:pointer; transition:all .15s; min-height:44px; display:flex; align-items:center; touch-action:manipulation; }
       .dialog-opt:hover { background:rgba(74,106,255,.25); border-color:rgba(74,106,255,.6); }
 
-      /* ── TOASTS ── */
       #toastHud { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); pointer-events:none; }
       .hud-toast { font-family:var(--font-head); font-size:14px; letter-spacing:3px; color:white; text-shadow:0 0 10px var(--accent); text-align:center; animation:toastPop 2s forwards; white-space:nowrap; position:absolute; }
       .hud-toast.xp  { color:var(--accent); text-shadow:0 0 10px var(--accent); }
@@ -226,7 +189,6 @@
       .hud-toast.info { color:#00e5ff; }
       @keyframes toastPop { 0%{opacity:0;transform:translateY(10px) scale(.8);} 15%{opacity:1;transform:translateY(-10px) scale(1);} 70%{opacity:1;transform:translateY(-20px);} 100%{opacity:0;transform:translateY(-30px);} }
 
-      /* ── INVENTARIO ── */
       #inventoryPanel {
         display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
         width:min(340px,92vw); max-height:min(480px,78vh); z-index:130;
@@ -240,10 +202,7 @@
       .inv-close { background:none; border:none; color:#8892b0; font-size:18px; cursor:pointer; padding:4px 8px; }
       .inv-body { display:flex; flex:1; min-height:0; overflow:hidden; }
       .inv-list { width:42%; border-right:1px solid #2a3560; overflow-y:auto; padding:8px; }
-      .inv-item-row {
-        display:flex; align-items:center; gap:8px; padding:8px; margin-bottom:4px;
-        border:1px solid #2a3560; border-radius:6px; cursor:pointer; transition:all .15s;
-      }
+      .inv-item-row { display:flex; align-items:center; gap:8px; padding:8px; margin-bottom:4px; border:1px solid #2a3560; border-radius:6px; cursor:pointer; transition:all .15s; }
       .inv-item-row:hover, .inv-item-row.sel { border-color:var(--accent); background:rgba(245,196,0,.08); }
       .inv-item-canvas { width:32px; height:32px; flex-shrink:0; image-rendering:pixelated; }
       .inv-item-name { font-family:var(--font-head); font-size:8px; color:#e8eaf6; letter-spacing:.5px; flex:1; min-width:0; }
@@ -253,11 +212,7 @@
       .inv-detail-desc { font-size:12px; color:#8892b0; line-height:1.4; margin-bottom:12px; flex:1; }
       .inv-preview { width:64px; height:64px; margin:0 auto 10px; image-rendering:pixelated; }
       .inv-actions { display:flex; flex-direction:column; gap:6px; }
-      .inv-action-btn {
-        padding:10px; border-radius:6px; border:1px solid rgba(245,196,0,.25);
-        background:rgba(245,196,0,.1); color:#fff; font-family:var(--font-head);
-        font-size:9px; letter-spacing:1px; cursor:pointer; transition:all .15s;
-      }
+      .inv-action-btn { padding:10px; border-radius:6px; border:1px solid rgba(245,196,0,.25); background:rgba(245,196,0,.1); color:#fff; font-family:var(--font-head); font-size:9px; letter-spacing:1px; cursor:pointer; transition:all .15s; }
       .inv-action-btn:hover { background:rgba(245,196,0,.22); border-color:var(--accent); }
       .inv-action-btn.danger { border-color:rgba(255,23,68,.4); background:rgba(255,23,68,.12); }
       .inv-empty { font-size:11px; color:#3d4a6b; text-align:center; padding:20px 8px; }
@@ -273,7 +228,6 @@
       .shenron-sub { font-size:14px; color:#c8e6c9; margin-top:12px; letter-spacing:2px; }
       @keyframes shenronPulse { 0%,100%{opacity:.85;transform:scale(1);} 50%{opacity:1;transform:scale(1.03);} }
 
-      /* ── RESPONSIVE ── */
       @media (pointer:coarse), (max-width:768px) {
         :root { --btn-size:52px; --btn-icon:19px; }
         #menuBackdrop { display:block; }
@@ -323,7 +277,6 @@
 
     <canvas id="gameCanvas"></canvas>
 
-    <!-- INTERIOR TRAILER -->
     <div id="trailerInterior">
       <canvas id="trailerCanvas"></canvas>
       <div class="trailer-hud-bar">
@@ -379,7 +332,6 @@
         </div>
       </div>
 
-      <!-- HUD TOP -->
       <div class="hud-top">
         <div class="player-hud">
           <div class="player-name" id="hudPlayerName">GUERRERO Z</div>
@@ -400,13 +352,11 @@
 
       <div class="region-label" id="regionLabel">BASE LOBBY</div>
 
-      <!-- Portal Panel -->
       <div id="portalPanel">
         <div class="portal-title">✦ PORTAL DE VIAJE</div>
         <div class="portal-btns" id="portalBtns"></div>
       </div>
 
-      <!-- Trailer Panel -->
       <div id="trailerPanel">
         <div class="trailer-title">🚐 CASA RODANTE</div>
         <div class="trailer-info" id="trailerPanelInfo">Tu espacio privado</div>
@@ -417,7 +367,6 @@
         </div>
       </div>
 
-      <!-- Skills bar PC -->
       <div class="skills-bar" id="skillsBar">
         <div class="skill-btn" onclick="interactNearby()" title="Interactuar [Z]"><span class="skill-icon">💬</span><span class="skill-key">Z</span></div>
         <div class="skill-btn" onclick="openMyTrailer()" title="Mi Trailer [Q]"><span class="skill-icon">🚐</span><span class="skill-key">Q</span></div>
@@ -427,7 +376,6 @@
         <div class="skill-btn" id="skillRun" onclick="toggleRunPC()"><span class="skill-icon">🏃</span><span class="skill-key">SHIFT</span></div>
       </div>
 
-      <!-- Mobile controls -->
       <div class="mobile-controls">
         <div class="joystick-wrap" id="joystickWrap">
           <div id="joystickBase"></div>
@@ -444,7 +392,6 @@
         </div>
       </div>
 
-      <!-- Dialog -->
       <div class="dialog-box" id="dialogBox">
         <div class="dialog-name" id="dialogName">NPC</div>
         <div class="dialog-text" id="dialogText"></div>
@@ -680,7 +627,6 @@
       return `<div class="action-btn ${cls || "btn-emote"}" onclick="${action}"><span class="btn-icon">${icon}</span><span class="btn-label">${label}</span></div>`;
     }
 
-    // ══ RP ACTIONS — ahora incluye acciones del sheet "special" ══
     const RP_ACTIONS = [
       { id:"wave",      icon:"👋", key:"Z", label:"SALUDAR",  title:"Saludar",    anim:"idle",         text:"SALUDO",   color:"#f5c400", sheet:"base" },
       { id:"train",     icon:"🥋", key:"Q", label:"ENTRENAR", title:"Entrenar",   anim:"training",     text:"ENTRENA",  color:"#ff7043", sheet:"special", hold:2200 },
@@ -692,8 +638,6 @@
       { id:"object",    icon:"🎒", key:"B", label:"OBJETO",   title:"Objeto",     anim:"hold_item",    text:"OBJETO",   color:"#90caf9", sheet:"special", objectIcon:"🎒", hold:1300 },
     ];
 
-    // ══ Resolución de animación por sheet para el animator ══
-    // Ahora setSpecialMode es soportado
     function _setAnimatorSheet(sheet) {
       if (!csAnimator) return;
       if (sheet === "special") {
@@ -757,7 +701,6 @@
       }
     }
 
-    // ══ CONTROL MODE — actualizado con setSpecialMode ══
     function setControlMode(mode) {
       if (mode === "pvp") {
         controlMode = "pvp";
@@ -804,7 +747,6 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // ══ CANVAS ══
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
     const minimapCanvas = document.getElementById("minimapCanvas");
@@ -820,7 +762,6 @@
     resizeCanvas();
     window.addEventListener("resize", resizeCanvas);
 
-    // ══ MULTIPLAYER ══
     const otherPlayers = {}, otherPlayerAnimators = {}, otherPlayerAccessoryImages = {};
     const otherPlayerVariantImages = {};
     const otherPlayerPreviewImages = {};
@@ -968,6 +909,145 @@
       _hydrateSheetField(app.combatCustomization, "spriteDataURL", "spriteImage");
     }
 
+    // ══════════════════════════════════════════════════════════════
+    //  NUEVO: waitForAccImage — espera hasta que la imagen esté lista
+    // ══════════════════════════════════════════════════════════════
+    async function waitForAccImage(CS, accId, ms) {
+      if (!accId || accId === "ac_none") return;
+      const timeout = ms || 4000;
+      const start = Date.now();
+      while (Date.now() - start < timeout) {
+        const entry = CS.ACCESSORIES_CATALOG.find(a => a.id === accId);
+        if (entry && entry.userImage && entry.userImage.complete && entry.userImage.naturalWidth > 0) return;
+        await new Promise(r => setTimeout(r, 60));
+      }
+      console.warn("[game] waitForAccImage timeout para:", accId);
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  NUEVO: loadFreeCustomizationForAcc — carga desde LS si falta
+    // ══════════════════════════════════════════════════════════════
+    async function loadFreeCustomizationForAcc(CS, accId) {
+      if (!accId || accId === "ac_none" || !CS) return;
+
+      // Si ya está en catálogo con imagen lista, no hacer nada
+      const existing = CS.ACCESSORIES_CATALOG.find(a => a.id === accId);
+      if (existing && existing.userImage && existing.userImage.complete && existing.userImage.naturalWidth > 0) return;
+
+      // Buscar en dragonCreatorZ_freeCustomization
+      try {
+        const rawFree = localStorage.getItem("dragonCreatorZ_freeCustomization");
+        if (rawFree) {
+          const freeList = JSON.parse(rawFree);
+          const found = freeList.find(x => x.id === accId);
+          if (found && found.dataURL) {
+            await new Promise(resolve => {
+              const img = new Image();
+              img.onload = () => {
+                if (existing) {
+                  existing.userImage = img;
+                  if (!existing.dataURL) existing.dataURL = found.dataURL;
+                  if (!existing.combatDataURL && found.combatDataURL) existing.combatDataURL = found.combatDataURL;
+                  if (!existing.specialDataURL && found.specialDataURL) existing.specialDataURL = found.specialDataURL;
+                  existing.isFreeCustomization = true;
+                  existing.scale = existing.scale ?? found.scale ?? 1;
+                  existing.animFrames = existing.animFrames ?? found.animFrames ?? 6;
+                  existing.rowCount = existing.rowCount ?? found.rowCount ?? 0;
+                  existing.combatScale = existing.combatScale ?? found.combatScale ?? 1;
+                  existing.combatAnimFrames = existing.combatAnimFrames ?? found.combatAnimFrames ?? 6;
+                  existing.specialScale = existing.specialScale ?? found.specialScale ?? 1;
+                  existing.specialAnimFrames = existing.specialAnimFrames ?? found.specialAnimFrames ?? 6;
+                  existing.slot = existing.slot || found.slot || "over_sheet";
+                  existing.raceName = existing.raceName || found.raceName || null;
+                } else {
+                  const entry = {
+                    id: accId,
+                    name: found.name || "Personalización",
+                    type: found.type || "other",
+                    slot: found.slot || "over_sheet",
+                    color: null,
+                    userImage: img,
+                    dataURL: found.dataURL,
+                    combatDataURL: found.combatDataURL || null,
+                    specialDataURL: found.specialDataURL || null,
+                    scale: found.scale ?? 1,
+                    animFrames: found.animFrames ?? 6,
+                    rowCount: found.rowCount ?? 0,
+                    combatScale: found.combatScale ?? 1,
+                    combatAnimFrames: found.combatAnimFrames ?? 6,
+                    combatRowCount: found.combatRowCount ?? 0,
+                    specialScale: found.specialScale ?? 1,
+                    specialAnimFrames: found.specialAnimFrames ?? 6,
+                    specialRowCount: found.specialRowCount ?? 0,
+                    raceName: found.raceName || null,
+                    isFreeCustomization: true,
+                  };
+                  // cargar imagen de combate si existe
+                  if (found.combatDataURL) {
+                    const ci = new Image();
+                    ci.onload = () => { entry.combatUserImage = ci; CS.invalidateHairCache?.(); };
+                    ci.src = found.combatDataURL;
+                  }
+                  // cargar imagen especial si existe
+                  if (found.specialDataURL) {
+                    const si = new Image();
+                    si.onload = () => { entry.specialUserImage = si; CS.invalidateHairCache?.(); };
+                    si.src = found.specialDataURL;
+                  }
+                  CS.ACCESSORIES_CATALOG.push(entry);
+                }
+                CS.invalidateHairCache?.();
+                resolve();
+              };
+              img.onerror = () => {
+                console.warn("[game] Error cargando imagen freeCustomization:", accId);
+                resolve();
+              };
+              img.src = found.dataURL;
+            });
+            return; // encontrado y cargado
+          }
+        }
+      } catch(e) {
+        console.warn("[game] Error leyendo freeCustomization del LS:", e);
+      }
+
+      // Fallback: buscar en dragonCreatorZ_accessories
+      try {
+        const rawAcc = localStorage.getItem("dragonCreatorZ_accessories");
+        if (rawAcc) {
+          const accList = JSON.parse(rawAcc);
+          const found = accList.find(x => x.id === accId);
+          if (found && found.dataURL) {
+            await new Promise(resolve => {
+              const img = new Image();
+              img.onload = () => {
+                if (existing) {
+                  existing.userImage = img;
+                  if (!existing.dataURL) existing.dataURL = found.dataURL;
+                } else {
+                  CS.ACCESSORIES_CATALOG.push({
+                    id: accId, name: found.name || "Accesorio",
+                    type: found.type || "other", slot: found.slot || "over_shirt",
+                    color: null, userImage: img, dataURL: found.dataURL,
+                    combatDataURL: found.combatDataURL || null,
+                    scale: found.scale ?? 1, animFrames: found.animFrames ?? 6,
+                    isFreeCustomization: false,
+                  });
+                }
+                CS.invalidateHairCache?.();
+                resolve();
+              };
+              img.onerror = resolve;
+              img.src = found.dataURL;
+            });
+          }
+        }
+      } catch(e) {
+        console.warn("[game] Error leyendo accessories del LS:", e);
+      }
+    }
+
     async function restoreAllAccessoriesForGame(CS) {
       if (!CS) return;
 
@@ -983,10 +1063,15 @@
               if (existing) {
                 if (!existing.dataURL) existing.dataURL = item.dataURL;
                 existing.combatDataURL = item.combatDataURL || existing.combatDataURL;
+                existing.specialDataURL = item.specialDataURL || existing.specialDataURL;
                 existing.scale = item.scale ?? existing.scale ?? 1;
                 existing.animFrames = item.animFrames ?? existing.animFrames ?? 6;
                 existing.combatScale = item.combatScale ?? existing.combatScale ?? 1;
                 existing.combatAnimFrames = item.combatAnimFrames ?? existing.combatAnimFrames ?? 6;
+                existing.specialScale = item.specialScale ?? existing.specialScale ?? 1;
+                existing.specialAnimFrames = item.specialAnimFrames ?? existing.specialAnimFrames ?? 6;
+                existing.slot = existing.slot || item.slot || "over_sheet";
+                existing.raceName = existing.raceName || item.raceName || null;
                 if (item.combatDataURL && !existing.combatUserImage) {
                   const cimg = new Image();
                   cimg.onload = () => { existing.combatUserImage = cimg; CS.invalidateHairCache?.(); };
@@ -1011,12 +1096,15 @@
               img.onload = () => {
                 const entry = {
                   id: item.id, name: item.name || "Personalización",
-                  type: item.type || "other", slot: item.slot || "over_shirt",
+                  type: item.type || "other", slot: item.slot || "over_sheet",
                   color: item.color || null, userImage: img, dataURL: item.dataURL,
                   combatDataURL: item.combatDataURL || null, specialDataURL: item.specialDataURL || null,
                   scale: item.scale ?? 1, animFrames: item.animFrames ?? 6,
+                  rowCount: item.rowCount ?? 0,
                   combatScale: item.combatScale ?? 1, combatAnimFrames: item.combatAnimFrames ?? 6,
+                  combatRowCount: item.combatRowCount ?? 0,
                   specialScale: item.specialScale ?? 1, specialAnimFrames: item.specialAnimFrames ?? 6,
+                  specialRowCount: item.specialRowCount ?? 0,
                   raceName: item.raceName || null, isFreeCustomization: true,
                 };
                 if (item.combatDataURL) {
@@ -1119,7 +1207,7 @@
                 } else {
                   CS.ACCESSORIES_CATALOG.push({
                     id: accId, name: sc.accessoryName || "Personalización",
-                    type: "other", slot: "over_shirt", color: null,
+                    type: "other", slot: "over_sheet", color: null,
                     userImage: img, dataURL: sc.accessoryDataURL, combatDataURL: sc.accessoryCombatDataURL || null,
                     isFreeCustomization: isFree,
                   });
@@ -1325,7 +1413,6 @@
           }
           if (otherPlayerAnimators[id]) {
             const anim = otherPlayerAnimators[id];
-            // Sincronizar modo del animador remoto
             if (data.specialMode && anim.setSpecialMode) anim.setSpecialMode(true);
             else if (anim.setBattleMode) anim.setBattleMode(!!data.combatMode);
             if (data.animAction) anim.play(data.animAction);
@@ -1359,7 +1446,6 @@
       if (now - mpLastSend < MP_SEND_RATE) return;
       mpLastSend = now;
       let animAction;
-      // Determinar animación actual incluyendo special mode
       if (csAnimator?.specialMode) {
         animAction = csAnimator.action || "sit";
       } else if (isCombatMode && csAnimator?.battleMode) {
@@ -1450,7 +1536,6 @@
             }
             const remoteVariantId = app.variantId || "base";
             const remoteVariantCfg = app.variantCustomizations?.[remoteVariantId];
-            // Cargar sheets de variante (exploración, combate y especial)
             ["spriteDataURL:spriteImage", "combatSpriteDataURL:combatSpriteImage", "specialSpriteDataURL:specialSpriteImage"].forEach(pair => {
               const [urlKey, imgKey] = pair.split(":");
               if (remoteVariantCfg?.[urlKey]) {
@@ -1476,7 +1561,6 @@
             }
             const remApp = Object.assign({}, app, { accessoryId: remoteAccId });
             const remCSPlayer = { appearance: remApp, direction: p.facing || 1 };
-            // Determinar spriteVariantId remoto
             let remSpriteVariantId = null;
             if (p.specialMode) remSpriteVariantId = "special";
             else if (p.combatMode) remSpriteVariantId = "fight";
@@ -1530,7 +1614,6 @@
 
     const TILE=48, CAM_LERP=0.12, SPRITE_DRAW_W=56, SPRITE_DRAW_H=82;
 
-    // ══ MAP DEFINITIONS ══
     const MAPS = {
       lobby:  { w:80, h:60, name:"BASE LOBBY",     bgColor:"#0a1020" },
       earth:  { w:120, h:80, name:"PLANETA TIERRA", bgColor:"#0a1510" },
@@ -1717,7 +1800,6 @@
     window.addEventListener("touchmove", (e) => { e.preventDefault(); if(!joystick.active)return; const t=e.touches[0]; const dx=t.clientX-joystick.startX,dy=t.clientY-joystick.startY; const maxR=40,dist=Math.sqrt(dx*dx+dy*dy); const nx=dist>maxR?(dx/dist)*maxR:dx,ny=dist>maxR?(dy/dist)*maxR:dy; joystick.dx=nx/maxR; joystick.dy=ny/maxR; jk.style.transform=`translate(${nx}px,${ny}px)`; }, {passive:false});
     window.addEventListener("touchend", () => { if(!joystick.active)return; joystick.active=false; joystick.dx=0; joystick.dy=0; jk.style.transform="translate(0,0)"; });
 
-    // ══ NPCs ══
     const NPC_DEFS = {
       lobby: [
         { id:"director",name:"DIRECTOR Z",x:40*TILE,y:20*TILE,color:"#f5c400",dialogs:[{text:"¡Bienvenido a la Base! Este es el punto de encuentro de todos los guerreros. Aquí planifican sus aventuras antes de viajar.",opts:[{label:"¿A dónde puedo viajar?",next:1},{label:"¡Gracias!",next:-1}]},{text:"Tenés dos destinos: la Tierra, con sus ciudades y zonas emblemáticas, y el Espacio, con naves y planetas. Usá el portal al sur.",opts:[{label:"Entendido.",next:-1}]}]},
@@ -1741,7 +1823,6 @@
     let activeNpc = null, dialogPage = 0;
     let particles = [], combatEffects = [];
 
-    // ══ TRAILERS ══
     const trailers = {};
     let myTrailerSpawned = false;
     let inTrailer = false;
@@ -1925,7 +2006,6 @@
       document.getElementById("dialogBox").classList.remove("visible");
     }
 
-    // ══ performRpAction — actualizado para 3 sheets ══
     function performRpAction(actionId) {
       const action = RP_ACTIONS.find(a => a.id === actionId) || RP_ACTIONS[0];
       const hold = action.hold || 900;
@@ -1933,7 +2013,6 @@
 
       if (csAnimator) {
         const sheet = action.sheet || "base";
-        // Configurar el modo del animador según el sheet de la acción
         if (sheet === "special") {
           csAnimator.setSpecialMode && csAnimator.setSpecialMode(true);
           csAnimator.play(action.anim || "sit", () => {
@@ -1941,7 +2020,6 @@
             csAnimator.play(isFlying ? "fly" : "idle");
           });
         } else if (sheet === "combat") {
-          // Acciones RP en sheet de combate (si las hubiera)
           csAnimator.setBattleMode && csAnimator.setBattleMode(true);
           csAnimator.play(action.anim || "combat_idle", () => {
             if (!isCombatMode) {
@@ -1950,7 +2028,6 @@
             }
           });
         } else {
-          // Sheet base — asegurar que no esté en modo special
           if (csAnimator.specialMode) csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
           if (!isCombatMode && csAnimator.battleMode) csAnimator.setBattleMode && csAnimator.setBattleMode(false);
           const anim = action.anim || "idle";
@@ -2029,16 +2106,10 @@
     function applyMapFlightMode(prevMap) {
       if (MAPS[currentMap]?.alwaysFly) {
         isFlying = true;
-        if (csAnimator) {
-          csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
-          csAnimator.play("fly");
-        }
+        if (csAnimator) { csAnimator.setSpecialMode && csAnimator.setSpecialMode(false); csAnimator.play("fly"); }
       } else if (prevMap && MAPS[prevMap]?.alwaysFly) {
         isFlying = false;
-        if (csAnimator && !player.moving) {
-          csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
-          csAnimator.play("idle");
-        }
+        if (csAnimator && !player.moving) { csAnimator.setSpecialMode && csAnimator.setSpecialMode(false); csAnimator.play("idle"); }
       }
     }
 
@@ -2096,7 +2167,6 @@
       setTimeout(() => el.remove(), 2000);
     }
 
-    // ══ INVENTARIO ══
     let invSelectedId = null;
 
     function getItemCtx() {
@@ -2199,7 +2269,6 @@
 
     let gameState = "loading";
 
-    // ══ updatePlayer — actualizado para manejar special mode correctamente ══
     function updatePlayer(dt) {
       if (gameState !== "playing") return;
       if (window.PvpSystem) window.PvpSystem.update(dt);
@@ -2221,12 +2290,10 @@
         const atkLocked = csAnimator.meta && !csAnimator.meta.loop;
         if (!rpLocked && !atkLocked) {
           if (csAnimator.specialMode) {
-            // En modo special: si el jugador se mueve, salir del special mode
             if (player.moving) {
               csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
               csAnimator.play(isRunning ? "run" : "walk");
             }
-            // Si está quieto en special mode, dejar que la animación siga
           } else if ((controlMode === "pvp" || isCombatMode) && csAnimator.battleMode) {
             if (isFlying) csAnimator.play("knockback_fly");
             else if (player.moving) csAnimator.play("dash");
@@ -2430,7 +2497,6 @@
       });
     }
 
-    // ══ drawPlayerChar — actualizado para spriteVariantId con "special" ══
     function drawPlayerChar() {
       const sx=player.x-cam.x, sy=player.y-cam.y;
       const CS=window.CharacterSystem;
@@ -2440,7 +2506,6 @@
       );
       if (useCS) {
         const accId = CS.player.appearance.accessoryId || "ac_none";
-        // Determinar spriteVariantId según el modo del animador
         let spriteVariantId = null;
         if (csAnimator.specialMode) spriteVariantId = "special";
         else if (isCombatMode) spriteVariantId = "fight";
@@ -2562,7 +2627,9 @@
     function goBack() { window.location.href="index.html"; }
     window.goBack=goBack;
 
-    // ══ LOAD GAME ══
+    // ══════════════════════════════════════════════════════════════
+    //  LOAD GAME — CON PARCHE PARA FREE CUSTOMIZATION
+    // ══════════════════════════════════════════════════════════════
     async function loadGame() {
       const steps=[
         ["GENERANDO MUNDOS...", ()=>{
@@ -2581,6 +2648,7 @@
           const CS=window.CharacterSystem;
           if (CS) {
             try {
+              // Paso 1: restaurar todos los accesorios del localStorage
               await restoreAllAccessoriesForGame(CS);
               if (window.ItemSystem) window.ItemSystem.ensureScouterAccessory(CS);
 
@@ -2622,53 +2690,53 @@
                 );
                 CS.player.appearance.accessorySlot = savedChar.accessorySlot || CS.player.appearance.accessorySlot || "over_shirt";
 
+                // ── PARCHE PRINCIPAL: cargar free customization si el accesorio es fc_ ──
                 if (savedAccId !== "ac_none") {
-                  const accInCatalog = CS.ACCESSORIES_CATALOG.find(a => a.id === savedAccId);
-                  if (!accInCatalog || !accInCatalog.userImage || !accInCatalog.userImage.complete || !accInCatalog.userImage.naturalWidth) {
-                    let dataURL = savedChar.accessoryDataURL || null;
-                    if (!dataURL) {
-                      try {
-                        const rawFree = localStorage.getItem("dragonCreatorZ_freeCustomization");
-                        if (rawFree) { const freeList = JSON.parse(rawFree); const found = freeList.find(x => x.id === savedAccId); if (found) dataURL = found.dataURL; }
-                      } catch(e) {}
-                    }
-                    if (!dataURL) {
-                      try {
-                        const rawAcc = localStorage.getItem("dragonCreatorZ_accessories");
-                        if (rawAcc) { const accList = JSON.parse(rawAcc); const found = accList.find(x => x.id === savedAccId); if (found) dataURL = found.dataURL; }
-                      } catch(e) {}
-                    }
-                    if (dataURL) {
-                      await new Promise(resolve => {
-                        const img = new Image();
-                        img.onload = () => {
-                          const isFree = !!(savedChar.accessoryIsFreeCustomization || String(savedAccId).startsWith("fc_"));
-                          if (accInCatalog) {
-                            accInCatalog.userImage = img;
-                            if (!accInCatalog.dataURL) accInCatalog.dataURL = dataURL;
-                            if (!accInCatalog.combatDataURL && savedChar.accessoryCombatDataURL) accInCatalog.combatDataURL = savedChar.accessoryCombatDataURL;
-                            accInCatalog.isFreeCustomization = accInCatalog.isFreeCustomization || isFree;
-                          } else {
-                            CS.ACCESSORIES_CATALOG.push({
-                              id: savedAccId, name: savedChar.accessoryName || "Personalización",
-                              type: "other", slot: "over_shirt", color: null,
-                              userImage: img, dataURL: dataURL, combatDataURL: savedChar.accessoryCombatDataURL || null,
-                              isFreeCustomization: isFree,
-                            });
-                          }
-                          CS.invalidateHairCache?.();
-                          resolve();
-                        };
-                        img.onerror = resolve;
-                        img.src = dataURL;
-                      });
-                    }
+                  // Primero intentar desde freeCustomization del LS
+                  await loadFreeCustomizationForAcc(CS, savedAccId);
+
+                  // Si aún no tiene imagen, intentar desde el dataURL guardado en el slot
+                  const inCatalog = CS.ACCESSORIES_CATALOG.find(a => a.id === savedAccId);
+                  if ((!inCatalog || !inCatalog.userImage || !inCatalog.userImage.complete || !inCatalog.userImage.naturalWidth)
+                      && savedChar.accessoryDataURL) {
+                    await new Promise(resolve => {
+                      const img = new Image();
+                      img.onload = () => {
+                        const isFree = !!(savedChar.accessoryIsFreeCustomization || String(savedAccId).startsWith("fc_"));
+                        if (inCatalog) {
+                          inCatalog.userImage = img;
+                          if (!inCatalog.dataURL) inCatalog.dataURL = savedChar.accessoryDataURL;
+                          if (!inCatalog.combatDataURL && savedChar.accessoryCombatDataURL) inCatalog.combatDataURL = savedChar.accessoryCombatDataURL;
+                          inCatalog.isFreeCustomization = inCatalog.isFreeCustomization || isFree;
+                          inCatalog.slot = inCatalog.slot || savedChar.accessorySlot || "over_sheet";
+                        } else {
+                          CS.ACCESSORIES_CATALOG.push({
+                            id: savedAccId,
+                            name: savedChar.accessoryName || "Personalización",
+                            type: "other",
+                            slot: savedChar.accessorySlot || "over_sheet",
+                            color: null,
+                            userImage: img,
+                            dataURL: savedChar.accessoryDataURL,
+                            combatDataURL: savedChar.accessoryCombatDataURL || null,
+                            specialDataURL: savedChar.accessorySpecialDataURL || null,
+                            isFreeCustomization: isFree,
+                          });
+                        }
+                        CS.invalidateHairCache?.();
+                        resolve();
+                      };
+                      img.onerror = resolve;
+                      img.src = savedChar.accessoryDataURL;
+                    });
                   }
+
+                  // Esperar hasta 4 segundos a que la imagen esté lista
+                  await waitForAccImage(CS, savedAccId, 4000);
                 }
               }
 
               CS.player.direction=player.facing;
-              // Crear animador con las nuevas capacidades del CS v2
               csAnimator=new CS.SpriteAnimator("idle");
               renderVariantSelector();
             } catch(err){ console.warn("[game]",err); csImageMap=null; csAnimator=null; }
