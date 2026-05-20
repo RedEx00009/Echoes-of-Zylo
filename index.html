@@ -729,6 +729,11 @@
         <div class="save-section">
           <div class="save-title">GUARDAR PERSONAJE</div>
           <div class="slots-list" id="slotsList"></div>
+          <div class="slot-actions">
+            <button class="ctrl-btn import-add-btn" id="btnExportCharacter">📤 EXPORTAR PERSONAJE (.json)</button>
+            <button class="ctrl-btn import-add-btn" id="btnImportCharacter">📥 IMPORTAR PERSONAJE (.json)</button>
+            <input type="file" id="characterImportInput" accept=".json,application/json" style="display:none" />
+          </div>
         </div>
         <button class="start-btn" id="btnStart">⚔️ COMENZAR A JUGAR</button>
       </div>
@@ -900,6 +905,240 @@
         } catch(e) {
           console.warn("Error restaurando free customization:", e);
         }
+      }
+
+      function _getCurrentAccessoryEntry() {
+        const accId = player.appearance.accessoryId || charState.accessoryId || "ac_none";
+        return ACCESSORIES_CATALOG.find(a => a.id === accId) || null;
+      }
+
+      function _getCurrentAccessoryExportData() {
+        const entry = _getCurrentAccessoryEntry();
+        if (!entry || entry.id === "ac_none") return null;
+        return {
+          id: entry.id,
+          name: entry.name,
+          type: entry.type,
+          slot: entry.slot,
+          color: entry.color || null,
+          raceName: entry.raceName || null,
+          isFreeCustomization: !!entry.isFreeCustomization,
+          dataURL: entry.dataURL || null,
+          combatDataURL: entry.combatDataURL || null,
+          specialDataURL: entry.specialDataURL || null,
+          scale: entry.scale ?? 1,
+          animFrames: entry.animFrames ?? 6,
+          rowCount: entry.rowCount ?? 0,
+          combatScale: entry.combatScale ?? 1,
+          combatAnimFrames: entry.combatAnimFrames ?? 6,
+          combatRowCount: entry.combatRowCount ?? 0,
+          specialScale: entry.specialScale ?? 1,
+          specialAnimFrames: entry.specialAnimFrames ?? 6,
+          specialRowCount: entry.specialRowCount ?? 0,
+        };
+      }
+
+      function _serializeAppearanceForExport() {
+        return {
+          raceId: player.appearance.raceId,
+          gender: player.appearance.gender,
+          variantId: player.appearance.variantId,
+          variantCustomizations: serializableVariantCustomizations(player.appearance.variantCustomizations),
+          combatCustomization: serializableCombatCustomization(player.appearance.combatCustomization),
+          faceId: player.appearance.faceId,
+          faceColor: player.appearance.faceColor || null,
+          browColor: player.appearance.browColor || null,
+          pupilColor: player.appearance.pupilColor || null,
+          hairId: player.appearance.hairId,
+          hairColor: player.appearance.hairColor || null,
+          topId: player.appearance.topId,
+          bottomId: player.appearance.bottomId,
+          shoesId: player.appearance.shoesId,
+          skinColor: player.appearance.skinColor || null,
+          eyeColor: player.appearance.eyeColor || null,
+          glovesId: player.appearance.glovesId,
+          auraId: player.appearance.auraId,
+          auraColor: player.appearance.auraColor || null,
+          clothColor: player.appearance.clothColor || null,
+          accessoryId: player.appearance.accessoryId || "ac_none",
+          accessorySlot: player.appearance.accessorySlot || "over_shirt",
+          accessoryIsFreeCustomization: !!player.appearance.accessoryIsFreeCustomization,
+          accessoryDataURL: player.appearance.accessoryDataURL || null,
+          accessoryCombatDataURL: player.appearance.accessoryCombatDataURL || null,
+          accessorySpecialDataURL: player.appearance.accessorySpecialDataURL || null,
+        };
+      }
+
+      function exportCharacterToJson() {
+        const payload = {
+          version: 1,
+          exportedAt: Date.now(),
+          name: document.getElementById("charName").value || "Guerrero Z",
+          appearance: _serializeAppearanceForExport(),
+          accessory: _getCurrentAccessoryExportData(),
+        };
+        const safeName = (payload.name || "personaje").replace(/[^a-zA-Z0-9-_]/g, "_");
+        const fileName = `${safeName}_dragonCreatorZ.json`;
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        showToast("Personaje exportado", "success");
+      }
+
+      function _registerImportedAccessory(accessory) {
+        if (!accessory || !accessory.id || !accessory.dataURL) return null;
+        let entry = ACCESSORIES_CATALOG.find(a => a.id === accessory.id);
+        if (!entry) {
+          entry = {
+            id: accessory.id,
+            name: accessory.name || "Personalización",
+            type: accessory.type || "other",
+            slot: accessory.slot || "over_shirt",
+            color: accessory.color || null,
+            userImage: null,
+            spriteImage: null,
+            dataURL: accessory.dataURL,
+            combatDataURL: accessory.combatDataURL || null,
+            specialDataURL: accessory.specialDataURL || null,
+            scale: accessory.scale ?? 1,
+            animFrames: accessory.animFrames ?? 6,
+            rowCount: accessory.rowCount ?? 0,
+            combatScale: accessory.combatScale ?? 1,
+            combatAnimFrames: accessory.combatAnimFrames ?? 6,
+            combatRowCount: accessory.combatRowCount ?? 0,
+            specialScale: accessory.specialScale ?? 1,
+            specialAnimFrames: accessory.specialAnimFrames ?? 6,
+            specialRowCount: accessory.specialRowCount ?? 0,
+            raceName: accessory.raceName || null,
+            isFreeCustomization: !!accessory.isFreeCustomization,
+          };
+          ACCESSORIES_CATALOG.push(entry);
+        } else {
+          entry.name = accessory.name || entry.name;
+          entry.type = accessory.type || entry.type;
+          entry.slot = accessory.slot || entry.slot;
+          entry.color = accessory.color ?? entry.color;
+          entry.dataURL = accessory.dataURL || entry.dataURL;
+          entry.combatDataURL = accessory.combatDataURL || entry.combatDataURL;
+          entry.specialDataURL = accessory.specialDataURL || entry.specialDataURL;
+          entry.scale = accessory.scale ?? entry.scale;
+          entry.animFrames = accessory.animFrames ?? entry.animFrames;
+          entry.rowCount = accessory.rowCount ?? entry.rowCount;
+          entry.combatScale = accessory.combatScale ?? entry.combatScale;
+          entry.combatAnimFrames = accessory.combatAnimFrames ?? entry.combatAnimFrames;
+          entry.combatRowCount = accessory.combatRowCount ?? entry.combatRowCount;
+          entry.specialScale = accessory.specialScale ?? entry.specialScale;
+          entry.specialAnimFrames = accessory.specialAnimFrames ?? entry.specialAnimFrames;
+          entry.specialRowCount = accessory.specialRowCount ?? entry.specialRowCount;
+          entry.raceName = accessory.raceName || entry.raceName;
+          entry.isFreeCustomization = entry.isFreeCustomization || !!accessory.isFreeCustomization;
+        }
+
+        const img = new Image();
+        img.onload = () => {
+          entry.userImage = img;
+          entry.spriteImage = img;
+          invalidateHairCache();
+        };
+        img.src = accessory.dataURL;
+
+        if (accessory.combatDataURL) {
+          const cimg = new Image();
+          cimg.onload = () => {
+            entry.combatUserImage = cimg;
+            entry.combatSpriteImage = cimg;
+            invalidateHairCache();
+          };
+          cimg.src = accessory.combatDataURL;
+        }
+
+        if (accessory.specialDataURL) {
+          const simg = new Image();
+          simg.onload = () => {
+            entry.specialUserImage = simg;
+            entry.specialSpriteImage = simg;
+            invalidateHairCache();
+          };
+          simg.src = accessory.specialDataURL;
+        }
+
+        if (entry.isFreeCustomization && !FREE_CUSTOMIZATION_CATALOG.find(a => a.id === entry.id)) {
+          FREE_CUSTOMIZATION_CATALOG.push(entry);
+        }
+
+        return entry;
+      }
+
+      function _applyImportedCharacter(payload) {
+        if (!payload || typeof payload !== "object") return false;
+        const appearance = payload.appearance || {};
+        player.appearance.raceId = appearance.raceId || player.appearance.raceId;
+        player.appearance.gender = appearance.gender || player.appearance.gender;
+        player.appearance.variantId = appearance.variantId || player.appearance.variantId;
+        hydrateVariantCustomizations(appearance.variantCustomizations || {});
+        hydrateCombatCustomization(appearance.combatCustomization || {});
+        player.appearance.faceId = appearance.faceId || player.appearance.faceId;
+        player.appearance.faceColor = appearance.faceColor ?? player.appearance.faceColor;
+        player.appearance.browColor = appearance.browColor ?? player.appearance.browColor;
+        player.appearance.pupilColor = appearance.pupilColor ?? player.appearance.pupilColor;
+        player.appearance.hairId = appearance.hairId || player.appearance.hairId;
+        player.appearance.hairColor = appearance.hairColor ?? player.appearance.hairColor;
+        player.appearance.topId = appearance.topId || player.appearance.topId;
+        player.appearance.bottomId = appearance.bottomId || player.appearance.bottomId;
+        player.appearance.shoesId = appearance.shoesId || player.appearance.shoesId;
+        player.appearance.skinColor = appearance.skinColor ?? player.appearance.skinColor;
+        player.appearance.eyeColor = appearance.eyeColor ?? player.appearance.eyeColor;
+        player.appearance.glovesId = appearance.glovesId || player.appearance.glovesId;
+        player.appearance.auraId = appearance.auraId || player.appearance.auraId;
+        player.appearance.auraColor = appearance.auraColor ?? player.appearance.auraColor;
+        player.appearance.clothColor = appearance.clothColor ?? player.appearance.clothColor;
+        player.appearance.accessoryId = appearance.accessoryId || player.appearance.accessoryId || "ac_none";
+        player.appearance.accessorySlot = appearance.accessorySlot || player.appearance.accessorySlot || "over_shirt";
+        player.appearance.accessoryIsFreeCustomization = !!appearance.accessoryIsFreeCustomization;
+        player.appearance.accessoryDataURL = appearance.accessoryDataURL || player.appearance.accessoryDataURL || null;
+        player.appearance.accessoryCombatDataURL = appearance.accessoryCombatDataURL || player.appearance.accessoryCombatDataURL || null;
+        player.appearance.accessorySpecialDataURL = appearance.accessorySpecialDataURL || player.appearance.accessorySpecialDataURL || null;
+
+        if (payload.accessory) {
+          const accessoryEntry = _registerImportedAccessory(payload.accessory);
+          if (accessoryEntry) {
+            player.appearance.accessoryId = accessoryEntry.id;
+            player.appearance.accessorySlot = accessoryEntry.slot || player.appearance.accessorySlot;
+            player.appearance.accessoryIsFreeCustomization = accessoryEntry.isFreeCustomization;
+          }
+        }
+
+        invalidateHairCache();
+        renderItemsPanel(activeCategory);
+        renderSlots();
+        updateStats();
+        return true;
+      }
+
+      function importCharacterFromJson(file) {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = ev => {
+          try {
+            const payload = JSON.parse(ev.target.result);
+            if (_applyImportedCharacter(payload)) {
+              showToast("Personaje importado", "success");
+            } else {
+              showToast("Archivo JSON no válido", "error");
+            }
+          } catch (error) {
+            console.error("Importación fallida:", error);
+            showToast("No se pudo importar el archivo JSON", "error");
+          }
+        };
+        reader.onerror = () => showToast("Error leyendo el archivo JSON", "error");
+        reader.readAsText(file);
       }
 
       /* ══ drawThumbCanvas ══ */
@@ -2137,6 +2376,17 @@
         );
         document.getElementById("charName").addEventListener("input",e=>{
           charState.name=e.target.value||"Guerrero Z";
+        });
+        document.getElementById("btnExportCharacter").addEventListener("click",()=>{
+          exportCharacterToJson();
+        });
+        document.getElementById("btnImportCharacter").addEventListener("click",()=>{
+          document.getElementById("characterImportInput").click();
+        });
+        document.getElementById("characterImportInput").addEventListener("change", e => {
+          const file = e.target.files && e.target.files[0];
+          if (file) importCharacterFromJson(file);
+          e.target.value = "";
         });
         document.getElementById("btnStart").addEventListener("click",()=>{
           try {
