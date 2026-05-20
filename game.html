@@ -579,12 +579,18 @@
           existing.userImage = img;
           if (!existing.dataURL) existing.dataURL = dataURL;
           if (!existing.combatDataURL && combatDataURL) existing.combatDataURL = combatDataURL;
+          if (!existing.specialDataURL && slotData.accessorySpecialDataURL) existing.specialDataURL = slotData.accessorySpecialDataURL;
           existing.isFreeCustomization = existing.isFreeCustomization || isFree;
+          existing.slot = existing.slot || slotData.accessorySlot || "over_shirt";
+          existing.type = existing.type || slotData.accessoryType || "other";
         } else {
           CS.ACCESSORIES_CATALOG.push({
             id: accId, name: slotData.accessoryName || "Personalización",
-            type: "other", slot: "over_shirt", color: null,
+            type: slotData.accessoryType || "other",
+            slot: slotData.accessorySlot || "over_shirt",
+            color: null,
             userImage: img, dataURL: dataURL, combatDataURL: combatDataURL,
+            specialDataURL: slotData.accessorySpecialDataURL || null,
             isFreeCustomization: isFree,
           });
         }
