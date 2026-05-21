@@ -179,6 +179,33 @@
       }
       .import-preview.visible { display: block; }
 
+      .imported-section {
+        border-top: 1px solid var(--border); padding: 10px 12px 12px; background: rgba(0,229,255,.03);
+      }
+      .imported-header {
+        display: flex; align-items: center; justify-content: space-between; gap: 10px;
+        font-family: var(--fh); font-size: 10px; letter-spacing: 2px; color: var(--cyan); margin-bottom: 10px;
+      }
+      .imported-sheet-list {
+        display: grid; grid-template-columns: 1fr; gap: 8px;
+        max-height: 220px; overflow-y: auto; padding-right: 2px;
+      }
+      .imported-sheet-item {
+        display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center;
+        background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px;
+        padding: 8px 10px; cursor: pointer; transition: border-color var(--tr), background var(--tr);
+      }
+      .imported-sheet-item:hover { border-color: var(--cyan); background: rgba(0,229,255,.05); }
+      .imported-sheet-item.active { border-color: var(--cyan); background: rgba(0,229,255,.1); }
+      .imported-sheet-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--tp); }
+      .imported-sheet-delete {
+        width: 26px; height: 26px; border: none; background: rgba(255,23,68,.12);
+        color: var(--red); border-radius: 5px; font-size: 14px; cursor: pointer;
+      }
+      .imported-sheet-empty {
+        color: var(--tm); font-size: 11px; line-height: 1.4; padding: 6px 0;
+      }
+
       .face-color-row { display: flex; gap: 4px; padding: 6px 8px 4px; flex-shrink: 0; flex-wrap: wrap; }
       .face-color-chip {
         width: 18px; height: 18px; border-radius: 3px; border: 2px solid transparent;
@@ -514,13 +541,20 @@
           <button class="cat-btn" data-cat="pants">          <span class="cat-icon">👖</span><span class="cat-label">ROPA INF.</span></button>
           <button class="cat-btn" data-cat="gloves">         <span class="cat-icon">🥊</span><span class="cat-label">GUANTES</span></button>
           <button class="cat-btn" data-cat="shoes">          <span class="cat-icon">👟</span><span class="cat-label">CALZADO</span></button>
-          <button class="cat-btn" data-cat="accessory">      <span class="cat-icon">🎽</span><span class="cat-label">ACCESOR.</span></button>
-          <button class="cat-btn" data-cat="free">           <span class="cat-icon">🧩</span><span class="cat-label">LIBRE</span></button>
+          <button class="cat-btn" data-cat="accessory">      <span class="cat-icon">🎽</span><span class="cat-label">ACCESORIOS</span></button>
           <button class="cat-btn" data-cat="aura">           <span class="cat-icon">✨</span><span class="cat-label">AURA</span></button>
           <button class="cat-btn" data-cat="color">          <span class="cat-icon">🎨</span><span class="cat-label">COLOR</span></button>
           <button class="cat-btn" data-cat="combat">         <span class="cat-icon">⚔️</span><span class="cat-label">COMBATE</span></button>
           <button class="cat-btn" data-cat="forms">          <span class="cat-icon">⚡</span><span class="cat-label">FORMAS</span></button>
         </nav>
+        <div class="imported-section" id="importedSection">
+          <div class="imported-header">
+            <span>IMPORTADOS</span>
+            <button id="addImportedSheetBtn" class="import-add-btn">+ AÑADIR PNG</button>
+          </div>
+          <div id="importedSheetList" class="imported-sheet-list"></div>
+          <input id="importedSheetFileInput" type="file" accept="image/png" multiple hidden>
+        </div>
         <div class="items-panel" id="itemsPanel"></div>
       </div>
 
@@ -996,6 +1030,194 @@
         }
       }
 
+      const IMPORT_DB_NAME = "DragonCreatorDB";
+      const IMPORT_STORE_NAME = "importedSheets";
+      let importedSheetKeys = [];
+      const importedSheetUrlCache = new Map();
+
+      function _openImportedSheetsDB() {
+        return new Promise((resolve, reject) => {
+          const request = indexedDB.open(IMPORT_DB_NAME, 1);
+          request.onupgradeneeded = (event) => {
+            const db = event.target.result;
+            if (!db.objectStoreNames.contains(IMPORT_STORE_NAME)) {
+              db.createObjectStore(IMPORT_STORE_NAME, { keyPath: "name" });
+            }
+          };
+          request.onsuccess = (event) => resolve(event.target.result);
+          request.onerror = (event) => reject(event.target.error);
+        });
+      }
+
+      async function _runImportedSheetsTx(mode, callback) {
+        const db = await _openImportedSheetsDB();
+        const tx = db.transaction(IMPORT_STORE_NAME, mode);
+        const store = tx.objectStore(IMPORT_STORE_NAME);
+        const result = await callback(store);
+        return new Promise((resolve, reject) => {
+          tx.oncomplete = () => resolve(result);
+          tx.onerror = () => reject(tx.error);
+          tx.onabort = () => reject(tx.error);
+        });
+      }
+
+      async function _loadImportedSheetKeys() {
+        importedSheetKeys = await _runImportedSheetsTx("readonly", (store) => {
+          return new Promise((resolve, reject) => {
+            const keys = [];
+            const req = store.openCursor();
+            req.onsuccess = (event) => {
+              const cursor = event.target.result;
+              if (!cursor) return resolve(keys);
+              keys.push(cursor.key);
+              cursor.continue();
+            };
+            req.onerror = () => reject(req.error);
+          });
+        });
+      }
+
+      async function _getImportedSheetBlob(name) {
+        if (!name) return null;
+        return _runImportedSheetsTx("readonly", (store) => {
+          return new Promise((resolve, reject) => {
+            const req = store.get(name);
+            req.onsuccess = (event) => resolve(event.target.result?.blob || null);
+            req.onerror = () => reject(req.error);
+          });
+        });
+      }
+
+      async function _saveImportedSheet(name, blob) {
+        if (!name || !blob) return;
+        await _runImportedSheetsTx("readwrite", (store) => { store.put({ name, blob }); });
+        importedSheetUrlCache.delete(name);
+        await _loadImportedSheetKeys();
+        await renderImportedSheetList();
+      }
+
+      async function _deleteImportedSheet(name) {
+        if (!name) return;
+        await _runImportedSheetsTx("readwrite", (store) => { store.delete(name); });
+        importedSheetUrlCache.delete(name);
+        importedSheetKeys = importedSheetKeys.filter(k => k !== name);
+        if (player.appearance.spriteSheets?.sheet === name) {
+          player.appearance.spriteSheets.sheet = null;
+          player.spriteSheets = { base: null, pelea: null, especial: null };
+        }
+        await renderImportedSheetList();
+      }
+
+      async function _resolveImportedSheetUrl(ref) {
+        if (!ref) return null;
+        if (typeof ref !== "string") return null;
+        if (/^(blob:|data:|https?:\/\/)/i.test(ref)) return ref;
+        if (importedSheetUrlCache.has(ref)) return importedSheetUrlCache.get(ref);
+        const blob = await _getImportedSheetBlob(ref);
+        if (!blob) return null;
+        const url = URL.createObjectURL(blob);
+        importedSheetUrlCache.set(ref, url);
+        return url;
+      }
+
+      async function _renderImportedSheetItem(name) {
+        const list = document.getElementById("importedSheetList");
+        const item = document.createElement("div");
+        item.className = "imported-sheet-item";
+        item.dataset.sheetName = name;
+        item.addEventListener("click", async () => { await setActiveImportedSheet(name); });
+        const label = document.createElement("div");
+        label.className = "imported-sheet-name";
+        label.textContent = name;
+        item.appendChild(label);
+        const deleteBtn = document.createElement("button");
+        deleteBtn.type = "button";
+        deleteBtn.className = "imported-sheet-delete";
+        deleteBtn.textContent = "✕";
+        deleteBtn.addEventListener("click", async (event) => {
+          event.stopPropagation();
+          await _deleteImportedSheet(name);
+        });
+        item.appendChild(deleteBtn);
+        if (player.appearance.spriteSheets?.sheet === name) item.classList.add("active");
+        list.appendChild(item);
+      }
+
+      async function renderImportedSheetList() {
+        const list = document.getElementById("importedSheetList");
+        if (!list) return;
+        list.innerHTML = "";
+        if (!importedSheetKeys.length) {
+          const empty = document.createElement("div");
+          empty.className = "imported-sheet-empty";
+          empty.textContent = "No hay PNG importados. Usá + AÑADIR PNG para cargar un sheet local.";
+          list.appendChild(empty);
+          return;
+        }
+        for (const name of importedSheetKeys) await _renderImportedSheetItem(name);
+      }
+
+      async function setActiveImportedSheet(name) {
+        const src = await _resolveImportedSheetUrl(name);
+        if (!src) {
+          showToast("No se encontró el PNG importado.", "error");
+          return;
+        }
+        player.appearance.spriteSheets = player.appearance.spriteSheets || {};
+        player.appearance.spriteSheets.sheet = name;
+        player.appearance.spriteSheets.base = name;
+        player.appearance.spriteSheets.pelea = name;
+        player.appearance.spriteSheets.especial = name;
+        const variantId = player.appearance.variantId || "base";
+        player.appearance.variantCustomizations = player.appearance.variantCustomizations || {};
+        const cfg = player.appearance.variantCustomizations[variantId] || {};
+        cfg.spriteDataURL = src;
+        cfg.spriteImage = null;
+        cfg.specialSpriteDataURL = src;
+        cfg.specialSpriteImage = null;
+        player.appearance.variantCustomizations[variantId] = cfg;
+        player.appearance.combatCustomization = player.appearance.combatCustomization || {};
+        player.appearance.combatCustomization.spriteDataURL = src;
+        player.appearance.combatCustomization.spriteImage = null;
+        player.spriteSheets = { base: src, pelea: src, especial: src };
+        await renderImportedSheetList();
+        invalidateHairCache();
+        showToast(`Sheet activo: ${name}`, "success");
+      }
+
+      async function _loadImportedSheetsOnStart() {
+        try {
+          await _loadImportedSheetKeys();
+          await renderImportedSheetList();
+          const activeSheetName = player.appearance.spriteSheets?.sheet;
+          if (activeSheetName && importedSheetKeys.includes(activeSheetName)) {
+            await setActiveImportedSheet(activeSheetName);
+          }
+        } catch (err) {
+          console.warn("No se pudo cargar IndexedDB de sheets importados:", err);
+        }
+      }
+
+      function _attachImportedSheetEvents() {
+        const addBtn = document.getElementById("addImportedSheetBtn");
+        const fileInput = document.getElementById("importedSheetFileInput");
+        if (!addBtn || !fileInput) return;
+        addBtn.addEventListener("click", () => fileInput.click());
+        fileInput.addEventListener("change", async (event) => {
+          const files = Array.from(event.target.files || []);
+          event.target.value = "";
+          for (const file of files) {
+            if (!file.type || !file.type.includes("png")) {
+              showToast("Solo se aceptan archivos PNG.", "warning");
+              continue;
+            }
+            const blob = file.slice(0, file.size, file.type);
+            await _saveImportedSheet(file.name, blob);
+          }
+          if (importedSheetKeys.length) await renderImportedSheetList();
+        });
+      }
+
       function _getCurrentAccessoryEntry() {
         const accId = player.appearance.accessoryId || charState.accessoryId || "ac_none";
         return ACCESSORIES_CATALOG.find(a => a.id === accId) || null;
@@ -1216,7 +1438,7 @@
         return entry;
       }
 
-      function _applyImportedCharacter(payload) {
+      async function _applyImportedCharacter(payload) {
         if (!payload || typeof payload !== "object") return false;
         const appearance = (payload.appearance && typeof payload.appearance === "object") ? payload.appearance : payload;
         player.appearance.raceId = appearance.raceId || player.appearance.raceId;
@@ -1241,7 +1463,7 @@
           pelea: appearance.spriteSheets.pelea,
           especial: appearance.spriteSheets.especial,
         };
-        applySlotSpriteUrls(appearance);
+        await applySlotSpriteUrls(appearance);
         player.appearance.faceId = appearance.faceId || player.appearance.faceId;
         player.appearance.faceColor = appearance.faceColor ?? player.appearance.faceColor;
         player.appearance.browColor = appearance.browColor ?? player.appearance.browColor;
@@ -1292,17 +1514,20 @@
         if (!file) return;
         const reader = new FileReader();
         reader.onload = ev => {
-          try {
-            const payload = JSON.parse(ev.target.result);
-            if (_applyImportedCharacter(payload)) {
-              showToast("Personaje importado", "success");
-            } else {
-              showToast("Archivo JSON no válido", "error");
+          (async () => {
+            try {
+              const payload = JSON.parse(ev.target.result);
+              const applied = await _applyImportedCharacter(payload);
+              if (applied) {
+                showToast("Personaje importado", "success");
+              } else {
+                showToast("Archivo JSON no válido", "error");
+              }
+            } catch (error) {
+              console.error("Importación fallida:", error);
+              showToast("No se pudo importar el archivo JSON", "error");
             }
-          } catch (error) {
-            console.error("Importación fallida:", error);
-            showToast("No se pudo importar el archivo JSON", "error");
-          }
+          })();
         };
         reader.onerror = () => showToast("Error leyendo el archivo JSON", "error");
         reader.readAsText(file);
@@ -1939,7 +2164,7 @@
 
       function getSpriteSheetExportData(app) {
         const currentVariant = app?.variantCustomizations?.[app?.variantId] || {};
-        const sheet = currentVariant.spriteDataURL || currentVariant.specialSpriteDataURL || app?.combatCustomization?.spriteDataURL || null;
+        const sheet = app?.spriteSheets?.sheet || currentVariant.spriteDataURL || currentVariant.specialSpriteDataURL || app?.combatCustomization?.spriteDataURL || null;
         return {
           sheet,
           base: sheet,
@@ -1948,18 +2173,20 @@
         };
       }
 
-      function applySlotSpriteUrls(slot) {
+      async function applySlotSpriteUrls(slot) {
         normalizeSlotSheetUrls(slot);
         const sheets = slot?.spriteSheets || {};
         const variantId = player.appearance.variantId || "base";
         player.appearance.variantCustomizations = player.appearance.variantCustomizations || {};
         const cfg = player.appearance.variantCustomizations[variantId] || {};
 
-        if (sheets.sheet) {
-          cfg.spriteDataURL = sheets.sheet;
-          cfg.specialSpriteDataURL = sheets.sheet;
+        const sheetRef = sheets.sheet || sheets.base || sheets.pelea || sheets.especial || null;
+        const sheetSrc = await _resolveImportedSheetUrl(sheetRef) || sheetRef;
+        if (sheetSrc) {
+          cfg.spriteDataURL = sheetSrc;
+          cfg.specialSpriteDataURL = sheetSrc;
           player.appearance.combatCustomization = player.appearance.combatCustomization || {};
-          player.appearance.combatCustomization.spriteDataURL = sheets.sheet;
+          player.appearance.combatCustomization.spriteDataURL = sheetSrc;
           player.appearance.variantCustomizations[variantId] = cfg;
           _hydrateSheetField(cfg, "spriteDataURL", "spriteImage");
           _hydrateSheetField(cfg, "specialSpriteDataURL", "specialSpriteImage");
@@ -2083,66 +2310,14 @@
         const wrap = document.createElement("div"); wrap.className = "items-scroll"; wrap.style.padding = "10px";
         panel.appendChild(wrap);
         const cfg = player.appearance.combatCustomization || {};
-        const info = document.createElement("div"); info.style.cssText = "font-size:11px;color:var(--td);line-height:1.35;margin-bottom:10px";
-        info.textContent = "Sheet de combate global (13 filas PvP). Si no importás uno, se usa la variante _fight.";
+        const info = document.createElement("div");
+        info.style.cssText = "font-size:11px;color:var(--td);line-height:1.35;margin-bottom:10px";
+        info.textContent = "El sheet activo se administra desde IMPORTADOS. Usa el mismo PNG para exploración, combate y especial.";
         wrap.appendChild(info);
-        const status = document.createElement("div"); status.style.cssText = "font-family:var(--fh);font-size:8px;letter-spacing:1px;color:var(--cyan);margin-bottom:8px";
-        status.textContent = cfg.spriteDataURL ? "PLANTILLA CUSTOM DE COMBATE" : "USANDO PLANTILLA NORMAL _FIGHT";
+        const status = document.createElement("div");
+        status.style.cssText = "font-family:var(--fh);font-size:8px;letter-spacing:1px;color:var(--cyan);margin-bottom:8px";
+        status.textContent = player.appearance.spriteSheets?.sheet ? "SHEET ACTUAL EN IMPORTADOS" : "SIN SHEET ACTIVO";
         wrap.appendChild(status);
-        const importBox = document.createElement("div"); importBox.className = "import-panel";
-        importBox.innerHTML = `<div class="import-title">IMPORTAR SPRITESHEET DE COMBATE</div>`;
-        const imgPreview = document.createElement("img"); imgPreview.className = "import-preview";
-        if (cfg.spriteDataURL) { imgPreview.src = cfg.spriteDataURL; imgPreview.classList.add("visible"); }
-        importBox.appendChild(imgPreview);
-        const metaRow = document.createElement("div"); metaRow.className = "import-row";
-        const scaleInput  = Object.assign(document.createElement("input"), { type:"number", min:"0.25", max:"8",  step:"0.05", className:"import-input-text", value:String(cfg.scale||1), placeholder:"Tamaño" });
-        const framesInput = Object.assign(document.createElement("input"), { type:"number", min:"1",    max:"48", step:"1",    className:"import-input-text", value:String(cfg.animFrames||6), placeholder:"Cols (frames)" });
-        const rowsInput   = Object.assign(document.createElement("input"), { type:"number", min:"1",    max:"64", step:"1",    className:"import-input-text", value:String(cfg.rowCount||""),  placeholder:"Filas (auto)" });
-        const saveMeta = () => {
-          const rc = parseInt(rowsInput.value, 10);
-          player.appearance.combatCustomization ||= {};
-          player.appearance.combatCustomization.scale      = Math.max(0.25, Math.min(8, Number(scaleInput.value)||1));
-          player.appearance.combatCustomization.animFrames = Math.max(1, Math.min(48, parseInt(framesInput.value,10)||6));
-          player.appearance.combatCustomization.rowCount   = rc>0?rc:0;
-          invalidateHairCache();
-        };
-        scaleInput.addEventListener("input", saveMeta); framesInput.addEventListener("input", saveMeta); rowsInput.addEventListener("input", saveMeta);
-        metaRow.appendChild(scaleInput); metaRow.appendChild(framesInput); metaRow.appendChild(rowsInput);
-        importBox.appendChild(metaRow);
-        const fileLabel = document.createElement("label"); fileLabel.className = "import-file-label";
-        const fileInput = document.createElement("input"); fileInput.type = "file"; fileInput.accept = "image/*";
-        fileInput.addEventListener("change", e => {
-          const file = e.target.files[0]; if (!file) return;
-          const reader = new FileReader();
-          reader.onload = ev => {
-            const dataURL = ev.target.result; const img = new Image();
-            img.onload = () => {
-              const rc = parseInt(rowsInput.value, 10);
-              player.appearance.combatCustomization = Object.assign({}, player.appearance.combatCustomization || {}, {
-                spriteDataURL: dataURL, spriteImage: img,
-                scale: Math.max(0.25,Math.min(8,Number(scaleInput.value)||1)),
-                animFrames: Math.max(1,Math.min(48,parseInt(framesInput.value,10)||6)),
-                rowCount: rc>0?rc:0,
-              });
-              imgPreview.src = dataURL; imgPreview.classList.add("visible");
-              invalidateHairCache(); showToast("Spritesheet de combate importado","success");
-              renderItemsPanel("combat");
-            };
-            img.onerror = () => showToast("No se pudo cargar la imagen","error");
-            img.src = dataURL;
-          };
-          reader.readAsDataURL(file);
-        });
-        fileLabel.appendChild(fileInput); fileLabel.appendChild(document.createTextNode("ARCHIVO PNG"));
-        importBox.appendChild(fileLabel); wrap.appendChild(importBox);
-        const resetBtn = document.createElement("button"); resetBtn.className = "import-add-btn";
-        resetBtn.style.marginTop = "10px"; resetBtn.textContent = "BORRAR PLANTILLA DE COMBATE";
-        resetBtn.disabled = !cfg.spriteDataURL && !cfg.scale && !cfg.animFrames;
-        resetBtn.addEventListener("click", () => {
-          player.appearance.combatCustomization = {}; invalidateHairCache();
-          showToast("Plantilla de combate reseteada","warning"); renderItemsPanel("combat");
-        });
-        wrap.appendChild(resetBtn);
       }
 
       function renderFormsPanel(panel) {
@@ -2189,34 +2364,10 @@
         });
         actions.appendChild(resetBtn); wrap.appendChild(actions);
         if (active !== "base") {
-          wrap.appendChild(buildSheetImportSection({
-            title: `SPRITES — ${variants.find(v=>v.id===active)?.label||active}`,
-            exploreCfg: custom||{}, combatCfg: custom||{}, specialCfg: custom||{},
-            exploreDisabled:false, combatDisabled:false, specialDisabled:false,
-            onExploreLoaded: (url,img) => {
-              player.appearance.variantCustomizations||={};
-              player.appearance.variantCustomizations[active]||={label:variants.find(v=>v.id===active)?.label||active};
-              Object.assign(player.appearance.variantCustomizations[active],{spriteDataURL:url,spriteImage:img});
-              showToast("Sheet de exploración importado","success");
-            },
-            onCombatLoaded: (url,img) => {
-              player.appearance.variantCustomizations||={};
-              player.appearance.variantCustomizations[active]||={label:variants.find(v=>v.id===active)?.label||active};
-              Object.assign(player.appearance.variantCustomizations[active],{combatSpriteDataURL:url,combatSpriteImage:img});
-              showToast("Sheet de combate importado","success");
-            },
-            onSpecialLoaded: (url,img) => {
-              player.appearance.variantCustomizations||={};
-              player.appearance.variantCustomizations[active]||={label:variants.find(v=>v.id===active)?.label||active};
-              Object.assign(player.appearance.variantCustomizations[active],{specialSpriteDataURL:url,specialSpriteImage:img});
-              showToast("Sheet especial importado","success");
-            },
-            onMetaChange: (meta) => {
-              player.appearance.variantCustomizations||={};
-              player.appearance.variantCustomizations[active]||={label:variants.find(v=>v.id===active)?.label||active};
-              Object.assign(player.appearance.variantCustomizations[active],meta);
-            },
-          }));
+          const note = document.createElement("div");
+          note.style.cssText = "font-size:10px;color:var(--td);line-height:1.4;margin-top:10px";
+          note.textContent = "Las formas usan el sheet activo de IMPORTADOS. Si necesitas cargar un PNG, hazlo desde IMPORTADOS.";
+          wrap.appendChild(note);
         }
       }
 
@@ -2561,12 +2712,12 @@
             accessoryName:    accEntry?.name||null,
           };
           const sheetUrls = getSpriteSheetExportData(player.appearance);
-          d.spriteSheets = sheetUrls;
-          d.base = sheetUrls.base || null;
-          d.pelea = sheetUrls.pelea || null;
-          d.especial = sheetUrls.especial || null;
-          d.combate = sheetUrls.pelea || null;
-          d.special = sheetUrls.especial || null;
+          d.spriteSheets = { sheet: sheetUrls.sheet };
+          d.base = sheetUrls.sheet || null;
+          d.pelea = sheetUrls.sheet || null;
+          d.especial = sheetUrls.sheet || null;
+          d.combate = sheetUrls.sheet || null;
+          d.special = sheetUrls.sheet || null;
           savedSlots[i]=d; activeSlotIndex=i;
           localStorage.setItem(LS_SLOT,String(i));
           saveSlots(); renderSlots();
@@ -2578,77 +2729,37 @@
         }
       }
 
-      function loadFromSlot(i) {
+      async function loadFromSlot(i) {
         try {
           const d = savedSlots[i]; if (!d) throw new Error("Slot vacío o inválido");
           normalizeSlotSheetUrls(d);
-          const bSrc = d?.spriteSheets?.base || d?.base || d?.sprites?.base || "";
-          const pSrc = d?.spriteSheets?.pelea || d?.spriteSheets?.combat || d?.pelea || d?.combat || d?.sprites?.combat || "";
-          const eSrc = d?.spriteSheets?.especial || d?.spriteSheets?.special || d?.especial || d?.special || d?.sprites?.special || "";
-
-          const fallbackBase = bSrc || pSrc || eSrc || "";
-          const combatSrc = pSrc || fallbackBase;
-          const specialSrc = eSrc || fallbackBase;
-
-          player.spriteSheets = {
-            base: fallbackBase,
-            pelea: combatSrc,
-            especial: specialSrc,
-          };
+          const sheetRef = d?.spriteSheets?.sheet || d?.base || d?.pelea || d?.especial || d?.combate || d?.special || "";
+          const sheetSrc = await _resolveImportedSheetUrl(sheetRef) || sheetRef || "";
 
           player.appearance.raceId    = d.race      || "human";
           player.appearance.gender    = d.gender    || "male";
           player.appearance.variantId = d.variantId || "base";
+          player.appearance.spriteSheets = { sheet: sheetRef, base: sheetRef, pelea: sheetRef, especial: sheetRef };
+          player.spriteSheets = { base: sheetSrc, pelea: sheetSrc, especial: sheetSrc };
 
           const customVariantId = player.appearance.variantId || "base";
           const variantCustomizations = Object.assign({}, d.variantCustomizations || {});
           variantCustomizations[customVariantId] = Object.assign({}, variantCustomizations[customVariantId] || {});
 
-          const simpleKey = `${player.appearance.raceId}`;
-          const genderKey = `${player.appearance.raceId}_${player.appearance.gender}`;
-
-          if (fallbackBase) {
-            const baseImg = new Image();
-            baseImg.onload = () => { invalidateHairCache(); };
-            baseImg.src = fallbackBase;
-            imageMap[simpleKey] = baseImg;
-            imageMap[genderKey] = baseImg;
-            imageMap[`${genderKey}_fight`] = baseImg;
-            imageMap[`${genderKey}_special`] = baseImg;
-          }
-          if (combatSrc) {
-            const combatImg = new Image();
-            combatImg.onload = () => { invalidateHairCache(); };
-            combatImg.src = combatSrc;
-            imageMap[`${simpleKey}_pelea`] = combatImg;
-            imageMap[`${genderKey}_fight`] = combatImg;
-          }
-          if (specialSrc) {
-            const specialImg = new Image();
-            specialImg.onload = () => { invalidateHairCache(); };
-            specialImg.src = specialSrc;
-            imageMap[`${simpleKey}_especial`] = specialImg;
-            imageMap[`${genderKey}_special`] = specialImg;
-          }
-
-          if (fallbackBase) {
-            variantCustomizations[customVariantId].spriteDataURL = fallbackBase;
-            variantCustomizations[customVariantId].spriteImage = null;
-          }
-          if (specialSrc) {
-            variantCustomizations[customVariantId].specialSpriteDataURL = specialSrc;
-            variantCustomizations[customVariantId].specialSpriteImage = null;
-          }
+          variantCustomizations[customVariantId].spriteDataURL = sheetSrc || variantCustomizations[customVariantId].spriteDataURL;
+          variantCustomizations[customVariantId].spriteImage = null;
+          variantCustomizations[customVariantId].specialSpriteDataURL = sheetSrc || variantCustomizations[customVariantId].specialSpriteDataURL;
+          variantCustomizations[customVariantId].specialSpriteImage = null;
 
           const combatCustomization = Object.assign({}, d.combatCustomization || {});
-          if (combatSrc) {
-            combatCustomization.spriteDataURL = combatSrc;
+          if (sheetSrc) {
+            combatCustomization.spriteDataURL = sheetSrc;
             combatCustomization.spriteImage = null;
           }
 
           hydrateVariantCustomizations(variantCustomizations);
           hydrateCombatCustomization(combatCustomization);
-          applySlotSpriteUrls(d);
+          await applySlotSpriteUrls(d);
 
           player.appearance.faceId      = d.faceId     || "fm0";
           player.appearance.faceColor   = d.faceColor  || null;
@@ -2764,7 +2875,7 @@
           card.appendChild(num); card.appendChild(miniWrap); card.appendChild(info);
           if(d){
             const lb=document.createElement("button"); lb.className="slot-save-btn"; lb.textContent="CARGAR";
-            lb.addEventListener("click",e=>{e.stopPropagation();loadFromSlot(i);});
+            lb.addEventListener("click",e=>{e.stopPropagation(); void loadFromSlot(i);});
             const db=document.createElement("button"); db.className="slot-delete-btn"; db.innerHTML="✕";
             db.addEventListener("click",e=>{e.stopPropagation();deleteSlot(i);});
             card.appendChild(lb); card.appendChild(db);
@@ -2864,7 +2975,7 @@
           showToast(loaded>0?`${loaded} sprites cargados`:"Modo procedimental activo",loaded>0?"success":"warning");
           if(savedSlots[activeSlotIndex]){
             try {
-              loadFromSlot(activeSlotIndex);
+              await loadFromSlot(activeSlotIndex);
             } catch(err) {
               console.warn("Slot corrupto:",err);
               savedSlots[activeSlotIndex] = null;
@@ -2872,6 +2983,8 @@
               showToast("Slot inicializado por defecto","warning");
             }
           }
+          await _loadImportedSheetsOnStart();
+          _attachImportedSheetEvents();
           renderItemsPanel("race"); renderSlots(); updateStats();
         } catch(err){
           console.error(err); imageMap=imageMap||{};
