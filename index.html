@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
@@ -10,535 +10,2995 @@
     />
     <style>
       :root {
-        --bg: #08090f;
-        --panel: #0d1020;
-        --panel-alt: #12172e;
+        --bg-deep: #08090f;
+        --bg-panel: #0d1020;
+        --bg-card: #12172e;
+        --bg-hover: #1a2040;
         --border: #2a3560;
-        --accent: #00e5ff;
-        --accent2: #4a6aff;
-        --text: #e8eaf6;
-        --muted: #7d8bb3;
-        --radius: 16px;
-        --shadow: 0 24px 80px rgba(0, 0, 0, 0.25);
-        --transition: 180ms ease;
+        --glow: #4a6aff;
+        --accent: #f5c400;
+        --accent2: #ff6a00;
+        --cyan: #00e5ff;
+        --green: #00ff9d;
+        --red: #ff1744;
+        --orange: #ff6a00;
+        --magenta: #e040fb;
+        --tp: #e8eaf6;
+        --td: #8892b0;
+        --tm: #3d4a6b;
+        --fh: "Orbitron", monospace;
+        --fb: "Rajdhani", sans-serif;
+        --r: 6px;
+        --tr: 0.15s ease;
       }
-
-      * {
-        box-sizing: border-box;
-      }
-
-      html,
-      body {
-        margin: 0;
-        min-height: 100%;
-        background: radial-gradient(circle at top, rgba(0, 229, 255, 0.14), transparent 30%), #06070d;
-        color: var(--text);
-        font-family: "Rajdhani", sans-serif;
-      }
-
-      body {
-        display: flex;
-        justify-content: center;
-        align-items: stretch;
-        min-height: 100vh;
-      }
-
-      button,
-      input {
-        font: inherit;
-      }
-
-      .page-shell {
-        width: min(1200px, calc(100vw - 24px));
-        margin: 24px auto;
-        display: flex;
-        flex-direction: column;
-        gap: 18px;
-      }
+      *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body { height: 100%; overflow: hidden; }
+      @media (max-width: 768px) { html, body { height: auto; overflow: auto; -webkit-overflow-scrolling: touch; } }
+      body { background: var(--bg-deep); color: var(--tp); font-family: var(--fb); font-size: 14px; }
 
       .app-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 18px 22px;
-        border-radius: var(--radius);
-        background: linear-gradient(180deg, rgba(14, 18, 36, 0.96), rgba(12, 14, 28, 0.98));
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        box-shadow: var(--shadow);
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 10px 20px; height: 52px;
+        background: linear-gradient(90deg, #0d1020, #111830, #0d1020);
+        border-bottom: 2px solid var(--border);
+        box-shadow: 0 2px 20px rgba(74,106,255,.25);
+        position: relative; z-index: 10;
       }
-
-      .brand {
-        display: flex;
-        align-items: center;
-        gap: 14px;
+      .app-header::after {
+        content: ""; position: absolute; bottom: -4px; left: 0; right: 0; height: 2px;
+        background: linear-gradient(90deg, transparent, var(--accent), var(--glow), var(--accent), transparent);
+        opacity: .6;
       }
-
-      .brand-symbol {
-        width: 48px;
-        height: 48px;
-        display: grid;
-        place-items: center;
-        border-radius: 16px;
-        background: linear-gradient(135deg, rgba(0, 229, 255, 0.24), rgba(74, 106, 255, 0.16));
-        color: var(--accent);
-        font-size: 26px;
-        box-shadow: 0 0 18px rgba(0, 229, 255, 0.18);
+      .header-logo { font-size: 24px; filter: drop-shadow(0 0 8px var(--accent)); animation: pulseLogo 2s ease-in-out infinite; }
+      @keyframes pulseLogo {
+        0%,100% { filter: drop-shadow(0 0 8px var(--accent)); }
+        50%      { filter: drop-shadow(0 0 20px var(--accent)) drop-shadow(0 0 36px var(--accent2)); }
       }
+      .header-title { font-family: var(--fh); font-size: 20px; font-weight: 900; letter-spacing: 3px; margin-left: 10px; }
+      .header-title .acc { color: var(--accent); text-shadow: 0 0 12px var(--accent); }
+      .header-sub { font-family: var(--fh); font-size: 9px; letter-spacing: 2px; color: var(--tm); }
 
-      .brand-title {
-        display: grid;
-        gap: 4px;
+      .creator-layout { display: grid; grid-template-columns: 200px 1fr 300px; height: calc(100vh - 52px); overflow: hidden; }
+
+      .left-col { display: flex; flex-direction: row; border-right: 1px solid var(--border); overflow: hidden; height: 100%; }
+      .cat-nav {
+        width: 68px; flex-shrink: 0; background: var(--bg-panel);
+        border-right: 1px solid var(--border);
+        display: flex; flex-direction: column; align-items: center; gap: 4px;
+        padding: 10px 4px; overflow-y: auto; scrollbar-width: none; height: 100%;
       }
-
-      .brand-title h1 {
-        margin: 0;
-        font-family: "Orbitron", monospace;
-        font-size: clamp(1.4rem, 2.5vw, 2.4rem);
-        letter-spacing: 0.2em;
+      .cat-nav::-webkit-scrollbar { display: none; }
+      .cat-btn {
+        width: 56px; height: 52px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+        background: transparent; border: 1px solid transparent; border-radius: var(--r);
+        color: var(--td); cursor: pointer; transition: all var(--tr);
+        font-family: var(--fb); font-size: 9px; font-weight: 600; letter-spacing: 1px;
+        text-align: center; line-height: 1.1;
+        touch-action: manipulation; -webkit-tap-highlight-color: transparent;
       }
-
-      .brand-title p {
-        margin: 0;
-        color: var(--muted);
-        font-size: 0.92rem;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
+      .cat-btn:hover { background: var(--bg-hover); border-color: var(--border); color: var(--tp); }
+      .cat-btn.active {
+        background: linear-gradient(135deg, rgba(245,196,0,.15), rgba(74,106,255,.1));
+        border-color: var(--accent); color: var(--accent);
+        box-shadow: 0 0 10px rgba(245,196,0,.2), inset 0 0 8px rgba(245,196,0,.05);
       }
+      .cat-icon  { font-size: 18px; line-height: 1; }
+      .cat-label { font-size: 8px; letter-spacing: 1px; margin-top: 1px; }
 
-      .primary-btn {
-        padding: 14px 18px;
-        border: none;
-        border-radius: 999px;
-        color: #070b14;
-        background: linear-gradient(135deg, var(--accent), var(--accent2));
-        cursor: pointer;
-        font-weight: 700;
-        letter-spacing: 0.08em;
-        transition: transform var(--transition), filter var(--transition), box-shadow var(--transition);
+      .items-panel { flex: 1; background: var(--bg-panel); display: flex; flex-direction: column; overflow: hidden; min-width: 0; height: 100%; }
+      .items-section-title {
+        font-family: var(--fh); font-size: 9px; letter-spacing: 2px; color: var(--td);
+        padding: 10px 10px 6px; border-bottom: 1px solid var(--border); flex-shrink: 0;
       }
+      .items-scroll {
+        flex: 1; overflow-y: auto; padding: 8px;
+        scrollbar-width: thin; scrollbar-color: var(--border) transparent; min-height: 0;
+      }
+      .items-scroll::-webkit-scrollbar { width: 3px; }
+      .items-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+      .items-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 8px; }
 
-      .primary-btn:hover {
-        transform: translateY(-1px);
-        filter: brightness(1.05);
-        box-shadow: 0 12px 30px rgba(0, 229, 255, 0.22);
+      .item-thumb {
+        aspect-ratio: 1; background: var(--bg-card); border: 2px solid var(--border);
+        border-radius: var(--r); cursor: pointer; overflow: hidden; transition: all var(--tr);
+        display: flex; align-items: center; justify-content: center; position: relative;
+        touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+      }
+      .item-thumb:hover { border-color: var(--td); transform: scale(1.04); background: var(--bg-hover); }
+      .item-thumb.selected { border-color: var(--accent); box-shadow: 0 0 12px rgba(245,196,0,.4); background: rgba(245,196,0,.08); }
+      .item-thumb canvas { width: 100%; height: 100%; image-rendering: pixelated; }
+      .item-thumb .item-label {
+        position: absolute; bottom: 0; left: 0; right: 0;
+        background: rgba(8,9,15,.85); font-family: var(--fh); font-size: 6px;
+        letter-spacing: .5px; color: var(--td); text-align: center; padding: 2px 1px; line-height: 1.2;
+      }
+      .item-thumb.selected .item-label { color: var(--accent); }
+
+      .acc-delete-btn {
+        position: absolute; top: 2px; right: 2px; width: 14px; height: 14px;
+        background: rgba(255,23,68,.8); border: none; border-radius: 2px;
+        color: white; font-size: 9px; cursor: pointer; display: flex;
+        align-items: center; justify-content: center; line-height: 1;
+        opacity: 0; transition: opacity .15s;
+        touch-action: manipulation;
+      }
+      .item-thumb:hover .acc-delete-btn { opacity: 1; }
+      .item-thumb.selected .acc-delete-btn { opacity: .7; }
+      .item-thumb.selected .acc-delete-btn:hover { opacity: 1; }
+
+      .acc-type-badge {
+        display: inline-block; padding: 1px 4px; border-radius: 2px;
+        font-family: var(--fh); font-size: 6px; letter-spacing: .5px;
+        background: rgba(0,229,255,.12); border: 1px solid var(--cyan);
+        color: var(--cyan); position: absolute; top: 2px; left: 2px; line-height: 1.4;
+        pointer-events: none;
       }
 
       .import-panel {
-        border-radius: var(--radius);
-        background: rgba(15, 18, 34, 0.92);
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        padding: 18px;
-        display: grid;
-        gap: 18px;
-        box-shadow: var(--shadow);
+        flex-shrink: 0; padding: 8px; border-top: 1px solid var(--border);
+        background: rgba(0,229,255,.03);
+      }
+      .import-title { font-family: var(--fh); font-size: 8px; letter-spacing: 2px; color: var(--cyan); margin-bottom: 6px; }
+      .import-row { display: flex; gap: 4px; margin-bottom: 5px; flex-wrap: wrap; }
+      .import-input-text {
+        flex: 1; min-width: 0; background: var(--bg-card); border: 1px solid var(--border);
+        border-radius: 4px; padding: 4px 7px; color: var(--tp); font-family: var(--fb);
+        font-size: 11px; outline: none; transition: border-color var(--tr);
+      }
+      .import-input-text:focus { border-color: var(--cyan); }
+      .import-input-text::placeholder { color: var(--tm); }
+      .import-select {
+        background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px;
+        padding: 4px 5px; color: var(--tp); font-family: var(--fb); font-size: 11px;
+        outline: none; cursor: pointer; transition: border-color var(--tr);
+        -webkit-appearance: none; appearance: none; min-width: 70px;
+      }
+      .import-select:focus { border-color: var(--cyan); }
+      .import-file-label {
+        display: flex; align-items: center; gap: 4px; cursor: pointer;
+        background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px;
+        padding: 4px 8px; color: var(--td); font-family: var(--fh); font-size: 8px;
+        letter-spacing: 1px; transition: all var(--tr); flex-shrink: 0;
+      }
+      .import-file-label:hover { border-color: var(--cyan); color: var(--cyan); }
+      .import-file-label input { display: none; }
+      .import-add-btn {
+        background: linear-gradient(135deg, rgba(0,229,255,.15), rgba(74,106,255,.15));
+        border: 1px solid var(--cyan); border-radius: 4px;
+        padding: 4px 10px; color: var(--cyan); font-family: var(--fh); font-size: 8px;
+        letter-spacing: 1px; cursor: pointer; transition: all var(--tr); flex-shrink: 0;
+        display: flex; align-items: center; gap: 4px;
+      }
+      .import-add-btn:hover { background: rgba(0,229,255,.25); box-shadow: 0 0 8px rgba(0,229,255,.3); }
+      .import-add-btn:disabled { opacity: .4; cursor: not-allowed; }
+      .import-preview {
+        width: 100%; height: 40px; object-fit: contain; border-radius: 4px;
+        border: 1px dashed var(--border); background: var(--bg-card);
+        display: none; image-rendering: pixelated; margin-bottom: 4px;
+      }
+      .import-preview.visible { display: block; }
+
+      .imported-section {
+        border-top: 1px solid var(--border); padding: 10px 12px 12px; background: rgba(0,229,255,.03);
+      }
+      .imported-header {
+        display: flex; align-items: center; justify-content: space-between; gap: 10px;
+        font-family: var(--fh); font-size: 10px; letter-spacing: 2px; color: var(--cyan); margin-bottom: 10px;
+      }
+      .imported-sheet-list {
+        display: grid; grid-template-columns: 1fr; gap: 8px;
+        max-height: 220px; overflow-y: auto; padding-right: 2px;
+      }
+      .imported-sheet-item {
+        display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center;
+        background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px;
+        padding: 8px 10px; cursor: pointer; transition: border-color var(--tr), background var(--tr);
+      }
+      .imported-sheet-item:hover { border-color: var(--cyan); background: rgba(0,229,255,.05); }
+      .imported-sheet-item.active { border-color: var(--cyan); background: rgba(0,229,255,.1); }
+      .imported-sheet-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--tp); }
+      .imported-sheet-delete {
+        width: 26px; height: 26px; border: none; background: rgba(255,23,68,.12);
+        color: var(--red); border-radius: 5px; font-size: 14px; cursor: pointer;
+      }
+      .imported-sheet-empty {
+        color: var(--tm); font-size: 11px; line-height: 1.4; padding: 6px 0;
       }
 
-      .import-panel.hidden {
-        display: none;
+      .face-color-row { display: flex; gap: 4px; padding: 6px 8px 4px; flex-shrink: 0; flex-wrap: wrap; }
+      .face-color-chip {
+        width: 18px; height: 18px; border-radius: 3px; border: 2px solid transparent;
+        cursor: pointer; transition: transform .1s, border-color .1s; flex-shrink: 0;
+      }
+      .face-color-chip:hover { transform: scale(1.15); }
+      .face-color-chip.active { border-color: white; }
+      .face-color-picker { width: 18px; height: 18px; padding: 0; border: 1px solid var(--border); border-radius: 3px; background: transparent; cursor: pointer; }
+      .face-color-picker::-webkit-color-swatch-wrapper { padding: 2px; }
+      .face-color-picker::-webkit-color-swatch { border: none; border-radius: 2px; }
+      .face-color-label { font-size: 9px; color: var(--td); letter-spacing: .5px; width: 100%; margin-top: 2px; }
+
+      .pagination {
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+        padding: 6px 8px; border-top: 1px solid var(--border); flex-shrink: 0;
+      }
+      .page-btn {
+        width: 24px; height: 24px; background: var(--bg-card); border: 1px solid var(--border);
+        color: var(--td); border-radius: 4px; cursor: pointer; font-size: 11px;
+        transition: all var(--tr); display: flex; align-items: center; justify-content: center;
+      }
+      .page-btn:hover { border-color: var(--accent); color: var(--accent); }
+      .page-btn:disabled { opacity: .3; cursor: default; }
+      .page-info { font-family: var(--fh); font-size: 9px; color: var(--td); letter-spacing: 1px; }
+
+      .gender-row { display: flex; gap: 6px; padding: 8px 8px 4px; flex-shrink: 0; }
+      .gender-btn {
+        flex: 1; padding: 5px 0; background: var(--bg-card); border: 2px solid var(--border);
+        border-radius: var(--r); color: var(--td); font-family: var(--fh); font-size: 9px;
+        letter-spacing: 1px; cursor: pointer; transition: all var(--tr);
+        display: flex; align-items: center; justify-content: center; gap: 4px;
+      }
+      .gender-btn:hover { background: var(--bg-hover); border-color: var(--td); }
+      .gender-btn.active { border-color: var(--cyan); color: var(--cyan); background: rgba(0,229,255,.08); }
+      .gender-btn:disabled { opacity: .3; cursor: not-allowed; }
+
+      .color-section { padding: 6px 8px 8px; flex-shrink: 0; border-top: 1px solid var(--border); }
+      .color-section-title { font-family: var(--fh); font-size: 8px; letter-spacing: 2px; color: var(--cyan); margin-bottom: 6px; }
+      .color-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+      .color-row-label { font-size: 10px; font-weight: 600; color: var(--td); width: 44px; flex-shrink: 0; letter-spacing: .5px; }
+      .color-gradient-wrap { flex: 1; display: flex; align-items: center; gap: 4px; }
+      .color-result { width: 20px; height: 20px; border-radius: 3px; border: 1px solid var(--border); flex-shrink: 0; cursor: pointer; transition: transform var(--tr); }
+      .color-result:hover { transform: scale(1.1); }
+      input[type="color"] { width: 20px; height: 20px; padding: 0; border: 1px solid var(--border); border-radius: 3px; background: transparent; cursor: pointer; }
+      input[type="color"]::-webkit-color-swatch-wrapper { padding: 2px; }
+      input[type="color"]::-webkit-color-swatch { border: none; border-radius: 2px; }
+
+      .race-badge {
+        display: inline-block; padding: 2px 6px; border-radius: 3px;
+        font-family: var(--fh); font-size: 7px; letter-spacing: 1px;
+        background: rgba(74,106,255,.15); border: 1px solid var(--glow); color: var(--cyan);
+        margin-left: 6px; vertical-align: middle;
       }
 
-      .import-row {
-        display: grid;
-        grid-template-columns: 1fr minmax(240px, 420px);
-        gap: 14px;
+      /* ══════════════════════════════════════════════
+         CENTRO — Preview + barra de animaciones
+      ══════════════════════════════════════════════ */
+      .center-col { display: flex; flex-direction: column; background: #0a0d1a; border-right: 1px solid var(--border); overflow: hidden; height: 100%; }
+      .preview-header { padding: 8px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0; background: linear-gradient(90deg, rgba(74,106,255,.08), transparent); }
+      .preview-title { font-family: var(--fh); font-size: 10px; letter-spacing: 3px; color: var(--cyan); text-shadow: 0 0 6px var(--cyan); }
+
+      /* ── Barra de animaciones reestructurada ── */
+      .view-anim-bar {
+        display: flex; flex-direction: column; gap: 0;
+        border-bottom: 1px solid var(--border); flex-shrink: 0;
+        background: rgba(10,13,26,.95);
       }
 
-      .file-label,
-      .url-group {
-        display: grid;
-        gap: 10px;
+      /* Tabs de sheet */
+      .sheet-tabs {
+        display: flex; gap: 0; border-bottom: 1px solid var(--border);
+      }
+      .sheet-tab {
+        flex: 1; padding: 6px 4px; text-align: center;
+        font-family: var(--fh); font-size: 8px; letter-spacing: 1.5px;
+        color: var(--tm); cursor: pointer; border: none; background: transparent;
+        border-bottom: 2px solid transparent; transition: all var(--tr);
+        display: flex; align-items: center; justify-content: center; gap: 4px;
+      }
+      .sheet-tab:hover { color: var(--td); background: rgba(255,255,255,.03); }
+      .sheet-tab.active-base    { color: var(--cyan);    border-bottom-color: var(--cyan);    background: rgba(0,229,255,.05); }
+      .sheet-tab.active-combat  { color: var(--red);     border-bottom-color: var(--red);     background: rgba(255,23,68,.05); }
+      .sheet-tab.active-special { color: var(--magenta); border-bottom-color: var(--magenta); background: rgba(224,64,251,.05); }
+      .sheet-tab-icon { font-size: 13px; }
+
+      /* Contenedor de grupos de animación */
+      .anim-groups-wrap {
+        padding: 5px 8px 6px; display: flex; flex-direction: column; gap: 3px;
       }
 
-      .file-label {
-        padding: 14px 16px;
-        border-radius: 14px;
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px dashed rgba(0, 229, 255, 0.2);
-        color: var(--text);
+      .anim-group-row {
+        display: flex; align-items: center; gap: 4px;
+      }
+      .anim-group-label {
+        font-family: var(--fh); font-size: 7px; letter-spacing: 1.5px;
+        color: var(--tm); min-width: 40px; flex-shrink: 0;
+      }
+      .anim-btns-row {
+        display: flex; gap: 3px; flex-wrap: wrap; flex: 1;
       }
 
-      .file-label input {
-        display: block;
-        width: 100%;
+      /* Vista estática (row 0) */
+      .view-btn-static {
+        padding: 3px 8px; border-radius: 4px; cursor: pointer;
+        font-family: var(--fh); font-size: 7px; letter-spacing: 1px;
+        border: 1px solid var(--border); background: var(--bg-card);
+        color: var(--td); transition: all var(--tr); white-space: nowrap;
+      }
+      .view-btn-static:hover { border-color: var(--orange); color: var(--orange); }
+      .view-btn-static.active-view {
+        border-color: var(--orange); color: var(--orange);
+        background: rgba(255,106,0,.12); box-shadow: 0 0 6px rgba(255,106,0,.3);
       }
 
-      .url-input {
-        width: 100%;
-        min-height: 48px;
-        padding: 12px 14px;
-        border-radius: 14px;
-        outline: none;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        background: rgba(255, 255, 255, 0.04);
-        color: var(--text);
+      /* Botones de animación */
+      .anim-btn {
+        padding: 3px 7px; border-radius: 4px; cursor: pointer;
+        font-family: var(--fh); font-size: 7px; letter-spacing: 1px;
+        border: 1px solid var(--border); background: var(--bg-card);
+        color: var(--td); transition: all var(--tr); white-space: nowrap;
       }
+      .anim-btn:hover { border-color: var(--td); color: var(--tp); }
 
-      .secondary-btn {
-        width: 100%;
-        padding: 14px 18px;
-        border-radius: 14px;
-        border: 1px solid rgba(0, 229, 255, 0.18);
-        background: rgba(0, 229, 255, 0.08);
-        color: var(--accent);
-        cursor: pointer;
-        transition: transform var(--transition), background var(--transition);
-      }
+      /* Colores activos por sheet */
+      .anim-btn.active-base    { border-color: var(--cyan);    color: var(--cyan);    background: rgba(0,229,255,.1);    box-shadow: 0 0 6px rgba(0,229,255,.25); }
+      .anim-btn.active-combat  { border-color: var(--red);     color: var(--red);     background: rgba(255,23,68,.1);    box-shadow: 0 0 6px rgba(255,23,68,.25); }
+      .anim-btn.active-special { border-color: var(--magenta); color: var(--magenta); background: rgba(224,64,251,.1);   box-shadow: 0 0 6px rgba(224,64,251,.25); }
 
-      .secondary-btn:hover {
-        transform: translateY(-1px);
-        background: rgba(0, 229, 255, 0.14);
-      }
+      /* Panel de animaciones oculto/visible */
+      .anim-panel { display: none; }
+      .anim-panel.visible { display: flex; flex-direction: column; gap: 3px; }
 
-      .sheet-status {
-        color: var(--muted);
-        padding: 0 2px;
-        font-size: 0.96rem;
+      .preview-canvas-wrap {
+        flex: 1; display: flex; align-items: center; justify-content: center;
+        position: relative; overflow: hidden;
       }
+      .preview-canvas-wrap::before {
+        content: ""; position: absolute; inset: 0;
+        background:
+          radial-gradient(ellipse 60% 50% at 50% 90%, rgba(74,106,255,.1) 0%, transparent 70%),
+          repeating-linear-gradient(0deg,   transparent, transparent 31px, rgba(42,53,96,.12) 32px),
+          repeating-linear-gradient(90deg,  transparent, transparent 31px, rgba(42,53,96,.12) 32px);
+        pointer-events: none;
+      }
+      .preview-shadow {
+        position: absolute; width: 90px; height: 16px; bottom: 18px; left: 50%;
+        transform: translateX(-50%);
+        background: radial-gradient(ellipse, rgba(74,106,255,.3) 0%, transparent 70%);
+        border-radius: 50%; pointer-events: none;
+      }
+      #previewCanvas { image-rendering: pixelated; image-rendering: crisp-edges; position: relative; z-index: 1; width: 180px; height: 260px; }
 
-      .grid-stage {
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
+      /* Indicator de sheet activo */
+      .sheet-indicator {
+        position: absolute; top: 8px; right: 10px; z-index: 5;
+        font-family: var(--fh); font-size: 8px; letter-spacing: 1px;
+        padding: 3px 7px; border-radius: 3px;
+        border: 1px solid transparent; transition: all .3s;
+        pointer-events: none;
       }
+      .sheet-indicator.base    { color: var(--cyan);    border-color: rgba(0,229,255,.3);    background: rgba(0,229,255,.08); }
+      .sheet-indicator.combat  { color: var(--red);     border-color: rgba(255,23,68,.3);    background: rgba(255,23,68,.08); }
+      .sheet-indicator.special { color: var(--magenta); border-color: rgba(224,64,251,.3);   background: rgba(224,64,251,.08); }
 
-      .grid-header {
-        font-family: "Orbitron", monospace;
-        color: var(--accent);
-        letter-spacing: 0.16em;
-        text-transform: uppercase;
-        font-size: 0.95rem;
+      .name-section { padding: 10px 16px 8px; flex-shrink: 0; border-top: 1px solid var(--border); }
+      .name-label { display: block; font-family: var(--fh); font-size: 8px; letter-spacing: 2px; color: var(--td); margin-bottom: 5px; text-align: center; }
+      .name-input-wrap { position: relative; display: flex; align-items: center; }
+      .name-input {
+        width: 100%; background: var(--bg-card); border: 1px solid var(--border);
+        border-radius: var(--r); padding: 7px 32px 7px 12px; color: var(--tp);
+        font-family: var(--fh); font-size: 13px; letter-spacing: 1px; outline: none;
+        transition: border-color var(--tr); text-align: center;
       }
+      .name-input:focus { border-color: var(--cyan); box-shadow: 0 0 8px rgba(0,229,255,.15); }
+      .name-edit-icon { position: absolute; right: 10px; font-size: 13px; pointer-events: none; color: var(--td); }
 
-      .canvas-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 18px;
-      }
+      .stats-section { padding: 0 16px 10px; flex-shrink: 0; }
+      .stats-title { font-family: var(--fh); font-size: 8px; letter-spacing: 3px; color: var(--td); margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
+      .stat-row { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
+      .stat-icon { font-size: 12px; width: 16px; text-align: center; }
+      .stat-name { width: 72px; font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--td); }
+      .stat-bar-wrap { flex: 1; height: 7px; background: rgba(255,255,255,.06); border-radius: 3px; overflow: hidden; border: 1px solid rgba(255,255,255,.06); }
+      .stat-bar { height: 100%; border-radius: 2px; transition: width .4s ease; position: relative; }
+      .stat-bar::after { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 50%; background: rgba(255,255,255,.2); border-radius: 2px; }
+      .health-bar { background: linear-gradient(90deg,#00c853,var(--green)); box-shadow: 0 0 5px rgba(0,230,118,.5); }
+      .ki-bar     { background: linear-gradient(90deg,#1565c0,#2979ff); box-shadow: 0 0 5px rgba(41,121,255,.5); }
+      .str-bar    { background: linear-gradient(90deg,#c62828,var(--red)); box-shadow: 0 0 5px rgba(255,23,68,.5); }
+      .def-bar    { background: linear-gradient(90deg,#e65100,#ff9800); box-shadow: 0 0 5px rgba(255,152,0,.5); }
+      .spd-bar    { background: linear-gradient(90deg,#6a1b9a,#aa00ff); box-shadow: 0 0 5px rgba(170,0,255,.5); }
+      .stat-val { font-family: var(--fh); font-size: 9px; color: var(--td); min-width: 24px; text-align: right; }
 
-      .preview-card {
-        background: rgba(11, 13, 24, 0.94);
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        border-radius: 20px;
-        padding: 16px;
-        display: grid;
-        gap: 14px;
-        box-shadow: var(--shadow);
+      .right-col { display: flex; flex-direction: column; background: var(--bg-panel); overflow: hidden; height: 100%; }
+      .right-header { padding: 8px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0; background: linear-gradient(90deg, rgba(74,106,255,.08), transparent); }
+      .right-title { font-family: var(--fh); font-size: 10px; letter-spacing: 3px; color: var(--cyan); text-shadow: 0 0 6px var(--cyan); }
+      .final-canvas-wrap {
+        flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+        padding: 12px; position: relative; overflow: hidden;
+        background: linear-gradient(180deg,#0a0d1a 0%,var(--bg-panel) 100%);
       }
+      .final-canvas-wrap::before {
+        content: ""; position: absolute; inset: 0;
+        background: radial-gradient(ellipse 70% 60% at 50% 80%, rgba(74,106,255,.1) 0%, transparent 70%);
+        pointer-events: none;
+      }
+      #finalCanvas { image-rendering: pixelated; image-rendering: crisp-edges; border-radius: 8px; width: 200px; height: 240px; position: relative; z-index: 1; }
 
-      .preview-label {
-        font-size: 0.88rem;
-        letter-spacing: 0.12em;
-        color: var(--text);
-        text-transform: uppercase;
+      .final-controls { display: flex; gap: 8px; justify-content: center; padding: 0 14px 10px; flex-shrink: 0; }
+      .ctrl-btn {
+        background: var(--bg-card); border: 1px solid var(--border); color: var(--td);
+        width: 40px; height: 40px; border-radius: var(--r); cursor: pointer; font-size: 16px;
+        transition: all var(--tr); display: flex; align-items: center; justify-content: center;
+        touch-action: manipulation; -webkit-tap-highlight-color: transparent;
       }
+      .ctrl-btn:hover { border-color: var(--cyan); color: var(--cyan); box-shadow: 0 0 8px rgba(0,229,255,.2); transform: scale(1.05); }
+      .ctrl-btn:active { transform: scale(.95); }
 
-      .preview-canvas {
-        width: 100%;
-        height: auto;
-        border-radius: 14px;
-        background: rgba(8, 9, 15, 0.95);
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        image-rendering: pixelated;
-        image-rendering: crisp-edges;
+      .save-section { flex: 1; overflow-y: auto; padding: 0 12px 10px; scrollbar-width: none; }
+      .save-section::-webkit-scrollbar { display: none; }
+      .save-title { font-family: var(--fh); font-size: 8px; letter-spacing: 3px; color: var(--td); margin-bottom: 8px; padding: 0 0 5px; border-bottom: 1px solid var(--border); }
+      .slots-list { display: flex; flex-direction: column; gap: 6px; }
+
+      .slot-card {
+        display: flex; align-items: center; gap: 8px;
+        background: var(--bg-card); border: 1px solid var(--border);
+        border-radius: var(--r); padding: 7px 8px; cursor: pointer;
+        transition: all var(--tr); position: relative;
       }
+      .slot-card:hover { border-color: var(--accent); background: var(--bg-hover); }
+      .slot-card.active-slot { border-color: var(--accent); box-shadow: 0 0 10px rgba(245,196,0,.2); }
+      .slot-card.empty { opacity: .5; }
+      .slot-card.empty:hover { border-color: var(--border); background: var(--bg-card); }
+      .slot-num { font-family: var(--fh); font-size: 16px; font-weight: 900; color: var(--tm); width: 22px; text-align: center; flex-shrink: 0; }
+      .slot-card.active-slot .slot-num { color: var(--accent); }
+      .slot-mini { width: 34px; height: 44px; flex-shrink: 0; position: relative; }
+      .slot-mini canvas { image-rendering: pixelated; border-radius: 3px; width: 100%; height: 100%; }
+      .slot-info { flex: 1; min-width: 0; }
+      .slot-name { font-family: var(--fh); font-size: 10px; letter-spacing: 1px; color: var(--tp); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .slot-level { font-size: 10px; color: var(--td); letter-spacing: 1px; }
+      .slot-save-btn {
+        background: transparent; border: 1px solid var(--border); color: var(--td);
+        padding: 3px 7px; border-radius: 4px; font-size: 9px; font-family: var(--fh);
+        cursor: pointer; letter-spacing: 1px; transition: all var(--tr); flex-shrink: 0;
+      }
+      .slot-save-btn:hover { border-color: var(--accent); color: var(--accent); }
+      .slot-delete-btn {
+        background: transparent; border: none; color: var(--tm); font-size: 13px;
+        cursor: pointer; padding: 2px; transition: color var(--tr); flex-shrink: 0; line-height: 1;
+      }
+      .slot-delete-btn:hover { color: var(--red); }
+
+      .start-btn {
+        flex-shrink: 0; margin: 0 12px 12px; padding: 12px;
+        background: linear-gradient(135deg,#1b5e20,#2e7d32,#388e3c);
+        border: 2px solid #4caf50; border-radius: var(--r); color: white;
+        font-family: var(--fh); font-size: 13px; font-weight: 700; letter-spacing: 3px;
+        cursor: pointer; transition: all var(--tr);
+        text-shadow: 0 1px 3px rgba(0,0,0,.5); position: relative; overflow: hidden;
+        touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+      }
+      .start-btn::before {
+        content: ""; position: absolute; top: 0; left: -100%; right: 0; bottom: 0;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,.15), transparent);
+        transition: left .4s ease;
+      }
+      .start-btn:hover { background: linear-gradient(135deg,#2e7d32,#388e3c,#4caf50); box-shadow: 0 0 18px rgba(76,175,80,.5); transform: translateY(-2px); }
+      .start-btn:hover::before { left: 100%; }
+      .start-btn:active { transform: translateY(0); }
 
       #toastContainer {
-        position: fixed;
-        right: 20px;
-        bottom: 24px;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        pointer-events: none;
-        z-index: 100;
+        position: fixed; bottom: 20px; right: 20px;
+        display: flex; flex-direction: column; gap: 6px; z-index: 1000; pointer-events: none;
       }
-
       .toast {
-        padding: 12px 18px;
-        border-radius: 14px;
-        backdrop-filter: blur(16px);
-        background: rgba(8, 11, 20, 0.92);
-        border: 1px solid rgba(0, 229, 255, 0.14);
-        color: var(--text);
-        min-width: 220px;
-        box-shadow: 0 22px 50px rgba(0, 0, 0, 0.28);
-        animation: toastIn 240ms ease;
+        background: var(--bg-card); border: 1px solid var(--glow); border-radius: var(--r);
+        padding: 8px 14px; font-family: var(--fh); font-size: 10px; letter-spacing: 1px;
+        color: var(--tp); max-width: 250px;
+        animation: toastIn .25s ease, toastOut .3s ease 2.3s forwards;
       }
+      .toast.success { border-color: var(--green); color: var(--green); }
+      .toast.warning { border-color: var(--accent); color: var(--accent); }
+      .toast.error   { border-color: var(--red);   color: var(--red); }
+      @keyframes toastIn  { from { opacity:0; transform: translateX(20px); } to { opacity:1; transform: none; } }
+      @keyframes toastOut { from { opacity:1; } to { opacity:0; transform: translateX(20px); } }
 
-      @keyframes toastIn {
-        from { opacity: 0; transform: translateY(8px); }
-        to { opacity: 1; transform: translateY(0); }
+      @media (max-width: 768px) {
+        .app-header { padding: 8px 12px; height: 48px; }
+        .header-title { font-size: 15px; letter-spacing: 1px; }
+        .header-sub { display: none; }
+        .creator-layout { display: flex; flex-direction: column; height: auto; overflow: visible; }
+        .left-col { flex-direction: column; border-right: none; border-bottom: 1px solid var(--border); height: auto; }
+        .cat-nav { width:100%; height:auto; flex-direction:row; flex-shrink:0; border-right:none; border-bottom:1px solid var(--border); padding:6px 8px; overflow-x:auto; overflow-y:hidden; gap:6px; }
+        .cat-btn { width:52px; height:48px; flex-shrink:0; }
+        .items-panel { height: auto; }
+        .items-scroll { max-height: 240px; }
+        .items-grid { grid-template-columns: repeat(4,1fr); }
+        .center-col { height:auto; border-right:none; border-bottom:1px solid var(--border); }
+        .preview-canvas-wrap { min-height:220px; padding:12px 0; }
+        #previewCanvas { width:140px; height:200px; }
+        .right-col { height: auto; }
+        .final-canvas-wrap { padding: 8px; }
+        #finalCanvas { width:160px; height:200px; }
+        .save-section { overflow-y: visible; }
+        .start-btn { margin:0 12px 16px; font-size:12px; padding:14px 12px; letter-spacing:2px; }
+        #toastContainer { bottom:12px; right:50%; transform:translateX(50%); align-items:center; }
+        .toast { text-align:center; max-width:90vw; }
       }
-
-      @media (max-width: 820px) {
-        .import-row {
-          grid-template-columns: 1fr;
-        }
-
-        .app-header {
-          flex-direction: column;
-          align-items: stretch;
-          gap: 14px;
-        }
+      @media (min-width:769px) and (max-width:1024px) {
+        .creator-layout { grid-template-columns: 220px 1fr; grid-template-rows: 1fr auto; height: calc(100vh - 52px); }
+        .left-col { grid-row: 1 / 3; }
+        .center-col { border-right:none; border-bottom:1px solid var(--border); }
+        .right-col { grid-column: 2; }
       }
     </style>
   </head>
   <body>
-    <div class="page-shell">
-      <header class="app-header">
-        <div class="brand">
-          <div class="brand-symbol">⚡</div>
-          <div class="brand-title">
-            <h1>Dragon Creator Z</h1>
-            <p>Spritesheet Grid Preview</p>
+    <header class="app-header">
+      <div style="display:flex;align-items:center">
+        <span class="header-logo">⚡</span>
+        <div style="margin-left:10px">
+          <h1 class="header-title">DRAGON CREATOR <span class="acc">Z</span></h1>
+        </div>
+      </div>
+      <span class="header-sub">CHARACTER BUILDER v4.3.1</span>
+    </header>
+
+    <main class="creator-layout">
+      <div class="left-col">
+        <nav class="cat-nav" id="categoryNav">
+          <button class="cat-btn active" data-cat="race">    <span class="cat-icon">👾</span><span class="cat-label">RAZA</span></button>
+          <button class="cat-btn" data-cat="face">           <span class="cat-icon">😶</span><span class="cat-label">CARA</span></button>
+          <button class="cat-btn" data-cat="hair">           <span class="cat-icon">💇</span><span class="cat-label">CABELLO</span></button>
+          <button class="cat-btn" data-cat="shirt">          <span class="cat-icon">👕</span><span class="cat-label">ROPA SUP.</span></button>
+          <button class="cat-btn" data-cat="pants">          <span class="cat-icon">👖</span><span class="cat-label">ROPA INF.</span></button>
+          <button class="cat-btn" data-cat="gloves">         <span class="cat-icon">🥊</span><span class="cat-label">GUANTES</span></button>
+          <button class="cat-btn" data-cat="shoes">          <span class="cat-icon">👟</span><span class="cat-label">CALZADO</span></button>
+          <button class="cat-btn" data-cat="accessory">      <span class="cat-icon">🎽</span><span class="cat-label">ACCESORIOS</span></button>
+          <button class="cat-btn" data-cat="aura">           <span class="cat-icon">✨</span><span class="cat-label">AURA</span></button>
+          <button class="cat-btn" data-cat="color">          <span class="cat-icon">🎨</span><span class="cat-label">COLOR</span></button>
+          <button class="cat-btn" data-cat="combat">         <span class="cat-icon">⚔️</span><span class="cat-label">COMBATE</span></button>
+          <button class="cat-btn" data-cat="forms">          <span class="cat-icon">⚡</span><span class="cat-label">FORMAS</span></button>
+        </nav>
+        <div class="imported-section" id="importedSection">
+          <div class="imported-header">
+            <span>IMPORTADOS</span>
+            <button id="addImportedSheetBtn" class="import-add-btn">+ AÑADIR PNG</button>
+          </div>
+          <div id="importedSheetList" class="imported-sheet-list"></div>
+          <input id="importedSheetFileInput" type="file" accept="image/png" multiple hidden>
+        </div>
+        <div class="items-panel" id="itemsPanel"></div>
+      </div>
+
+      <!-- ══════════ COLUMNA CENTRAL ══════════ -->
+      <div class="center-col">
+        <div class="preview-header"><span class="preview-title">VISTA PREVIA</span></div>
+
+        <!-- ── Nueva barra de animaciones por sheet ── -->
+        <div class="view-anim-bar">
+
+          <!-- Tabs de sheet -->
+          <div class="sheet-tabs">
+            <button class="sheet-tab active-base" data-sheet="base" id="tabBase">
+              <span class="sheet-tab-icon">🌍</span>BASE
+            </button>
+            <button class="sheet-tab" data-sheet="combat" id="tabCombat">
+              <span class="sheet-tab-icon">⚔️</span>COMBATE
+            </button>
+            <button class="sheet-tab" data-sheet="special" id="tabSpecial">
+              <span class="sheet-tab-icon">✨</span>ESPECIAL
+            </button>
+          </div>
+
+          <!-- ── PANEL BASE (Brett_Base.png) ── -->
+          <div class="anim-panel visible" id="panelBase">
+            <div class="anim-groups-wrap">
+
+              <!-- Vista estática row 0 -->
+              <div class="anim-group-row">
+                <span class="anim-group-label">VISTA</span>
+                <div class="anim-btns-row">
+                  <button class="view-btn-static" data-sheet="base" data-view="base_view">BASE</button>
+                </div>
+              </div>
+
+              <!-- Movimiento -->
+              <div class="anim-group-row">
+                <span class="anim-group-label">MOVER</span>
+                <div class="anim-btns-row">
+                  <button class="anim-btn active-base" data-sheet="base" data-anim="idle">IDLE</button>
+                  <button class="anim-btn" data-sheet="base" data-anim="walk">WALK</button>
+                  <button class="anim-btn" data-sheet="base" data-anim="run">RUN</button>
+                </div>
+              </div>
+
+              <!-- Aire -->
+              <div class="anim-group-row">
+                <span class="anim-group-label">AIRE</span>
+                <div class="anim-btns-row">
+                  <button class="anim-btn" data-sheet="base" data-anim="jump">JUMP</button>
+                  <button class="anim-btn" data-sheet="base" data-anim="fall">FALL</button>
+                  <button class="anim-btn" data-sheet="base" data-anim="land">LAND</button>
+                  <button class="anim-btn" data-sheet="base" data-anim="fly">FLY</button>
+                  <button class="anim-btn" data-sheet="base" data-anim="hover">HOVER</button>
+                </div>
+              </div>
+
+              <!-- Acciones RP -->
+              <div class="anim-group-row">
+                <span class="anim-group-label">RP</span>
+                <div class="anim-btns-row">
+                  <button class="anim-btn" data-sheet="base" data-anim="meditate">MEDITAR</button>
+                  <button class="anim-btn" data-sheet="base" data-anim="sleep">SLEEP</button>
+                  <button class="anim-btn" data-sheet="base" data-anim="interaction">INTER.</button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- ── PANEL COMBATE (Brett_Pelea.png) ── -->
+          <div class="anim-panel" id="panelCombat">
+            <div class="anim-groups-wrap">
+
+              <!-- Vista estática combate -->
+              <div class="anim-group-row">
+                <span class="anim-group-label">VISTA</span>
+                <div class="anim-btns-row">
+                  <button class="view-btn-static" data-sheet="combat" data-view="combat_view">COMBATE</button>
+                </div>
+              </div>
+
+              <!-- Idle + movimiento combate -->
+              <div class="anim-group-row">
+                <span class="anim-group-label">STANCE</span>
+                <div class="anim-btns-row">
+                  <button class="anim-btn" data-sheet="combat" data-anim="combat_idle">IDLE</button>
+                  <button class="anim-btn" data-sheet="combat" data-anim="dash">DASH</button>
+                  <button class="anim-btn" data-sheet="combat" data-anim="rush">RUSH</button>
+                </div>
+              </div>
+
+              <!-- Ataques -->
+              <div class="anim-group-row">
+                <span class="anim-group-label">ATAQUE</span>
+                <div class="anim-btns-row">
+                  <button class="anim-btn" data-sheet="combat" data-anim="light_combo">LIGHT</button>
+                  <button class="anim-btn" data-sheet="combat" data-anim="heavy_combo">HEAVY</button>
+                  <button class="anim-btn" data-sheet="combat" data-anim="special">ESPECIAL</button>
+                  <button class="anim-btn" data-sheet="combat" data-anim="charge">CARGA</button>
+                </div>
+              </div>
+
+              <!-- Defensivo / daño -->
+              <div class="anim-group-row">
+                <span class="anim-group-label">DEF/DAÑO</span>
+                <div class="anim-btns-row">
+                  <button class="anim-btn" data-sheet="combat" data-anim="block">BLOCK</button>
+                  <button class="anim-btn" data-sheet="combat" data-anim="hit">HIT</button>
+                  <button class="anim-btn" data-sheet="combat" data-anim="recovery">RECOV.</button>
+                  <button class="anim-btn" data-sheet="combat" data-anim="knockback_fly">KNOCKB.</button>
+                </div>
+              </div>
+
+              <!-- Extra combate -->
+              <div class="anim-group-row">
+                <span class="anim-group-label">EXTRA</span>
+                <div class="anim-btns-row">
+                  <button class="anim-btn" data-sheet="combat" data-anim="sparring">SPARRING</button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- ── PANEL ESPECIAL (Brett_special.png) ── -->
+          <div class="anim-panel" id="panelSpecial">
+            <div class="anim-groups-wrap">
+
+              <!-- Fusiones -->
+              <div class="anim-group-row">
+                <span class="anim-group-label">FUSIÓN</span>
+                <div class="anim-btns-row">
+                  <button class="anim-btn" data-sheet="special" data-anim="fusion_metamoru">METAMORU</button>
+                  <button class="anim-btn" data-sheet="special" data-anim="fusion_potara">POTARA</button>
+                </div>
+              </div>
+
+              <!-- Interacción mundo -->
+              <div class="anim-group-row">
+                <span class="anim-group-label">MUNDO</span>
+                <div class="anim-btns-row">
+                  <button class="anim-btn" data-sheet="special" data-anim="carry_player">CARGAR</button>
+                  <button class="anim-btn" data-sheet="special" data-anim="training">ENTRENA</button>
+                  <button class="anim-btn" data-sheet="special" data-anim="drive">CONDUCIR</button>
+                  <button class="anim-btn" data-sheet="special" data-anim="sit">SENTAR</button>
+                </div>
+              </div>
+
+              <!-- Items -->
+              <div class="anim-group-row">
+                <span class="anim-group-label">ITEMS</span>
+                <div class="anim-btns-row">
+                  <button class="anim-btn" data-sheet="special" data-anim="hold_item">SOSTENER</button>
+                  <button class="anim-btn" data-sheet="special" data-anim="use_item">USAR</button>
+                  <button class="anim-btn" data-sheet="special" data-anim="eat_drink">COMER</button>
+                </div>
+              </div>
+
+              <!-- Emote -->
+              <div class="anim-group-row">
+                <span class="anim-group-label">EMOTE</span>
+                <div class="anim-btns-row">
+                  <button class="anim-btn" data-sheet="special" data-anim="emote">EMOTE</button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div><!-- /view-anim-bar -->
+
+        <div class="preview-canvas-wrap">
+          <div class="preview-shadow"></div>
+          <div class="sheet-indicator base" id="sheetIndicator">🌍 BASE</div>
+          <canvas id="previewCanvas" width="180" height="260"></canvas>
+        </div>
+        <div class="name-section">
+          <label class="name-label">NOMBRE DEL PERSONAJE</label>
+          <div class="name-input-wrap">
+            <input class="name-input" type="text" id="charName" value="Guerrero Z" maxlength="24" autocomplete="off" />
+            <span class="name-edit-icon">✏️</span>
           </div>
         </div>
-        <button id="toggleImport" class="primary-btn">Importar Spritesheet</button>
-      </header>
+        <div class="stats-section">
+          <div class="stats-title">ESTADÍSTICAS</div>
+          <div class="stat-row"><span class="stat-icon">❤️</span><span class="stat-name">SALUD</span>    <div class="stat-bar-wrap"><div class="stat-bar health-bar" id="barHealth" style="width:75%"></div></div><span class="stat-val" id="valHealth">75</span></div>
+          <div class="stat-row"><span class="stat-icon">💙</span><span class="stat-name">KI</span>       <div class="stat-bar-wrap"><div class="stat-bar ki-bar"     id="barKi"     style="width:85%"></div></div><span class="stat-val" id="valKi">85</span></div>
+          <div class="stat-row"><span class="stat-icon">💥</span><span class="stat-name">FUERZA</span>   <div class="stat-bar-wrap"><div class="stat-bar str-bar"    id="barStr"    style="width:80%"></div></div><span class="stat-val" id="valStr">80</span></div>
+          <div class="stat-row"><span class="stat-icon">🛡️</span><span class="stat-name">DEFENSA</span>  <div class="stat-bar-wrap"><div class="stat-bar def-bar"    id="barDef"    style="width:70%"></div></div><span class="stat-val" id="valDef">70</span></div>
+          <div class="stat-row"><span class="stat-icon">⚡</span><span class="stat-name">VELOCIDAD</span><div class="stat-bar-wrap"><div class="stat-bar spd-bar"    id="barSpd"    style="width:90%"></div></div><span class="stat-val" id="valSpd">90</span></div>
+        </div>
+      </div>
 
-      <section class="import-panel hidden" id="importPanel">
-        <div class="import-row">
-          <label class="file-label">Cargar PNG local
-            <input id="sheetFileInput" type="file" accept="image/png,image/*" />
-          </label>
-          <div class="url-group">
-            <input id="sheetUrlInput" class="url-input" type="url" placeholder="https://.../spritesheet.png" />
-            <button id="loadUrlBtn" class="secondary-btn">Cargar URL</button>
+      <!-- ══════════ COLUMNA DERECHA ══════════ -->
+      <div class="right-col">
+        <div class="right-header"><span class="right-title">VISTA FINAL</span></div>
+        <div class="final-canvas-wrap">
+          <canvas id="finalCanvas" width="220" height="260"></canvas>
+        </div>
+        <div class="final-controls">
+          <button class="ctrl-btn" id="btnRotate" title="Rotar">🔄</button>
+          <button class="ctrl-btn" id="btnZoom"   title="Zoom">🔍</button>
+          <button class="ctrl-btn" id="btnFlip"   title="Espejo">↔️</button>
+        </div>
+        <div class="save-section">
+          <div class="save-title">GUARDAR PERSONAJE</div>
+          <div class="slots-list" id="slotsList"></div>
+          <div class="slot-actions">
+            <button class="ctrl-btn import-add-btn" id="btnExportCharacter">📤 EXPORTAR PERSONAJE (.json)</button>
+            <button class="ctrl-btn import-add-btn" id="btnImportCharacter">📥 IMPORTAR PERSONAJE (.json)</button>
+            <input type="file" id="characterImportInput" accept=".json,application/json" style="display:none" />
           </div>
         </div>
-        <div id="sheetStatus" class="sheet-status">Ningún spritesheet importado.</div>
-      </section>
-
-      <main class="grid-stage">
-        <div class="grid-header">Vista principal de la grilla</div>
-        <section class="canvas-grid" id="canvasGrid"></section>
-      </main>
-    </div>
+        <button class="start-btn" id="btnStart">⚔️ COMENZAR A JUGAR</button>
+      </div>
+    </main>
 
     <div id="toastContainer"></div>
 
     <script src="character-system.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    <script src="firebase-character-service.js"></script>
     <script>
       "use strict";
 
-      const toastContainer = document.getElementById("toastContainer");
-      const importPanel = document.getElementById("importPanel");
-      const toggleImport = document.getElementById("toggleImport");
-      const sheetFileInput = document.getElementById("sheetFileInput");
-      const sheetUrlInput = document.getElementById("sheetUrlInput");
-      const loadUrlBtn = document.getElementById("loadUrlBtn");
-      const canvasGrid = document.getElementById("canvasGrid");
-      const sheetStatus = document.getElementById("sheetStatus");
+      if (!window.CharacterSystem) {
+        document.body.innerHTML = '<p style="color:#f44;padding:40px;font-family:monospace">ERROR: character-system.js no encontrado.</p>';
+        throw new Error("CharacterSystem no cargado");
+      }
 
-      const previewDefinitions = [
-        { label: "IDLE", action: "idle", direction: 1 },
-        { label: "WALK", action: "walk", direction: 1 },
-        { label: "RUN", action: "run", direction: 1 },
-        { label: "JUMP", action: "jump", direction: 1 },
-        { label: "FALL", action: "fall", direction: -1 },
-        { label: "HOVER", action: "hover", direction: 1 },
-      ];
+      const {
+        player, RACE_CATALOG, AURAS_CATALOG,
+        ACCESSORIES_CATALOG, ACCESSORY_TYPES,
+        addUserAccessory, removeUserAccessory, restoreUserAccessories,
+        VIEW_META, ACTIONS_META, COMBAT_VIEW_META, COMBAT_ACTIONS_META, SPECIAL_ACTIONS_META,
+        SpriteAnimator, initPlayer, preloadAssets, drawPlayer,
+        tintHair, tintLayer, invalidateHairCache, getById, cycleId,
+        getCatalogFor, getDefaultIds, GENDERLESS_RACES,
+        isCompatibleSheet, getIdleFrameCoords,
+      } = window.CharacterSystem;
 
-      const state = {
-        imageMap: {},
-        previews: [],
-        importing: false,
+      const FIREBASE_CONFIG = {
+        apiKey: "AIzaSyBYZwK41XAUkLeRlWQRms0oEyJ1QXMQVg8",
+        authDomain: "dragon-world-z.firebaseapp.com",
+        databaseURL: "https://dragon-world-z-default-rtdb.firebaseio.com",
+        projectId: "dragon-world-z",
+        storageBucket: "dragon-world-z.firebasestorage.app",
+        messagingSenderId: "994414993412",
+        appId: "1:994414993412:web:66813401c499f41e46d551"
+      };
+      try { FirebaseCharacterService.initFirebase(FIREBASE_CONFIG); } catch (err) { console.warn("[DC] Firebase no se pudo inicializar:", err); }
+
+      async function _ensureFirebaseUserId() {
+        if (!window.FirebaseCharacterService) return null;
+        try {
+          const current = FirebaseCharacterService.getCurrentUserId();
+          if (current) return current;
+          const user = await FirebaseCharacterService.signInAnonymously();
+          return user ? user.uid : null;
+        } catch (error) {
+          console.warn("[DC] No se pudo autenticar anónimamente en Firebase:", error);
+          return null;
+        }
+      }
+
+      function _getSlotUploadSources(app) {
+        const variantId = app?.variantId || "base";
+        const variantCfg = app?.variantCustomizations?.[variantId] || {};
+        const sheet =
+          variantCfg.spriteDataURL ||
+          variantCfg.spriteImage?.src ||
+          variantCfg.specialSpriteDataURL ||
+          variantCfg.specialSpriteImage?.src ||
+          app?.combatCustomization?.spriteDataURL ||
+          app?.combatCustomization?.spriteImage?.src ||
+          null;
+        return { sheet };
+      }
+
+      async function _syncSlotToFirebase(slotIndex, slotData) {
+        const userId = await _ensureFirebaseUserId();
+        if (!userId) return null;
+        try {
+          const sources = _getSlotUploadSources(player.appearance);
+          return await FirebaseCharacterService.uploadCharacterSlot(
+            userId,
+            slotIndex,
+            sources.sheet,
+            slotData
+          );
+        } catch (error) {
+          console.warn("[DC] Sync Firebase del slot falló:", error);
+          return null;
+        }
+      }
+
+      async function loadSlotFromFirebase(userId, slotIndex) {
+        if (!window.FirebaseCharacterService) {
+          throw new Error("FirebaseCharacterService no disponible.");
+        }
+        return await FirebaseCharacterService.getCharacterSlot(userId, slotIndex);
+      }
+
+      /* ══ Paletas ══ */
+      const SKIN_PALETTE  = ["#f5d5a8","#e8c898","#d4a574","#c07840","#8d5524","#4caf50","#9c88ff","#c0c0c0","#f0e0f0"];
+      const EYE_PALETTE   = ["#1a1a1a","#f5f5f5","#00e676","#2979ff","#b71c1c","#aa00ff","#ffd600","#ff6a00","#00e5ff","#ff69b4"];
+      const HAIR_PALETTE  = ["#1a1a1a","#8B4513","#c0840a","#ffd700","#ff4400","#00e5ff","#aa00ff","#e8eaf6","#ff69b4","#00e676"];
+      const FACE_PALETTE  = ["#b71c1c","#1565c0","#2e7d32","#6a1b9a","#ffd700","#00e5ff","#ff69b4","#1a1a1a","#e040fb","#00e676"];
+      const CLOTH_PALETTE = ["#ff6a00","#1565c0","#b71c1c","#2e7d32","#6a1b9a","#ffd700","#1a1a1a","#e0e0e0"];
+      const AURA_PALETTE  = ["#fdd835","#00b0ff","#ff1744","#aa00ff","#00e676","#e8eaf6","#90a4ae","#ff6a00"];
+
+      /* ══ Estado global ══ */
+      const LS_KEY      = "dragonCreatorZ_slots";
+      const LS_SLOT     = "dragonCreatorZ_activeSlot";
+      const LS_ACC_KEY  = "dragonCreatorZ_accessories";
+      const LS_FREE_KEY = "dragonCreatorZ_freeCustomization";
+      const PAGE_SIZE   = 8;
+      const MAX_DATAURL_BYTES = 1500 * 1024;
+
+      const FREE_CUSTOMIZATION_CATALOG = [];
+      let imageMap    = {};
+      let animator    = null, finalAnim = null;
+      let activeCategory = "race";
+      let pageState   = {};
+      let savedSlots  = Array(11).fill(null);
+      let activeSlotIndex = 0;
+      let uiFlipped   = false, uiZoom = 1;
+      let _auraPhase  = 0;
+
+      // ── Estado de animación ──────────────────────────────
+      // activeSheet: "base" | "combat" | "special"
+      // activeAnimKey: key dentro del sheet activo
+      // activeViewKey: key de vista estática (row 0) o null
+      let activeSheet   = "base";
+      let activeAnimKey = "idle";
+      let activeViewKey = null;
+
+      let _importPendingImg    = null;
+      let _importPendingDataURL = null;
+      let _importPendingCombatImg = null;
+      let _importPendingCombatDataURL = null;
+      let _importPendingSpecialImg = null;
+      let _importPendingSpecialDataURL = null;
+
+      const charState = {
+        name:        "Guerrero Z",
+        level:       1,
+        glovesId:    "gm0",
+        auraId:      "a1",
+        auraColor:   "#fdd835",
+        clothColor:  "#ff6a00",
+        accessoryId: "ac_none",
+        get viewKey()         { return activeViewKey; },
+        get auraPhase()       { return _auraPhase; },
+        get spriteVariantId() {
+          if (activeSheet === "combat")  return "fight";
+          if (activeSheet === "special") return "special";
+          return null;
+        },
       };
 
-      function showToast(message, kind = "success") {
-        const toast = document.createElement("div");
-        toast.className = "toast";
-        toast.textContent = message;
-        toastContainer.appendChild(toast);
-        setTimeout(() => toast.remove(), 2800);
+      const previewCanvas = document.getElementById("previewCanvas");
+      const previewCtx    = previewCanvas.getContext("2d");
+      const finalCanvas   = document.getElementById("finalCanvas");
+      const finalCtx      = finalCanvas.getContext("2d");
+
+      function currentCatalog(cat) {
+        return getCatalogFor(cat, player.appearance.raceId, player.appearance.gender);
       }
 
-      function getCharState() {
-        return {
-          spriteVariantId: player.appearance?.variantId || "base",
-          viewKey: null,
-          auraPhase: 0,
-          glovesId: player.appearance?.glovesId || "gm0",
-          auraId: player.appearance?.auraId || "a0",
-          auraColor: player.appearance?.auraColor || "#00e5ff",
-          accessoryId: "ac_none",
-        };
-      }
-
-      function buildPreviewGrid() {
-        canvasGrid.innerHTML = "";
-        state.previews = previewDefinitions.map((definition) => {
-          const card = document.createElement("article");
-          card.className = "preview-card";
-
-          const label = document.createElement("div");
-          label.className = "preview-label";
-          label.textContent = definition.label;
-
-          const canvas = document.createElement("canvas");
-          canvas.className = "preview-canvas";
-          canvas.width = 220;
-          canvas.height = 260;
-
-          card.append(label, canvas);
-          canvasGrid.appendChild(card);
-
-          const animator = new SpriteAnimator(definition.action);
-          animator.play(definition.action);
-          return {
-            canvas,
-            ctx: canvas.getContext("2d"),
-            animator,
-            direction: definition.direction,
-          };
-        });
-      }
-
-      function renderPreviewCells(timestamp) {
-        state.previews.forEach((cell) => {
-          cell.animator.update(timestamp);
-          const { canvas, ctx, animator, direction } = cell;
-          const width = canvas.width;
-          const height = canvas.height;
-          ctx.clearRect(0, 0, width, height);
-          const playerCopy = Object.assign({}, player, { direction });
-          drawPlayer(ctx, width / 2, height - 16, playerCopy, state.imageMap, animator, getCharState());
-        });
-      }
-
-      function loop(timestamp = performance.now()) {
-        renderPreviewCells(timestamp);
-        requestAnimationFrame(loop);
-      }
-
-      function setImportedSheet(url, img) {
-        player.appearance = player.appearance || {};
-        player.appearance.variantId = "base";
-        player.appearance.variantCustomizations = player.appearance.variantCustomizations || {};
-        player.appearance.variantCustomizations.base = {
-          spriteImage: img,
-          spriteDataURL: url,
-          scale: 1,
-          animFrames: 6,
-          rowCount: 14,
-        };
-        player.spriteSheets = {
-          base: url,
-          pelea: url,
-          especial: url,
-        };
-        sheetStatus.textContent = `Spritesheet activo · ${img.naturalWidth}×${img.naturalHeight}`;
-        showToast("Spritesheet cargado correctamente", "success");
-      }
-
-      function loadImageFromUrl(url) {
-        return new Promise((resolve, reject) => {
-          const img = new Image();
-          img.crossOrigin = "anonymous";
-          img.onload = () => resolve(img);
-          img.onerror = () => reject(new Error("No se pudo cargar la imagen desde la URL."));
-          img.src = url;
-        });
-      }
-
-      async function handleFileImport(file) {
-        if (!file) return;
-        try {
-          state.importing = true;
-          const url = URL.createObjectURL(file);
-          const img = await loadImageFromUrl(url);
-          setImportedSheet(url, img);
-        } catch (error) {
-          showToast("Error cargando el spritesheet local.", "error");
-          console.error(error);
-        } finally {
-          state.importing = false;
+      /* ══ Persistencia de accesorios importados ══ */
+      function _saveAccessoriesToLS() {
+        const toStore = ACCESSORIES_CATALOG
+          .filter(a => a.id !== "ac_none" && a.dataURL && !a.isFreeCustomization)
+          .map(a => ({
+            id: a.id, name: a.name, type: a.type, color: a.color, dataURL: a.dataURL,
+            combatDataURL: a.combatDataURL || null,
+            specialDataURL: a.specialDataURL || null,
+            scale: a.scale ?? 1, animFrames: a.animFrames ?? 6,
+            rowCount: a.rowCount ?? 0,
+            combatScale: a.combatScale ?? 1, combatAnimFrames: a.combatAnimFrames ?? 6,
+            combatRowCount: a.combatRowCount ?? 0,
+            specialScale: a.specialScale ?? 1, specialAnimFrames: a.specialAnimFrames ?? 6,
+            specialRowCount: a.specialRowCount ?? 0,
+          }));
+        try { localStorage.setItem(LS_ACC_KEY, JSON.stringify(toStore)); } catch(e) {
+          console.warn("[DC] No se pudo guardar accesorios en LS:", e);
         }
       }
 
-      async function handleUrlImport(url) {
-        if (!url) {
-          showToast("Ingresá una URL válida.", "warning");
+      async function _restoreAccessoriesFromLS() {
+        try {
+          const raw = localStorage.getItem(LS_ACC_KEY);
+          if (!raw) return;
+          const list = JSON.parse(raw);
+          await restoreUserAccessories(list);
+        } catch(e) {}
+      }
+
+      /* ══ Persistencia Free Customization ══ */
+      function _saveFreeCustomizationToLS() {
+        const toStore = FREE_CUSTOMIZATION_CATALOG
+          .filter(a => String(a.id).startsWith("custom_file_"))
+          .map(a => ({
+            id:       a.id,  name:     a.name,  type:     a.type,
+            slot:     a.slot, color:    a.color, dataURL:  a.dataURL,
+            combatDataURL: a.combatDataURL || null,
+            specialDataURL: a.specialDataURL || null,
+            scale: a.scale ?? 1, animFrames: a.animFrames ?? 6, rowCount: a.rowCount ?? 0,
+            combatScale: a.combatScale ?? 1, combatAnimFrames: a.combatAnimFrames ?? 6, combatRowCount: a.combatRowCount ?? 0,
+            specialScale: a.specialScale ?? 1, specialAnimFrames: a.specialAnimFrames ?? 6, specialRowCount: a.specialRowCount ?? 0,
+            raceName: a.raceName || null,
+            isFreeCustomization: a.isFreeCustomization ?? true,
+          }));
+        try { localStorage.setItem(LS_FREE_KEY, JSON.stringify(toStore)); } catch(e) {
+          console.warn("[DC] No se pudo guardar free customization en LS:", e);
+        }
+      }
+
+      function _restoreFreeCustomizationFromLS() {
+        try {
+          const raw = localStorage.getItem(LS_FREE_KEY);
+          if (!raw) return;
+          const list = JSON.parse(raw);
+          if (!Array.isArray(list)) return;
+          list.forEach(item => {
+            if (!item?.id || ACCESSORIES_CATALOG.some(a => a.id === item.id)) return;
+            const img = new Image();
+            const entry = {
+              id: item.id,
+              name: item.name || "Personalización",
+              type: item.type || "other",
+              slot: item.slot || "over_shirt",
+              color: item.color || null,
+              userImage: img,
+              spriteImage: img,
+              dataURL: item.dataURL,
+              combatDataURL: item.combatDataURL || null,
+              specialDataURL: item.specialDataURL || null,
+              scale: item.scale ?? 1,
+              animFrames: item.animFrames ?? 6,
+              rowCount: item.rowCount ?? 0,
+              combatScale: item.combatScale ?? 1,
+              combatAnimFrames: item.combatAnimFrames ?? 6,
+              combatRowCount: item.combatRowCount ?? 0,
+              specialScale: item.specialScale ?? 1,
+              specialAnimFrames: item.specialAnimFrames ?? 6,
+              specialRowCount: item.specialRowCount ?? 0,
+              raceName: item.raceName || null,
+              isFreeCustomization: item.isFreeCustomization ?? true,
+            };
+            img.onload = () => { entry.userImage = img; entry.spriteImage = img; };
+            img.src = item.dataURL;
+            if (item.combatDataURL) {
+              const cimg = new Image();
+              cimg.onload = () => { entry.combatUserImage = cimg; entry.combatSpriteImage = cimg; };
+              cimg.src = item.combatDataURL;
+            }
+            if (item.specialDataURL) {
+              const simg = new Image();
+              simg.onload = () => { entry.specialUserImage = simg; entry.specialSpriteImage = simg; };
+              simg.src = item.specialDataURL;
+            }
+            FREE_CUSTOMIZATION_CATALOG.push(entry);
+            ACCESSORIES_CATALOG.push(entry);
+          });
+        } catch(e) {
+          console.warn("Error restaurando free customization:", e);
+        }
+      }
+
+      const IMPORT_DB_NAME = "DragonCreatorDB";
+      const IMPORT_STORE_NAME = "importedSheets";
+      let importedSheetKeys = [];
+      const importedSheetUrlCache = new Map();
+
+      function _openImportedSheetsDB() {
+        return new Promise((resolve, reject) => {
+          const request = indexedDB.open(IMPORT_DB_NAME, 1);
+          request.onupgradeneeded = (event) => {
+            const db = event.target.result;
+            if (!db.objectStoreNames.contains(IMPORT_STORE_NAME)) {
+              db.createObjectStore(IMPORT_STORE_NAME, { keyPath: "name" });
+            }
+          };
+          request.onsuccess = (event) => resolve(event.target.result);
+          request.onerror = (event) => reject(event.target.error);
+        });
+      }
+
+      async function _runImportedSheetsTx(mode, callback) {
+        const db = await _openImportedSheetsDB();
+        const tx = db.transaction(IMPORT_STORE_NAME, mode);
+        const store = tx.objectStore(IMPORT_STORE_NAME);
+        const result = await callback(store);
+        return new Promise((resolve, reject) => {
+          tx.oncomplete = () => resolve(result);
+          tx.onerror = () => reject(tx.error);
+          tx.onabort = () => reject(tx.error);
+        });
+      }
+
+      async function _loadImportedSheetKeys() {
+        importedSheetKeys = await _runImportedSheetsTx("readonly", (store) => {
+          return new Promise((resolve, reject) => {
+            const keys = [];
+            const req = store.openCursor();
+            req.onsuccess = (event) => {
+              const cursor = event.target.result;
+              if (!cursor) return resolve(keys);
+              keys.push(cursor.key);
+              cursor.continue();
+            };
+            req.onerror = () => reject(req.error);
+          });
+        });
+      }
+
+      async function _getImportedSheetBlob(name) {
+        if (!name) return null;
+        return _runImportedSheetsTx("readonly", (store) => {
+          return new Promise((resolve, reject) => {
+            const req = store.get(name);
+            req.onsuccess = (event) => resolve(event.target.result?.blob || null);
+            req.onerror = () => reject(req.error);
+          });
+        });
+      }
+
+      async function _saveImportedSheet(name, blob) {
+        if (!name || !blob) return;
+        await _runImportedSheetsTx("readwrite", (store) => { store.put({ name, blob }); });
+        importedSheetUrlCache.delete(name);
+        await _loadImportedSheetKeys();
+        await renderImportedSheetList();
+      }
+
+      async function _deleteImportedSheet(name) {
+        if (!name) return;
+        await _runImportedSheetsTx("readwrite", (store) => { store.delete(name); });
+        importedSheetUrlCache.delete(name);
+        importedSheetKeys = importedSheetKeys.filter(k => k !== name);
+        if (player.appearance.spriteSheets?.sheet === name) {
+          player.appearance.spriteSheets.sheet = null;
+          player.spriteSheets = { base: null, pelea: null, especial: null };
+        }
+        await renderImportedSheetList();
+      }
+
+      async function _resolveImportedSheetUrl(ref) {
+        if (!ref) return null;
+        if (typeof ref !== "string") return null;
+        if (/^(blob:|data:|https?:\/\/)/i.test(ref)) return ref;
+        if (importedSheetUrlCache.has(ref)) return importedSheetUrlCache.get(ref);
+        const blob = await _getImportedSheetBlob(ref);
+        if (!blob) return null;
+        const url = URL.createObjectURL(blob);
+        importedSheetUrlCache.set(ref, url);
+        return url;
+      }
+
+      async function _renderImportedSheetItem(name) {
+        const list = document.getElementById("importedSheetList");
+        const item = document.createElement("div");
+        item.className = "imported-sheet-item";
+        item.dataset.sheetName = name;
+        item.addEventListener("click", async () => { await setActiveImportedSheet(name); });
+        const label = document.createElement("div");
+        label.className = "imported-sheet-name";
+        label.textContent = name;
+        item.appendChild(label);
+        const deleteBtn = document.createElement("button");
+        deleteBtn.type = "button";
+        deleteBtn.className = "imported-sheet-delete";
+        deleteBtn.textContent = "✕";
+        deleteBtn.addEventListener("click", async (event) => {
+          event.stopPropagation();
+          await _deleteImportedSheet(name);
+        });
+        item.appendChild(deleteBtn);
+        if (player.appearance.spriteSheets?.sheet === name) item.classList.add("active");
+        list.appendChild(item);
+      }
+
+      async function renderImportedSheetList() {
+        const list = document.getElementById("importedSheetList");
+        if (!list) return;
+        list.innerHTML = "";
+        if (!importedSheetKeys.length) {
+          const empty = document.createElement("div");
+          empty.className = "imported-sheet-empty";
+          empty.textContent = "No hay PNG importados. Usá + AÑADIR PNG para cargar un sheet local.";
+          list.appendChild(empty);
           return;
         }
+        for (const name of importedSheetKeys) await _renderImportedSheetItem(name);
+      }
+
+      async function setActiveImportedSheet(name) {
+        const src = await _resolveImportedSheetUrl(name);
+        if (!src) {
+          showToast("No se encontró el PNG importado.", "error");
+          return;
+        }
+        player.appearance.spriteSheets = player.appearance.spriteSheets || {};
+        player.appearance.spriteSheets.sheet = name;
+        player.appearance.spriteSheets.base = name;
+        player.appearance.spriteSheets.pelea = name;
+        player.appearance.spriteSheets.especial = name;
+        const variantId = player.appearance.variantId || "base";
+        player.appearance.variantCustomizations = player.appearance.variantCustomizations || {};
+        const cfg = player.appearance.variantCustomizations[variantId] || {};
+        cfg.spriteDataURL = src;
+        cfg.spriteImage = null;
+        cfg.specialSpriteDataURL = src;
+        cfg.specialSpriteImage = null;
+        player.appearance.variantCustomizations[variantId] = cfg;
+        player.appearance.combatCustomization = player.appearance.combatCustomization || {};
+        player.appearance.combatCustomization.spriteDataURL = src;
+        player.appearance.combatCustomization.spriteImage = null;
+        player.spriteSheets = { base: src, pelea: src, especial: src };
+        await renderImportedSheetList();
+        invalidateHairCache();
+        showToast(`Sheet activo: ${name}`, "success");
+      }
+
+      async function _loadImportedSheetsOnStart() {
         try {
-          state.importing = true;
-          const img = await loadImageFromUrl(url);
-          setImportedSheet(url, img);
-        } catch (error) {
-          showToast("Error cargando spritesheet desde URL.", "error");
-          console.error(error);
-        } finally {
-          state.importing = false;
+          await _loadImportedSheetKeys();
+          await renderImportedSheetList();
+          const activeSheetName = player.appearance.spriteSheets?.sheet;
+          if (activeSheetName && importedSheetKeys.includes(activeSheetName)) {
+            await setActiveImportedSheet(activeSheetName);
+          }
+        } catch (err) {
+          console.warn("No se pudo cargar IndexedDB de sheets importados:", err);
+        }
+      }
+
+      function _attachImportedSheetEvents() {
+        const addBtn = document.getElementById("addImportedSheetBtn");
+        const fileInput = document.getElementById("importedSheetFileInput");
+        if (!addBtn || !fileInput) return;
+        addBtn.addEventListener("click", () => fileInput.click());
+        fileInput.addEventListener("change", async (event) => {
+          const files = Array.from(event.target.files || []);
+          event.target.value = "";
+          for (const file of files) {
+            if (!file.type || !file.type.includes("png")) {
+              showToast("Solo se aceptan archivos PNG.", "warning");
+              continue;
+            }
+            const blob = file.slice(0, file.size, file.type);
+            await _saveImportedSheet(file.name, blob);
+          }
+          if (importedSheetKeys.length) await renderImportedSheetList();
+        });
+      }
+
+      function _getCurrentAccessoryEntry() {
+        const accId = player.appearance.accessoryId || charState.accessoryId || "ac_none";
+        return ACCESSORIES_CATALOG.find(a => a.id === accId) || null;
+      }
+
+      function _getImportedAccessoriesExportData() {
+        return ACCESSORIES_CATALOG
+          .filter(a => a.id !== "ac_none" && a.dataURL && !a.isFreeCustomization)
+          .map(entry => ({
+            id: entry.id,
+            name: entry.name,
+            type: entry.type,
+            slot: entry.slot,
+            color: entry.color || null,
+            isFreeCustomization: false,
+            dataURL: entry.dataURL || null,
+            combatDataURL: entry.combatDataURL || null,
+            specialDataURL: entry.specialDataURL || null,
+            scale: entry.scale ?? 1,
+            animFrames: entry.animFrames ?? 6,
+            rowCount: entry.rowCount ?? 0,
+            combatScale: entry.combatScale ?? 1,
+            combatAnimFrames: entry.combatAnimFrames ?? 6,
+            combatRowCount: entry.combatRowCount ?? 0,
+            specialScale: entry.specialScale ?? 1,
+            specialAnimFrames: entry.specialAnimFrames ?? 6,
+            specialRowCount: entry.specialRowCount ?? 0,
+          }));
+      }
+
+      function _getImportedFreeCustomizationExportData() {
+        return FREE_CUSTOMIZATION_CATALOG.map(entry => ({
+          id: entry.id,
+          name: entry.name,
+          type: entry.type,
+          slot: entry.slot,
+          color: entry.color || null,
+          raceName: entry.raceName || null,
+          isFreeCustomization: true,
+          dataURL: entry.dataURL || null,
+          combatDataURL: entry.combatDataURL || null,
+          specialDataURL: entry.specialDataURL || null,
+          scale: entry.scale ?? 1,
+          animFrames: entry.animFrames ?? 6,
+          rowCount: entry.rowCount ?? 0,
+          combatScale: entry.combatScale ?? 1,
+          combatAnimFrames: entry.combatAnimFrames ?? 6,
+          combatRowCount: entry.combatRowCount ?? 0,
+          specialScale: entry.specialScale ?? 1,
+          specialAnimFrames: entry.specialAnimFrames ?? 6,
+          specialRowCount: entry.specialRowCount ?? 0,
+        }));
+      }
+
+      function _getCurrentAccessoryExportData() {
+        const entry = _getCurrentAccessoryEntry();
+        if (!entry || entry.id === "ac_none") return null;
+        return {
+          id: entry.id,
+          name: entry.name,
+          type: entry.type,
+          slot: entry.slot,
+          color: entry.color || null,
+          raceName: entry.raceName || null,
+          isFreeCustomization: !!entry.isFreeCustomization,
+          dataURL: entry.dataURL || null,
+          combatDataURL: entry.combatDataURL || null,
+          specialDataURL: entry.specialDataURL || null,
+          scale: entry.scale ?? 1,
+          animFrames: entry.animFrames ?? 6,
+          rowCount: entry.rowCount ?? 0,
+          combatScale: entry.combatScale ?? 1,
+          combatAnimFrames: entry.combatAnimFrames ?? 6,
+          combatRowCount: entry.combatRowCount ?? 0,
+          specialScale: entry.specialScale ?? 1,
+          specialAnimFrames: entry.specialAnimFrames ?? 6,
+          specialRowCount: entry.specialRowCount ?? 0,
+        };
+      }
+
+      function _serializeAppearanceForExport() {
+        return {
+          raceId: player.appearance.raceId,
+          gender: player.appearance.gender,
+          variantId: player.appearance.variantId,
+          variantCustomizations: serializableVariantCustomizations(player.appearance.variantCustomizations),
+          combatCustomization: serializableCombatCustomization(player.appearance.combatCustomization),
+          spriteSheets: getSpriteSheetExportData(player.appearance),
+          faceId: player.appearance.faceId,
+          faceColor: player.appearance.faceColor || null,
+          browColor: player.appearance.browColor || null,
+          pupilColor: player.appearance.pupilColor || null,
+          hairId: player.appearance.hairId,
+          hairColor: player.appearance.hairColor || null,
+          topId: player.appearance.topId,
+          bottomId: player.appearance.bottomId,
+          shoesId: player.appearance.shoesId,
+          skinColor: player.appearance.skinColor || null,
+          eyeColor: player.appearance.eyeColor || null,
+          glovesId: player.appearance.glovesId,
+          auraId: player.appearance.auraId,
+          auraColor: player.appearance.auraColor || null,
+          clothColor: player.appearance.clothColor || null,
+          accessoryId: player.appearance.accessoryId || "ac_none",
+          accessorySlot: player.appearance.accessorySlot || "over_shirt",
+          accessoryIsFreeCustomization: !!player.appearance.accessoryIsFreeCustomization,
+          accessoryDataURL: player.appearance.accessoryDataURL || null,
+          accessoryCombatDataURL: player.appearance.accessoryCombatDataURL || null,
+          accessorySpecialDataURL: player.appearance.accessorySpecialDataURL || null,
+        };
+      }
+
+      function exportCharacterToJson() {
+        const payload = {
+          version: 1,
+          exportedAt: Date.now(),
+          name: document.getElementById("charName").value || "Guerrero Z",
+          appearance: _serializeAppearanceForExport(),
+          accessory: _getCurrentAccessoryExportData(),
+          accessories: _getImportedAccessoriesExportData(),
+          freeCustomizations: _getImportedFreeCustomizationExportData(),
+        };
+        const safeName = (payload.name || "personaje").replace(/[^a-zA-Z0-9-_]/g, "_");
+        const fileName = `${safeName}_dragonCreatorZ.json`;
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        showToast("Personaje exportado", "success");
+      }
+
+      function _registerImportedAccessory(accessory) {
+        if (!accessory || !accessory.id || !accessory.dataURL) return null;
+        let entry = ACCESSORIES_CATALOG.find(a => a.id === accessory.id);
+        if (!entry) {
+          entry = {
+            id: accessory.id,
+            name: accessory.name || "Personalización",
+            type: accessory.type || "other",
+            slot: accessory.slot || "over_shirt",
+            color: accessory.color || null,
+            userImage: null,
+            spriteImage: null,
+            dataURL: accessory.dataURL,
+            combatDataURL: accessory.combatDataURL || null,
+            specialDataURL: accessory.specialDataURL || null,
+            scale: accessory.scale ?? 1,
+            animFrames: accessory.animFrames ?? 6,
+            rowCount: accessory.rowCount ?? 0,
+            combatScale: accessory.combatScale ?? 1,
+            combatAnimFrames: accessory.combatAnimFrames ?? 6,
+            combatRowCount: accessory.combatRowCount ?? 0,
+            specialScale: accessory.specialScale ?? 1,
+            specialAnimFrames: accessory.specialAnimFrames ?? 6,
+            specialRowCount: accessory.specialRowCount ?? 0,
+            raceName: accessory.raceName || null,
+            isFreeCustomization: !!accessory.isFreeCustomization,
+          };
+          ACCESSORIES_CATALOG.push(entry);
+        } else {
+          entry.name = accessory.name || entry.name;
+          entry.type = accessory.type || entry.type;
+          entry.slot = accessory.slot || entry.slot;
+          entry.color = accessory.color ?? entry.color;
+          entry.dataURL = accessory.dataURL || entry.dataURL;
+          entry.combatDataURL = accessory.combatDataURL || entry.combatDataURL;
+          entry.specialDataURL = accessory.specialDataURL || entry.specialDataURL;
+          entry.scale = accessory.scale ?? entry.scale;
+          entry.animFrames = accessory.animFrames ?? entry.animFrames;
+          entry.rowCount = accessory.rowCount ?? entry.rowCount;
+          entry.combatScale = accessory.combatScale ?? entry.combatScale;
+          entry.combatAnimFrames = accessory.combatAnimFrames ?? entry.combatAnimFrames;
+          entry.combatRowCount = accessory.combatRowCount ?? entry.combatRowCount;
+          entry.specialScale = accessory.specialScale ?? entry.specialScale;
+          entry.specialAnimFrames = accessory.specialAnimFrames ?? entry.specialAnimFrames;
+          entry.specialRowCount = accessory.specialRowCount ?? entry.specialRowCount;
+          entry.raceName = accessory.raceName || entry.raceName;
+          entry.isFreeCustomization = entry.isFreeCustomization || !!accessory.isFreeCustomization;
+        }
+
+        const img = new Image();
+        img.onload = () => {
+          entry.userImage = img;
+          entry.spriteImage = img;
+          invalidateHairCache();
+        };
+        img.src = accessory.dataURL;
+
+        if (accessory.combatDataURL) {
+          const cimg = new Image();
+          cimg.onload = () => {
+            entry.combatUserImage = cimg;
+            entry.combatSpriteImage = cimg;
+            invalidateHairCache();
+          };
+          cimg.src = accessory.combatDataURL;
+        }
+
+        if (accessory.specialDataURL) {
+          const simg = new Image();
+          simg.onload = () => {
+            entry.specialUserImage = simg;
+            entry.specialSpriteImage = simg;
+            invalidateHairCache();
+          };
+          simg.src = accessory.specialDataURL;
+        }
+
+        if (entry.isFreeCustomization && !FREE_CUSTOMIZATION_CATALOG.find(a => a.id === entry.id)) {
+          FREE_CUSTOMIZATION_CATALOG.push(entry);
+        }
+
+        return entry;
+      }
+
+      async function _applyImportedCharacter(payload) {
+        if (!payload || typeof payload !== "object") return false;
+        const appearance = (payload.appearance && typeof payload.appearance === "object") ? payload.appearance : payload;
+        player.appearance.raceId = appearance.raceId || player.appearance.raceId;
+        player.appearance.gender = appearance.gender || player.appearance.gender;
+        player.appearance.variantId = appearance.variantId || player.appearance.variantId;
+        hydrateVariantCustomizations(appearance.variantCustomizations || {});
+        hydrateCombatCustomization(appearance.combatCustomization || {});
+        normalizeSlotSheetUrls(appearance);
+
+        const importedBase = appearance.spriteSheets?.base || appearance.base || "";
+        const importedPelea = appearance.spriteSheets?.pelea || appearance.pelea || appearance.combat || appearance.combate || "";
+        const importedEspecial = appearance.spriteSheets?.especial || appearance.especial || appearance.special || "";
+
+        appearance.spriteSheets = {
+          base: importedBase,
+          pelea: importedPelea || importedBase,
+          especial: importedEspecial || importedBase,
+        };
+
+        player.spriteSheets = {
+          base: appearance.spriteSheets.base,
+          pelea: appearance.spriteSheets.pelea,
+          especial: appearance.spriteSheets.especial,
+        };
+        await applySlotSpriteUrls(appearance);
+        player.appearance.faceId = appearance.faceId || player.appearance.faceId;
+        player.appearance.faceColor = appearance.faceColor ?? player.appearance.faceColor;
+        player.appearance.browColor = appearance.browColor ?? player.appearance.browColor;
+        player.appearance.pupilColor = appearance.pupilColor ?? player.appearance.pupilColor;
+        player.appearance.hairId = appearance.hairId || player.appearance.hairId;
+        player.appearance.hairColor = appearance.hairColor ?? player.appearance.hairColor;
+        player.appearance.topId = appearance.topId || player.appearance.topId;
+        player.appearance.bottomId = appearance.bottomId || player.appearance.bottomId;
+        player.appearance.shoesId = appearance.shoesId || player.appearance.shoesId;
+        player.appearance.skinColor = appearance.skinColor ?? player.appearance.skinColor;
+        player.appearance.eyeColor = appearance.eyeColor ?? player.appearance.eyeColor;
+        player.appearance.glovesId = appearance.glovesId || player.appearance.glovesId;
+        player.appearance.auraId = appearance.auraId || player.appearance.auraId;
+        player.appearance.auraColor = appearance.auraColor ?? player.appearance.auraColor;
+        player.appearance.clothColor = appearance.clothColor ?? player.appearance.clothColor;
+        player.appearance.accessoryId = appearance.accessoryId || player.appearance.accessoryId || "ac_none";
+        player.appearance.accessorySlot = appearance.accessorySlot || player.appearance.accessorySlot || "over_shirt";
+        player.appearance.accessoryIsFreeCustomization = !!appearance.accessoryIsFreeCustomization;
+        player.appearance.accessoryDataURL = appearance.accessoryDataURL || player.appearance.accessoryDataURL || null;
+        player.appearance.accessoryCombatDataURL = appearance.accessoryCombatDataURL || player.appearance.accessoryCombatDataURL || null;
+        player.appearance.accessorySpecialDataURL = appearance.accessorySpecialDataURL || player.appearance.accessorySpecialDataURL || null;
+
+        if (Array.isArray(payload.accessories)) {
+          payload.accessories.forEach(_registerImportedAccessory);
+        }
+        if (Array.isArray(payload.freeCustomizations)) {
+          payload.freeCustomizations.forEach(_registerImportedAccessory);
+        }
+        if (payload.accessory) {
+          const accessoryEntry = _registerImportedAccessory(payload.accessory);
+          if (accessoryEntry) {
+            player.appearance.accessoryId = accessoryEntry.id;
+            player.appearance.accessorySlot = accessoryEntry.slot || player.appearance.accessorySlot;
+            player.appearance.accessoryIsFreeCustomization = accessoryEntry.isFreeCustomization;
+          }
+        }
+
+        _saveAccessoriesToLS();
+        _saveFreeCustomizationToLS();
+        invalidateHairCache();
+        renderItemsPanel(activeCategory);
+        renderSlots();
+        updateStats();
+        return true;
+      }
+
+      function importCharacterFromJson(file) {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = ev => {
+          (async () => {
+            try {
+              const payload = JSON.parse(ev.target.result);
+              const applied = await _applyImportedCharacter(payload);
+              if (applied) {
+                showToast("Personaje importado", "success");
+              } else {
+                showToast("Archivo JSON no válido", "error");
+              }
+            } catch (error) {
+              console.error("Importación fallida:", error);
+              showToast("No se pudo importar el archivo JSON", "error");
+            }
+          })();
+        };
+        reader.onerror = () => showToast("Error leyendo el archivo JSON", "error");
+        reader.readAsText(file);
+      }
+
+      /* ══ drawThumbCanvas ══ */
+      function drawThumbCanvas(canvas, cat, item) {
+        const ctx = canvas.getContext("2d");
+        const w = canvas.width, h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = "#12172e";
+        ctx.fillRect(0, 0, w, h);
+
+        const img = (cat === "accessory" || cat === "free")
+          ? (item.userImage || null)
+          : (item.spriteKey ? imageMap[item.spriteKey] : null);
+
+        if (img && img.complete && img.naturalWidth) {
+          const sheet = isCompatibleSheet(img);
+          let srcX, srcY, srcW, srcH;
+          if (sheet) {
+            const coords = getIdleFrameCoords(img);
+            srcX = coords.srcX; srcY = coords.srcY;
+            srcW = coords.fw;   srcH = coords.fh;
+            if (srcX + srcW > img.naturalWidth || srcY + srcH > img.naturalHeight) {
+              srcX = 0; srcY = 0; srcW = img.naturalWidth; srcH = img.naturalHeight;
+            }
+          } else {
+            srcX = 0; srcY = 0; srcW = img.naturalWidth; srcH = img.naturalHeight;
+          }
+
+          const scale = Math.min(w / srcW, h / srcH) * 0.88;
+          const dw = Math.round(srcW * scale), dh = Math.round(srcH * scale);
+          const dx = Math.round((w - dw) / 2),  dy = Math.round((h - dh) / 2);
+          ctx.imageSmoothingEnabled = false;
+
+          if (cat === "hair" && item.tintable && player.appearance.hairColor) {
+            const frameCoords = sheet ? { srcX, srcY, fw: srcW, fh: srcH } : null;
+            const cacheKey = (item.id || "hair") + "|" + (img.src || "");
+            const tinted = tintLayer(img, player.appearance.hairColor, cacheKey, dw, dh, frameCoords);
+            if (tinted) ctx.drawImage(tinted, dx, dy, dw, dh);
+            else ctx.drawImage(img, srcX, srcY, srcW, srcH, dx, dy, dw, dh);
+          } else if (cat === "face" && item.tintable) {
+            const faceColor = item.eyeColor
+              ? (player.appearance.eyeColor || null)
+              : (player.appearance.faceColor || null);
+            if (faceColor) {
+              const frameCoords = sheet ? { srcX, srcY, fw: srcW, fh: srcH } : null;
+              const cacheKey = (item.id || "face") + "|" + (img.src || "");
+              const tinted = tintLayer(img, faceColor, cacheKey, dw, dh, frameCoords);
+              if (tinted) ctx.drawImage(tinted, dx, dy, dw, dh);
+              else ctx.drawImage(img, srcX, srcY, srcW, srcH, dx, dy, dw, dh);
+            } else {
+              ctx.drawImage(img, srcX, srcY, srcW, srcH, dx, dy, dw, dh);
+            }
+          } else if (cat === "aura" && item.color) {
+            ctx.drawImage(img, srcX, srcY, srcW, srcH, dx, dy, dw, dh);
+            const aColor = charState.auraColor || item.color;
+            ctx.globalCompositeOperation = "multiply";
+            ctx.fillStyle = aColor;
+            ctx.fillRect(dx, dy, dw, dh);
+            ctx.globalCompositeOperation = "destination-in";
+            ctx.drawImage(img, srcX, srcY, srcW, srcH, dx, dy, dw, dh);
+            ctx.globalCompositeOperation = "source-over";
+          } else {
+            ctx.drawImage(img, srcX, srcY, srcW, srcH, dx, dy, dw, dh);
+          }
+        } else {
+          const color = item.color || item.color1 || item.skinColor || "#2a3560";
+          if (color) {
+            ctx.fillStyle = color + "88";
+            ctx.beginPath();
+            if (ctx.roundRect) ctx.roundRect(4, 4, w - 8, h - 8, 4);
+            else ctx.rect(4, 4, w - 8, h - 8);
+            ctx.fill();
+          }
+          const ACC_TYPE_ICONS = {
+            belt:"🥋", cape:"🧣", bag:"🎒", collar:"📿",
+            brace:"⌚", mask:"🥽", scouter:"🔭", tail:"🐾", wings:"🦋", none:"➕", other:"✨",
+          };
+          const BASE_ICONS = { race:"👾", face:"😶", hair:"💇", shirt:"👕", pants:"👖", gloves:"🥊", shoes:"👟", aura:"✨" };
+          const icon = cat === "accessory"
+            ? (ACC_TYPE_ICONS[item.type] || "🎽")
+            : (BASE_ICONS[cat] || "?");
+          ctx.font = `${Math.round(h * 0.38)}px sans-serif`;
+          ctx.textAlign = "center"; ctx.textBaseline = "middle";
+          ctx.fillText(icon, w / 2, h / 2);
+          ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+        }
+      }
+
+      /* ══════════════════════════════════════════════
+         NUEVO: initViewAnimBar — 3 sheets
+      ══════════════════════════════════════════════ */
+      function initViewAnimBar() {
+        const indicator = document.getElementById("sheetIndicator");
+
+        // Labels del indicador por sheet
+        const INDICATOR_META = {
+          base:    { cls: "base",    label: "🌍 BASE"     },
+          combat:  { cls: "combat",  label: "⚔️ COMBATE"  },
+          special: { cls: "special", label: "✨ ESPECIAL" },
+        };
+
+        function updateIndicator(sheet) {
+          const m = INDICATOR_META[sheet] || INDICATOR_META.base;
+          indicator.className = `sheet-indicator ${m.cls}`;
+          indicator.textContent = m.label;
+        }
+
+        // ── Cambio de tab ──────────────────────────────────
+        document.querySelectorAll(".sheet-tab").forEach(tab => {
+          tab.addEventListener("click", () => {
+            const sheet = tab.dataset.sheet;
+            if (activeSheet === sheet) return;
+
+            // Desactivar tab anterior
+            document.querySelectorAll(".sheet-tab").forEach(t => {
+              t.classList.remove("active-base", "active-combat", "active-special");
+            });
+            tab.classList.add(`active-${sheet}`);
+
+            // Mostrar panel correcto
+            document.querySelectorAll(".anim-panel").forEach(p => p.classList.remove("visible"));
+            document.getElementById(`panel${sheet.charAt(0).toUpperCase() + sheet.slice(1)}`).classList.add("visible");
+
+            activeSheet   = sheet;
+            activeViewKey = null; // limpiar vista estática al cambiar de sheet
+
+            // Activar animadores al modo correcto
+            if (sheet === "combat") {
+              animator.setBattleMode(true);
+              finalAnim.setBattleMode(true);
+              _playAnim("combat_idle", "combat");
+            } else if (sheet === "special") {
+              animator.setSpecialMode(true);
+              finalAnim.setSpecialMode(true);
+              _playAnim("sit", "special");
+            } else {
+              animator.setBattleMode(false);
+              animator.setSpecialMode(false);
+              finalAnim.setBattleMode(false);
+              finalAnim.setSpecialMode(false);
+              _playAnim("idle", "base");
+            }
+
+            updateIndicator(sheet);
+            _syncActiveButton();
+          });
+        });
+
+        // ── Botones de animación (todos los sheets) ──────────
+        document.querySelectorAll(".anim-btn").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const sheet   = btn.dataset.sheet;
+            const animKey = btn.dataset.anim;
+            if (activeSheet !== sheet) return; // ignorar si no es el sheet activo
+            activeViewKey = null;
+            _clearStaticViews();
+            _playAnim(animKey, sheet);
+            _syncActiveButton();
+          });
+        });
+
+        // ── Botones de vista estática (row 0) ────────────────
+        document.querySelectorAll(".view-btn-static").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const sheet   = btn.dataset.sheet;
+            const viewKey = btn.dataset.view;
+            if (activeSheet !== sheet) return;
+
+            // Toggle
+            if (activeViewKey === viewKey) {
+              activeViewKey = null;
+              btn.classList.remove("active-view");
+              // Restaurar animación por defecto del sheet
+              const defaultAnim = sheet === "combat" ? "combat_idle" : sheet === "special" ? "sit" : "idle";
+              _playAnim(defaultAnim, sheet);
+              _syncActiveButton();
+            } else {
+              activeViewKey = viewKey;
+              _clearAllActive();
+              btn.classList.add("active-view");
+              // Setear vista en animadores
+              if (sheet !== "combat" && sheet !== "special") {
+                animator.setView(viewKey);
+                finalAnim.setView(viewKey);
+              }
+            }
+          });
+        });
+
+        updateIndicator("base");
+        _syncActiveButton();
+      }
+
+      // Ejecuta animación en ambos animadores según el sheet
+      function _playAnim(animKey, sheet) {
+        activeAnimKey = animKey;
+        if (sheet === "combat") {
+          animator.play(animKey);
+          finalAnim.play(animKey);
+        } else if (sheet === "special") {
+          animator.play(animKey);
+          finalAnim.play(animKey);
+        } else {
+          animator.clearView();
+          animator.play(animKey);
+          finalAnim.clearView();
+          finalAnim.play(animKey);
+        }
+      }
+
+      // Limpiar todos los botones activos
+      function _clearAllActive() {
+        document.querySelectorAll(".anim-btn").forEach(b =>
+          b.classList.remove("active-base","active-combat","active-special")
+        );
+        document.querySelectorAll(".view-btn-static").forEach(b => b.classList.remove("active-view"));
+      }
+
+      // Limpiar solo las vistas estáticas
+      function _clearStaticViews() {
+        document.querySelectorAll(".view-btn-static").forEach(b => b.classList.remove("active-view"));
+      }
+
+      // Reflejar estado activo en los botones
+      function _syncActiveButton() {
+        _clearAllActive();
+        if (activeViewKey) {
+          const vBtn = document.querySelector(`.view-btn-static[data-sheet="${activeSheet}"][data-view="${activeViewKey}"]`);
+          if (vBtn) vBtn.classList.add("active-view");
+          return;
+        }
+        const aBtn = document.querySelector(`.anim-btn[data-sheet="${activeSheet}"][data-anim="${activeAnimKey}"]`);
+        if (aBtn) aBtn.classList.add(`active-${activeSheet}`);
+      }
+
+      /* ══ Config de categorías ══ */
+      const CAT_CONFIG = {
+        race:      { label:"SELECCIONA LA RAZA",          catalog: RACE_CATALOG,     prop:"raceId",       needsGender:true },
+        face:      { label:"SELECCIONA LA CARA",                                       prop:"faceId",       needsFaceColor:true },
+        hair:      { label:"SELECCIONA EL CABELLO",                                    prop:"hairId",       needsColor:true, colorProp:"hairColor",  colorLabel:"COLOR CABELLO", palette:HAIR_PALETTE },
+        shirt:     { label:"SELECCIONA LA ROPA SUPERIOR",                              prop:"topId"   },
+        pants:     { label:"SELECCIONA LA ROPA INFERIOR",                              prop:"bottomId"},
+        gloves:    { label:"SELECCIONA LOS GUANTES",                                   prop:"glovesId",     isExtra:true },
+        shoes:     { label:"SELECCIONA EL CALZADO",                                    prop:"shoesId" },
+        accessory: {
+          label: "ACCESORIOS IMPORTADOS",
+          catalog: () => ACCESSORIES_CATALOG.filter(a =>
+            !a.isFreeCustomization &&
+            !String(a.id).startsWith("fc_") &&
+            !String(a.id).startsWith("free_custom_") &&
+            !String(a.id).startsWith("custom_")
+          ),
+          prop:"accessoryId", isExtra:true, isAccImport:true
+        },
+        free: {
+          label: "PERSONALIZACIÓN LIBRE",
+          catalog: () => ACCESSORIES_CATALOG.filter(a =>
+            a.isFreeCustomization ||
+            String(a.id).startsWith("fc_") ||
+            String(a.id).startsWith("free_custom_") ||
+            String(a.id).startsWith("custom_") ||
+            String(a.id).startsWith("custom_file_")
+          ),
+          prop:"accessoryId", isExtra:true, isAccImport:true
+        },
+        aura:      { label:"SELECCIONA EL AURA",          catalog: AURAS_CATALOG,      prop:"auraId",       isExtra:true, needsColor:true, colorProp:"auraColor", colorLabel:"COLOR AURA", palette:AURA_PALETTE },
+        combat:    { label:"PLANTILLA DE COMBATE", special:"combat" },
+        forms:     { label:"FORMAS CUSTOMIZABLES", special:"forms" },
+        color:     { label:"COLORES", special:"color" },
+      };
+
+      /* ══ renderItemsPanel ══ */
+      function renderItemsPanel(cat) {
+        const panel = document.getElementById("itemsPanel");
+        panel.innerHTML = "";
+        const cfg = CAT_CONFIG[cat];
+        if (!cfg) return;
+
+        const titleEl = document.createElement("div");
+        titleEl.className = "items-section-title";
+        const raceId  = player.appearance.raceId;
+        const gender  = player.appearance.gender;
+        const raceDef = RACE_CATALOG.find(r => r.id === raceId);
+        const showBadge = !["race","color","aura","accessory"].includes(cat);
+        if (showBadge && raceDef) {
+          titleEl.innerHTML = cfg.label + `<span class="race-badge">${raceDef.name}${GENDERLESS_RACES.includes(raceId) ? "" : gender === "female" ? " ♀" : " ♂"}</span>`;
+        } else {
+          titleEl.textContent = cfg.label;
+        }
+        panel.appendChild(titleEl);
+
+        if (cfg.special === "color")  { renderColorPanel(panel);  return; }
+        if (cfg.special === "combat") { renderCombatPanel(panel); return; }
+        if (cfg.special === "forms")  { renderFormsPanel(panel);  return; }
+
+        const catalog = typeof cfg.catalog === "function"
+          ? cfg.catalog()
+          : (cfg.catalog || currentCatalog(cat));
+
+        if (cfg.needsGender) {
+          const gRow = document.createElement("div");
+          gRow.className = "gender-row";
+          const genderless = GENDERLESS_RACES.includes(player.appearance.raceId);
+          ["male","female"].forEach(g => {
+            const btn = document.createElement("button");
+            btn.className = "gender-btn" + (player.appearance.gender === g ? " active" : "");
+            btn.textContent = g === "male" ? "♂ MASC" : "♀ FEM";
+            if (genderless) btn.disabled = true;
+            btn.addEventListener("click", () => {
+              if (player.appearance.gender === g) return;
+              player.appearance.gender = g;
+              _resetEquipmentForCurrentRaceGender();
+              document.querySelectorAll(".gender-btn").forEach(b => b.classList.remove("active"));
+              btn.classList.add("active");
+              updateStats();
+              if (activeCategory !== "race") renderItemsPanel(activeCategory);
+            });
+            gRow.appendChild(btn);
+          });
+          panel.appendChild(gRow);
+        }
+
+        const scroll = document.createElement("div");
+        scroll.className = "items-scroll";
+        panel.appendChild(scroll);
+
+        const page = pageState[cat] || 0;
+        const totalPages = Math.ceil(catalog.length / PAGE_SIZE);
+        const items = catalog.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
+
+        const grid = document.createElement("div");
+        grid.className = "items-grid";
+
+        items.forEach(item => {
+          const thumb = document.createElement("div");
+          thumb.className = "item-thumb item-card";
+          const currentId = cfg.isExtra
+            ? (charState[cfg.prop] || player.appearance[cfg.prop])
+            : player.appearance[cfg.prop];
+          if (item.id === currentId) thumb.classList.add("selected");
+
+          const cv = document.createElement("canvas");
+          cv.width = 52; cv.height = 52;
+          cv.style.imageRendering = "pixelated";
+          cv.style.mozImageRendering = "crisp-edges";
+          cv.getContext("2d").imageSmoothingEnabled = false;
+          drawThumbCanvas(cv, cat, item);
+          thumb.appendChild(cv);
+
+          const lbl = document.createElement("div");
+          lbl.className = "item-label";
+          lbl.textContent = item.raceName ? `${item.raceName} · ${item.name || item.id}` : (item.name || item.id);
+          thumb.appendChild(lbl);
+
+          if ((cat === "accessory" || cat === "free") && item.type && item.type !== "none") {
+            const td = ACCESSORY_TYPES.find(t => t.id === item.type);
+            const badge = document.createElement("div");
+            badge.className = "acc-type-badge";
+            badge.textContent = (td ? td.icon : "✨");
+            thumb.appendChild(badge);
+
+            const delBtn = document.createElement("button");
+            delBtn.className = "acc-delete-btn";
+            delBtn.textContent = "✕";
+            delBtn.title = "Eliminar accesorio";
+            delBtn.addEventListener("click", e => {
+              e.stopPropagation();
+              if (charState.accessoryId === item.id || player.appearance.accessoryId === item.id) {
+                charState.accessoryId = "ac_none";
+                player.appearance.accessoryId = "ac_none";
+              }
+              const isFree = item.isFreeCustomization || String(item.id).startsWith("fc_");
+              if (isFree) {
+                const idx = FREE_CUSTOMIZATION_CATALOG.findIndex(x => x.id === item.id);
+                if (idx !== -1) FREE_CUSTOMIZATION_CATALOG.splice(idx, 1);
+                _saveFreeCustomizationToLS();
+              } else {
+                _saveAccessoriesToLS();
+              }
+              removeUserAccessory(item.id);
+              renderItemsPanel(cat);
+              showToast("Accesorio eliminado", "warning");
+            });
+            thumb.appendChild(delBtn);
+          }
+
+          thumb.addEventListener("click", () => {
+            grid.querySelectorAll(".item-thumb").forEach(t => t.classList.remove("selected"));
+            thumb.classList.add("selected");
+
+            if (cfg.isExtra) {
+              charState[cfg.prop] = item.id;
+              player.appearance[cfg.prop] = item.id;
+              if (cat === "aura" && item.color) {
+                charState.auraColor = item.color;
+                player.appearance.auraColor = item.color;
+                grid.querySelectorAll("canvas").forEach((c, i) => { if (items[i]) drawThumbCanvas(c, cat, items[i]); });
+              }
+            } else {
+              player.appearance[cfg.prop] = item.id;
+              if (cat === "race") {
+                const race = RACE_CATALOG.find(r => r.id === item.id);
+                if (race) {
+                  player.appearance.skinColor = race.skinColor;
+                  player.appearance.eyeColor  = race.eyeColor;
+                }
+                if (GENDERLESS_RACES.includes(item.id)) player.appearance.gender = "male";
+                const variants = getActiveVariants();
+                if (!variants.some(v => v.id === player.appearance.variantId)) player.appearance.variantId = "base";
+                _resetEquipmentForCurrentRaceGender();
+              }
+              if (cat === "hair") invalidateHairCache();
+              if (cat === "face") invalidateHairCache();
+            }
+            updateStats();
+          });
+          grid.appendChild(thumb);
+        });
+        scroll.appendChild(grid);
+
+        if (cfg.needsFaceColor) {
+          renderFaceColorSection(panel, grid, items, cat);
+        }
+
+        if (cfg.needsColor && cfg.palette) {
+          renderColorSwatchSection(panel, grid, items, cat, cfg);
+        }
+
+        if (cfg.isAccImport) {
+          renderImportPanel(panel, cat);
+          if (cat === "free" || cat === "accessory") {
+            const selId = player.appearance.accessoryId || charState.accessoryId;
+            const selEntry = ACCESSORIES_CATALOG.find(a => a.id === selId && a.id !== "ac_none" && (
+              cat === "free" ? (a.isFreeCustomization || String(a.id).startsWith("fc_")) : !a.isFreeCustomization
+            ));
+            const editorId = cat === "free" ? "freeSheetEditor" : "accSheetEditor";
+            if (selEntry && !document.getElementById(editorId)) {
+              const editor = buildSheetImportSection({
+                title: `SHEETS ACTIVOS — ${selEntry.name}`,
+                exploreCfg: selEntry, combatCfg: selEntry,
+                exploreDisabled: false, combatDisabled: false,
+                onExploreLoaded: (url, img) => {
+                  selEntry.dataURL = url; selEntry.userImage = img;
+                  if (cat === "free") _saveFreeCustomizationToLS(); else _saveAccessoriesToLS();
+                  invalidateHairCache(); showToast("Exploración actualizada", "success");
+                },
+                onCombatLoaded: (url, img) => {
+                  selEntry.combatDataURL = url; selEntry.combatUserImage = img;
+                  if (cat === "free") _saveFreeCustomizationToLS(); else _saveAccessoriesToLS();
+                  invalidateHairCache(); showToast("Combate actualizado", "success");
+                },
+                onMetaChange: (meta) => {
+                  Object.assign(selEntry, meta);
+                  if (cat === "free") _saveFreeCustomizationToLS(); else _saveAccessoriesToLS();
+                  invalidateHairCache();
+                },
+              });
+              editor.id = editorId;
+              panel.appendChild(editor);
+            }
+          }
+        }
+
+        if (totalPages > 1) {
+          const pag = document.createElement("div");
+          pag.className = "pagination";
+          const prev = document.createElement("button"); prev.className="page-btn"; prev.textContent="‹"; prev.disabled = page===0;
+          prev.addEventListener("click", () => { pageState[cat]=page-1; renderItemsPanel(cat); });
+          const info = document.createElement("span"); info.className="page-info"; info.textContent=`${page+1} / ${totalPages}`;
+          const next = document.createElement("button"); next.className="page-btn"; next.textContent="›"; next.disabled = page>=totalPages-1;
+          next.addEventListener("click", () => { pageState[cat]=page+1; renderItemsPanel(cat); });
+          pag.appendChild(prev); pag.appendChild(info); pag.appendChild(next);
+          panel.appendChild(pag);
+        }
+      }
+
+      function renderFaceColorSection(panel, grid, items, cat) {
+        const wrap = document.createElement("div"); wrap.className = "color-section";
+        const t = document.createElement("div"); t.className = "color-section-title"; t.textContent = "COLOR OJOS / MARCAS";
+        wrap.appendChild(t);
+        function addFaceRow(label, prop, palette) {
+          const row = document.createElement("div"); row.className = "face-color-row";
+          const lbl = document.createElement("span"); lbl.className = "face-color-label"; lbl.textContent = label;
+          row.appendChild(lbl);
+          const picker = document.createElement("input"); picker.type = "color";
+          picker.value = player.appearance[prop] || "#1a1a1a"; picker.className = "face-color-picker";
+          palette.forEach(hex => {
+            const sw = document.createElement("div");
+            sw.className = "face-color-chip" + (player.appearance[prop] === hex ? " active" : "");
+            sw.style.background = hex;
+            sw.addEventListener("click", () => {
+              player.appearance[prop] = hex; picker.value = hex;
+              row.querySelectorAll(".face-color-chip").forEach(c => c.classList.remove("active"));
+              sw.classList.add("active"); invalidateHairCache();
+              grid.querySelectorAll("canvas").forEach((c, i) => { if (items[i]) drawThumbCanvas(c, cat, items[i]); });
+            });
+            row.appendChild(sw);
+          });
+          picker.addEventListener("input", e => {
+            player.appearance[prop] = e.target.value;
+            row.querySelectorAll(".face-color-chip").forEach(c => c.classList.remove("active"));
+            invalidateHairCache();
+            grid.querySelectorAll("canvas").forEach((c, i) => { if (items[i]) drawThumbCanvas(c, cat, items[i]); });
+          });
+          row.appendChild(picker); wrap.appendChild(row);
+        }
+        addFaceRow("OJOS",    "eyeColor",   EYE_PALETTE);
+        addFaceRow("MARCAS",  "faceColor",  FACE_PALETTE);
+        addFaceRow("CEJAS",   "browColor",  FACE_PALETTE);
+        addFaceRow("PUPILAS", "pupilColor", EYE_PALETTE);
+        panel.appendChild(wrap);
+      }
+
+      function renderColorSwatchSection(panel, grid, items, cat, cfg) {
+        const cs = document.createElement("div"); cs.className = "color-section";
+        const cst = document.createElement("div"); cst.className = "color-section-title"; cst.textContent = cfg.colorLabel || "COLOR";
+        cs.appendChild(cst);
+        const swWrap = document.createElement("div"); swWrap.style.cssText = "display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px";
+        const picker = document.createElement("input"); picker.type = "color";
+        picker.value = (cfg.isExtra ? charState[cfg.colorProp] : player.appearance[cfg.colorProp]) || "#ffd700";
+        cfg.palette.forEach(hex => {
+          const sw = document.createElement("div");
+          const cur = cfg.isExtra ? charState[cfg.colorProp] : player.appearance[cfg.colorProp];
+          sw.style.cssText = `width:20px;height:20px;border-radius:3px;background:${hex};border:2px solid ${cur===hex?"white":"transparent"};cursor:pointer;flex-shrink:0;transition:.12s`;
+          sw.addEventListener("click", () => {
+            swWrap.querySelectorAll("div").forEach(s => s.style.borderColor = "transparent");
+            sw.style.borderColor = "white";
+            if (cfg.isExtra) { charState[cfg.colorProp] = hex; player.appearance[cfg.colorProp] = hex; }
+            else { player.appearance[cfg.colorProp] = hex; if (cfg.colorProp === "hairColor") invalidateHairCache(); }
+            picker.value = hex;
+            if (cat === "hair" || cat === "aura") {
+              grid.querySelectorAll("canvas").forEach((c, i) => { if (items[i]) drawThumbCanvas(c, cat, items[i]); });
+            }
+          });
+          swWrap.appendChild(sw);
+        });
+        cs.appendChild(swWrap);
+        const pickerRow = document.createElement("div"); pickerRow.style.cssText = "display:flex;align-items:center;gap:6px";
+        const pickerLabel = document.createElement("span"); pickerLabel.style.cssText = "font-size:10px;color:var(--td);letter-spacing:1px;flex:1"; pickerLabel.textContent = "PERSONALIZAR";
+        picker.addEventListener("input", e => {
+          if (cfg.isExtra) { charState[cfg.colorProp] = e.target.value; player.appearance[cfg.colorProp] = e.target.value; }
+          else { player.appearance[cfg.colorProp] = e.target.value; if (cfg.colorProp === "hairColor") invalidateHairCache(); }
+          swWrap.querySelectorAll("div").forEach(s => s.style.borderColor = "transparent");
+          if (cat === "hair" || cat === "aura") {
+            grid.querySelectorAll("canvas").forEach((c, i) => { if (items[i]) drawThumbCanvas(c, cat, items[i]); });
+          }
+        });
+        pickerRow.appendChild(pickerLabel); pickerRow.appendChild(picker);
+        cs.appendChild(pickerRow); panel.appendChild(cs);
+      }
+
+      function getActiveVariants() {
+        const race = RACE_CATALOG.find(r => r.id === player.appearance.raceId);
+        const catalogVariants = race?.variants?.length ? race.variants : [{ id: "base", label: "Base", suffix: "" }];
+        const customVariants = Object.entries(player.appearance.variantCustomizations || {})
+          .filter(([id]) => !catalogVariants.some(v => v.id === id))
+          .map(([id, cfg]) => ({ id, label: cfg.label || cfg.name || id, suffix: "" }));
+        return catalogVariants.concat(customVariants);
+      }
+
+      function _stripSheetImages(cfg) {
+        const out = Object.assign({}, cfg || {});
+        delete out.spriteImage; delete out.userImage;
+        delete out.combatSpriteImage; delete out.combatUserImage;
+        delete out.specialSpriteImage; delete out.specialUserImage;
+        if (out.exploreSheet) out.exploreSheet = _stripSheetImages(out.exploreSheet);
+        if (out.combatSheet)  out.combatSheet  = _stripSheetImages(out.combatSheet);
+        if (out.specialSheet) out.specialSheet = _stripSheetImages(out.specialSheet);
+        return out;
+      }
+
+      function _hydrateSheetField(cfg, urlKey, imgKey) {
+        const url = cfg?.[urlKey]; if (!url) return;
+        const img = new Image();
+        img.onload = () => { cfg[imgKey] = img; invalidateHairCache(); };
+        img.src = url;
+      }
+
+      function serializableVariantCustomizations(customs) {
+        const out = {};
+        Object.entries(customs || {}).forEach(([id, cfg]) => { out[id] = _stripSheetImages(cfg); });
+        return out;
+      }
+
+      function hydrateVariantCustomizations(customs) {
+        player.appearance.variantCustomizations = customs || {};
+        Object.values(player.appearance.variantCustomizations).forEach(cfg => {
+          _hydrateSheetField(cfg, "sheet", "spriteImage");
+          _hydrateSheetField(cfg, "spriteDataURL", "spriteImage");
+          _hydrateSheetField(cfg, "combatSpriteDataURL", "combatSpriteImage");
+          _hydrateSheetField(cfg, "specialSpriteDataURL", "specialSpriteImage");
+        });
+      }
+
+      function serializableCombatCustomization(cfg) { return _stripSheetImages(cfg); }
+
+      function hydrateCombatCustomization(cfg) {
+        player.appearance.combatCustomization = cfg || {};
+        _hydrateSheetField(player.appearance.combatCustomization, "sheet", "spriteImage");
+        _hydrateSheetField(player.appearance.combatCustomization, "spriteDataURL", "spriteImage");
+      }
+
+      function normalizeSlotSheetUrls(slot) {
+        if (!slot || typeof slot !== "object") return;
+
+        const extractValue = (value) => {
+          if (!value) return null;
+          if (typeof value === "string") return value;
+          if (value.src && typeof value.src === "string") return value.src;
+          return null;
+        };
+
+        const source = slot.spriteSheets || slot.sprites || {};
+        const sheet = extractValue(source.sheet || slot.sheet || source.base || slot.base || source.explore || slot.explore);
+        const sheetCombate = extractValue(
+          source.pelea || slot.pelea || source.combat || slot.combat || source.combate || slot.combate
+        );
+        const sheetEspecial = extractValue(source.especial || slot.especial || source.special || slot.special);
+
+        const normalized = {};
+        if (sheet) {
+          normalized.sheet = sheet;
+          normalized.base = sheet;
+          normalized.pelea = sheet;
+          normalized.especial = sheet;
+        }
+        if (sheetCombate) normalized.pelea = sheetCombate;
+        if (sheetEspecial) normalized.especial = sheetEspecial;
+        if (Object.keys(normalized).length) slot.spriteSheets = normalized;
+      }
+
+      function getSpriteSheetExportData(app) {
+        const currentVariant = app?.variantCustomizations?.[app?.variantId] || {};
+        const sheet = app?.spriteSheets?.sheet || currentVariant.spriteDataURL || currentVariant.specialSpriteDataURL || app?.combatCustomization?.spriteDataURL || null;
+        return {
+          sheet,
+          base: sheet,
+          pelea: sheet,
+          especial: sheet,
+        };
+      }
+
+      async function applySlotSpriteUrls(slot) {
+        normalizeSlotSheetUrls(slot);
+        const sheets = slot?.spriteSheets || {};
+        const variantId = player.appearance.variantId || "base";
+        player.appearance.variantCustomizations = player.appearance.variantCustomizations || {};
+        const cfg = player.appearance.variantCustomizations[variantId] || {};
+
+        const sheetRef = sheets.sheet || sheets.base || sheets.pelea || sheets.especial || null;
+        const sheetSrc = await _resolveImportedSheetUrl(sheetRef) || sheetRef;
+        if (sheetSrc) {
+          cfg.spriteDataURL = sheetSrc;
+          cfg.specialSpriteDataURL = sheetSrc;
+          player.appearance.combatCustomization = player.appearance.combatCustomization || {};
+          player.appearance.combatCustomization.spriteDataURL = sheetSrc;
+          player.appearance.variantCustomizations[variantId] = cfg;
+          _hydrateSheetField(cfg, "spriteDataURL", "spriteImage");
+          _hydrateSheetField(cfg, "specialSpriteDataURL", "specialSpriteImage");
+          _hydrateSheetField(player.appearance.combatCustomization, "spriteDataURL", "spriteImage");
+          return;
+        }
+
+        if (sheets.base || sheets.especial) {
+          if (sheets.base) {
+            cfg.spriteDataURL = sheets.base;
+            if (!sheets.pelea) {
+              player.appearance.combatCustomization = player.appearance.combatCustomization || {};
+              player.appearance.combatCustomization.spriteDataURL = sheets.base;
+            }
+            if (!sheets.especial) cfg.specialSpriteDataURL = sheets.base;
+          }
+          if (sheets.especial) cfg.specialSpriteDataURL = sheets.especial;
+          player.appearance.variantCustomizations[variantId] = cfg;
+          _hydrateSheetField(cfg, "spriteDataURL", "spriteImage");
+          _hydrateSheetField(cfg, "specialSpriteDataURL", "specialSpriteImage");
+        }
+        if (sheets.pelea) {
+          player.appearance.combatCustomization = player.appearance.combatCustomization || {};
+          player.appearance.combatCustomization.spriteDataURL = sheets.pelea;
+          _hydrateSheetField(player.appearance.combatCustomization, "spriteDataURL", "spriteImage");
+        }
+      }
+
+      function buildSheetImportSection(opts) {
+        const { title, exploreLabel, combatLabel, specialLabel, exploreCfg, combatCfg, specialCfg,
+                exploreDisabled, combatDisabled, specialDisabled,
+                onExploreLoaded, onCombatLoaded, onSpecialLoaded, onMetaChange } = opts;
+        const box = document.createElement("div"); box.className = "import-panel"; box.style.marginTop = opts.marginTop || "10px";
+        const titleEl = document.createElement("div"); titleEl.className = "import-title"; titleEl.textContent = title;
+        box.appendChild(titleEl);
+
+        function makeLabel(text) {
+          const s = document.createElement("span");
+          s.style.cssText = "font-size:8px;color:var(--td);letter-spacing:.5px;width:100%;margin-top:4px;display:block";
+          s.textContent = text; return s;
+        }
+
+        function addSheetBlock(label, cfg, disabled, kind) {
+          const block = document.createElement("div"); block.style.marginBottom = "10px";
+          const sub = document.createElement("div"); sub.className = "import-title"; sub.style.fontSize = "9px"; sub.textContent = label;
+          block.appendChild(sub);
+          const preview = document.createElement("img"); preview.className = "import-preview";
+          const url = kind === 'combat' ? (cfg.combatSpriteDataURL || cfg.combatDataURL)
+                    : kind === 'special' ? (cfg.specialSpriteDataURL || cfg.specialDataURL)
+                    : (cfg.spriteDataURL || cfg.dataURL);
+          if (url) { preview.src = url; preview.classList.add("visible"); }
+          block.appendChild(preview);
+          const fileLabel = document.createElement("label"); fileLabel.className = "import-file-label";
+          const fileInput = document.createElement("input"); fileInput.type = "file"; fileInput.accept = "image/*"; fileInput.disabled = !!disabled;
+          fileInput.addEventListener("change", e => {
+            const file = e.target.files[0]; if (!file || disabled) return;
+            const reader = new FileReader();
+            reader.onload = ev => {
+              const dataURL = ev.target.result; const img = new Image();
+              img.onload = () => {
+                if (kind === 'combat') onCombatLoaded && onCombatLoaded(dataURL, img);
+                else if (kind === 'special') onSpecialLoaded && onSpecialLoaded(dataURL, img);
+                else onExploreLoaded && onExploreLoaded(dataURL, img);
+                preview.src = dataURL; preview.classList.add("visible"); invalidateHairCache();
+              };
+              img.onerror = () => showToast("No se pudo cargar la imagen", "error");
+              img.src = dataURL;
+            };
+            reader.readAsDataURL(file);
+          });
+          fileLabel.appendChild(fileInput); fileLabel.appendChild(document.createTextNode("PNG"));
+          block.appendChild(fileLabel); box.appendChild(block);
+        }
+
+        const metaRow = document.createElement("div"); metaRow.className = "import-row"; metaRow.style.flexWrap = "wrap";
+
+        const grpExpl = document.createElement("div"); grpExpl.style.cssText = "display:flex;flex-direction:column;gap:3px;flex:1;min-width:80px";
+        grpExpl.appendChild(makeLabel("▸ EXPLORACIÓN"));
+        const scaleExplore  = Object.assign(document.createElement("input"), { type:"number", min:"0.25", max:"8",  step:"0.05", className:"import-input-text", placeholder:"Escala",       value: String(exploreCfg?.scale??1),           disabled:!!exploreDisabled });
+        const framesExplore = Object.assign(document.createElement("input"), { type:"number", min:"1",    max:"48", step:"1",    className:"import-input-text", placeholder:"Cols (frames)", value: String(exploreCfg?.animFrames??6),      disabled:!!exploreDisabled });
+        const rowsExplore   = Object.assign(document.createElement("input"), { type:"number", min:"1",    max:"64", step:"1",    className:"import-input-text", placeholder:"Filas (auto)",  value: String(exploreCfg?.rowCount??""),       disabled:!!exploreDisabled });
+        grpExpl.appendChild(scaleExplore); grpExpl.appendChild(framesExplore); grpExpl.appendChild(rowsExplore);
+        metaRow.appendChild(grpExpl);
+
+        const grpComb = document.createElement("div"); grpComb.style.cssText = "display:flex;flex-direction:column;gap:3px;flex:1;min-width:80px";
+        grpComb.appendChild(makeLabel("▸ COMBATE"));
+        const scaleCombat   = Object.assign(document.createElement("input"), { type:"number", min:"0.25", max:"8",  step:"0.05", className:"import-input-text", placeholder:"Escala",       value: String(combatCfg?.combatScale??combatCfg?.scale??1),     disabled:!!combatDisabled });
+        const framesCombat  = Object.assign(document.createElement("input"), { type:"number", min:"1",    max:"48", step:"1",    className:"import-input-text", placeholder:"Cols (frames)", value: String(combatCfg?.combatAnimFrames??combatCfg?.animFrames??6), disabled:!!combatDisabled });
+        const rowsCombat    = Object.assign(document.createElement("input"), { type:"number", min:"1",    max:"64", step:"1",    className:"import-input-text", placeholder:"Filas (auto)",  value: String(combatCfg?.combatRowCount??combatCfg?.rowCount??""),  disabled:!!combatDisabled });
+        grpComb.appendChild(scaleCombat); grpComb.appendChild(framesCombat); grpComb.appendChild(rowsCombat);
+        metaRow.appendChild(grpComb);
+
+        const saveMeta = () => {
+          const rExpl = parseInt(rowsExplore.value, 10); const rComb = parseInt(rowsCombat.value, 10);
+          onMetaChange({
+            scale: Number(scaleExplore.value)||1, animFrames: parseInt(framesExplore.value,10)||6, rowCount: rExpl>0?rExpl:0,
+            combatScale: Number(scaleCombat.value)||1, combatAnimFrames: parseInt(framesCombat.value,10)||6, combatRowCount: rComb>0?rComb:0,
+          });
+        };
+        [scaleExplore, framesExplore, rowsExplore, scaleCombat, framesCombat, rowsCombat].forEach(el => el.addEventListener("input", saveMeta));
+        box.appendChild(metaRow);
+
+        addSheetBlock(exploreLabel || "🌍 EXPLORACIÓN (14 filas)", exploreCfg||{}, exploreDisabled, 'explore');
+        addSheetBlock(combatLabel  || "⚔️ COMBATE PvP (11 filas)", combatCfg||exploreCfg||{}, combatDisabled, 'combat');
+        addSheetBlock(specialLabel || "✨ ESPECIAL (var)", specialCfg||exploreCfg||{}, specialDisabled, 'special');
+        return box;
+      }
+
+      function captureCurrentFormConfig() {
+        const app = player.appearance;
+        return {
+          faceId: app.faceId, faceColor: app.faceColor, browColor: app.browColor, pupilColor: app.pupilColor,
+          eyeColor: app.eyeColor, hairId: app.hairId, hairColor: app.hairColor,
+          topId: app.topId, bottomId: app.bottomId, shoesId: app.shoesId, glovesId: app.glovesId,
+          skinColor: app.skinColor, auraId: app.auraId, auraColor: app.auraColor, accessoryId: app.accessoryId,
+          scale: 1, animFrames: 6,
+        };
+      }
+
+      function renderCombatPanel(panel) {
+        const wrap = document.createElement("div"); wrap.className = "items-scroll"; wrap.style.padding = "10px";
+        panel.appendChild(wrap);
+        const cfg = player.appearance.combatCustomization || {};
+        const info = document.createElement("div");
+        info.style.cssText = "font-size:11px;color:var(--td);line-height:1.35;margin-bottom:10px";
+        info.textContent = "El sheet activo se administra desde IMPORTADOS. Usa el mismo PNG para exploración, combate y especial.";
+        wrap.appendChild(info);
+        const status = document.createElement("div");
+        status.style.cssText = "font-family:var(--fh);font-size:8px;letter-spacing:1px;color:var(--cyan);margin-bottom:8px";
+        status.textContent = player.appearance.spriteSheets?.sheet ? "SHEET ACTUAL EN IMPORTADOS" : "SIN SHEET ACTIVO";
+        wrap.appendChild(status);
+      }
+
+      function renderFormsPanel(panel) {
+        const wrap = document.createElement("div"); wrap.className = "items-scroll"; wrap.style.padding = "10px";
+        panel.appendChild(wrap);
+        const variants = getActiveVariants();
+        const active = player.appearance.variantId || "base";
+        const createRow = document.createElement("div"); createRow.className = "import-row"; createRow.style.marginBottom = "10px";
+        const nameInput = document.createElement("input"); nameInput.className = "import-input-text"; nameInput.type = "text"; nameInput.maxLength = 18; nameInput.placeholder = "Nueva forma";
+        const addFormBtn = document.createElement("button"); addFormBtn.className = "import-add-btn"; addFormBtn.textContent = "AÑADIR";
+        addFormBtn.addEventListener("click", () => {
+          const label = nameInput.value.trim() || `Forma ${variants.length}`;
+          const id = `custom_${Date.now()}_${Math.random().toString(36).slice(2,5)}`;
+          player.appearance.variantCustomizations ||= {};
+          player.appearance.variantCustomizations[id] = Object.assign(captureCurrentFormConfig(), { label });
+          player.appearance.variantId = id; invalidateHairCache();
+          showToast(`"${label}" creada`,"success"); renderItemsPanel("forms");
+        });
+        createRow.appendChild(nameInput); createRow.appendChild(addFormBtn); wrap.appendChild(createRow);
+        const row = document.createElement("div"); row.style.cssText = "display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px";
+        variants.forEach(v => {
+          const btn = document.createElement("button"); btn.className = "gender-btn" + (active===v.id?" active":""); btn.textContent = v.label;
+          btn.addEventListener("click", () => { player.appearance.variantId = v.id; invalidateHairCache(); renderItemsPanel("forms"); });
+          row.appendChild(btn);
+        });
+        wrap.appendChild(row);
+        const custom = player.appearance.variantCustomizations?.[active] || null;
+        const info = document.createElement("div"); info.style.cssText = "font-size:11px;color:var(--td);line-height:1.35;margin-bottom:10px";
+        info.textContent = active === "base" ? "Base usa el personaje normal (exploración + combate del juego)." : "Cada forma puede tener sheet de exploración (14 filas) y de combate PvP (13 filas).";
+        wrap.appendChild(info);
+        const actions = document.createElement("div"); actions.style.cssText = "display:grid;gap:6px";
+        const saveBtn = document.createElement("button"); saveBtn.className = "import-add-btn"; saveBtn.textContent = "GUARDAR LOOK ACTUAL EN ESTA FORMA"; saveBtn.disabled = active === "base";
+        saveBtn.addEventListener("click", () => {
+          player.appearance.variantCustomizations ||= {};
+          player.appearance.variantCustomizations[active] = Object.assign({}, player.appearance.variantCustomizations[active]||{}, captureCurrentFormConfig(), { scale: custom?.scale??1, animFrames: custom?.animFrames??6 });
+          invalidateHairCache(); showToast("Forma guardada","success"); renderItemsPanel("forms");
+        });
+        actions.appendChild(saveBtn);
+        const resetBtn = document.createElement("button"); resetBtn.className = "import-add-btn"; resetBtn.textContent = active.startsWith("custom_") ? "BORRAR ESTA FORMA" : "RESETEAR ESTA FORMA"; resetBtn.disabled = active==="base"||!custom;
+        resetBtn.addEventListener("click", () => {
+          delete player.appearance.variantCustomizations?.[active];
+          if (player.appearance.variantId === active) player.appearance.variantId = "base";
+          invalidateHairCache(); showToast(active.startsWith("custom_")?"Forma borrada":"Forma reseteada","warning"); renderItemsPanel("forms");
+        });
+        actions.appendChild(resetBtn); wrap.appendChild(actions);
+        if (active !== "base") {
+          const note = document.createElement("div");
+          note.style.cssText = "font-size:10px;color:var(--td);line-height:1.4;margin-top:10px";
+          note.textContent = "Las formas usan el sheet activo de IMPORTADOS. Si necesitas cargar un PNG, hazlo desde IMPORTADOS.";
+          wrap.appendChild(note);
+        }
+      }
+
+      function renderImportPanel(panel, cat) {
+        const isFreeCat = cat === "free";
+        const ip = document.createElement("div"); ip.className = "import-panel";
+        const t = document.createElement("div"); t.className = "import-title";
+        t.textContent = isFreeCat ? "➕ IMPORTAR PERSONALIZACIÓN LIBRE" : "➕ IMPORTAR ACCESORIO";
+        ip.appendChild(t);
+        const preview = document.createElement("img"); preview.className = "import-preview"; preview.alt = "preview";
+        if (_importPendingImg && _importPendingDataURL) { preview.src = _importPendingDataURL; preview.classList.add("visible"); }
+        ip.appendChild(preview);
+        const row1 = document.createElement("div"); row1.className = "import-row";
+        const nameInput = document.createElement("input"); nameInput.type="text"; nameInput.className="import-input-text"; nameInput.placeholder = isFreeCat?"Nombre (ej: Mi Raza Custom)":"Nombre del accesorio"; nameInput.maxLength=24;
+        row1.appendChild(nameInput);
+        const typeSelect = document.createElement("select"); typeSelect.className = "import-select";
+        const raceInput = document.createElement("input"); raceInput.type="text"; raceInput.className="import-input-text"; raceInput.placeholder="Raza (opcional)"; raceInput.maxLength=20; raceInput.style.marginTop="4px";
+        if (isFreeCat) {
+          row1.appendChild(raceInput);
+        } else {
+          ACCESSORY_TYPES.forEach(tp => {
+            const opt = document.createElement("option"); opt.value=tp.id; opt.textContent=`${tp.icon} ${tp.label}`; typeSelect.appendChild(opt);
+          });
+          row1.appendChild(typeSelect);
+        }
+        ip.appendChild(row1);
+        const row2 = document.createElement("div"); row2.className = "import-row";
+        const fileLabel = document.createElement("label"); fileLabel.className = "import-file-label";
+        const fileInput = document.createElement("input"); fileInput.type="file"; fileInput.accept="image/*";
+        fileInput.addEventListener("change", e => {
+          const file = e.target.files[0]; if(!file) return;
+          const reader = new FileReader();
+          reader.onload = ev => {
+            _importPendingDataURL = ev.target.result; const img = new Image();
+            img.onload = () => { _importPendingImg=img; preview.src=_importPendingDataURL; preview.classList.add("visible"); addBtn.disabled=false; };
+            img.onerror = () => showToast("No se pudo cargar la imagen","error");
+            img.src = _importPendingDataURL;
+          };
+          reader.readAsDataURL(file);
+        });
+        fileLabel.appendChild(fileInput); fileLabel.appendChild(document.createTextNode("📁 EXPLORACIÓN (14 filas)"));
+        row2.appendChild(fileLabel);
+        const combatLabel2 = document.createElement("label"); combatLabel2.className = "import-file-label";
+        const combatInput = document.createElement("input"); combatInput.type="file"; combatInput.accept="image/*";
+        const combatPreview = document.createElement("img"); combatPreview.className = "import-preview";
+        combatInput.addEventListener("change", e => {
+          const file = e.target.files[0]; if(!file) return;
+          const reader = new FileReader();
+          reader.onload = ev => {
+            _importPendingCombatDataURL=ev.target.result; const img=new Image();
+            img.onload = () => { _importPendingCombatImg=img; combatPreview.src=_importPendingCombatDataURL; combatPreview.classList.add("visible"); };
+            img.src = _importPendingCombatDataURL;
+          };
+          reader.readAsDataURL(file);
+        });
+        combatLabel2.appendChild(combatInput); combatLabel2.appendChild(document.createTextNode("⚔️ COMBATE (13 filas, opcional)"));
+        row2.appendChild(combatLabel2);
+        row2.appendChild(combatPreview);
+        // Especial (sheet opcional)
+        const specialLabel = document.createElement("label"); specialLabel.className = "import-file-label";
+        const specialInput = document.createElement("input"); specialInput.type = "file"; specialInput.accept = "image/*";
+        const specialPreview = document.createElement("img"); specialPreview.className = "import-preview";
+        specialInput.addEventListener("change", e => {
+          const file = e.target.files[0]; if(!file) return;
+          const reader = new FileReader();
+          reader.onload = ev => {
+            _importPendingSpecialDataURL = ev.target.result; const img = new Image();
+            img.onload = () => { _importPendingSpecialImg = img; specialPreview.src = _importPendingSpecialDataURL; specialPreview.classList.add("visible"); };
+            img.onerror = () => showToast("No se pudo cargar la imagen","error");
+            img.src = _importPendingSpecialDataURL;
+          };
+          reader.readAsDataURL(file);
+        });
+        specialLabel.appendChild(specialInput); specialLabel.appendChild(document.createTextNode("✨ ESPECIAL (opcional)"));
+        row2.appendChild(specialLabel);
+        row2.appendChild(specialPreview);
+        const addBtn = document.createElement("button"); addBtn.className="import-add-btn"; addBtn.disabled=!_importPendingImg; addBtn.innerHTML="✚ AÑADIR";
+        addBtn.addEventListener("click", () => {
+          if(!_importPendingImg||!_importPendingDataURL){showToast("Primero seleccioná un archivo PNG","warning");return;}
+          const name=nameInput.value.trim()||(isFreeCat?"Personalización":"Accesorio");
+          const type=isFreeCat?"other":typeSelect.value;
+          const typeDef=ACCESSORY_TYPES.find(td=>td.id===type)||ACCESSORY_TYPES[ACCESSORY_TYPES.length-1];
+          const uniqueId = `custom_file_${Date.now()}_${Math.random().toString(36).slice(2,5)}`;
+          const entry = {
+            id: uniqueId,
+            name,
+            type,
+            slot: typeDef.slot,
+            color: null,
+            userImage: _importPendingImg,
+            dataURL: _importPendingDataURL,
+            combatUserImage: _importPendingCombatImg || null,
+            combatDataURL: _importPendingCombatDataURL || null,
+            specialUserImage: _importPendingSpecialImg || null,
+            specialDataURL: _importPendingSpecialDataURL || null,
+            scale: 1,
+            animFrames: 6,
+            combatScale: 1,
+            combatAnimFrames: 6,
+            specialScale: 1,
+            specialAnimFrames: 6,
+            specialRowCount: 0,
+            raceName: isFreeCat ? (raceInput.value.trim() || null) : null,
+            isFreeCustomization: isFreeCat,
+          };
+          ACCESSORIES_CATALOG.push(entry);
+          if (isFreeCat) {
+            FREE_CUSTOMIZATION_CATALOG.push(entry);
+            _saveFreeCustomizationToLS();
+          } else {
+            _saveAccessoriesToLS();
+          }
+          charState.accessoryId=entry.id; player.appearance.accessoryId=entry.id;
+          _importPendingImg=null; _importPendingDataURL=null; _importPendingCombatImg=null; _importPendingCombatDataURL=null; _importPendingSpecialImg=null; _importPendingSpecialDataURL=null;
+          fileInput.value = "";
+          combatInput.value = "";
+          specialInput.value = "";
+          preview.classList.remove("visible");
+          combatPreview.classList.remove("visible");
+          specialPreview.classList.remove("visible");
+          addBtn.disabled = true;
+          nameInput.value = "";
+          if (isFreeCat) raceInput.value = "";
+          if (!isFreeCat) typeSelect.selectedIndex = 0;
+          showToast(`"${name}" añadido`,"success"); renderItemsPanel(cat);
+        });
+        row2.appendChild(addBtn); ip.appendChild(row2); panel.appendChild(ip);
+      }
+
+      function _resetEquipmentForCurrentRaceGender() {
+        const raceId=player.appearance.raceId, gender=player.appearance.gender;
+        const defaults=getDefaultIds(raceId,gender);
+        player.appearance.faceId  =defaults.faceId;
+        player.appearance.hairId  =defaults.hairId;
+        player.appearance.topId   =getCatalogFor("shirt", raceId,gender).find(i=>i.spriteKey===null)?.id||getCatalogFor("shirt", raceId,gender).at(-1)?.id||defaults.topId;
+        player.appearance.bottomId=getCatalogFor("pants", raceId,gender).find(i=>i.spriteKey===null)?.id||getCatalogFor("pants", raceId,gender).at(-1)?.id||defaults.bottomId;
+        player.appearance.shoesId =getCatalogFor("shoes", raceId,gender).find(i=>i.spriteKey===null)?.id||getCatalogFor("shoes", raceId,gender).at(-1)?.id||defaults.shoesId;
+        charState.glovesId=getCatalogFor("gloves",raceId,gender).find(i=>i.spriteKey===null)?.id||getCatalogFor("gloves",raceId,gender)[0]?.id||"gm0";
+        player.appearance.glovesId=charState.glovesId;
+        invalidateHairCache();
+        ["face","hair","shirt","pants","shoes","gloves"].forEach(c=>{pageState[c]=0;});
+      }
+
+      function renderColorPanel(panel) {
+        const scroll=document.createElement("div"); scroll.className="items-scroll"; panel.appendChild(scroll);
+        const cs=document.createElement("div"); cs.className="color-section"; cs.style.cssText="border-top:none;padding:8px 0"; scroll.appendChild(cs);
+        function addColorRow(label,palette,prop,isExtra){
+          const row=document.createElement("div"); row.className="color-row";
+          const lbl=document.createElement("span"); lbl.className="color-row-label"; lbl.textContent=label; row.appendChild(lbl);
+          const gwrap=document.createElement("div"); gwrap.className="color-gradient-wrap";
+          const swWrap=document.createElement("div"); swWrap.style.cssText="display:flex;gap:3px;flex-wrap:wrap;flex:1";
+          const picker=document.createElement("input"); picker.type="color";
+          const curVal=isExtra?charState[prop]:player.appearance[prop];
+          picker.value=curVal||"#ffffff"; picker.style.cssText="margin-left:4px;flex-shrink:0";
+          const result=document.createElement("div"); result.className="color-result"; result.style.background=curVal||"#fff";
+          function updateResult(){result.style.background=(isExtra?charState[prop]:player.appearance[prop])||"#fff";}
+          palette.forEach(hex=>{
+            const sw=document.createElement("div");
+            const cur=isExtra?charState[prop]:player.appearance[prop];
+            sw.style.cssText=`width:16px;height:16px;border-radius:3px;background:${hex};border:2px solid ${cur===hex?"white":"transparent"};cursor:pointer;flex-shrink:0;transition:.12s`;
+            sw.addEventListener("click",()=>{
+              swWrap.querySelectorAll("div").forEach(s=>s.style.borderColor="transparent"); sw.style.borderColor="white";
+              if(isExtra){charState[prop]=hex;player.appearance[prop]=hex;}
+              else{player.appearance[prop]=hex;if(prop==="hairColor"||prop==="eyeColor"||prop==="faceColor")invalidateHairCache();}
+              picker.value=hex; updateResult();
+            });
+            swWrap.appendChild(sw);
+          });
+          picker.addEventListener("input",e=>{
+            if(isExtra){charState[prop]=e.target.value;player.appearance[prop]=e.target.value;}
+            else{player.appearance[prop]=e.target.value;if(prop==="hairColor"||prop==="eyeColor"||prop==="faceColor")invalidateHairCache();}
+            swWrap.querySelectorAll("div").forEach(s=>s.style.borderColor="transparent"); updateResult();
+          });
+          gwrap.appendChild(swWrap); gwrap.appendChild(picker); gwrap.appendChild(result); row.appendChild(gwrap); cs.appendChild(row);
+        }
+        addColorRow("PIEL",    SKIN_PALETTE,  "skinColor",  false);
+        addColorRow("OJOS",    EYE_PALETTE,   "eyeColor",   false);
+        addColorRow("MARCAS",  FACE_PALETTE,  "faceColor",  false);
+        addColorRow("CABELLO", HAIR_PALETTE,  "hairColor",  false);
+        addColorRow("ROPA",    CLOTH_PALETTE, "clothColor", true);
+        addColorRow("AURA",    AURA_PALETTE,  "auraColor",  true);
+      }
+
+      const RACE_STATS = {
+        human:    {health:85,ki:75, strength:80,defense:80,speed:80},
+        saiyan:   {health:80,ki:90, strength:95,defense:70,speed:85},
+        namekian: {health:90,ki:85, strength:85,defense:90,speed:70},
+        android:  {health:95,ki:100,strength:90,defense:95,speed:75},
+        kaioshin: {health:70,ki:100,strength:75,defense:80,speed:90},
+        frieza:   {health:85,ki:95, strength:88,defense:85,speed:95},
+      };
+      function updateStats() {
+        const stats=RACE_STATS[player.appearance.raceId]||RACE_STATS.human;
+        [["health","barHealth","valHealth"],["ki","barKi","valKi"],["strength","barStr","valStr"],["defense","barDef","valDef"],["speed","barSpd","valSpd"]].forEach(([key,barId,valId])=>{
+          const v=stats[key]||75;
+          document.getElementById(barId).style.width=v+"%";
+          document.getElementById(valId).textContent=v;
+        });
+      }
+
+      function buildCharState() {
+        return {
+          glovesId:    charState.glovesId    || player.appearance.glovesId    || "gm0",
+          auraId:      charState.auraId      || player.appearance.auraId      || "a0",
+          auraColor:   charState.auraColor   || player.appearance.auraColor   || "#fdd835",
+          accessoryId: charState.accessoryId || player.appearance.accessoryId || "ac_none",
+          auraPhase:   _auraPhase,
+          viewKey:     activeViewKey,
+          spriteVariantId: charState.spriteVariantId,
+        };
+      }
+
+      function loop(now) {
+        requestAnimationFrame(loop);
+        _auraPhase++;
+        animator.update(now);
+        finalAnim.update(now);
+        const ps = buildCharState();
+
+        previewCtx.clearRect(0,0,previewCanvas.width,previewCanvas.height);
+        drawPlayer(previewCtx,previewCanvas.width/2,previewCanvas.height-16,player,imageMap,animator,ps);
+
+        finalCtx.clearRect(0,0,finalCanvas.width,finalCanvas.height);
+        finalCtx.save();
+        const fw=finalCanvas.width, fh=finalCanvas.height;
+        finalCtx.translate(fw/2,fh/2);
+        if(uiFlipped) finalCtx.scale(-uiZoom,uiZoom);
+        else          finalCtx.scale(uiZoom,uiZoom);
+        finalCtx.translate(-fw/2,-fh/2);
+        const fp=Object.assign({},player,{direction:1,appearance:Object.assign({},player.appearance)});
+        drawPlayer(finalCtx,fw/2,fh-16,fp,imageMap,finalAnim,ps);
+        finalCtx.restore();
+      }
+
+      function loadSlots() {
+        try {
+          const raw=localStorage.getItem(LS_KEY);
+          const parsed=raw?JSON.parse(raw):null;
+          savedSlots = Array.isArray(parsed)
+            ? Array.from({length:11},(_,i)=>{
+                const slot = parsed[i] ?? null;
+                if (slot) normalizeSlotSheetUrls(slot);
+                return slot;
+              })
+            : Array(11).fill(null);
+        } catch {
+          savedSlots=Array(11).fill(null);
+        }
+        const si=parseInt(localStorage.getItem(LS_SLOT)||"0",10);
+        activeSlotIndex=Number.isFinite(si)?Math.max(0,Math.min(10,si)):0;
+      }
+
+      function saveSlots() {
+        try {
+          localStorage.setItem(LS_KEY,JSON.stringify(savedSlots));
+        } catch(e) {
+          console.warn("[DC] localStorage lleno — intentando limpiar dataURLs grandes...");
+          const slim=savedSlots.map(s=>{
+            if(!s) return null;
+            const copy=JSON.parse(JSON.stringify(s));
+            // Remove top-level large dataURLs
+            if(copy.accessoryDataURL && copy.accessoryDataURL.length>MAX_DATAURL_BYTES) delete copy.accessoryDataURL;
+            if(copy.previewDataURL && copy.previewDataURL.length>MAX_DATAURL_BYTES) delete copy.previewDataURL;
+            ["base","pelea","especial","combate","special"].forEach(key => {
+              if(copy[key] && typeof copy[key] === 'string' && copy[key].length>MAX_DATAURL_BYTES) delete copy[key];
+            });
+            if(copy.spriteSheets && typeof copy.spriteSheets === 'object') {
+              if(copy.spriteSheets.base && copy.spriteSheets.base.length>MAX_DATAURL_BYTES) delete copy.spriteSheets.base;
+              if(copy.spriteSheets.pelea && copy.spriteSheets.pelea.length>MAX_DATAURL_BYTES) delete copy.spriteSheets.pelea;
+              if(copy.spriteSheets.especial && copy.spriteSheets.especial.length>MAX_DATAURL_BYTES) delete copy.spriteSheets.especial;
+            }
+            // Trim variant customizations large sheets
+            if(copy.variantCustomizations && typeof copy.variantCustomizations === 'object') {
+              Object.values(copy.variantCustomizations).forEach(cfg => {
+                if(!cfg) return;
+                if(cfg.spriteDataURL && cfg.spriteDataURL.length>MAX_DATAURL_BYTES) delete cfg.spriteDataURL;
+                if(cfg.combatSpriteDataURL && cfg.combatSpriteDataURL.length>MAX_DATAURL_BYTES) delete cfg.combatSpriteDataURL;
+                if(cfg.specialSpriteDataURL && cfg.specialSpriteDataURL.length>MAX_DATAURL_BYTES) delete cfg.specialSpriteDataURL;
+              });
+            }
+            // Trim combat customization
+            if(copy.combatCustomization) {
+              if(copy.combatCustomization.spriteDataURL && copy.combatCustomization.spriteDataURL.length>MAX_DATAURL_BYTES) delete copy.combatCustomization.spriteDataURL;
+            }
+            return copy;
+          });
+          try { localStorage.setItem(LS_KEY,JSON.stringify(slim)); }
+          catch(e2) { console.error("[DC] No se pudo guardar slots:",e2); }
+        }
+      }
+
+      function saveToSlot(i) {
+        try {
+          const accId=charState.accessoryId||player.appearance.accessoryId||"ac_none";
+          const accEntry=ACCESSORIES_CATALOG.find(a=>a.id===accId);
+          let accessoryDataURL=null;
+          let accessoryCombatDataURL=null;
+          let accessorySpecialDataURL=null;
+          if(accEntry&&accEntry.dataURL){
+            if(accEntry.dataURL.length<=MAX_DATAURL_BYTES) accessoryDataURL=accEntry.dataURL;
+            else console.warn("[DC] dataURL del accesorio demasiado grande para LS, se omite.");
+          }
+          if(accEntry&&accEntry.combatDataURL){
+            if(accEntry.combatDataURL.length<=MAX_DATAURL_BYTES) accessoryCombatDataURL=accEntry.combatDataURL;
+            else console.warn("[DC] dataURL de combate del accesorio demasiado grande para LS, se omite.");
+          }
+          if(accEntry&&accEntry.specialDataURL){
+            if(accEntry.specialDataURL.length<=MAX_DATAURL_BYTES) accessorySpecialDataURL=accEntry.specialDataURL;
+            else console.warn("[DC] dataURL especial del accesorio demasiado grande para LS, se omite.");
+          }
+          const accessoryIsFreeCustomization=!!(accEntry?.isFreeCustomization||FREE_CUSTOMIZATION_CATALOG.some(a=>a.id===accId)||player.appearance.raceId==="Custom"||String(accId).startsWith("fc_"));
+          const d={
+            name:             document.getElementById("charName").value||"Guerrero Z",
+            level:            1,
+            race:             player.appearance.raceId,
+            gender:           player.appearance.gender,
+            variantId:        player.appearance.variantId||"base",
+            variantCustomizations: serializableVariantCustomizations(player.appearance.variantCustomizations),
+            combatCustomization:   serializableCombatCustomization(player.appearance.combatCustomization),
+            faceId:           player.appearance.faceId,
+            faceColor:        player.appearance.faceColor,
+            browColor:        player.appearance.browColor||null,
+            pupilColor:       player.appearance.pupilColor||null,
+            hair:             player.appearance.hairId,
+            hairColor:        player.appearance.hairColor,
+            shirt:            player.appearance.topId,
+            pants:            player.appearance.bottomId,
+            shoes:            player.appearance.shoesId,
+            skinColor:        player.appearance.skinColor,
+            eyeColor:         player.appearance.eyeColor,
+            gloves:           charState.glovesId||player.appearance.glovesId||"gm0",
+            aura:             charState.auraId||player.appearance.auraId||"a0",
+            auraColor:        charState.auraColor||player.appearance.auraColor||"#fdd835",
+            clothColor:       charState.clothColor||"#ff6a00",
+            accessory:        accId,
+            accessorySlot:    accEntry?.slot || "over_shirt",
+            accessoryType:    accEntry?.type || "other",
+            accessoryDataURL,
+            accessoryCombatDataURL,
+            accessorySpecialDataURL,
+            accessoryIsFreeCustomization,
+            accessoryName:    accEntry?.name||null,
+          };
+          const sheetUrls = getSpriteSheetExportData(player.appearance);
+          d.spriteSheets = { sheet: sheetUrls.sheet };
+          d.base = sheetUrls.sheet || null;
+          d.pelea = sheetUrls.sheet || null;
+          d.especial = sheetUrls.sheet || null;
+          d.combate = sheetUrls.sheet || null;
+          d.special = sheetUrls.sheet || null;
+          savedSlots[i]=d; activeSlotIndex=i;
+          localStorage.setItem(LS_SLOT,String(i));
+          saveSlots(); renderSlots();
+          showToast(`"${d.name}" guardado en slot ${i+1}`,"success");
+          void _syncSlotToFirebase(i, d);
+        } catch(err) {
+          console.error("[DC] saveToSlot error:",err);
+          showToast("Error al guardar — revisá la consola","error");
+        }
+      }
+
+      async function loadFromSlot(i) {
+        try {
+          const d = savedSlots[i]; if (!d) throw new Error("Slot vacío o inválido");
+          normalizeSlotSheetUrls(d);
+          const sheetRef = d?.spriteSheets?.sheet || d?.base || d?.pelea || d?.especial || d?.combate || d?.special || "";
+          const sheetSrc = await _resolveImportedSheetUrl(sheetRef) || sheetRef || "";
+
+          player.appearance.raceId    = d.race      || "human";
+          player.appearance.gender    = d.gender    || "male";
+          player.appearance.variantId = d.variantId || "base";
+          player.appearance.spriteSheets = { sheet: sheetRef, base: sheetRef, pelea: sheetRef, especial: sheetRef };
+          player.spriteSheets = { base: sheetSrc, pelea: sheetSrc, especial: sheetSrc };
+
+          const customVariantId = player.appearance.variantId || "base";
+          const variantCustomizations = Object.assign({}, d.variantCustomizations || {});
+          variantCustomizations[customVariantId] = Object.assign({}, variantCustomizations[customVariantId] || {});
+
+          variantCustomizations[customVariantId].spriteDataURL = sheetSrc || variantCustomizations[customVariantId].spriteDataURL;
+          variantCustomizations[customVariantId].spriteImage = null;
+          variantCustomizations[customVariantId].specialSpriteDataURL = sheetSrc || variantCustomizations[customVariantId].specialSpriteDataURL;
+          variantCustomizations[customVariantId].specialSpriteImage = null;
+
+          const combatCustomization = Object.assign({}, d.combatCustomization || {});
+          if (sheetSrc) {
+            combatCustomization.spriteDataURL = sheetSrc;
+            combatCustomization.spriteImage = null;
+          }
+
+          hydrateVariantCustomizations(variantCustomizations);
+          hydrateCombatCustomization(combatCustomization);
+          await applySlotSpriteUrls(d);
+
+          player.appearance.faceId      = d.faceId     || "fm0";
+          player.appearance.faceColor   = d.faceColor  || null;
+          player.appearance.browColor   = d.browColor  || null;
+          player.appearance.pupilColor  = d.pupilColor || null;
+          player.appearance.hairId      = d.hair       || "hm1";
+          player.appearance.hairColor   = d.hairColor  || "#1a1a1a";
+          player.appearance.topId       = d.shirt      || "sm1";
+          player.appearance.bottomId    = d.pants      || "pm1";
+          player.appearance.shoesId     = d.shoes      || "shm1";
+          player.appearance.skinColor   = d.skinColor  || "#e8c898";
+          player.appearance.eyeColor    = d.eyeColor   || "#3a2a1a";
+          charState.glovesId            = d.gloves     || "gm0";
+          charState.auraId              = d.aura       || "a0";
+          charState.auraColor           = d.auraColor  || "#fdd835";
+          charState.clothColor          = d.clothColor || "#ff6a00";
+          player.appearance.glovesId    = charState.glovesId;
+          player.appearance.auraId      = charState.auraId;
+          player.appearance.auraColor   = charState.auraColor;
+
+          const accId = d.accessory || "ac_none";
+          const existing = ACCESSORIES_CATALOG.find(a => a.id === accId);
+          if (!existing && d.accessoryDataURL && accId !== "ac_none") {
+            const img = new Image(); img.src = d.accessoryDataURL;
+            const isFreeCat = !!(d.accessoryIsFreeCustomization || d.race === "Custom" || accId.startsWith("fc_"));
+            const entry = { id: accId, name: d.accessoryName || "Personalización", type: "other", slot: "over_shirt", color: null, userImage: img, spriteImage: img, dataURL: d.accessoryDataURL, raceName: null, isFreeCustomization: isFreeCat };
+            if (d.accessoryCombatDataURL) {
+              const ci = new Image(); ci.src = d.accessoryCombatDataURL;
+              entry.combatUserImage = ci;
+              entry.combatDataURL = d.accessoryCombatDataURL;
+            }
+            if (d.accessorySpecialDataURL) {
+              const si = new Image(); si.src = d.accessorySpecialDataURL;
+              entry.specialUserImage = si;
+              entry.specialDataURL = d.accessorySpecialDataURL;
+            }
+            ACCESSORIES_CATALOG.push(entry);
+            if (isFreeCat && !FREE_CUSTOMIZATION_CATALOG.find(x => x.id === accId)) FREE_CUSTOMIZATION_CATALOG.push(entry);
+          }
+          charState.accessoryId         = accId;
+          player.appearance.accessoryId = accId;
+          document.getElementById("charName").value = d.name || "Guerrero Z";
+          invalidateHairCache();
+          activeSlotIndex = i; localStorage.setItem(LS_SLOT, String(i));
+          renderSlots(); renderItemsPanel(activeCategory); updateStats();
+          showToast(`"${d.name}" cargado`, "success");
+        } catch (err) {
+          console.warn("loadFromSlot falló:", err);
+          player.appearance.raceId = "human";
+          player.appearance.gender = "male";
+          player.appearance.variantId = "base";
+          player.appearance.variantCustomizations = {};
+          player.appearance.combatCustomization = {};
+          player.appearance.faceId = "fm0";
+          player.appearance.hairId = "hm1";
+          player.appearance.topId = "sm1";
+          player.appearance.bottomId = "pm1";
+          player.appearance.shoesId = "shm1";
+          player.appearance.skinColor = "#e8c898";
+          player.appearance.eyeColor = "#3a2a1a";
+          charState.glovesId = "gm0";
+          charState.auraId = "a0";
+          charState.auraColor = "#fdd835";
+          player.appearance.glovesId = charState.glovesId;
+          player.appearance.auraId = charState.auraId;
+          player.appearance.auraColor = charState.auraColor;
+          invalidateHairCache();
+          showToast("Slot inicializado por defecto", "warning");
+        }
+      }
+
+      function deleteSlot(i) {
+        savedSlots[i]=null; saveSlots(); renderSlots();
+        showToast(`Slot ${i+1} eliminado`,"warning");
+      }
+
+      function renderSlots() {
+        const list=document.getElementById("slotsList"); list.innerHTML="";
+        for(let i=0;i<11;i++){
+          const d=savedSlots[i];
+          const card=document.createElement("div");
+          card.className="slot-card"+(d?"":" empty")+(i===activeSlotIndex&&d?" active-slot":"");
+          const num=document.createElement("div"); num.className="slot-num"; num.textContent=i+1;
+          const miniWrap=document.createElement("div"); miniWrap.className="slot-mini";
+          const mcv=document.createElement("canvas"); mcv.width=34; mcv.height=44;
+          const mctx=mcv.getContext("2d");
+          mctx.fillStyle="#0d1020"; mctx.fillRect(0,0,34,44);
+          if(d){
+            try{
+              const sr=d.race||"human",sg=d.gender||"male";
+              const slotGloves=d.gloves||getDefaultIds(sr,sg).glovesId;
+              const slotAcc=d.accessory||"ac_none";
+              const mp={direction:1,appearance:{
+                raceId:sr,gender:sg,variantId:d.variantId||"base",
+                variantCustomizations:d.variantCustomizations||{},combatCustomization:d.combatCustomization||{},
+                faceId:d.faceId||getDefaultIds(sr,sg).faceId,faceColor:d.faceColor||null,
+                hairId:d.hair||getDefaultIds(sr,sg).hairId,hairColor:d.hairColor||"#1a1a1a",
+                topId:d.shirt||getDefaultIds(sr,sg).topId,bottomId:d.pants||getDefaultIds(sr,sg).bottomId,
+                shoesId:d.shoes||getDefaultIds(sr,sg).shoesId,
+                skinColor:d.skinColor||"#e8c898",eyeColor:d.eyeColor||"#3a2a1a",
+                glovesId:slotGloves,auraId:"a0",auraColor:"#fdd835",accessoryId:slotAcc,
+              }};
+              drawPlayer(mctx,17,42,mp,imageMap,null,{glovesId:slotGloves,auraId:"a0",auraColor:"#fdd835",accessoryId:slotAcc,auraPhase:0,viewKey:null});
+            }catch(e){console.warn("Error dibujando slot mini:",e);}
+          } else {
+            mctx.fillStyle="#2a3560"; mctx.font="22px sans-serif"; mctx.textAlign="center"; mctx.fillText("+",17,32);
+          }
+          miniWrap.appendChild(mcv);
+          const info=document.createElement("div"); info.className="slot-info";
+          const nm=document.createElement("div"); nm.className="slot-name"; nm.textContent=d?d.name:"VACÍO";
+          const lv=document.createElement("div"); lv.className="slot-level"; lv.textContent=d?`NIVEL ${d.level||1}`:"—";
+          info.appendChild(nm); info.appendChild(lv);
+          card.appendChild(num); card.appendChild(miniWrap); card.appendChild(info);
+          if(d){
+            const lb=document.createElement("button"); lb.className="slot-save-btn"; lb.textContent="CARGAR";
+            lb.addEventListener("click",e=>{e.stopPropagation(); void loadFromSlot(i);});
+            const db=document.createElement("button"); db.className="slot-delete-btn"; db.innerHTML="✕";
+            db.addEventListener("click",e=>{e.stopPropagation();deleteSlot(i);});
+            card.appendChild(lb); card.appendChild(db);
+            card.addEventListener("click",()=>saveToSlot(i)); card.title="Click para sobreescribir";
+          } else {
+            const sb=document.createElement("button"); sb.className="slot-save-btn"; sb.textContent="GUARDAR";
+            sb.addEventListener("click",e=>{e.stopPropagation();saveToSlot(i);});
+            card.appendChild(sb);
+          }
+          list.appendChild(card);
         }
       }
 
       function initEvents() {
-        toggleImport.addEventListener("click", () => {
-          importPanel.classList.toggle("hidden");
-          sheetUrlInput.focus();
+        document.querySelectorAll(".cat-btn").forEach(btn=>{
+          btn.addEventListener("click",()=>{
+            document.querySelectorAll(".cat-btn").forEach(b=>b.classList.remove("active"));
+            btn.classList.add("active");
+            activeCategory=btn.dataset.cat; pageState[activeCategory]=0;
+            renderItemsPanel(activeCategory);
+          });
         });
-
-        sheetFileInput.addEventListener("change", async (event) => {
-          const file = event.target.files?.[0];
-          event.target.value = "";
-          if (file) {
-            await handleFileImport(file);
+        document.getElementById("btnFlip").addEventListener("click",()=>{
+          uiFlipped=!uiFlipped; showToast(uiFlipped?"Vista espejo":"Vista normal","success");
+        });
+        document.getElementById("btnZoom").addEventListener("click",()=>{
+          uiZoom=uiZoom===1?1.25:uiZoom===1.25?0.8:1;
+          showToast(`Zoom: ${Math.round(uiZoom*100)}%`,"success");
+        });
+        document.getElementById("btnRotate").addEventListener("click",()=>
+          showToast("Rotación no disponible en esta versión","warning")
+        );
+        document.getElementById("charName").addEventListener("input",e=>{
+          charState.name=e.target.value||"Guerrero Z";
+        });
+        document.getElementById("btnExportCharacter").addEventListener("click",()=>{
+          exportCharacterToJson();
+        });
+        document.getElementById("btnImportCharacter").addEventListener("click",()=>{
+          document.getElementById("characterImportInput").click();
+        });
+        document.getElementById("characterImportInput").addEventListener("change", e => {
+          const file = e.target.files && e.target.files[0];
+          if (file) importCharacterFromJson(file);
+          e.target.value = "";
+        });
+        document.getElementById("btnStart").addEventListener("click",()=>{
+          try {
+            const slotIndex = activeSlotIndex;
+            saveToSlot(slotIndex);
+            showToast(`Iniciando con slot ${slotIndex+1}...`,"success");
+            let attempts = 0;
+            const confirmAndRedirect = () => {
+              try {
+                const raw = localStorage.getItem(LS_KEY);
+                if (raw) {
+                  const parsed = JSON.parse(raw);
+                  if (Array.isArray(parsed) && parsed[slotIndex] && parsed[slotIndex].name) {
+                    window.location.href = `game.html?slot=${slotIndex}`;
+                    return;
+                  }
+                }
+              } catch (e) {}
+              attempts++;
+              if (attempts < 6) setTimeout(confirmAndRedirect, 150);
+              else {
+                showToast('No se pudo confirmar guardado — intentando de todos modos','warning');
+                window.location.href = `game.html?slot=${slotIndex}`;
+              }
+            };
+            setTimeout(confirmAndRedirect, 100);
+          } catch(e) {
+            console.error("[DC] Error en btnStart:",e);
+            showToast("Error al iniciar — revisá la consola","error");
           }
         });
+      }
 
-        loadUrlBtn.addEventListener("click", async () => {
-          await handleUrlImport(sheetUrlInput.value.trim());
-        });
-
-        sheetUrlInput.addEventListener("keydown", async (event) => {
-          if (event.key === "Enter") {
-            event.preventDefault();
-            await handleUrlImport(sheetUrlInput.value.trim());
-          }
-        });
+      function showToast(msg,type="success"){
+        const c=document.getElementById("toastContainer");
+        const t=document.createElement("div"); t.className=`toast ${type}`; t.textContent=msg;
+        c.appendChild(t); setTimeout(()=>t.remove(),3000);
       }
 
       async function init() {
-        if (!window.CharacterSystem) {
-          document.body.innerHTML = '<p style="color:#f44;padding:40px;font-family:monospace">ERROR: character-system.js no encontrado.</p>';
-          return;
-        }
-
-        const {
-          player: enginePlayer,
-          SpriteAnimator: EngineAnimator,
-          initPlayer: engineInitPlayer,
-          preloadAssets: enginePreloadAssets,
-          drawPlayer: engineDrawPlayer,
-        } = window.CharacterSystem;
-
-        window.player = enginePlayer;
-        window.SpriteAnimator = EngineAnimator;
-        window.initPlayer = engineInitPlayer;
-        window.preloadAssets = enginePreloadAssets;
-        window.drawPlayer = engineDrawPlayer;
-
-        initPlayer();
-        player.appearance = player.appearance || {};
-        player.appearance.variantId = player.appearance.variantId || "base";
-        player.appearance.variantCustomizations = player.appearance.variantCustomizations || {};
-
+        loadSlots();
         try {
-          state.imageMap = await preloadAssets("", { quiet: true });
-          sheetStatus.textContent = "Sprites y assets cargados. Importá tu spritesheet para ver la grilla.";
-        } catch (error) {
-          console.error(error);
-          sheetStatus.textContent = "No se pudieron cargar los assets base.";
-          showToast("Falló la carga inicial de assets.", "error");
+          initPlayer();
+          animator  = new SpriteAnimator("idle");
+          finalAnim = new SpriteAnimator("idle");
+          initViewAnimBar();
+          showToast("Cargando sprites...","warning");
+          await _restoreAccessoriesFromLS();
+          _restoreFreeCustomizationFromLS();
+          imageMap = await preloadAssets("",{quiet:true});
+          const loaded=Object.values(imageMap).filter(Boolean).length;
+          showToast(loaded>0?`${loaded} sprites cargados`:"Modo procedimental activo",loaded>0?"success":"warning");
+          if(savedSlots[activeSlotIndex]){
+            try {
+              await loadFromSlot(activeSlotIndex);
+            } catch(err) {
+              console.warn("Slot corrupto:",err);
+              savedSlots[activeSlotIndex] = null;
+              saveSlots();
+              showToast("Slot inicializado por defecto","warning");
+            }
+          }
+          await _loadImportedSheetsOnStart();
+          _attachImportedSheetEvents();
+          renderItemsPanel("race"); renderSlots(); updateStats();
+        } catch(err){
+          console.error(err); imageMap=imageMap||{};
+          showToast("Falló parte de la carga — modo procedural activo.","error");
+          try{initViewAnimBar();renderItemsPanel("race");renderSlots();updateStats();}
+          catch(e2){console.error(e2);}
+        } finally {
+          initEvents();
+          requestAnimationFrame(loop);
         }
-
-        buildPreviewGrid();
-        initEvents();
-        requestAnimationFrame(loop);
+        setTimeout(()=>showToast("¡Bienvenido a Dragon Creator Z!","success"),500);
       }
 
-      init();
+      document.addEventListener("DOMContentLoaded", init);
     </script>
   </body>
 </html>
