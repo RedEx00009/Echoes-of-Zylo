@@ -1,4 +1,3 @@
-cat > /mnt/user-data/outputs/index.html << 'HTMLEOF'
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -16,7 +15,65 @@ cat > /mnt/user-data/outputs/index.html << 'HTMLEOF'
     }
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     html,body{height:100%;overflow:hidden;background:var(--bg-deep);color:var(--tp);font-family:var(--fb);font-size:14px}
+    @media(max-width:1024px){html,body{height:auto;overflow:auto}}
     @media(max-width:768px){html,body{height:auto;overflow:auto}}
+
+    /* MOBILE / TABLET */
+    @media (max-width:1024px) {
+      .creator-layout{display:flex;flex-direction:column;height:auto;min-height:100vh;overflow:auto;gap:10px;padding:0 10px 10px}
+      .left-panel,.center-panel,.right-panel{width:100%;min-height:0;max-width:100%;border:none;background:transparent}
+      .left-panel{border-right:none}
+      .right-panel{border-left:none}
+      .cat-tabs{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:8px 0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
+      .cat-tabs::-webkit-scrollbar{display:none}
+      .cat-tab{flex:1 1 90px;min-width:80px;font-size:8px;padding:8px 6px}
+      .left-scroll{max-height:none;overflow:visible;padding:0}
+      .anim-toolbar{flex-wrap:wrap;gap:6px;padding:8px 8px 6px}
+      .sheet-tab{flex:1 1 30%;min-width:100px;font-size:8px;padding:8px 6px}
+      .anim-panels-wrap{border:none}
+      .anim-row{flex-wrap:wrap}
+      .anim-row-label{width:100%;margin-bottom:4px}
+      .anim-btn,.view-btn-static{flex:1 1 140px;min-width:120px}
+      .preview-area{padding:12px 0}
+      .preview-canvas-wrap{width:100%;max-width:320px}
+      #previewCanvas{width:100%;height:auto;max-width:320px}
+      .name-section,.stats-section{padding:10px 0}
+      .stats-title{margin-bottom:10px}
+      .stat-row{flex-wrap:wrap;gap:6px}
+      .stat-name{width:auto;flex:0 0 auto}
+      .stat-val{min-width:40px}
+      .final-canvas-wrap{padding:10px}
+      #finalCanvas{width:100%;height:auto;max-width:320px}
+      .final-controls{flex-wrap:wrap;justify-content:center}
+      .ctrl-btn{flex:1 1 30%;min-width:100px}
+      .save-section{padding:10px 0;max-height:none}
+      .slot-actions{flex-wrap:wrap}
+      .slot-action-btn{flex:1 1 48%}
+      .start-btn{width:100%;margin:0;padding:12px}
+    }
+
+    @media (max-width:640px) {
+      .app-header{padding:10px 14px}
+      .header-logo{font-size:20px}
+      .header-title{font-size:16px;letter-spacing:2px}
+      .header-sub{font-size:8px}
+      .cat-tab{font-size:7px;padding:8px 4px;min-width:70px}
+      .item-grid{grid-template-columns:repeat(2,1fr)}
+      .item-card{padding:8px 6px;font-size:8px}
+      .color-chip{width:20px;height:20px}
+      .gender-btn{font-size:7px;padding:7px 6px}
+      .sheet-tab{font-size:7px;padding:7px 5px}
+      .anim-btn,.view-btn-static{font-size:7px;padding:6px 8px;min-width:100px}
+      .name-input{font-size:12px;padding:8px 10px}
+      .stat-name{font-size:9px}
+      .stat-val{font-size:8px}
+      .slot-num{font-size:12px;width:18px}
+      .slot-mini{width:28px;height:38px}
+      .slot-save-btn{font-size:6px;padding:4px 6px}
+      .slot-action-btn{font-size:7px;padding:8px}
+      .start-btn{font-size:10px}
+      #toastContainer{bottom:12px;right:12px;left:12px}
+    }
 
     /* ── HEADER ── */
     .app-header{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;height:52px;background:linear-gradient(90deg,#0d1020,#111830,#0d1020);border-bottom:2px solid var(--border);box-shadow:0 2px 20px rgba(74,106,255,.25);position:relative;z-index:10}
@@ -330,6 +387,19 @@ cat > /mnt/user-data/outputs/index.html << 'HTMLEOF'
           <input type="color" id="eyeColorPicker" class="color-picker" value="#3a2a1a"/>
           <span class="color-hex" id="eyeColorHex">#3A2A1A</span>
         </div>
+        <div class="sec-label">CEJAS</div>
+        <div class="color-chips" id="browColorChips"></div>
+        <div class="color-picker-row">
+          <input type="color" id="browColorPicker" class="color-picker" value="#1a1a1a"/>
+          <span class="color-hex" id="browColorHex">#1A1A1A</span>
+        </div>
+        <div class="sec-label">PUPILAS</div>
+        <div class="color-chips" id="pupilColorChips"></div>
+        <div class="color-picker-row">
+          <input type="color" id="pupilColorPicker" class="color-picker" value="#1a1a1a"/>
+          <span class="color-hex" id="pupilColorHex">#1A1A1A</span>
+        </div>
+        <button id="btnPaintBrowPupil" class="slot-action-btn" style="margin-top:10px;width:100%;">🎨 APLICAR COLORES DE CEJAS Y PUPILAS</button>
       </div>
 
       <!-- ── IMPORTAR SKIN PRINCIPAL ── -->
@@ -432,6 +502,7 @@ if (!window.CharacterSystem) {
 const {
   player, RACE_CATALOG, AURAS_CATALOG,
   ACCESSORIES_CATALOG, ACCESSORY_TYPES,
+  FACE_CATALOG_MALE, FACE_CATALOG_FEMALE, FACE_CATALOG_NAMEKIAN, FACE_CATALOG_FRIEZA,
   addUserAccessory, removeUserAccessory, restoreUserAccessories,
   VIEW_META, ACTIONS_META, COMBAT_VIEW_META, COMBAT_ACTIONS_META, SPECIAL_ACTIONS_META,
   SpriteAnimator, initPlayer, preloadAssets, drawPlayer,
@@ -440,10 +511,129 @@ const {
   isCompatibleSheet, getIdleFrameCoords,
 } = window.CharacterSystem;
 
+// Array con todos los catálogos de cara (para poder inyectar caras importadas en todos)
+const ALL_FACE_CATALOGS = [FACE_CATALOG_MALE, FACE_CATALOG_FEMALE, FACE_CATALOG_NAMEKIAN, FACE_CATALOG_FRIEZA];
+
+// ════════════════════════════════════════════════════════════════════
+//  PATCH: tintFaceDetailed — versión adaptada para sprites RGB puros
+//  donde el fondo es negro, cejas son rojo oscuro puro,
+//  iris es gris neutro y borde del ojo es gris muy oscuro.
+//  Se dibuja con globalCompositeOperation="screen" para que el negro
+//  desaparezca sobre la skin base.
+// ════════════════════════════════════════════════════════════════════
+window.CharacterSystem.tintFaceDetailed = function tintFaceDetailedPatched(
+  faceImg, browColor, pupilColor, faceDef, w, h, frameCoords
+) {
+  if (!faceImg || !faceImg.complete || !faceImg.naturalWidth) return null;
+
+  const _hexToRgb = window.CharacterSystem._hexToRgb;
+  const _hslToRgb = window.CharacterSystem._hslToRgb;
+  const _rgbToHsl = window.CharacterSystem._rgbToHsl;
+
+  // ── Extraer el frame a tamaño nativo ──────────────────────────
+  const srcW = frameCoords ? frameCoords.fw : faceImg.naturalWidth;
+  const srcH = frameCoords ? frameCoords.fh : faceImg.naturalHeight;
+  const tmp  = document.createElement("canvas");
+  tmp.width  = srcW; tmp.height = srcH;
+  const tCtx = tmp.getContext("2d");
+  tCtx.imageSmoothingEnabled = false;
+  if (frameCoords)
+    tCtx.drawImage(faceImg, frameCoords.srcX, frameCoords.srcY, srcW, srcH, 0, 0, srcW, srcH);
+  else
+    tCtx.drawImage(faceImg, 0, 0, srcW, srcH, 0, 0, srcW, srcH);
+
+  // ── Leer píxeles ──────────────────────────────────────────────
+  let imgData;
+  try { imgData = tCtx.getImageData(0, 0, srcW, srcH); }
+  catch(e) {
+    // CORS fallback
+    const fb = document.createElement("canvas"); fb.width = w; fb.height = h;
+    const fCtx = fb.getContext("2d"); fCtx.imageSmoothingEnabled = false;
+    if (frameCoords) fCtx.drawImage(faceImg, frameCoords.srcX, frameCoords.srcY, srcW, srcH, 0, 0, w, h);
+    else             fCtx.drawImage(faceImg, 0, 0, srcW, srcH, 0, 0, w, h);
+    return { canvas: fb, useScreen: true };
+  }
+
+  const sd   = imgData.data;
+  const bRgb = _hexToRgb(browColor  || "#1a1a1a");
+  const pRgb = _hexToRgb(pupilColor || "#2979ff");
+  const { h: bH, s: bS, l: bL } = _rgbToHsl(bRgb.r, bRgb.g, bRgb.b);
+  const { h: pH, s: pS, l: pL } = _rgbToHsl(pRgb.r, pRgb.g, pRgb.b);
+
+  for (let i = 0; i < sd.length; i += 4) {
+    const r = sd[i], g = sd[i+1], b = sd[i+2];
+    // Ignorar si hay canal alpha y es transparente
+    if (sd.length > i+3 && sd[i+3] < 8) continue;
+
+    const mx  = Math.max(r, g, b);
+    const mn  = Math.min(r, g, b);
+    const lum = (mx + mn) / 510;   // 0-1
+
+    // ── NEGRO PURO (fondo) → dejar; screen lo ocultará ──────────
+    if (lum < 0.04) continue;
+
+    // ── BLANCO DEL OJO → dejar tal cual ─────────────────────────
+    if (lum > 0.70 && (mx - mn) < 20) continue;
+
+    // ── CEJAS: detectar por canal rojo dominante ─────────────────
+    //    En el sprite: r≈80-95, g≈0-5, b≈0-5  →  rojo puro oscuro
+    const isRedDominant = r > g * 3 && r > b * 3 && r > 25;
+    if (isRedDominant) {
+      // Remap luminosidad original al rango del color de ceja elegido
+      const lumBase = Math.max(0.06, Math.min(0.88, lum * 1.4));
+      const targetL = bS < 0.08
+        ? lumBase                               // Si brow es negro/gris: mantener lum
+        : Math.max(0.06, bL * 0.5 + lumBase * 0.5);
+      const { r: nr, g: ng, b: nb } = _hslToRgb(bH, Math.min(1, bS * 1.2), targetL);
+      sd[i] = nr; sd[i+1] = ng; sd[i+2] = nb;
+      continue;
+    }
+
+    // ── IRIS / PUPILA: grises neutros (borde oscuro + iris medio) ─
+    //    Saturación baja, cualquier luminosidad entre 0.04 y 0.70
+    const saturation = mx > 0 ? (mx - mn) / mx : 0;
+    if (saturation < 0.25) {
+      if (lum < 0.12) {
+        // Borde muy oscuro del ojo → teñir muy suave (oscurecer el color iris)
+        const targetL = Math.max(0.03, pL * 0.25);
+        const { r: nr, g: ng, b: nb } = _hslToRgb(pH, pS, targetL);
+        sd[i] = nr; sd[i+1] = ng; sd[i+2] = nb;
+      } else {
+        // Iris: gris medio → mapear al color de pupila elegido
+        const lo = Math.max(pL * 0.15, 0.04);
+        const hi = Math.min(pL * 1.9, 0.92);
+        const targetL = lo + lum * (hi - lo);
+        const { r: nr, g: ng, b: nb } = _hslToRgb(pH, Math.min(1, pS * 1.1), Math.max(0, Math.min(1, targetL)));
+        sd[i] = nr; sd[i+1] = ng; sd[i+2] = nb;
+      }
+      continue;
+    }
+
+    // ── Cualquier otro color (líneas de contorno saturadas, etc.) ─
+    // Teñir con el color del iris como fallback
+    const { l: ol } = _rgbToHsl(r, g, b);
+    const { r: nr, g: ng, b: nb } = _hslToRgb(pH, pS, Math.max(0.04, Math.min(0.9, ol)));
+    sd[i] = nr; sd[i+1] = ng; sd[i+2] = nb;
+  }
+
+  tCtx.putImageData(imgData, 0, 0);
+
+  // ── Escalar al tamaño de display ──────────────────────────────
+  const off = document.createElement("canvas");
+  off.width = w; off.height = h;
+  const ctx = off.getContext("2d");
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(tmp, 0, 0, srcW, srcH, 0, 0, w, h);
+
+  return { canvas: off, useScreen: true };
+};
+
 /* ════ Paletas ════ */
 const SKIN_PALETTE  = ["#f5d5a8","#e8c898","#d4a574","#c07840","#8d5524","#4caf50","#9c88ff","#c0c0c0","#f0e0f0"];
 const HAIR_PALETTE  = ["#1a1a1a","#8B4513","#c0840a","#ffd700","#ff4400","#00e5ff","#aa00ff","#e8eaf6","#ff69b4","#00e676"];
 const EYE_PALETTE   = ["#1a1a1a","#f5f5f5","#00e676","#2979ff","#b71c1c","#aa00ff","#ffd600","#ff6a00","#00e5ff","#ff69b4"];
+const BROW_PALETTE  = ["#1a1a1a","#4e342e","#5d4037","#8d6e63","#795548","#ff1744","#d50000","#b71c1c","#e65100","#ff6d00","#f9a825","#ffd600","#33691e","#1b5e20","#006064","#01579b","#4a148c","#880e4f","#f5f5f5","#9e9e9e"];
+const PUPIL_PALETTE = ["#1a1a1a","#4e342e","#2e7d32","#00c853","#00e5ff","#2979ff","#1565c0","#0d47a1","#aa00ff","#7c4dff","#e040fb","#c62828","#ff6d00","#ffd600","#f5f5f5","#b0bec5","#ff69b4","#00bfa5","#558b2f","#37474f"];
 const AURA_PALETTE  = ["#fdd835","#00b0ff","#ff1744","#aa00ff","#00e676","#e8eaf6","#90a4ae","#ff6a00"];
 
 /* ════ Estado global ════ */
@@ -715,6 +905,21 @@ function refreshColorPicker(pickerId, hexId, chipsId, val, palette) {
   });
 }
 
+function setFaceDetailColors(browColor, pupilColor) {
+  player.appearance.browColor = browColor;
+  player.appearance.pupilColor = pupilColor;
+  refreshColorPicker("browColorPicker","browColorHex","browColorChips", browColor, BROW_PALETTE);
+  refreshColorPicker("pupilColorPicker","pupilColorHex","pupilColorChips", pupilColor, PUPIL_PALETTE);
+  invalidateHairCache();
+}
+
+function paintBrowsAndPupils() {
+  const browColor  = document.getElementById("browColorPicker")?.value  || player.appearance.browColor  || "#1a1a1a";
+  const pupilColor = document.getElementById("pupilColorPicker")?.value || player.appearance.pupilColor || "#2979ff";
+  setFaceDetailColors(browColor, pupilColor);
+  showToast("Colores de cejas y pupilas aplicados","success");
+}
+
 /* ════ Tabs de categoría ════ */
 function initCatTabs() {
   document.querySelectorAll(".cat-tab").forEach(tab => {
@@ -782,14 +987,17 @@ function _setImportStatus(lblId, fnId, filename, loaded) {
 // Accesorios de capas activos (para guardar en slot)
 const layerImports = {};
 
+// ID fijo para la cara importada (para poder limpiarla/actualizarla)
+const IMPORTED_FACE_SPRITE_KEY = "face_imported_custom";
+
 async function _handleLayerImport(file, layer) {
   const dataURL = await _readFileAsDataURL(file);
   const img     = await _loadImageFromDataURL(dataURL);
   imageMap[`imported_${layer}`] = img;
   layerImports[layer] = dataURL;
 
+  // ── SKIN PRINCIPAL ──────────────────────────────────────────
   if (layer === "skin") {
-    // Skin principal → sprite base del personaje
     const variantId = player.appearance.variantId || "base";
     player.appearance.variantCustomizations ||= {};
     const cfg = player.appearance.variantCustomizations[variantId] || {};
@@ -808,39 +1016,80 @@ async function _handleLayerImport(file, layer) {
     return;
   }
 
-  // Crear/actualizar entrada en ACCESSORIES_CATALOG
-  const layerToSlot = { cara:"over_shirt", top:"over_shirt", bottom:"over_shirt", shoes:"over_shirt", gloves:"over_shirt" };
+  // ── CARA — tratamiento especial ─────────────────────────────
+  // La cara importada DEBE registrarse en los face catalogs con tintable:true
+  // y eyeColor:true para que drawPlayer la encuentre y llame tintFaceDetailed.
+  // La clave es: spriteKey apunta a imageMap, y imageMap[spriteKey] = img.
+  if (layer === "cara") {
+    const faceId = "face_imported_custom";
+
+    // Registrar imagen en imageMap con el spriteKey correcto
+    imageMap[IMPORTED_FACE_SPRITE_KEY] = img;
+
+    // Entrada de catálogo con todos los flags necesarios para tinting
+    const faceCatalogEntry = {
+      id:       faceId,
+      name:     file.name.replace(/\.png$/i,"").slice(0,18) || "Cara Custom",
+      spriteKey: IMPORTED_FACE_SPRITE_KEY,
+      tintable: true,
+      eyeColor: true,   // <-- esto hace que drawPlayer llame tintFaceDetailed
+    };
+
+    // Inyectar (o reemplazar si ya existe) en TODOS los face catalogs
+    ALL_FACE_CATALOGS.forEach(cat => {
+      const existingIdx = cat.findIndex(e => e.id === faceId);
+      if (existingIdx >= 0) cat[existingIdx] = faceCatalogEntry;
+      else cat.push(faceCatalogEntry);
+    });
+
+    // Apuntar faceId del personaje a la entrada importada
+    player.appearance.faceId = faceId;
+
+    // Asegurarse de que browColor y pupilColor tengan valores por defecto
+    player.appearance.browColor  = player.appearance.browColor  || "#1a1a1a";
+    player.appearance.pupilColor = player.appearance.pupilColor || "#2979ff";
+
+    invalidateHairCache();
+    const labelMap = { cara:"lblImportCara" };
+    const fnMap    = { cara:"fnCara" };
+    _setImportStatus(labelMap[layer], fnMap[layer], file.name, true);
+    buildAllGrids();
+    showToast(`Cara importada: ${file.name} (usá CEJAS y IRIS para colorearla)`, "success");
+    return;
+  }
+
+  // ── RESTO DE CAPAS (top, bottom, shoes, gloves) ─────────────
+  // Estas van como accesorio de sprite sheet ya que son capas simples sobre la skin.
   const accId = `layer_import_${layer}`;
   const existing = ACCESSORIES_CATALOG.findIndex(a => a.id === accId);
   const entry = {
-    id: accId, name: `Import:${layer}`, type:"other",
-    slot: layerToSlot[layer]||"over_shirt",
+    id: accId, name: `Import:${layer}`, type:"other", slot:"over_shirt",
     color:null, userImage:img, spriteImage:img,
     dataURL, combatDataURL:dataURL, combatUserImage:img, combatSpriteImage:img,
     specialDataURL:dataURL, specialUserImage:img, specialSpriteImage:img,
-    scale:1,animFrames:6,rowCount:0,combatScale:1,combatAnimFrames:6,combatRowCount:0,
-    specialScale:1,specialAnimFrames:6,specialRowCount:0,isFreeCustomization:false
+    scale:1, animFrames:6, rowCount:0,
+    combatScale:1, combatAnimFrames:6, combatRowCount:0,
+    specialScale:1, specialAnimFrames:6, specialRowCount:0,
+    isFreeCustomization:false,
   };
   if (existing >= 0) ACCESSORIES_CATALOG[existing] = entry;
   else ACCESSORIES_CATALOG.push(entry);
   imageMap[accId] = img;
 
-  // Asignar al prop correcto
   const layerPropMap = {
-    cara:   () => { player.appearance.faceId = accId; },
-    top:    () => { player.appearance.topId = accId; },
+    top:    () => { player.appearance.topId    = accId; },
     bottom: () => { player.appearance.bottomId = accId; },
-    shoes:  () => { player.appearance.shoesId = accId; },
+    shoes:  () => { player.appearance.shoesId  = accId; },
     gloves: () => { charState.glovesId = accId; player.appearance.glovesId = accId; },
   };
   layerPropMap[layer]?.();
   invalidateHairCache();
 
-  const labelMap = { cara:"lblImportCara", top:"lblImportTop", bottom:"lblImportBottom", shoes:"lblImportShoes", gloves:"lblImportGloves" };
-  const fnMap    = { cara:"fnCara", top:"fnTop", bottom:"fnBottom", shoes:"fnShoes", gloves:"fnGloves" };
+  const labelMap = { top:"lblImportTop", bottom:"lblImportBottom", shoes:"lblImportShoes", gloves:"lblImportGloves" };
+  const fnMap    = { top:"fnTop", bottom:"fnBottom", shoes:"fnShoes", gloves:"fnGloves" };
   _setImportStatus(labelMap[layer], fnMap[layer], file.name, true);
   buildAllGrids();
-  showToast(`${layer.toUpperCase()} importado: ${file.name}`,"success");
+  showToast(`${layer.toUpperCase()} importado: ${file.name}`, "success");
 }
 
 // Importar accesorio
@@ -1092,6 +1341,7 @@ function saveToSlot(i) {
       shoesId:player.appearance.shoesId, glovesId:charState.glovesId||"gm0",
       auraId:charState.auraId||"a0", auraColor:charState.auraColor||"#fdd835",
       skinColor:player.appearance.skinColor, eyeColor:player.appearance.eyeColor,
+      browColor:player.appearance.browColor||"#1a1a1a", pupilColor:player.appearance.pupilColor||"#1a1a1a",
       hairColor:player.appearance.hairColor,
       accessoryId:charState.accessoryId||"ac_none",
       spriteSheets:{sheet,base:sheet,pelea:sheet,especial:sheet},
@@ -1112,6 +1362,8 @@ async function loadFromSlot(i) {
     player.appearance.variantId=d.variantId||"base";
     player.appearance.skinColor=d.skinColor||"#e8c898";
     player.appearance.eyeColor =d.eyeColor||"#3a2a1a";
+    player.appearance.browColor=d.browColor||"#1a1a1a";
+    player.appearance.pupilColor=d.pupilColor||"#1a1a1a";
     player.appearance.hairColor=d.hairColor||"#1a1a1a";
     player.appearance.faceId   =d.faceId||"fm0";
     player.appearance.hairId   =d.hairId||"hm1";
@@ -1144,7 +1396,23 @@ async function loadFromSlot(i) {
             layerImports.skin=dataURL;
             _setImportStatus("lblImportSkin","fnSkin","Cargado",true);
           });
-          else {
+          else if (layer === "cara") {
+            // Cara: inyectar en face catalogs con tintable+eyeColor=true
+            layerImports.cara = dataURL;
+            imageMap[IMPORTED_FACE_SPRITE_KEY] = img;
+            const faceCatalogEntry = {
+              id: "face_imported_custom", name: "Cara Custom",
+              spriteKey: IMPORTED_FACE_SPRITE_KEY, tintable: true, eyeColor: true,
+            };
+            ALL_FACE_CATALOGS.forEach(cat => {
+              const idx = cat.findIndex(e => e.id === "face_imported_custom");
+              if (idx >= 0) cat[idx] = faceCatalogEntry; else cat.push(faceCatalogEntry);
+            });
+            player.appearance.faceId = "face_imported_custom";
+            player.appearance.browColor  = player.appearance.browColor  || "#1a1a1a";
+            player.appearance.pupilColor = player.appearance.pupilColor || "#2979ff";
+            _setImportStatus("lblImportCara","fnCara","Cargado",true);
+          } else {
             layerImports[layer]=dataURL;
             imageMap[`imported_${layer}`]=img;
             imageMap[`layer_import_${layer}`]=img;
@@ -1157,12 +1425,12 @@ async function loadFromSlot(i) {
               scale:1,animFrames:6,rowCount:0,combatScale:1,combatAnimFrames:6,combatRowCount:0,
               specialScale:1,specialAnimFrames:6,specialRowCount:0,isFreeCustomization:false};
             if(ex>=0) ACCESSORIES_CATALOG[ex]=entry; else ACCESSORIES_CATALOG.push(entry);
-            const propMap={cara:()=>{player.appearance.faceId=accId;},top:()=>{player.appearance.topId=accId;},
+            const propMap={top:()=>{player.appearance.topId=accId;},
               bottom:()=>{player.appearance.bottomId=accId;},shoes:()=>{player.appearance.shoesId=accId;},
               gloves:()=>{charState.glovesId=accId;player.appearance.glovesId=accId;}};
             propMap[layer]?.();
-            const lblMap={cara:"lblImportCara",top:"lblImportTop",bottom:"lblImportBottom",shoes:"lblImportShoes",gloves:"lblImportGloves"};
-            const fnMap ={cara:"fnCara",top:"fnTop",bottom:"fnBottom",shoes:"fnShoes",gloves:"fnGloves"};
+            const lblMap={top:"lblImportTop",bottom:"lblImportBottom",shoes:"lblImportShoes",gloves:"lblImportGloves"};
+            const fnMap ={top:"fnTop",bottom:"fnBottom",shoes:"fnShoes",gloves:"fnGloves"};
             _setImportStatus(lblMap[layer],fnMap[layer],"Cargado",true);
           }
         } catch(e){ console.warn(`No se pudo restaurar capa ${layer}:`,e); }
@@ -1187,8 +1455,10 @@ async function loadFromSlot(i) {
     invalidateHairCache();
     buildAllGrids();
     refreshColorPicker("skinColorPicker","skinColorHex","skinColorChips",player.appearance.skinColor,SKIN_PALETTE);
-    refreshColorPicker("hairColorPicker","hairColorHex","hairColorChips",player.appearance.hairColor,HAIR_PALETTE);
     refreshColorPicker("eyeColorPicker","eyeColorHex","eyeColorChips",player.appearance.eyeColor,EYE_PALETTE);
+    refreshColorPicker("browColorPicker","browColorHex","browColorChips",player.appearance.browColor||"#1a1a1a",BROW_PALETTE);
+    refreshColorPicker("pupilColorPicker","pupilColorHex","pupilColorChips",player.appearance.pupilColor||"#1a1a1a",PUPIL_PALETTE);
+    refreshColorPicker("hairColorPicker","hairColorHex","hairColorChips",player.appearance.hairColor,HAIR_PALETTE);
     refreshColorPicker("auraColorPicker","auraColorHex","auraColorChips",charState.auraColor,AURA_PALETTE);
     activeSlotIndex=i; localStorage.setItem(LS_SLOT,String(i));
     renderSlots(); updateStats();
@@ -1220,7 +1490,8 @@ function renderSlots() {
           faceId:d.faceId||getDefaultIds(sr,sg).faceId,hairId:d.hairId||getDefaultIds(sr,sg).hairId,
           topId:d.topId||getDefaultIds(sr,sg).topId,bottomId:d.bottomId||getDefaultIds(sr,sg).bottomId,
           shoesId:d.shoesId||getDefaultIds(sr,sg).shoesId,
-          skinColor:d.skinColor||"#e8c898",hairColor:d.hairColor||"#1a1a1a",
+          skinColor:d.skinColor||"#e8c898",eyeColor:d.eyeColor||"#3a2a1a",browColor:d.browColor||"#1a1a1a",pupilColor:d.pupilColor||"#1a1a1a",
+          hairColor:d.hairColor||"#1a1a1a",
           glovesId:slotGloves,auraId:"a0",auraColor:"#fdd835",accessoryId:"ac_none"}};
         drawPlayer(mctx,16,40,mp,imageMap,null,{glovesId:slotGloves,auraId:"a0",auraColor:"#fdd835",accessoryId:"ac_none",auraPhase:0,viewKey:null});
       }catch(e){console.warn(e);}
@@ -1258,7 +1529,8 @@ function exportCharacterToJson() {
     name:document.getElementById("charName").value||"Guerrero Z",
     appearance:{
       raceId:_currentRace(), gender:_currentGender(), skinColor:player.appearance.skinColor,
-      eyeColor:player.appearance.eyeColor, hairColor:player.appearance.hairColor,
+      eyeColor:player.appearance.eyeColor, browColor:player.appearance.browColor||null, pupilColor:player.appearance.pupilColor||null,
+      hairColor:player.appearance.hairColor,
       faceId:player.appearance.faceId, hairId:player.appearance.hairId,
       topId:player.appearance.topId, bottomId:player.appearance.bottomId,
       shoesId:player.appearance.shoesId, glovesId:charState.glovesId||"gm0",
@@ -1286,6 +1558,8 @@ async function importCharacterFromJson(file) {
       if(app.gender)    player.appearance.gender=app.gender;
       if(app.skinColor) player.appearance.skinColor=app.skinColor;
       if(app.eyeColor)  player.appearance.eyeColor=app.eyeColor;
+      if(app.browColor) player.appearance.browColor=app.browColor;
+      if(app.pupilColor)player.appearance.pupilColor=app.pupilColor;
       if(app.hairColor) player.appearance.hairColor=app.hairColor;
       if(app.faceId)    player.appearance.faceId=app.faceId;
       if(app.hairId)    player.appearance.hairId=app.hairId;
@@ -1297,7 +1571,14 @@ async function importCharacterFromJson(file) {
       if(app.auraColor) {player.appearance.auraColor=app.auraColor;charState.auraColor=app.auraColor;}
       if(app.accessoryId){player.appearance.accessoryId=app.accessoryId;charState.accessoryId=app.accessoryId;}
       if(payload.name)  document.getElementById("charName").value=payload.name;
-      invalidateHairCache(); buildAllGrids(); updateStats();
+      invalidateHairCache(); buildAllGrids();
+      refreshColorPicker("skinColorPicker","skinColorHex","skinColorChips",player.appearance.skinColor,SKIN_PALETTE);
+      refreshColorPicker("eyeColorPicker","eyeColorHex","eyeColorChips",player.appearance.eyeColor,EYE_PALETTE);
+      refreshColorPicker("browColorPicker","browColorHex","browColorChips",player.appearance.browColor||"#1a1a1a",BROW_PALETTE);
+      refreshColorPicker("pupilColorPicker","pupilColorHex","pupilColorChips",player.appearance.pupilColor||"#1a1a1a",PUPIL_PALETTE);
+      refreshColorPicker("hairColorPicker","hairColorHex","hairColorChips",player.appearance.hairColor,HAIR_PALETTE);
+      refreshColorPicker("auraColorPicker","auraColorHex","auraColorChips",charState.auraColor,AURA_PALETTE);
+      updateStats();
       showToast("Personaje importado","success");
     }catch(err){console.error(err);showToast("Archivo JSON no válido","error");}
   };
@@ -1317,6 +1598,7 @@ function initEvents() {
     if(file) importCharacterFromJson(file);
     e.target.value="";
   });
+  document.getElementById("btnPaintBrowPupil").addEventListener("click",()=>paintBrowsAndPupils());
   document.getElementById("btnStart").addEventListener("click",()=>{
     try{
       saveToSlot(activeSlotIndex);
@@ -1345,6 +1627,10 @@ async function init() {
     // Color pickers
     buildColorPicker("skinColorChips","skinColorPicker","skinColorHex",SKIN_PALETTE,"skinColor","skinColor");
     buildColorPicker("eyeColorChips","eyeColorPicker","eyeColorHex",EYE_PALETTE,"eyeColor","eyeColor");
+    if (!player.appearance.browColor)  player.appearance.browColor  = "#1a1a1a";
+    if (!player.appearance.pupilColor) player.appearance.pupilColor = "#1a1a1a";
+    buildColorPicker("browColorChips","browColorPicker","browColorHex",BROW_PALETTE,"browColor","browColor");
+    buildColorPicker("pupilColorChips","pupilColorPicker","pupilColorHex",PUPIL_PALETTE,"pupilColor","pupilColor");
     buildColorPicker("hairColorChips","hairColorPicker","hairColorHex",HAIR_PALETTE,"hairColor","hairColor");
     buildColorPicker("auraColorChips","auraColorPicker","auraColorHex",AURA_PALETTE,"auraColor","auraColor",true);
     if (savedSlots[activeSlotIndex]) {
@@ -1367,5 +1653,3 @@ document.addEventListener("DOMContentLoaded", init);
 </script>
 </body>
 </html>
-HTMLEOF
-echo "Done - $(wc -c < /mnt/user-data/outputs/index.html) bytes"
