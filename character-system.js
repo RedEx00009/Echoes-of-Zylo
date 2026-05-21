@@ -1357,53 +1357,25 @@
     if (faceImg && faceImg.complete && faceImg.naturalWidth) {
       if (faceDef && faceDef.tintable) {
         if (faceDef.eyeColor) {
-          // Obtener coordenadas del frame actual de la animación
-          let sx = 0, sy = 0, sw = FRAME_W, sh = FRAME_H;
-          const faceSheet = isCompatibleSheet(faceImg);
-          
-          if (faceSheet && animator) {
-            const r = animator.battleMode || animator.specialMode ? animator.getLayerFrameCoords(faceImg) : animator.getFrameCoords(faceImg);
-            if (r && r.srcX + r.fw <= faceImg.naturalWidth && r.srcY + r.fh <= faceImg.naturalHeight) {
-              sx = r.srcX; sy = r.srcY; sw = r.fw; sh = r.fh;
-            }
+          const browColor  = app.browColor  || null;
+          const pupilColor = app.pupilColor || null;
+          const eyeColor   = app.eyeColor   || null;
+          let frameCoords = null;
+          if (isCompatibleSheet(faceImg) && animator) {
+            const r = animator.battleMode || animator.specialMode
+              ? animator.getLayerFrameCoords(faceImg)
+              : animator.getFrameCoords(faceImg);
+            if (r && r.srcX + r.fw <= faceImg.naturalWidth && r.srcY + r.fh <= faceImg.naturalHeight)
+              frameCoords = r;
           }
-
-          // 1. Crear un canvas temporal para aislar únicamente el frame actual
-          const tempCanvas = document.createElement("canvas");
-          tempCanvas.width = sw;
-          tempCanvas.height = sh;
-          const tempCtx = tempCanvas.getContext("2d");
-
-          // 2. Extraer el frame exacto de la animación usando sx y sy de la hoja grande
-          tempCtx.drawImage(faceImg, sx, sy, sw, sh, 0, 0, sw, sh);
-
-          // 3. Tintar únicamente este frame recortado (evita romper la caché global)
-          // Asegurar que si app.browColor o pupilColor están vacíos, usen el color por defecto oscuro (#1a1a1a) o el valor del selector
-          const currentBrowColor = app.browColor || "#1a1a1a";
-          const currentPupilColor = app.pupilColor || "#1a1a1a";
-
-          // Usar el patch externo si está disponible (soporta file:// sin CORS)
-          const _tintFn = (window.CharacterSystem && window.CharacterSystem.tintFaceDetailed !== tintFaceDetailed)
-            ? window.CharacterSystem.tintFaceDetailed
-            : tintFaceDetailed;
-
-          const tintResult = _tintFn(tempCanvas, currentBrowColor, currentPupilColor, faceDef, sw, sh, null);
-
-          // El patch devuelve {canvas, useScreen}, la función interna devuelve canvas directamente
-          if (tintResult) {
-            const tintedCanvas = tintResult.canvas || tintResult;
-            ctx.imageSmoothingEnabled = false;
-            if (tintResult.useScreen) {
-              ctx.save();
-              ctx.globalCompositeOperation = "screen";
-              ctx.drawImage(tintedCanvas, 0, 0, sw, sh, destX, destY, dw, dh);
-              ctx.restore();
-            } else {
-              ctx.drawImage(tintedCanvas, 0, 0, sw, sh, destX, destY, dw, dh);
-            }
-          } else {
-            _drawLayerSprite(ctx, faceImg, destX, destY, dw, dh, animator);
+          let tinted = null;
+          if (browColor || pupilColor) {
+            tinted = tintFaceDetailed(faceImg, browColor||eyeColor||"#1a1a1a", pupilColor||eyeColor||"#1a1a1a", faceDef, dw, dh, frameCoords);
+          } else if (eyeColor) {
+            tinted = tintFaceColor(faceImg, eyeColor, faceDef, dw, dh, frameCoords);
           }
+          if (tinted) { ctx.imageSmoothingEnabled=false; ctx.drawImage(tinted, destX, destY, dw, dh); }
+          else _drawLayerSprite(ctx, faceImg, destX, destY, dw, dh, animator);
         } else {
           const faceColor = app.faceColor || null;
           let frameCoords = null;
