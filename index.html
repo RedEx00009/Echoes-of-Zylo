@@ -534,18 +534,7 @@
     <main class="creator-layout">
       <div class="left-col">
         <nav class="cat-nav" id="categoryNav">
-          <button class="cat-btn active" data-cat="race">    <span class="cat-icon">👾</span><span class="cat-label">RAZA</span></button>
-          <button class="cat-btn" data-cat="face">           <span class="cat-icon">😶</span><span class="cat-label">CARA</span></button>
-          <button class="cat-btn" data-cat="hair">           <span class="cat-icon">💇</span><span class="cat-label">CABELLO</span></button>
-          <button class="cat-btn" data-cat="shirt">          <span class="cat-icon">👕</span><span class="cat-label">ROPA SUP.</span></button>
-          <button class="cat-btn" data-cat="pants">          <span class="cat-icon">👖</span><span class="cat-label">ROPA INF.</span></button>
-          <button class="cat-btn" data-cat="gloves">         <span class="cat-icon">🥊</span><span class="cat-label">GUANTES</span></button>
-          <button class="cat-btn" data-cat="shoes">          <span class="cat-icon">👟</span><span class="cat-label">CALZADO</span></button>
-          <button class="cat-btn" data-cat="accessory">      <span class="cat-icon">🎽</span><span class="cat-label">ACCESORIOS</span></button>
-          <button class="cat-btn" data-cat="aura">           <span class="cat-icon">✨</span><span class="cat-label">AURA</span></button>
-          <button class="cat-btn" data-cat="color">          <span class="cat-icon">🎨</span><span class="cat-label">COLOR</span></button>
-          <button class="cat-btn" data-cat="combat">         <span class="cat-icon">⚔️</span><span class="cat-label">COMBATE</span></button>
-          <button class="cat-btn" data-cat="forms">          <span class="cat-icon">⚡</span><span class="cat-label">FORMAS</span></button>
+          <button class="cat-btn active" data-cat="importar">    <span class="cat-icon">📥</span><span class="cat-label">IMPORTAR</span></button>
         </nav>
         <div class="imported-section" id="importedSection">
           <div class="imported-header">
@@ -881,7 +870,7 @@
       const FREE_CUSTOMIZATION_CATALOG = [];
       let imageMap    = {};
       let animator    = null, finalAnim = null;
-      let activeCategory = "race";
+      let activeCategory = "importar";
       let pageState   = {};
       let savedSlots  = Array(11).fill(null);
       let activeSlotIndex = 0;
@@ -1806,205 +1795,84 @@
       function renderItemsPanel(cat) {
         const panel = document.getElementById("itemsPanel");
         panel.innerHTML = "";
-        const cfg = CAT_CONFIG[cat];
-        if (!cfg) return;
 
         const titleEl = document.createElement("div");
         titleEl.className = "items-section-title";
-        const raceId  = player.appearance.raceId;
-        const gender  = player.appearance.gender;
-        const raceDef = RACE_CATALOG.find(r => r.id === raceId);
-        const showBadge = !["race","color","aura","accessory"].includes(cat);
-        if (showBadge && raceDef) {
-          titleEl.innerHTML = cfg.label + `<span class="race-badge">${raceDef.name}${GENDERLESS_RACES.includes(raceId) ? "" : gender === "female" ? " ♀" : " ♂"}</span>`;
-        } else {
-          titleEl.textContent = cfg.label;
-        }
+        titleEl.textContent = "IMPORTAR";
         panel.appendChild(titleEl);
 
-        if (cfg.special === "color")  { renderColorPanel(panel);  return; }
-        if (cfg.special === "combat") { renderCombatPanel(panel); return; }
-        if (cfg.special === "forms")  { renderFormsPanel(panel);  return; }
+        const subtitle = document.createElement("div");
+        subtitle.className = "import-title";
+        subtitle.textContent = "Carga tu hoja de sprites local";
+        panel.appendChild(subtitle);
 
-        const catalog = typeof cfg.catalog === "function"
-          ? cfg.catalog()
-          : (cfg.catalog || currentCatalog(cat));
+        const description = document.createElement("div");
+        description.style.cssText = "color:var(--td);font-size:11px;line-height:1.4;margin:0 0 10px;";
+        description.textContent = "Selecciona un archivo PNG válido. Se guardará en window.imageMap, se actualizará el animador y el canvas se refrescará automáticamente.";
+        panel.appendChild(description);
 
-        if (cfg.needsGender) {
-          const gRow = document.createElement("div");
-          gRow.className = "gender-row";
-          const genderless = GENDERLESS_RACES.includes(player.appearance.raceId);
-          ["male","female"].forEach(g => {
-            const btn = document.createElement("button");
-            btn.className = "gender-btn" + (player.appearance.gender === g ? " active" : "");
-            btn.textContent = g === "male" ? "♂ MASC" : "♀ FEM";
-            if (genderless) btn.disabled = true;
-            btn.addEventListener("click", () => {
-              if (player.appearance.gender === g) return;
-              player.appearance.gender = g;
-              _resetEquipmentForCurrentRaceGender();
-              document.querySelectorAll(".gender-btn").forEach(b => b.classList.remove("active"));
-              btn.classList.add("active");
-              updateStats();
-              if (activeCategory !== "race") renderItemsPanel(activeCategory);
-            });
-            gRow.appendChild(btn);
-          });
-          panel.appendChild(gRow);
-        }
+        const importRow = document.createElement("div");
+        importRow.className = "import-row";
 
-        const scroll = document.createElement("div");
-        scroll.className = "items-scroll";
-        panel.appendChild(scroll);
-
-        const page = pageState[cat] || 0;
-        const totalPages = Math.ceil(catalog.length / PAGE_SIZE);
-        const items = catalog.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
-
-        const grid = document.createElement("div");
-        grid.className = "items-grid";
-
-        items.forEach(item => {
-          const thumb = document.createElement("div");
-          thumb.className = "item-thumb item-card";
-          const currentId = cfg.isExtra
-            ? (charState[cfg.prop] || player.appearance[cfg.prop])
-            : player.appearance[cfg.prop];
-          if (item.id === currentId) thumb.classList.add("selected");
-
-          const cv = document.createElement("canvas");
-          cv.width = 52; cv.height = 52;
-          cv.style.imageRendering = "pixelated";
-          cv.style.mozImageRendering = "crisp-edges";
-          cv.getContext("2d").imageSmoothingEnabled = false;
-          drawThumbCanvas(cv, cat, item);
-          thumb.appendChild(cv);
-
-          const lbl = document.createElement("div");
-          lbl.className = "item-label";
-          lbl.textContent = item.raceName ? `${item.raceName} · ${item.name || item.id}` : (item.name || item.id);
-          thumb.appendChild(lbl);
-
-          if ((cat === "accessory" || cat === "free") && item.type && item.type !== "none") {
-            const td = ACCESSORY_TYPES.find(t => t.id === item.type);
-            const badge = document.createElement("div");
-            badge.className = "acc-type-badge";
-            badge.textContent = (td ? td.icon : "✨");
-            thumb.appendChild(badge);
-
-            const delBtn = document.createElement("button");
-            delBtn.className = "acc-delete-btn";
-            delBtn.textContent = "✕";
-            delBtn.title = "Eliminar accesorio";
-            delBtn.addEventListener("click", e => {
-              e.stopPropagation();
-              if (charState.accessoryId === item.id || player.appearance.accessoryId === item.id) {
-                charState.accessoryId = "ac_none";
-                player.appearance.accessoryId = "ac_none";
-              }
-              const isFree = item.isFreeCustomization || String(item.id).startsWith("fc_");
-              if (isFree) {
-                const idx = FREE_CUSTOMIZATION_CATALOG.findIndex(x => x.id === item.id);
-                if (idx !== -1) FREE_CUSTOMIZATION_CATALOG.splice(idx, 1);
-                _saveFreeCustomizationToLS();
-              } else {
-                _saveAccessoriesToLS();
-              }
-              removeUserAccessory(item.id);
-              renderItemsPanel(cat);
-              showToast("Accesorio eliminado", "warning");
-            });
-            thumb.appendChild(delBtn);
+        const fileLabel = document.createElement("label");
+        fileLabel.className = "import-file-label";
+        fileLabel.textContent = "ELEGIR PNG";
+        const fileInput = document.createElement("input");
+        fileInput.type = "file";
+        fileInput.accept = "image/png";
+        fileInput.addEventListener("change", async (event) => {
+          const file = event.target.files?.[0];
+          event.target.value = "";
+          if (!file) return;
+          if (!file.type || !file.type.includes("png")) {
+            showToast("Solo se aceptan archivos PNG.", "warning");
+            return;
           }
 
-          thumb.addEventListener("click", () => {
-            grid.querySelectorAll(".item-thumb").forEach(t => t.classList.remove("selected"));
-            thumb.classList.add("selected");
-
-            if (cfg.isExtra) {
-              charState[cfg.prop] = item.id;
-              player.appearance[cfg.prop] = item.id;
-              if (cat === "aura" && item.color) {
-                charState.auraColor = item.color;
-                player.appearance.auraColor = item.color;
-                grid.querySelectorAll("canvas").forEach((c, i) => { if (items[i]) drawThumbCanvas(c, cat, items[i]); });
-              }
-            } else {
-              player.appearance[cfg.prop] = item.id;
-              if (cat === "race") {
-                const race = RACE_CATALOG.find(r => r.id === item.id);
-                if (race) {
-                  player.appearance.skinColor = race.skinColor;
-                  player.appearance.eyeColor  = race.eyeColor;
-                }
-                if (GENDERLESS_RACES.includes(item.id)) player.appearance.gender = "male";
-                const variants = getActiveVariants();
-                if (!variants.some(v => v.id === player.appearance.variantId)) player.appearance.variantId = "base";
-                _resetEquipmentForCurrentRaceGender();
-              }
-              if (cat === "hair") invalidateHairCache();
-              if (cat === "face") invalidateHairCache();
+          const blob = file.slice(0, file.size, file.type);
+          try {
+            await _saveImportedSheet(file.name, blob);
+            await setActiveImportedSheet(file.name);
+            const objectUrl = URL.createObjectURL(blob);
+            const img = new Image();
+            img.onload = () => {
+              window.imageMap[file.name] = img;
+              if (window.csAnimator) window.csAnimator.img = img;
+              invalidateHairCache();
+            };
+            img.src = objectUrl;
+            const preview = document.getElementById("importPreview");
+            if (preview) {
+              preview.src = objectUrl;
+              preview.classList.add("visible");
             }
-            updateStats();
-          });
-          grid.appendChild(thumb);
+            showToast(`PNG importado: ${file.name}`, "success");
+          } catch (err) {
+            console.error(err);
+            showToast("Error importando el PNG.", "error");
+          }
         });
-        scroll.appendChild(grid);
+        fileLabel.appendChild(fileInput);
+        importRow.appendChild(fileLabel);
 
-        if (cfg.needsFaceColor) {
-          renderFaceColorSection(panel, grid, items, cat);
-        }
+        const importBtn = document.createElement("button");
+        importBtn.type = "button";
+        importBtn.className = "import-add-btn";
+        importBtn.textContent = "CARGAR PNG";
+        importBtn.addEventListener("click", () => fileInput.click());
+        importRow.appendChild(importBtn);
 
-        if (cfg.needsColor && cfg.palette) {
-          renderColorSwatchSection(panel, grid, items, cat, cfg);
-        }
+        panel.appendChild(importRow);
 
-        if (cfg.isAccImport) {
-          renderImportPanel(panel, cat);
-          if (cat === "free" || cat === "accessory") {
-            const selId = player.appearance.accessoryId || charState.accessoryId;
-            const selEntry = ACCESSORIES_CATALOG.find(a => a.id === selId && a.id !== "ac_none" && (
-              cat === "free" ? (a.isFreeCustomization || String(a.id).startsWith("fc_")) : !a.isFreeCustomization
-            ));
-            const editorId = cat === "free" ? "freeSheetEditor" : "accSheetEditor";
-            if (selEntry && !document.getElementById(editorId)) {
-              const editor = buildSheetImportSection({
-                title: `SHEETS ACTIVOS — ${selEntry.name}`,
-                exploreCfg: selEntry, combatCfg: selEntry,
-                exploreDisabled: false, combatDisabled: false,
-                onExploreLoaded: (url, img) => {
-                  selEntry.dataURL = url; selEntry.userImage = img;
-                  if (cat === "free") _saveFreeCustomizationToLS(); else _saveAccessoriesToLS();
-                  invalidateHairCache(); showToast("Exploración actualizada", "success");
-                },
-                onCombatLoaded: (url, img) => {
-                  selEntry.combatDataURL = url; selEntry.combatUserImage = img;
-                  if (cat === "free") _saveFreeCustomizationToLS(); else _saveAccessoriesToLS();
-                  invalidateHairCache(); showToast("Combate actualizado", "success");
-                },
-                onMetaChange: (meta) => {
-                  Object.assign(selEntry, meta);
-                  if (cat === "free") _saveFreeCustomizationToLS(); else _saveAccessoriesToLS();
-                  invalidateHairCache();
-                },
-              });
-              editor.id = editorId;
-              panel.appendChild(editor);
-            }
-          }
-        }
+        const preview = document.createElement("img");
+        preview.id = "importPreview";
+        preview.className = "import-preview";
+        panel.appendChild(preview);
 
-        if (totalPages > 1) {
-          const pag = document.createElement("div");
-          pag.className = "pagination";
-          const prev = document.createElement("button"); prev.className="page-btn"; prev.textContent="‹"; prev.disabled = page===0;
-          prev.addEventListener("click", () => { pageState[cat]=page-1; renderItemsPanel(cat); });
-          const info = document.createElement("span"); info.className="page-info"; info.textContent=`${page+1} / ${totalPages}`;
-          const next = document.createElement("button"); next.className="page-btn"; next.textContent="›"; next.disabled = page>=totalPages-1;
-          next.addEventListener("click", () => { pageState[cat]=page+1; renderItemsPanel(cat); });
-          pag.appendChild(prev); pag.appendChild(info); pag.appendChild(next);
-          panel.appendChild(pag);
-        }
+        const note = document.createElement("div");
+        note.className = "imported-sheet-empty";
+        note.textContent = "El PNG se añadirá a la lista de hojas importadas y se usará como sprite activo.";
+        panel.appendChild(note);
       }
 
       function renderFaceColorSection(panel, grid, items, cat) {
@@ -2965,6 +2833,7 @@
         try {
           initPlayer();
           animator  = new SpriteAnimator("idle");
+          window.csAnimator = animator;
           finalAnim = new SpriteAnimator("idle");
           initViewAnimBar();
           showToast("Cargando sprites...","warning");
@@ -2985,11 +2854,11 @@
           }
           await _loadImportedSheetsOnStart();
           _attachImportedSheetEvents();
-          renderItemsPanel("race"); renderSlots(); updateStats();
+          renderItemsPanel("importar"); renderSlots(); updateStats();
         } catch(err){
           console.error(err); imageMap=imageMap||{};
           showToast("Falló parte de la carga — modo procedural activo.","error");
-          try{initViewAnimBar();renderItemsPanel("race");renderSlots();updateStats();}
+          try{initViewAnimBar();renderItemsPanel("importar");renderSlots();updateStats();}
           catch(e2){console.error(e2);}
         } finally {
           initEvents();
