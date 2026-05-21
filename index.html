@@ -191,17 +191,27 @@
         max-height: 220px; overflow-y: auto; padding-right: 2px;
       }
       .imported-sheet-item {
-        display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center;
+        display: flex; flex-direction: column; gap: 8px; align-items: stretch;
         background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px;
-        padding: 8px 10px; cursor: pointer; transition: border-color var(--tr), background var(--tr);
+        padding: 8px; cursor: pointer; transition: border-color var(--tr), background var(--tr);
+        position: relative;
+      }
+      .imported-sheet-thumb {
+        width: 100%; height: 80px; object-fit: cover; border-radius: 4px;
+        background: rgba(0,0,0,.5); border: 1px solid var(--border);
       }
       .imported-sheet-item:hover { border-color: var(--cyan); background: rgba(0,229,255,.05); }
-      .imported-sheet-item.active { border-color: var(--cyan); background: rgba(0,229,255,.1); }
-      .imported-sheet-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--tp); }
+      .imported-sheet-item:hover .imported-sheet-thumb { border-color: var(--cyan); }
+      .imported-sheet-item.active { border-color: var(--cyan); background: rgba(0,229,255,.1); box-shadow: inset 0 0 8px rgba(0,229,255,.2); }
+      .imported-sheet-item.active .imported-sheet-thumb { border-color: var(--cyan); box-shadow: 0 0 8px rgba(0,229,255,.4); }
+      .imported-sheet-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; color: var(--tp); flex-shrink: 0; }
       .imported-sheet-delete {
-        width: 26px; height: 26px; border: none; background: rgba(255,23,68,.12);
-        color: var(--red); border-radius: 5px; font-size: 14px; cursor: pointer;
+        position: absolute; top: 4px; right: 4px; width: 24px; height: 24px; border: none;
+        background: rgba(255,23,68,.2); color: var(--red); border-radius: 3px; font-size: 12px;
+        cursor: pointer; opacity: 0; transition: opacity var(--tr), background var(--tr);
       }
+      .imported-sheet-item:hover .imported-sheet-delete { opacity: 1; }
+      .imported-sheet-delete:hover { background: rgba(255,23,68,.4); }
       .imported-sheet-empty {
         color: var(--tm); font-size: 11px; line-height: 1.4; padding: 6px 0;
       }
@@ -274,22 +284,14 @@
         background: rgba(10,13,26,.95);
       }
 
-      /* Tabs de sheet */
-      .sheet-tabs {
-        display: flex; gap: 0; border-bottom: 1px solid var(--border);
-      }
-      .sheet-tab {
-        flex: 1; padding: 6px 4px; text-align: center;
-        font-family: var(--fh); font-size: 8px; letter-spacing: 1.5px;
-        color: var(--tm); cursor: pointer; border: none; background: transparent;
-        border-bottom: 2px solid transparent; transition: all var(--tr);
-        display: flex; align-items: center; justify-content: center; gap: 4px;
-      }
-      .sheet-tab:hover { color: var(--td); background: rgba(255,255,255,.03); }
-      .sheet-tab.active-base    { color: var(--cyan);    border-bottom-color: var(--cyan);    background: rgba(0,229,255,.05); }
-      .sheet-tab.active-combat  { color: var(--red);     border-bottom-color: var(--red);     background: rgba(255,23,68,.05); }
-      .sheet-tab.active-special { color: var(--magenta); border-bottom-color: var(--magenta); background: rgba(224,64,251,.05); }
-      .sheet-tab-icon { font-size: 13px; }
+      /* Tabs de sheet — REMOVIDOS (sheet único) */
+      .sheet-tabs { display: none; }
+      .sheet-tab { display: none; }
+      .sheet-tab:hover { display: none; }
+      .sheet-tab.active-base { display: none; }
+      .sheet-tab.active-combat { display: none; }
+      .sheet-tab.active-special { display: none; }
+      .sheet-tab-icon { display: none; }
 
       /* Contenedor de grupos de animación */
       .anim-groups-wrap {
@@ -562,23 +564,10 @@
       <div class="center-col">
         <div class="preview-header"><span class="preview-title">VISTA PREVIA</span></div>
 
-        <!-- ── Nueva barra de animaciones por sheet ── -->
-        <div class="view-anim-bar">
+          <!-- ── Barra de animaciones (hoja única) ── -->
+          <div class="view-anim-bar">
 
-          <!-- Tabs de sheet -->
-          <div class="sheet-tabs">
-            <button class="sheet-tab active-base" data-sheet="base" id="tabBase">
-              <span class="sheet-tab-icon">🌍</span>BASE
-            </button>
-            <button class="sheet-tab" data-sheet="combat" id="tabCombat">
-              <span class="sheet-tab-icon">⚔️</span>COMBATE
-            </button>
-            <button class="sheet-tab" data-sheet="special" id="tabSpecial">
-              <span class="sheet-tab-icon">✨</span>ESPECIAL
-            </button>
-          </div>
-
-          <!-- ── PANEL BASE (Brett_Base.png) ── -->
+          <!-- ── PANEL ÚNICO DE ANIMACIONES ── -->
           <div class="anim-panel visible" id="panelBase">
             <div class="anim-groups-wrap">
 
@@ -590,7 +579,7 @@
                 </div>
               </div>
 
-              <!-- Movimiento -->
+              <!-- Movimiento / Exploración -->
               <div class="anim-group-row">
                 <span class="anim-group-label">MOVER</span>
                 <div class="anim-btns-row">
@@ -612,7 +601,7 @@
                 </div>
               </div>
 
-              <!-- Acciones RP -->
+              <!-- RP / Interacción -->
               <div class="anim-group-row">
                 <span class="anim-group-label">RP</span>
                 <div class="anim-btns-row">
@@ -622,85 +611,46 @@
                 </div>
               </div>
 
-            </div>
-          </div>
-
-          <!-- ── PANEL COMBATE (Brett_Pelea.png) ── -->
-          <div class="anim-panel" id="panelCombat">
-            <div class="anim-groups-wrap">
-
-              <!-- Vista estática combate -->
+              <!-- Combate: Stance/Movimiento -->
               <div class="anim-group-row">
-                <span class="anim-group-label">VISTA</span>
+                <span class="anim-group-label">COMBATE</span>
                 <div class="anim-btns-row">
-                  <button class="view-btn-static" data-sheet="combat" data-view="combat_view">COMBATE</button>
+                  <button class="anim-btn" data-sheet="base" data-anim="combat_idle">IDLE COM</button>
+                  <button class="anim-btn" data-sheet="base" data-anim="dash">DASH</button>
+                  <button class="anim-btn" data-sheet="base" data-anim="rush">RUSH</button>
                 </div>
               </div>
 
-              <!-- Idle + movimiento combate -->
+              <!-- Combate: Ataques -->
               <div class="anim-group-row">
-                <span class="anim-group-label">STANCE</span>
+                <span class="anim-group-label">ATAQUES</span>
                 <div class="anim-btns-row">
-                  <button class="anim-btn" data-sheet="combat" data-anim="combat_idle">IDLE</button>
-                  <button class="anim-btn" data-sheet="combat" data-anim="dash">DASH</button>
-                  <button class="anim-btn" data-sheet="combat" data-anim="rush">RUSH</button>
+                  <button class="anim-btn" data-sheet="base" data-anim="light_combo">LIGHT</button>
+                  <button class="anim-btn" data-sheet="base" data-anim="heavy_combo">HEAVY</button>
+                  <button class="anim-btn" data-sheet="base" data-anim="special">ESPECIAL</button>
+                  <button class="anim-btn" data-sheet="base" data-anim="charge">CARGA</button>
                 </div>
               </div>
 
-              <!-- Ataques -->
+              <!-- Combate: Defensivo -->
               <div class="anim-group-row">
-                <span class="anim-group-label">ATAQUE</span>
+                <span class="anim-group-label">DEFENSA</span>
                 <div class="anim-btns-row">
-                  <button class="anim-btn" data-sheet="combat" data-anim="light_combo">LIGHT</button>
-                  <button class="anim-btn" data-sheet="combat" data-anim="heavy_combo">HEAVY</button>
-                  <button class="anim-btn" data-sheet="combat" data-anim="special">ESPECIAL</button>
-                  <button class="anim-btn" data-sheet="combat" data-anim="charge">CARGA</button>
+                  <button class="anim-btn" data-sheet="base" data-anim="block">BLOCK</button>
+                  <button class="anim-btn" data-sheet="base" data-anim="hit">HIT</button>
+                  <button class="anim-btn" data-sheet="base" data-anim="recovery">RECOV.</button>
+                  <button class="anim-btn" data-sheet="base" data-anim="knockback_fly">KNOCKB.</button>
                 </div>
               </div>
 
-              <!-- Defensivo / daño -->
-              <div class="anim-group-row">
-                <span class="anim-group-label">DEF/DAÑO</span>
-                <div class="anim-btns-row">
-                  <button class="anim-btn" data-sheet="combat" data-anim="block">BLOCK</button>
-                  <button class="anim-btn" data-sheet="combat" data-anim="hit">HIT</button>
-                  <button class="anim-btn" data-sheet="combat" data-anim="recovery">RECOV.</button>
-                  <button class="anim-btn" data-sheet="combat" data-anim="knockback_fly">KNOCKB.</button>
-                </div>
-              </div>
-
-              <!-- Extra combate -->
-              <div class="anim-group-row">
-                <span class="anim-group-label">EXTRA</span>
-                <div class="anim-btns-row">
-                  <button class="anim-btn" data-sheet="combat" data-anim="sparring">SPARRING</button>
-                </div>
-              </div>
-
-            </div>
-          </div>
-
-          <!-- ── PANEL ESPECIAL (Brett_special.png) ── -->
-          <div class="anim-panel" id="panelSpecial">
-            <div class="anim-groups-wrap">
-
-              <!-- Fusiones -->
-              <div class="anim-group-row">
-                <span class="anim-group-label">FUSIÓN</span>
-                <div class="anim-btns-row">
-                  <button class="anim-btn" data-sheet="special" data-anim="fusion_metamoru">METAMORU</button>
-                  <button class="anim-btn" data-sheet="special" data-anim="fusion_potara">POTARA</button>
-                </div>
-              </div>
-
-              <!-- Interacción mundo -->
+              <!-- Extra / Mundo -->
               <div class="anim-group-row">
                 <span class="anim-group-label">MUNDO</span>
                 <div class="anim-btns-row">
-                  <button class="anim-btn" data-sheet="special" data-anim="carry_player">CARGAR</button>
-                  <button class="anim-btn" data-sheet="special" data-anim="training">ENTRENA</button>
-                  <button class="anim-btn" data-sheet="special" data-anim="drive">CONDUCIR</button>
-                  <button class="anim-btn" data-sheet="special" data-anim="sit">SENTAR</button>
+                  <button class="anim-btn" data-sheet="base" data-anim="carry_player">CARGAR</button>
+                  <button class="anim-btn" data-sheet="base" data-anim="training">ENTRENA</button>
+                  <button class="anim-btn" data-sheet="base" data-anim="drive">CONDUCIR</button>
+                  <button class="anim-btn" data-sheet="base" data-anim="sit">SENTAR</button>
                 </div>
               </div>
 
@@ -708,9 +658,18 @@
               <div class="anim-group-row">
                 <span class="anim-group-label">ITEMS</span>
                 <div class="anim-btns-row">
-                  <button class="anim-btn" data-sheet="special" data-anim="hold_item">SOSTENER</button>
-                  <button class="anim-btn" data-sheet="special" data-anim="use_item">USAR</button>
-                  <button class="anim-btn" data-sheet="special" data-anim="eat_drink">COMER</button>
+                  <button class="anim-btn" data-sheet="base" data-anim="hold_item">SOSTENER</button>
+                  <button class="anim-btn" data-sheet="base" data-anim="use_item">USAR</button>
+                  <button class="anim-btn" data-sheet="base" data-anim="eat_drink">COMER</button>
+                </div>
+              </div>
+
+              <!-- Formas / Fusiones -->
+              <div class="anim-group-row">
+                <span class="anim-group-label">FORMAS</span>
+                <div class="anim-btns-row">
+                  <button class="anim-btn" data-sheet="base" data-anim="fusion_metamoru">METAMORU</button>
+                  <button class="anim-btn" data-sheet="base" data-anim="fusion_potara">POTARA</button>
                 </div>
               </div>
 
@@ -718,12 +677,13 @@
               <div class="anim-group-row">
                 <span class="anim-group-label">EMOTE</span>
                 <div class="anim-btns-row">
-                  <button class="anim-btn" data-sheet="special" data-anim="emote">EMOTE</button>
+                  <button class="anim-btn" data-sheet="base" data-anim="emote">EMOTE</button>
                 </div>
               </div>
 
             </div>
           </div>
+
 
         </div><!-- /view-anim-bar -->
 
@@ -1041,7 +1001,7 @@
           request.onupgradeneeded = (event) => {
             const db = event.target.result;
             if (!db.objectStoreNames.contains(IMPORT_STORE_NAME)) {
-              db.createObjectStore(IMPORT_STORE_NAME, { keyPath: "name" });
+              db.createObjectStore(IMPORT_STORE_NAME);
             }
           };
           request.onsuccess = (event) => resolve(event.target.result);
@@ -1082,16 +1042,19 @@
         return _runImportedSheetsTx("readonly", (store) => {
           return new Promise((resolve, reject) => {
             const req = store.get(name);
-            req.onsuccess = (event) => resolve(event.target.result?.blob || null);
+            req.onsuccess = (event) => resolve(event.target.result || null);
             req.onerror = () => reject(req.error);
           });
         });
       }
 
-      async function _saveImportedSheet(name, blob) {
-        if (!name || !blob) return;
-        await _runImportedSheetsTx("readwrite", (store) => { store.put({ name, blob }); });
-        importedSheetUrlCache.delete(name);
+      async function _saveImportedSheet(name, data) {
+        if (!name || !data) return;
+        if (importedSheetUrlCache.has(name)) {
+          URL.revokeObjectURL(importedSheetUrlCache.get(name));
+          importedSheetUrlCache.delete(name);
+        }
+        await _runImportedSheetsTx("readwrite", (store) => { store.put(data, name); });
         await _loadImportedSheetKeys();
         await renderImportedSheetList();
       }
@@ -1099,10 +1062,14 @@
       async function _deleteImportedSheet(name) {
         if (!name) return;
         await _runImportedSheetsTx("readwrite", (store) => { store.delete(name); });
-        importedSheetUrlCache.delete(name);
+        const cachedUrl = importedSheetUrlCache.get(name);
+        if (cachedUrl) {
+          URL.revokeObjectURL(cachedUrl);
+          importedSheetUrlCache.delete(name);
+        }
         importedSheetKeys = importedSheetKeys.filter(k => k !== name);
-        if (player.appearance.spriteSheets?.sheet === name) {
-          player.appearance.spriteSheets.sheet = null;
+        if (player.appearance.spriteSheets?.activeKey === name || player.appearance.spriteSheets?.sheet === name) {
+          player.appearance.spriteSheets = { sheet: null, activeKey: null, base: null, pelea: null, especial: null };
           player.spriteSheets = { base: null, pelea: null, especial: null };
         }
         await renderImportedSheetList();
@@ -1113,8 +1080,9 @@
         if (typeof ref !== "string") return null;
         if (/^(blob:|data:|https?:\/\/)/i.test(ref)) return ref;
         if (importedSheetUrlCache.has(ref)) return importedSheetUrlCache.get(ref);
-        const blob = await _getImportedSheetBlob(ref);
-        if (!blob) return null;
+        const blobOrBuffer = await _getImportedSheetBlob(ref);
+        if (!blobOrBuffer) return null;
+        const blob = blobOrBuffer instanceof Blob ? blobOrBuffer : new Blob([blobOrBuffer], { type: "image/png" });
         const url = URL.createObjectURL(blob);
         importedSheetUrlCache.set(ref, url);
         return url;
@@ -1126,10 +1094,19 @@
         item.className = "imported-sheet-item";
         item.dataset.sheetName = name;
         item.addEventListener("click", async () => { await setActiveImportedSheet(name); });
+
+        const thumb = document.createElement("img");
+        thumb.className = "imported-sheet-thumb";
+        thumb.alt = name;
+        const url = await _resolveImportedSheetUrl(name);
+        if (url) thumb.src = url;
+        item.appendChild(thumb);
+
         const label = document.createElement("div");
         label.className = "imported-sheet-name";
         label.textContent = name;
         item.appendChild(label);
+
         const deleteBtn = document.createElement("button");
         deleteBtn.type = "button";
         deleteBtn.className = "imported-sheet-delete";
@@ -1139,7 +1116,10 @@
           await _deleteImportedSheet(name);
         });
         item.appendChild(deleteBtn);
-        if (player.appearance.spriteSheets?.sheet === name) item.classList.add("active");
+
+        if (player.appearance.spriteSheets?.activeKey === name || player.appearance.spriteSheets?.sheet === name) {
+          item.classList.add("active");
+        }
         list.appendChild(item);
       }
 
@@ -1164,6 +1144,7 @@
           return;
         }
         player.appearance.spriteSheets = player.appearance.spriteSheets || {};
+        player.appearance.spriteSheets.activeKey = name;
         player.appearance.spriteSheets.sheet = name;
         player.appearance.spriteSheets.base = name;
         player.appearance.spriteSheets.pelea = name;
@@ -1189,7 +1170,7 @@
         try {
           await _loadImportedSheetKeys();
           await renderImportedSheetList();
-          const activeSheetName = player.appearance.spriteSheets?.sheet;
+          const activeSheetName = player.appearance.spriteSheets?.activeKey || player.appearance.spriteSheets?.sheet;
           if (activeSheetName && importedSheetKeys.includes(activeSheetName)) {
             await setActiveImportedSheet(activeSheetName);
           }
@@ -1211,8 +1192,8 @@
               showToast("Solo se aceptan archivos PNG.", "warning");
               continue;
             }
-            const blob = file.slice(0, file.size, file.type);
-            await _saveImportedSheet(file.name, blob);
+            const data = await file.arrayBuffer();
+            await _saveImportedSheet(file.name, data);
           }
           if (importedSheetKeys.length) await renderImportedSheetList();
         });
@@ -1620,74 +1601,18 @@
       }
 
       /* ══════════════════════════════════════════════
-         NUEVO: initViewAnimBar — 3 sheets
+         NUEVO: initViewAnimBar — Sheet único
       ══════════════════════════════════════════════ */
       function initViewAnimBar() {
-        const indicator = document.getElementById("sheetIndicator");
+        // Ya no hay tabs de sheet; toda animación usa "base" como referencia interna.
 
-        // Labels del indicador por sheet
-        const INDICATOR_META = {
-          base:    { cls: "base",    label: "🌍 BASE"     },
-          combat:  { cls: "combat",  label: "⚔️ COMBATE"  },
-          special: { cls: "special", label: "✨ ESPECIAL" },
-        };
-
-        function updateIndicator(sheet) {
-          const m = INDICATOR_META[sheet] || INDICATOR_META.base;
-          indicator.className = `sheet-indicator ${m.cls}`;
-          indicator.textContent = m.label;
-        }
-
-        // ── Cambio de tab ──────────────────────────────────
-        document.querySelectorAll(".sheet-tab").forEach(tab => {
-          tab.addEventListener("click", () => {
-            const sheet = tab.dataset.sheet;
-            if (activeSheet === sheet) return;
-
-            // Desactivar tab anterior
-            document.querySelectorAll(".sheet-tab").forEach(t => {
-              t.classList.remove("active-base", "active-combat", "active-special");
-            });
-            tab.classList.add(`active-${sheet}`);
-
-            // Mostrar panel correcto
-            document.querySelectorAll(".anim-panel").forEach(p => p.classList.remove("visible"));
-            document.getElementById(`panel${sheet.charAt(0).toUpperCase() + sheet.slice(1)}`).classList.add("visible");
-
-            activeSheet   = sheet;
-            activeViewKey = null; // limpiar vista estática al cambiar de sheet
-
-            // Activar animadores al modo correcto
-            if (sheet === "combat") {
-              animator.setBattleMode(true);
-              finalAnim.setBattleMode(true);
-              _playAnim("combat_idle", "combat");
-            } else if (sheet === "special") {
-              animator.setSpecialMode(true);
-              finalAnim.setSpecialMode(true);
-              _playAnim("sit", "special");
-            } else {
-              animator.setBattleMode(false);
-              animator.setSpecialMode(false);
-              finalAnim.setBattleMode(false);
-              finalAnim.setSpecialMode(false);
-              _playAnim("idle", "base");
-            }
-
-            updateIndicator(sheet);
-            _syncActiveButton();
-          });
-        });
-
-        // ── Botones de animación (todos los sheets) ──────────
+        // ── Botones de animación (sheet único) ──────────
         document.querySelectorAll(".anim-btn").forEach(btn => {
           btn.addEventListener("click", () => {
-            const sheet   = btn.dataset.sheet;
-            const animKey = btn.dataset.anim;
-            if (activeSheet !== sheet) return; // ignorar si no es el sheet activo
             activeViewKey = null;
             _clearStaticViews();
-            _playAnim(animKey, sheet);
+            const animKey = btn.dataset.anim;
+            _playAnim(animKey, "base");
             _syncActiveButton();
           });
         });
@@ -1695,50 +1620,32 @@
         // ── Botones de vista estática (row 0) ────────────────
         document.querySelectorAll(".view-btn-static").forEach(btn => {
           btn.addEventListener("click", () => {
-            const sheet   = btn.dataset.sheet;
             const viewKey = btn.dataset.view;
-            if (activeSheet !== sheet) return;
 
             // Toggle
             if (activeViewKey === viewKey) {
               activeViewKey = null;
               btn.classList.remove("active-view");
-              // Restaurar animación por defecto del sheet
-              const defaultAnim = sheet === "combat" ? "combat_idle" : sheet === "special" ? "sit" : "idle";
-              _playAnim(defaultAnim, sheet);
+              _playAnim("idle", "base");
               _syncActiveButton();
             } else {
               activeViewKey = viewKey;
               _clearAllActive();
               btn.classList.add("active-view");
-              // Setear vista en animadores
-              if (sheet !== "combat" && sheet !== "special") {
-                animator.setView(viewKey);
-                finalAnim.setView(viewKey);
-              }
+              animator.setView(viewKey);
+              finalAnim.setView(viewKey);
             }
           });
         });
 
-        updateIndicator("base");
         _syncActiveButton();
       }
 
-      // Ejecuta animación en ambos animadores según el sheet
+      // Ejecuta animación en ambos animadores (sheet único)
       function _playAnim(animKey, sheet) {
         activeAnimKey = animKey;
-        if (sheet === "combat") {
-          animator.play(animKey);
-          finalAnim.play(animKey);
-        } else if (sheet === "special") {
-          animator.play(animKey);
-          finalAnim.play(animKey);
-        } else {
-          animator.clearView();
-          animator.play(animKey);
-          finalAnim.clearView();
-          finalAnim.play(animKey);
-        }
+        animator.play(animKey);
+        finalAnim.play(animKey);
       }
 
       // Limpiar todos los botones activos
@@ -1758,12 +1665,12 @@
       function _syncActiveButton() {
         _clearAllActive();
         if (activeViewKey) {
-          const vBtn = document.querySelector(`.view-btn-static[data-sheet="${activeSheet}"][data-view="${activeViewKey}"]`);
+          const vBtn = document.querySelector(`.view-btn-static[data-view="${activeViewKey}"]`);
           if (vBtn) vBtn.classList.add("active-view");
           return;
         }
-        const aBtn = document.querySelector(`.anim-btn[data-sheet="${activeSheet}"][data-anim="${activeAnimKey}"]`);
-        if (aBtn) aBtn.classList.add(`active-${activeSheet}`);
+        const aBtn = document.querySelector(`.anim-btn[data-anim="${activeAnimKey}"]`);
+        if (aBtn) aBtn.classList.add("active-base");
       }
 
       /* ══ Config de categorías ══ */
@@ -2144,7 +2051,7 @@
         };
 
         const source = slot.spriteSheets || slot.sprites || {};
-        const sheet = extractValue(source.sheet || slot.sheet || source.base || slot.base || source.explore || slot.explore);
+        const sheet = extractValue(source.activeKey || source.sheet || slot.sheet || source.base || slot.base || source.explore || slot.explore);
         const sheetCombate = extractValue(
           source.pelea || slot.pelea || source.combat || slot.combat || source.combate || slot.combate
         );
@@ -2181,7 +2088,8 @@
         const cfg = player.appearance.variantCustomizations[variantId] || {};
 
         const sheetRef = sheets.sheet || sheets.base || sheets.pelea || sheets.especial || null;
-        const sheetSrc = await _resolveImportedSheetUrl(sheetRef) || sheetRef;
+        const resolvedUrl = await _resolveImportedSheetUrl(sheetRef);
+        const sheetSrc = resolvedUrl || (/^(blob:|data:|https?:\/\/)/i.test(sheetRef) ? sheetRef : null);
         if (sheetSrc) {
           cfg.spriteDataURL = sheetSrc;
           cfg.specialSpriteDataURL = sheetSrc;
@@ -2711,17 +2619,19 @@
             accessoryIsFreeCustomization,
             accessoryName:    accEntry?.name||null,
           };
-          const sheetUrls = getSpriteSheetExportData(player.appearance);
-          d.spriteSheets = { sheet: sheetUrls.sheet };
-          d.base = sheetUrls.sheet || null;
-          d.pelea = sheetUrls.sheet || null;
-          d.especial = sheetUrls.sheet || null;
-          d.combate = sheetUrls.sheet || null;
-          d.special = sheetUrls.sheet || null;
-          savedSlots[i]=d; activeSlotIndex=i;
-          localStorage.setItem(LS_SLOT,String(i));
+          const activeKey = player.appearance.spriteSheets?.activeKey || null;
+          const fallbackSheet = player.appearance.spriteSheets?.sheet || null;
+          const sheetData = {};
+          if (activeKey) {
+            sheetData.activeKey = activeKey;
+          } else if (fallbackSheet) {
+            sheetData.sheet = fallbackSheet;
+          }
+          d.spriteSheets = sheetData;
+          savedSlots[i] = d; activeSlotIndex = i;
+          localStorage.setItem(LS_SLOT, String(i));
           saveSlots(); renderSlots();
-          showToast(`"${d.name}" guardado en slot ${i+1}`,"success");
+          showToast(`"${d.name}" guardado en slot ${i+1}`, "success");
           void _syncSlotToFirebase(i, d);
         } catch(err) {
           console.error("[DC] saveToSlot error:",err);
@@ -2733,13 +2643,20 @@
         try {
           const d = savedSlots[i]; if (!d) throw new Error("Slot vacío o inválido");
           normalizeSlotSheetUrls(d);
-          const sheetRef = d?.spriteSheets?.sheet || d?.base || d?.pelea || d?.especial || d?.combate || d?.special || "";
-          const sheetSrc = await _resolveImportedSheetUrl(sheetRef) || sheetRef || "";
+          const sheetRef = d?.spriteSheets?.activeKey || d?.spriteSheets?.sheet || d?.base || d?.pelea || d?.especial || d?.combate || d?.special || "";
+          const resolvedUrl = await _resolveImportedSheetUrl(sheetRef);
+          const sheetSrc = resolvedUrl || (/^(blob:|data:|https?:\/\/)/i.test(sheetRef) ? sheetRef : "");
 
           player.appearance.raceId    = d.race      || "human";
           player.appearance.gender    = d.gender    || "male";
           player.appearance.variantId = d.variantId || "base";
-          player.appearance.spriteSheets = { sheet: sheetRef, base: sheetRef, pelea: sheetRef, especial: sheetRef };
+          player.appearance.spriteSheets = {
+            activeKey: d?.spriteSheets?.activeKey || null,
+            sheet: sheetRef || null,
+            base: sheetRef || null,
+            pelea: sheetRef || null,
+            especial: sheetRef || null,
+          };
           player.spriteSheets = { base: sheetSrc, pelea: sheetSrc, especial: sheetSrc };
 
           const customVariantId = player.appearance.variantId || "base";
