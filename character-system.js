@@ -9,48 +9,44 @@
  *  Tamaño de display: DISPLAY_W × DISPLAY_H (configurable)
  * ══════════════════════════════════════════════════════════════════
  *
- *  ── *_Base.png  (RP / Exploración) ── MAX_COLS=6, TOTAL_ROWS=14
- *   Row  0 → base_view   (1 frame)
- *   Row  1 → idle        (3 frames)
- *   Row  2 → walk        (4 frames)
- *   Row  3 → run         (4 frames)
- *   Row  4 → jump        (3 frames)
- *   Row  5 → fall        (1 frame)
- *   Row  6 → Land        (3 frames)
- *   Row  7 → fly         (4 frames)
- *   Row  8 → hover       (2 frames)
- *   Row  9 → meditate    (3 frames)
- *   Row 10 → sleep       (3 frames)
- *   Row 11 → interaction (3 frames)
- *   Row 12 → (reservada / futura)
- *   Row 13 → (reservada / futura)
- *
- *  ── *_Pelea.png  (Combate) ── COMBAT_MAX_COLS=4, COMBAT_TOTAL_ROWS=13
- *   Row  0 → combat_view   (1 frame)
- *   Row  1 → combat_idle   (4 frames)
- *   Row  2 → dash          (3 frames)
- *   Row  3 → rush          (3 frames)
- *   Row  4 → light_combo   (4 frames)
- *   Row  5 → heavy_combo   (3 frames)
- *   Row  6 → special       (3 frames)
- *   Row  7 → block         (2 frames)
- *   Row  8 → hit           (3 frames)
- *   Row  9 → recovery      (3 frames)
- *   Row 10 → charge        (3 frames)
- *   Row 11 → sparring      (4 frames)
- *   Row 12 → knockback_fly (1 frame)
- *
- *  ── *_special.png  (Especiales) ── SPECIAL_MAX_COLS=6, SPECIAL_TOTAL_ROWS=10
- *   Row 0 → fusion_metamoru (4 frames)
- *   Row 1 → fusion_potara   (3 frames)
- *   Row 2 → carry_player    (4 frames)
- *   Row 3 → training        (6 frames)
- *   Row 4 → hold_item       (4 frames)
- *   Row 5 → use_item        (4 frames)
- *   Row 6 → eat_drink       (3 frames)
- *   Row 7 → drive           (1 frame)
- *   Row 8 → sit             (3 frames)
- *   Row 9 → emote           (3 frames)
+ *  ── *_Sheet.png  (Unificado) ── MAX_COLS=6, TOTAL_ROWS=37
+ *   Row  0 → base_view        (1 frame)
+ *   Row  1 → idle             (3 frames)
+ *   Row  2 → walk             (4 frames)
+ *   Row  3 → run              (4 frames)
+ *   Row  4 → jump             (3 frames)
+ *   Row  5 → fall             (1 frame)
+ *   Row  6 → land             (3 frames)
+ *   Row  7 → fly              (4 frames)
+ *   Row  8 → hover            (2 frames)
+ *   Row  9 → meditate         (3 frames)
+ *   Row 10 → sleep            (3 frames)
+ *   Row 11 → interaction      (3 frames)
+ *   Row 12 → (reservada)
+ *   Row 13 → (reservada)
+ *   Row 14 → combat_view      (1 frame)
+ *   Row 15 → combat_idle      (4 frames)
+ *   Row 16 → dash             (3 frames)
+ *   Row 17 → rush             (3 frames)
+ *   Row 18 → light_combo      (4 frames)
+ *   Row 19 → heavy_combo      (3 frames)
+ *   Row 20 → special          (3 frames)
+ *   Row 21 → block            (2 frames)
+ *   Row 22 → hit              (3 frames)
+ *   Row 23 → recovery         (3 frames)
+ *   Row 24 → charge           (3 frames)
+ *   Row 25 → sparring         (4 frames)
+ *   Row 26 → knockback_fly    (1 frame)
+ *   Row 27 → fusion_metamoru  (4 frames)
+ *   Row 28 → fusion_potara    (3 frames)
+ *   Row 29 → carry_player     (4 frames)
+ *   Row 30 → training         (6 frames)
+ *   Row 31 → hold_item        (4 frames)
+ *   Row 32 → use_item         (4 frames)
+ *   Row 33 → eat_drink        (3 frames)
+ *   Row 34 → drive            (1 frame)
+ *   Row 35 → sit              (3 frames)
+ *   Row 36 → emote            (3 frames)
  */
 
 "use strict";
@@ -75,7 +71,7 @@
   // ═══════════════════════════════════════════════════════════════
 
   const MAX_COLS   = 6;
-  const TOTAL_ROWS = 14;
+  const TOTAL_ROWS = 37;
 
   /**
    * VIEW_META: meta de la fila de previsualización del personaje.
@@ -121,22 +117,22 @@
   };
 
   const COMBAT_ACTIONS_META = {
-    combat_view:   { row:  0, frames: 1, fps: 1,  loop: true,  label: "Combat View"   },
-    combat_idle:   { row:  1, frames: 4, fps: 4,  loop: true,  label: "Combat Idle"   },
-    dash:          { row:  2, frames: 3, fps: 12, loop: false, label: "Dash"          },
-    rush:          { row:  3, frames: 3, fps: 12, loop: false, label: "Rush"          },
-    light_combo:   { row:  4, frames: 4, fps: 10, loop: false, label: "Light Combo"   },
-    heavy_combo:   { row:  5, frames: 3, fps: 9,  loop: false, label: "Heavy Combo"   },
-    special:       { row:  6, frames: 3, fps: 8,  loop: false, label: "Special"       },
-    block:         { row:  7, frames: 2, fps: 6,  loop: false, label: "Block"         },
-    hit:           { row:  8, frames: 3, fps: 8,  loop: false, label: "Hit"           },
-    recovery:      { row:  9, frames: 3, fps: 6,  loop: false, label: "Recovery"      },
-    charge:        { row: 10, frames: 3, fps: 4,  loop: true,  label: "Charge"        },
-    sparring:      { row: 11, frames: 4, fps: 8,  loop: true,  label: "Sparring"      },
-    knockback_fly: { row: 12, frames: 1, fps: 1,  loop: false, label: "Knockback Fly" },
+    combat_view:   { row: 14, frames: 1, fps: 1,  loop: true,  label: "Combat View"   },
+    combat_idle:   { row: 15, frames: 4, fps: 4,  loop: true,  label: "Combat Idle"   },
+    dash:          { row: 16, frames: 3, fps: 12, loop: false, label: "Dash"          },
+    rush:          { row: 17, frames: 3, fps: 12, loop: false, label: "Rush"          },
+    light_combo:   { row: 18, frames: 4, fps: 10, loop: false, label: "Light Combo"   },
+    heavy_combo:   { row: 19, frames: 3, fps: 9,  loop: false, label: "Heavy Combo"   },
+    special:       { row: 20, frames: 3, fps: 8,  loop: false, label: "Special"       },
+    block:         { row: 21, frames: 2, fps: 6,  loop: false, label: "Block"         },
+    hit:           { row: 22, frames: 3, fps: 8,  loop: false, label: "Hit"           },
+    recovery:      { row: 23, frames: 3, fps: 6,  loop: false, label: "Recovery"      },
+    charge:        { row: 24, frames: 3, fps: 4,  loop: true,  label: "Charge"        },
+    sparring:      { row: 25, frames: 4, fps: 8,  loop: true,  label: "Sparring"      },
+    knockback_fly: { row: 26, frames: 1, fps: 1,  loop: false, label: "Knockback Fly" },
   };
 
-  const COMBAT_IDLE_ROW = COMBAT_ACTIONS_META.combat_idle.row; // 1
+  const COMBAT_IDLE_ROW = COMBAT_ACTIONS_META.combat_idle.row; // 15
 
   // ═══════════════════════════════════════════════════════════════
   //  ESPECIALES — grilla 6 columnas × 10 filas
@@ -146,16 +142,16 @@
   const SPECIAL_TOTAL_ROWS = 10;
 
   const SPECIAL_ACTIONS_META = {
-    fusion_metamoru: { row: 0, frames: 4, fps: 4,  loop: false, label: "Fusion Metamoru" },
-    fusion_potara:   { row: 1, frames: 3, fps: 4,  loop: false, label: "Fusion Potara"   },
-    carry_player:    { row: 2, frames: 4, fps: 6,  loop: true,  label: "Carry Player"    },
-    training:        { row: 3, frames: 6, fps: 8,  loop: true,  label: "Training"        },
-    hold_item:       { row: 4, frames: 4, fps: 4,  loop: true,  label: "Hold Item"       },
-    use_item:        { row: 5, frames: 4, fps: 6,  loop: false, label: "Use Item"        },
-    eat_drink:       { row: 6, frames: 3, fps: 4,  loop: false, label: "Eat/Drink"       },
-    drive:           { row: 7, frames: 1, fps: 1,  loop: true,  label: "Drive"           },
-    sit:             { row: 8, frames: 3, fps: 2,  loop: true,  label: "Sentarse"        },
-    emote:           { row: 9, frames: 3, fps: 4,  loop: false, label: "Emote"           },
+    fusion_metamoru: { row: 27, frames: 4, fps: 4,  loop: false, label: "Fusion Metamoru" },
+    fusion_potara:   { row: 28, frames: 3, fps: 4,  loop: false, label: "Fusion Potara"   },
+    carry_player:    { row: 29, frames: 4, fps: 6,  loop: true,  label: "Carry Player"    },
+    training:        { row: 30, frames: 6, fps: 8,  loop: true,  label: "Training"        },
+    hold_item:       { row: 31, frames: 4, fps: 4,  loop: true,  label: "Hold Item"       },
+    use_item:        { row: 32, frames: 4, fps: 6,  loop: false, label: "Use Item"        },
+    eat_drink:       { row: 33, frames: 3, fps: 4,  loop: false, label: "Eat/Drink"       },
+    drive:           { row: 34, frames: 1, fps: 1,  loop: true,  label: "Drive"           },
+    sit:             { row: 35, frames: 3, fps: 2,  loop: true,  label: "Sentarse"        },
+    emote:           { row: 36, frames: 3, fps: 4,  loop: false, label: "Emote"           },
   };
 
   // ═══════════════════════════════════════════════════════════════
@@ -268,32 +264,7 @@
    */
   function _detectSheetType(img) {
     if (!img || !img.naturalWidth || !img.naturalHeight) return null;
-    const iw = img.naturalWidth, ih = img.naturalHeight;
-    const ratio = iw / ih;
-
-    const ratioBase    = MAX_COLS   / TOTAL_ROWS;
-    const ratioCombat  = COMBAT_MAX_COLS   / COMBAT_TOTAL_ROWS;
-    const ratioSpecial = SPECIAL_MAX_COLS  / SPECIAL_TOTAL_ROWS;
-
-    // Tolerancia ampliada a 0.15
-    const TOL = 0.15;
-
-    if (Math.abs(ratio - ratioCombat)  < TOL &&
-        iw >= COMBAT_MAX_COLS   * 8 &&
-        ih >= COMBAT_TOTAL_ROWS * 8) return "combat";
-
-    if (Math.abs(ratio - ratioSpecial) < TOL &&
-        iw >= SPECIAL_MAX_COLS   * 8 &&
-        ih >= SPECIAL_TOTAL_ROWS * 8) return "special";
-
-    if (Math.abs(ratio - ratioBase)    < TOL &&
-        iw >= MAX_COLS   * 8 &&
-        ih >= TOTAL_ROWS * 8) return "base";
-
-    // NUEVO: fallback — si tiene suficientes pixeles para ser un sheet base, aceptarlo
-    if (iw >= MAX_COLS * 8 && ih >= TOTAL_ROWS * 8) return "base";
-
-    return null;
+    return "sheet";
   }
 
   const _frameSizeCache = new Map();
@@ -308,7 +279,7 @@
     const key = (img.src || "") + "|" + img.naturalWidth + "x" + img.naturalHeight;
     if (_frameSizeCache.has(key)) return _frameSizeCache.get(key);
 
-    // Siempre usa la grilla de 6 columnas × 14 filas
+    // Siempre usa la grilla de 6 columnas × 37 filas
     const result = _computeFrameSize(img, MAX_COLS, TOTAL_ROWS);
     _frameSizeCache.set(key, result);
     return result;
@@ -1498,15 +1469,7 @@
 
     if (isSheet && animator) {
       ctx.imageSmoothingEnabled = false;
-      let coords;
-      if (type === "base") {
-        // Capa sobre sheet base — usa layer coords (sincronizada con la animación RP)
-        const useLayers = animator.battleMode || animator.specialMode;
-        coords = useLayers ? animator.getLayerFrameCoords(img) : animator.getFrameCoords(img);
-      } else {
-        // Sheet de combate/especial sobre capas — usa idle como fallback
-        coords = getIdleFrameCoords(img);
-      }
+      const coords = animator.getLayerFrameCoords(img);
       const { srcX, srcY, fw, fh } = coords;
       if (srcX + fw <= img.naturalWidth && srcY + fh <= img.naturalHeight) {
         ctx.drawImage(img, srcX, srcY, fw, fh, destX, destY, dw, dh);
@@ -1555,68 +1518,43 @@
       (accDef.isFreeCustomization || String(accDef.id).startsWith("fc_")));
   }
 
-  function _pickSheetMode(battleMode, specialMode) {
-    if (specialMode) return "special";
-    if (battleMode)  return "combat";
-    return "explore";
-  }
-
-  function _pickSheetImage(cfg, mode) {
+  function _pickSheetImage(cfg) {
     if (!cfg) return null;
-    if (mode === "combat") {
-      return cfg.combatSpriteImage || cfg.combatUserImage || cfg.spriteImage || cfg.userImage || null;
-    }
-    if (mode === "special") {
-      return cfg.specialSpriteImage || cfg.specialUserImage || cfg.spriteImage || cfg.userImage || null;
-    }
-    return cfg.spriteImage || cfg.userImage || null;
+    return cfg.spriteImage || cfg.combatSpriteImage || cfg.specialSpriteImage || cfg.userImage || cfg.combatUserImage || cfg.specialUserImage || null;
   }
 
-  function _pickSheetMeta(cfg, mode) {
-    const isCombat  = mode === "combat";
-    const isSpecial = mode === "special";
-    const defFrames = isCombat ? COMBAT_MAX_COLS : isSpecial ? SPECIAL_MAX_COLS : MAX_COLS;
-    const defRows   = isCombat ? COMBAT_TOTAL_ROWS : isSpecial ? SPECIAL_TOTAL_ROWS : TOTAL_ROWS;
+  function _pickSheetMeta(cfg) {
     return {
-      scale:      Number(isCombat  ? (cfg.combatScale  ?? cfg.scale)
-                       : isSpecial ? (cfg.specialScale ?? cfg.scale) : cfg.scale) || 1,
-      animFrames: parseInt(isCombat  ? (cfg.combatAnimFrames  ?? cfg.animFrames)
-                         : isSpecial ? (cfg.specialAnimFrames ?? cfg.animFrames) : cfg.animFrames, 10) || defFrames,
-      rowCount:   parseInt(isCombat  ? (cfg.combatRowCount  ?? cfg.rowCount)
-                         : isSpecial ? (cfg.specialRowCount ?? cfg.rowCount)   : cfg.rowCount,   10) || defRows,
+      scale:      Number(cfg.scale) || 1,
+      animFrames: parseInt(cfg.animFrames, 10) || MAX_COLS,
+      rowCount:   parseInt(cfg.rowCount, 10) || TOTAL_ROWS,
       yOffset:    Number(cfg.yOffset) || 0,
-      sheetMode:  mode,
+      sheetMode:  "sheet",
     };
   }
 
-  function resolveCustomSheetBundle(cfg, battleMode, specialMode) {
+  function resolveCustomSheetBundle(cfg) {
     if (!cfg) return null;
-    const mode = _pickSheetMode(battleMode, specialMode);
-    const img  = _pickSheetImage(cfg, mode);
+    const img  = _pickSheetImage(cfg);
     if (!img || !img.complete || !img.naturalWidth) return null;
-    return { img, custom: _pickSheetMeta(cfg, mode) };
+    return { img, custom: _pickSheetMeta(cfg) };
   }
 
-  function resolveFreeCustomizationBundle(accDef, battleMode, specialMode) {
+  function resolveFreeCustomizationBundle(accDef) {
     if (!isFreeCustomizationEntry(accDef)) return null;
-    return resolveCustomSheetBundle(accDef, battleMode, specialMode);
+    return resolveCustomSheetBundle(accDef);
   }
 
   function _drawVariantSheet(ctx, img, screenX, screenY, dw, dh, animator, custom) {
     if (!img || !img.complete || !img.naturalWidth) return false;
     const scale   = Math.max(0.25, Math.min(8, Number(custom?.scale) || 1));
-    const mode    = custom?.sheetMode || "explore";
-    const defCols = mode === "combat" ? COMBAT_MAX_COLS  : mode === "special" ? SPECIAL_MAX_COLS  : MAX_COLS;
-    const defRows = mode === "combat" ? COMBAT_TOTAL_ROWS : mode === "special" ? SPECIAL_TOTAL_ROWS : TOTAL_ROWS;
-    const metaMap = mode === "combat" ? COMBAT_ACTIONS_META : mode === "special" ? SPECIAL_ACTIONS_META : ACTIONS_META;
-    const defKey  = mode === "combat" ? "combat_idle" : mode === "special" ? "sit" : "idle";
     const uFrames = parseInt(custom?.animFrames, 10);
     const uRows   = parseInt(custom?.rowCount,   10);
-    const frameCols  = Math.max(1, Math.min(48, uFrames > 0 ? uFrames : defCols));
-    const effectRows = Math.max(1, Math.min(64, uRows   > 0 ? uRows   : defRows));
+    const frameCols  = Math.max(1, Math.min(48, uFrames > 0 ? uFrames : MAX_COLS));
+    const effectRows = Math.max(1, Math.min(64, uRows   > 0 ? uRows   : TOTAL_ROWS));
     const fw = Math.max(1, Math.floor(img.naturalWidth  / frameCols));
     const fh = Math.max(1, Math.floor(img.naturalHeight / effectRows));
-    const meta  = (animator && metaMap[animator.action]) ? animator.meta : metaMap[defKey];
+    const meta  = animator?.meta || VIEW_META.base_view;
     const row   = Math.max(0, Math.min(effectRows - 1, meta?.row || 0));
     const frame = animator ? Math.min(animator.frame, frameCols - 1) : 0;
     const drawW = dw * scale, drawH = dh * scale;
@@ -1657,7 +1595,7 @@
 
   function _drawAccessoryLayer(ctx, accDef, screenX, screenY, dw, dh, animator, inCombat, inSpecial) {
     if (!accDef || accDef.id === "ac_none") return;
-    const bundle = resolveCustomSheetBundle(accDef, inCombat, inSpecial);
+    const bundle = resolveCustomSheetBundle(accDef);
     if (bundle?.img?.complete && bundle.img.naturalWidth) {
       _drawVariantSheet(ctx, bundle.img, screenX, screenY, dw, dh, animator, bundle.custom);
       return;
@@ -1776,17 +1714,17 @@
 
     // ── Plantillas globales de combate/especial importadas ─────
     if (inCombat) {
-      const gb = resolveCustomSheetBundle(combatCustom, true, false);
+      const gb = resolveCustomSheetBundle(combatCustom);
       if (gb) { _drawVariantSheet(ctx, gb.img, screenX, screenY, dw, dh, animator, gb.custom); ctx.restore(); return; }
     }
     if (inSpecial) {
-      const gb = resolveCustomSheetBundle(specialCustom, false, true);
+      const gb = resolveCustomSheetBundle(specialCustom);
       if (gb) { _drawVariantSheet(ctx, gb.img, screenX, screenY, dw, dh, animator, gb.custom); ctx.restore(); return; }
     }
 
     // ── Variante con sheet propio ──────────────────────────────
     if (variantCustom) {
-      const vb = resolveCustomSheetBundle(variantCustom, inCombat, inSpecial);
+      const vb = resolveCustomSheetBundle(variantCustom);
       if (vb) { _drawVariantSheet(ctx, vb.img, screenX, screenY, dw, dh, animator, vb.custom); ctx.restore(); return; }
     }
 

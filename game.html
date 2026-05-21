@@ -967,6 +967,7 @@
     function hydrateVariantCustomizations(app, customizations) {
       app.variantCustomizations = customizations || {};
       Object.values(app.variantCustomizations).forEach((cfg) => {
+        _hydrateSheetField(cfg, "sheet", "spriteImage");
         _hydrateSheetField(cfg, "spriteDataURL", "spriteImage");
         _hydrateSheetField(cfg, "combatSpriteDataURL", "combatSpriteImage");
         _hydrateSheetField(cfg, "specialSpriteDataURL", "specialSpriteImage");
@@ -975,6 +976,7 @@
 
     function hydrateCombatCustomization(app, cfg) {
       app.combatCustomization = cfg || {};
+      _hydrateSheetField(app.combatCustomization, "sheet", "spriteImage");
       _hydrateSheetField(app.combatCustomization, "spriteDataURL", "spriteImage");
     }
 
@@ -1464,8 +1466,8 @@
             }
             const remoteVariantId = app.variantId || "base";
             const remoteVariantCfg = app.variantCustomizations?.[remoteVariantId];
-            // Cargar sheets de variante (exploración, combate y especial)
-            ["spriteDataURL:spriteImage", "combatSpriteDataURL:combatSpriteImage", "specialSpriteDataURL:specialSpriteImage"].forEach(pair => {
+            // Cargar sheets de variante (exploración, combate, especial y unificado)
+            ["spriteDataURL:spriteImage", "sheet:spriteImage", "combatSpriteDataURL:combatSpriteImage", "specialSpriteDataURL:specialSpriteImage"].forEach(pair => {
               const [urlKey, imgKey] = pair.split(":");
               if (remoteVariantCfg?.[urlKey]) {
                 const suffix = urlKey.replace("SpriteDataURL","").replace("DataURL","");

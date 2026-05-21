@@ -793,11 +793,15 @@
       function _getSlotUploadSources(app) {
         const variantId = app?.variantId || "base";
         const variantCfg = app?.variantCustomizations?.[variantId] || {};
-        return {
-          base: variantCfg.spriteDataURL || variantCfg.spriteImage?.src || null,
-          pelea: app?.combatCustomization?.spriteDataURL || app?.combatCustomization?.spriteImage?.src || null,
-          especial: variantCfg.specialSpriteDataURL || variantCfg.specialSpriteImage?.src || null,
-        };
+        const sheet =
+          variantCfg.spriteDataURL ||
+          variantCfg.spriteImage?.src ||
+          variantCfg.specialSpriteDataURL ||
+          variantCfg.specialSpriteImage?.src ||
+          app?.combatCustomization?.spriteDataURL ||
+          app?.combatCustomization?.spriteImage?.src ||
+          null;
+        return { sheet };
       }
 
       async function _syncSlotToFirebase(slotIndex, slotData) {
@@ -808,9 +812,7 @@
           return await FirebaseCharacterService.uploadCharacterSlot(
             userId,
             slotIndex,
-            sources.base,
-            sources.pelea,
-            sources.especial,
+            sources.sheet,
             slotData
           );
         } catch (error) {
@@ -1891,6 +1893,7 @@
       function hydrateVariantCustomizations(customs) {
         player.appearance.variantCustomizations = customs || {};
         Object.values(player.appearance.variantCustomizations).forEach(cfg => {
+          _hydrateSheetField(cfg, "sheet", "spriteImage");
           _hydrateSheetField(cfg, "spriteDataURL", "spriteImage");
           _hydrateSheetField(cfg, "combatSpriteDataURL", "combatSpriteImage");
           _hydrateSheetField(cfg, "specialSpriteDataURL", "specialSpriteImage");
@@ -1901,6 +1904,7 @@
 
       function hydrateCombatCustomization(cfg) {
         player.appearance.combatCustomization = cfg || {};
+        _hydrateSheetField(player.appearance.combatCustomization, "sheet", "spriteImage");
         _hydrateSheetField(player.appearance.combatCustomization, "spriteDataURL", "spriteImage");
       }
 
@@ -1915,14 +1919,19 @@
         };
 
         const source = slot.spriteSheets || slot.sprites || {};
-        const sheetBase = extractValue(source.base || slot.base || source.explore || slot.explore);
+        const sheet = extractValue(source.sheet || slot.sheet || source.base || slot.base || source.explore || slot.explore);
         const sheetCombate = extractValue(
           source.pelea || slot.pelea || source.combat || slot.combat || source.combate || slot.combate
         );
         const sheetEspecial = extractValue(source.especial || slot.especial || source.special || slot.special);
 
         const normalized = {};
-        if (sheetBase) normalized.base = sheetBase;
+        if (sheet) {
+          normalized.sheet = sheet;
+          normalized.base = sheet;
+          normalized.pelea = sheet;
+          normalized.especial = sheet;
+        }
         if (sheetCombate) normalized.pelea = sheetCombate;
         if (sheetEspecial) normalized.especial = sheetEspecial;
         if (Object.keys(normalized).length) slot.spriteSheets = normalized;
@@ -1930,21 +1939,43 @@
 
       function getSpriteSheetExportData(app) {
         const currentVariant = app?.variantCustomizations?.[app?.variantId] || {};
+        const sheet = currentVariant.spriteDataURL || currentVariant.specialSpriteDataURL || app?.combatCustomization?.spriteDataURL || null;
         return {
-          base: currentVariant.spriteDataURL || null,
-          pelea: app?.combatCustomization?.spriteDataURL || null,
-          especial: currentVariant.specialSpriteDataURL || null,
+          sheet,
+          base: sheet,
+          pelea: sheet,
+          especial: sheet,
         };
       }
 
       function applySlotSpriteUrls(slot) {
         normalizeSlotSheetUrls(slot);
         const sheets = slot?.spriteSheets || {};
+        const variantId = player.appearance.variantId || "base";
+        player.appearance.variantCustomizations = player.appearance.variantCustomizations || {};
+        const cfg = player.appearance.variantCustomizations[variantId] || {};
+
+        if (sheets.sheet) {
+          cfg.spriteDataURL = sheets.sheet;
+          cfg.specialSpriteDataURL = sheets.sheet;
+          player.appearance.combatCustomization = player.appearance.combatCustomization || {};
+          player.appearance.combatCustomization.spriteDataURL = sheets.sheet;
+          player.appearance.variantCustomizations[variantId] = cfg;
+          _hydrateSheetField(cfg, "spriteDataURL", "spriteImage");
+          _hydrateSheetField(cfg, "specialSpriteDataURL", "specialSpriteImage");
+          _hydrateSheetField(player.appearance.combatCustomization, "spriteDataURL", "spriteImage");
+          return;
+        }
+
         if (sheets.base || sheets.especial) {
-          const variantId = player.appearance.variantId || "base";
-          player.appearance.variantCustomizations = player.appearance.variantCustomizations || {};
-          const cfg = player.appearance.variantCustomizations[variantId] || {};
-          if (sheets.base) cfg.spriteDataURL = sheets.base;
+          if (sheets.base) {
+            cfg.spriteDataURL = sheets.base;
+            if (!sheets.pelea) {
+              player.appearance.combatCustomization = player.appearance.combatCustomization || {};
+              player.appearance.combatCustomization.spriteDataURL = sheets.base;
+            }
+            if (!sheets.especial) cfg.specialSpriteDataURL = sheets.base;
+          }
           if (sheets.especial) cfg.specialSpriteDataURL = sheets.especial;
           player.appearance.variantCustomizations[variantId] = cfg;
           _hydrateSheetField(cfg, "spriteDataURL", "spriteImage");

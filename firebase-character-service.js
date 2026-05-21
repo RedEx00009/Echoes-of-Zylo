@@ -164,27 +164,40 @@
       };
     },
 
-    async uploadCharacterSlot(userId, slotIndex, baseBlobOrBase64, combatBlobOrBase64, specialBlobOrBase64, slotData) {
+    async uploadCharacterSlot(userId, slotIndex, sheetBlobOrBase64, slotData) {
       if (!userId || typeof slotIndex === "undefined" || slotIndex === null) {
         throw new Error("userId y slotIndex son obligatorios.");
       }
       const cleanedData = _stripLocalDataURLs(slotData || {});
-      const sourceBase = baseBlobOrBase64 || cleanedData.spriteSheets?.base || null;
-      const sourceCombat = combatBlobOrBase64 || cleanedData.spriteSheets?.pelea || cleanedData.spriteSheets?.combat || null;
-      const sourceSpecial = specialBlobOrBase64 || cleanedData.spriteSheets?.especial || cleanedData.spriteSheets?.special || null;
+      const sourceSheet = sheetBlobOrBase64
+        || cleanedData.spriteSheets?.sheet
+        || cleanedData.spriteSheets?.base
+        || cleanedData.spriteSheets?.pelea
+        || cleanedData.spriteSheets?.combat
+        || cleanedData.spriteSheets?.especial
+        || cleanedData.spriteSheets?.special
+        || null;
 
-      const uploadPromises = {
-        base: sourceBase ? _uploadOptionalFile(_storagePathForSlot(userId, slotIndex, "base.png"), sourceBase) : Promise.resolve(cleanedData.spriteSheets?.base || null),
-        pelea: sourceCombat ? _uploadOptionalFile(_storagePathForSlot(userId, slotIndex, "combat.png"), sourceCombat) : Promise.resolve(cleanedData.spriteSheets?.pelea || cleanedData.spriteSheets?.combat || null),
-        especial: sourceSpecial ? _uploadOptionalFile(_storagePathForSlot(userId, slotIndex, "special.png"), sourceSpecial) : Promise.resolve(cleanedData.spriteSheets?.especial || cleanedData.spriteSheets?.special || null),
-      };
-
-      const [baseUrl, combatUrl, specialUrl] = await Promise.all([uploadPromises.base, uploadPromises.pelea, uploadPromises.especial]);
+      let sheetUrl = null;
+      if (sourceSheet) {
+        sheetUrl = await _uploadOptionalFile(_storagePathForSlot(userId, slotIndex, "sheet.png"), sourceSheet);
+      } else {
+        sheetUrl = cleanedData.spriteSheets?.sheet
+          || cleanedData.spriteSheets?.base
+          || cleanedData.spriteSheets?.pelea
+          || cleanedData.spriteSheets?.combat
+          || cleanedData.spriteSheets?.especial
+          || cleanedData.spriteSheets?.special
+          || null;
+      }
 
       cleanedData.spriteSheets = {};
-      if (baseUrl) cleanedData.spriteSheets.base = baseUrl;
-      if (combatUrl) cleanedData.spriteSheets.pelea = combatUrl;
-      if (specialUrl) cleanedData.spriteSheets.especial = specialUrl;
+      if (sheetUrl) {
+        cleanedData.spriteSheets.sheet = sheetUrl;
+        cleanedData.spriteSheets.base = sheetUrl;
+        cleanedData.spriteSheets.pelea = sheetUrl;
+        cleanedData.spriteSheets.especial = sheetUrl;
+      }
       cleanedData.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
 
       await _slotDocRef(userId, slotIndex).set(cleanedData, { merge: true });
