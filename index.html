@@ -707,13 +707,25 @@ function _drawThumb(canvas, item, cat) {
     }
     ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
   } else {
-    const color = item.color || item.color1 || item.skinColor || "#2a3560";
-    if (color) { ctx.fillStyle = color+"88"; ctx.fillRect(4,4,w-8,h-8); }
-    const ICONS = { race:"👾", face:"😶", hair:"💇", shirt:"👕", pants:"👖", shoes:"👟", gloves:"🥊", aura:"✨", accessory:"🎽" };
-    ctx.font = `${Math.round(h*0.4)}px sans-serif`;
-    ctx.textAlign="center"; ctx.textBaseline="middle";
-    ctx.fillText(ICONS[cat]||"?", w/2, h/2);
-    ctx.textAlign="left"; ctx.textBaseline="alphabetic";
+    const color = item.color || item.color1 || item.skinColor || null;
+    // Ítem "sin ropa / bare" — style bare o sin color
+    const isBare = item.style === "bare" || (!color && item.spriteKey === null && item.id !== undefined);
+    if (isBare) {
+      // Fondo con color de piel del jugador + ícono de prohibición
+      ctx.fillStyle = (player.appearance.skinColor || "#e8c898") + "55";
+      ctx.fillRect(4,4,w-8,h-8);
+      ctx.font = `${Math.round(h*0.38)}px sans-serif`;
+      ctx.textAlign="center"; ctx.textBaseline="middle";
+      ctx.fillText("🚫", w/2, h/2);
+      ctx.textAlign="left"; ctx.textBaseline="alphabetic";
+    } else {
+      if (color) { ctx.fillStyle = color+"88"; ctx.fillRect(4,4,w-8,h-8); }
+      const ICONS = { race:"👾", face:"😶", hair:"💇", shirt:"👕", pants:"👖", shoes:"👟", gloves:"🥊", aura:"✨", accessory:"🎽" };
+      ctx.font = `${Math.round(h*0.4)}px sans-serif`;
+      ctx.textAlign="center"; ctx.textBaseline="middle";
+      ctx.fillText(ICONS[cat]||"?", w/2, h/2);
+      ctx.textAlign="left"; ctx.textBaseline="alphabetic";
+    }
   }
 }
 

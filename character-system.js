@@ -532,6 +532,7 @@
     { id: "pm6", name: "Verde",   spriteKey: "bottom_pm6", color: "#2e7d32" },
     { id: "pm7", name: "Rojo",    spriteKey: "bottom_pm7", color: "#b71c1c" },
     { id: "pm8", name: "Marrón",  spriteKey: "bottom_pm8", color: "#5d4037" },
+    { id: "pm9", name: "Sin ropa",  spriteKey: null,          color: null,      style: "bare" },
   ];
 
   const BOTTOM_CATALOG_FEMALE = [
@@ -543,6 +544,7 @@
     { id: "pf6", name: "Short Ver",  spriteKey: "bottom_pf6", color: "#2e7d32" },
     { id: "pf7", name: "Falda Roj",  spriteKey: "bottom_pf7", color: "#b71c1c" },
     { id: "pf8", name: "Short Neg",  spriteKey: "bottom_pf8", color: "#1a1a1a" },
+    { id: "pf9", name: "Sin ropa F",  spriteKey: null,          color: null,      style: "bare" },
   ];
 
   const BOTTOM_CATALOG_NAMEKIAN = [
@@ -554,6 +556,7 @@
     { id: "pn6", name: "Pant Cla",   spriteKey: "bottom_pn6", color: "#a5d6a7" },
     { id: "pn7", name: "Pant Amar",  spriteKey: "bottom_pn7", color: "#f9a825" },
     { id: "pn8", name: "Pant Azul",  spriteKey: "bottom_pn8", color: "#0d47a1" },
+    { id: "pn9", name: "Sin ropa N",  spriteKey: null,          color: null,      style: "bare" },
   ];
 
   const BOTTOM_CATALOG_FRIEZA = [
@@ -565,6 +568,7 @@
     { id: "pr6", name: "Pant Arc",  spriteKey: "bottom_pr6", color: "#9e9e9e" },
     { id: "pr7", name: "Pant Dor",  spriteKey: "bottom_pr7", color: "#ffd700" },
     { id: "pr8", name: "Arm Inf 3", spriteKey: "bottom_pr8", color: "#311b92" },
+    { id: "pr9", name: "Sin ropa A",  spriteKey: null,          color: null,      style: "bare" },
   ];
 
   // ═══════════════════════════════════════════════════════════════
@@ -1664,11 +1668,14 @@
 
     const faceDef  = faceCat.find((f) => f.id === app.faceId)   || faceCat[0];
     const hairDef  = hairCat.find((h) => h.id === app.hairId)   || hairCat[0];
-    const topDef   = topCat.find((t)  => t.id === app.topId)    || topCat[0];
-    const btmDef   = btmCat.find((b)  => b.id === app.bottomId) || btmCat[0];
-    const shoesDef = shoeCat.find((s) => s.id === app.shoesId)  || shoeCat[0];
+    // Nota: si el ID es de un layer importado ("layer_import_*") o no existe en el catálogo base,
+    // NO hacer fallback al primer item (que siempre tiene sprite). Usar null spriteKey para no dibujar nada.
+    const _BARE = { spriteKey: null };
+    const topDef   = topCat.find((t)  => t.id === app.topId)    || (app.topId    ? _BARE : topCat[0]);
+    const btmDef   = btmCat.find((b)  => b.id === app.bottomId) || (app.bottomId ? _BARE : btmCat[0]);
+    const shoesDef = shoeCat.find((s) => s.id === app.shoesId)  || (app.shoesId  ? _BARE : shoeCat[0]);
     const glovesId = app.glovesId || (charState && charState.glovesId) || glvCat[0].id;
-    const glvDef   = glvCat.find((g) => g.id === glovesId) || glvCat[0];
+    const glvDef   = glvCat.find((g) => g.id === glovesId) || (glovesId ? _BARE : glvCat[0]);
 
     const auraId    = app.auraId    || (charState && charState.auraId)    || "a0";
     const auraColor = app.auraColor || (charState && charState.auraColor) || "#fdd835";
