@@ -971,7 +971,7 @@
     hair_hr5: "hair/frieza/hr5_sin.png",       hair_hr6: "hair/frieza/hr6_armadura.png",
     hair_hr7: "hair/frieza/hr7_mascara.png",   hair_hr8: "hair/frieza/hr8_corona.png",
 
-    top_sm1: "tops/male/sm1_gi_orange.png",   top_sm2: "tops/male/sm2_gi_blue.png",
+    top_sm1: null,                             top_sm2: "tops/male/sm2_gi_blue.png",
     top_sm3: "tops/male/sm3_armor.png",        top_sm4: "tops/male/sm4_gi_green.png",
     top_sm5: "tops/male/sm5_gi_purple.png",    top_sm6: "tops/male/sm6_gi_red.png",
     top_sm7: "tops/male/sm7_black_sleeves.png",
@@ -1257,7 +1257,9 @@
         if (!quiet) console.warn(`[CharacterSystem] No se pudo cargar: ${basePath}${filename}`);
         resolve([key, null]);
       };
-      img.src = basePath + filename;
+      // Cache-buster: evita que el browser use imágenes eliminadas del servidor
+      const cacheBust = options.cacheBust ? `?v=${options.cacheBust}` : "";
+      img.src = basePath + filename + cacheBust;
     });
     const results = await Promise.all(Array.from(entryMap.entries()).map(loadOne));
     return Object.fromEntries(results);

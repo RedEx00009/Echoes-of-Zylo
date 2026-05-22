@@ -2598,7 +2598,7 @@
               await restoreAllAccessoriesForGame(CS);
               if (window.ItemSystem) window.ItemSystem.ensureScouterAccessory(CS);
 
-              csImageMap=await CS.preloadAssets("");
+              csImageMap=await CS.preloadAssets("", { cacheBust: "20260522" });
               CS.initPlayer();
 
               if(savedChar){
