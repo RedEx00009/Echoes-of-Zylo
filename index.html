@@ -182,6 +182,25 @@
     .start-btn{width:calc(100% - 20px);margin:8px 10px;padding:12px;background:linear-gradient(135deg,rgba(245,196,0,.2),rgba(255,106,0,.2));border:1px solid var(--accent);border-radius:var(--r);color:var(--accent);font-family:var(--fh);font-size:11px;letter-spacing:2px;cursor:pointer;transition:all var(--tr);flex-shrink:0}
     .start-btn:hover{background:linear-gradient(135deg,rgba(245,196,0,.35),rgba(255,106,0,.3));box-shadow:0 0 16px rgba(245,196,0,.3)}
 
+    /* ── Transform tab & cards ── */
+    .cat-tab[data-cat="transform"].active{color:#e040fb;border-bottom-color:#e040fb;background:rgba(224,64,251,.06)}
+    .tf-card{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg-card);border:2px solid var(--border);border-radius:6px;cursor:pointer;transition:all .15s;margin-bottom:4px;user-select:none}
+    .tf-card:hover{border-color:rgba(224,64,251,.5);background:rgba(224,64,251,.05)}
+    .tf-card.tf-active{border-color:#e040fb!important;background:rgba(224,64,251,.1)!important;box-shadow:0 0 10px rgba(224,64,251,.2)}
+    .tf-card.tf-card-base.tf-active{border-color:var(--accent)!important;background:rgba(245,196,0,.08)!important;box-shadow:0 0 10px rgba(245,196,0,.15)}
+    .tf-aura-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;border:2px solid rgba(255,255,255,.2)}
+    .tf-card-name{flex:1;font-family:var(--fh);font-size:9px;letter-spacing:.5px;color:var(--tp);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .tf-card.tf-active .tf-card-name{color:#e040fb}
+    .tf-card.tf-card-base.tf-active .tf-card-name{color:var(--accent)}
+    .tf-card-mult{font-family:var(--fh);font-size:8px;color:var(--tm);letter-spacing:.3px}
+    .tf-tag{font-family:var(--fh);font-size:6px;letter-spacing:.5px;padding:2px 5px;border-radius:3px;background:rgba(0,229,255,.1);color:var(--cyan);border:1px solid rgba(0,229,255,.25);flex-shrink:0}
+    .tf-tag.race{background:rgba(74,106,255,.1);color:var(--glow);border-color:rgba(74,106,255,.25)}
+    .tf-tag.custom{background:rgba(224,64,251,.1);color:#e040fb;border-color:rgba(224,64,251,.3)}
+    .tf-tag.special{background:rgba(245,196,0,.1);color:var(--accent);border-color:rgba(245,196,0,.3)}
+    .tf-del-btn{background:none;border:none;color:var(--tm);cursor:pointer;font-size:11px;padding:2px 4px;transition:color .15s;flex-shrink:0;line-height:1}
+    .tf-del-btn:hover{color:var(--red)}
+    .tf-hint{font-size:8px;color:var(--tm);font-family:var(--fb);line-height:1.4;margin:5px 0 2px;padding:5px 8px;background:rgba(255,255,255,.02);border-left:2px solid var(--border);border-radius:0 4px 4px 0}
+
     /* ── Toast ── */
     #toastContainer{position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:6px;pointer-events:none}
     .toast{padding:8px 14px;border-radius:var(--r);font-family:var(--fh);font-size:9px;letter-spacing:1px;pointer-events:none;animation:toastIn .25s ease;box-shadow:0 4px 16px rgba(0,0,0,.5)}
@@ -253,6 +272,7 @@
       <button class="cat-tab" data-cat="aura"><span class="cat-icon">🌟</span>AURA</button>
       <button class="cat-tab" data-cat="color"><span class="cat-icon">🎨</span>COLOR</button>
       <button class="cat-tab" data-cat="import"><span class="cat-icon">📂</span>IMPORT</button>
+      <button class="cat-tab" data-cat="transform"><span class="cat-icon">⚡</span>TRANSF.</button>
     </div>
 
     <div class="left-scroll">
@@ -393,6 +413,78 @@
         <div style="margin-top:12px;font-family:var(--fh);font-size:8px;letter-spacing:1px;color:var(--td)" id="skinStatus">Sin skin personalizada</div>
         <button id="btnClearSkin" style="margin-top:8px;width:100%;padding:7px;background:rgba(255,23,68,.08);border:1px solid rgba(255,23,68,.3);border-radius:4px;color:rgba(255,23,68,.7);font-family:var(--fh);font-size:8px;letter-spacing:1px;cursor:pointer;transition:all .15s">✕ LIMPIAR SKIN</button>
       </div>
+
+      <!-- ── TRANSFORMACIONES ── -->
+      <div class="cat-panel" id="panel-transform">
+
+        <!-- Forma activa (indicador) -->
+        <div id="tfActiveBar" style="display:none;align-items:center;gap:7px;padding:6px 10px;margin-bottom:8px;background:rgba(224,64,251,.08);border:1px solid rgba(224,64,251,.4);border-radius:5px">
+          <span id="tfActiveAuraDot" style="width:10px;height:10px;border-radius:50%;background:#fdd835;flex-shrink:0"></span>
+          <span id="tfActiveName" style="flex:1;font-family:var(--fh);font-size:9px;letter-spacing:.5px;color:#e040fb"></span>
+          <button id="tfBtnRevert" style="padding:3px 9px;background:rgba(255,23,68,.1);border:1px solid rgba(255,23,68,.4);border-radius:4px;color:var(--red);font-family:var(--fh);font-size:7px;letter-spacing:.5px;cursor:pointer;transition:all .15s">↩ BASE</button>
+        </div>
+
+        <!-- Lista de formas -->
+        <div class="sec-label">FORMA BASE</div>
+        <div id="tfBaseCard" class="tf-card tf-card-base">
+          <span class="tf-aura-dot" style="background:#fdd835"></span>
+          <span class="tf-card-name">Forma Base</span>
+          <span class="tf-tag">BASE</span>
+        </div>
+
+        <div id="tfRaceSection">
+          <div class="sec-label" style="margin-top:10px">TRANSFORMACIONES DE RAZA</div>
+          <div id="tfRaceList"></div>
+        </div>
+
+        <div id="tfCustomSection">
+          <div class="sec-label" style="margin-top:10px;display:flex;align-items:center;justify-content:space-between">
+            <span>CUSTOM</span>
+          </div>
+          <div id="tfCustomList"></div>
+        </div>
+
+        <button id="btnAddCustomTf" style="width:100%;margin-top:8px;padding:8px;background:rgba(224,64,251,.07);border:1px dashed rgba(224,64,251,.35);border-radius:5px;color:#e040fb;font-family:var(--fh);font-size:8px;letter-spacing:1px;cursor:pointer;transition:all .15s">+ AGREGAR TRANSFORMACIÓN CUSTOM</button>
+
+        <!-- Form custom -->
+        <div id="tfCustomForm" style="display:none;margin-top:10px;background:#0a0e1a;border:1px solid #2a3560;border-radius:8px;padding:12px">
+          <div style="font-family:var(--fh);font-size:9px;letter-spacing:2px;color:#e040fb;margin-bottom:10px">NUEVA TRANSFORMACIÓN</div>
+
+          <div style="margin-bottom:8px">
+            <label class="sec-label" style="margin:0 0 4px">NOMBRE</label>
+            <input id="tfcName" type="text" maxlength="28" placeholder="Ej: Ultra Ego" style="width:100%;padding:7px 10px;background:#12172e;border:1px solid #2a3560;border-radius:5px;color:#e8eaf6;font-family:Rajdhani,sans-serif;font-size:13px;outline:none"/>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+            <div>
+              <label class="sec-label" style="margin:0 0 4px">COLOR AURA</label>
+              <input id="tfcAuraColor" type="color" value="#e040fb" style="width:100%;height:30px;padding:2px;background:#12172e;border:1px solid #2a3560;border-radius:5px;cursor:pointer;outline:none"/>
+            </div>
+            <div>
+              <label class="sec-label" style="margin:0 0 4px">MULTIPLICADOR</label>
+              <div style="display:flex;align-items:center;gap:6px">
+                <input id="tfcMult" type="range" min="0.5" max="10" step="0.5" value="2" style="flex:1;accent-color:#e040fb;cursor:pointer"/>
+                <span id="tfcMultVal" style="font-family:var(--fh);font-size:10px;color:#e040fb;min-width:30px">×2.0</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-bottom:8px">
+            <label class="sec-label" style="margin:0 0 4px">SPRITESHEET DE SKIN (PNG — opcional)</label>
+            <label id="tfcSheetLabel" style="display:flex;align-items:center;gap:8px;padding:7px 10px;cursor:pointer;background:rgba(0,229,255,.05);border:1px dashed rgba(0,229,255,.3);border-radius:5px;color:#00e5ff;font-family:var(--fh);font-size:8px;letter-spacing:1px;transition:all .15s">
+              <span>📁 IMPORTAR PNG</span>
+              <span id="tfcSheetFname" style="font-size:8px;color:#8892b0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">sin archivo</span>
+              <input type="file" id="tfcSheetFile" accept="image/png,image/webp,image/jpeg" style="display:none"/>
+            </label>
+          </div>
+
+          <div style="display:flex;gap:8px">
+            <button id="tfcSave" style="flex:1;padding:8px;background:rgba(224,64,251,.15);border:1px solid rgba(224,64,251,.5);border-radius:6px;color:#e040fb;font-family:var(--fh);font-size:9px;letter-spacing:1px;cursor:pointer">💾 GUARDAR</button>
+            <button id="tfcCancel" style="padding:8px 14px;background:transparent;border:1px solid #2a3560;border-radius:6px;color:#8892b0;font-family:var(--fh);font-size:9px;cursor:pointer">CANCELAR</button>
+          </div>
+        </div>
+
+      </div><!-- /panel-transform -->
 
     </div><!-- /left-scroll -->
   </aside>
@@ -1529,6 +1621,479 @@ async function init() {
 }
 
 document.addEventListener("DOMContentLoaded", init);
+
+/* ═══════════════════════════════════════════════════════════════
+   SISTEMA DE TRANSFORMACIONES
+   ─────────────────────────────────────────────────────────────
+   Cada forma guarda su propio snapshot de apariencia.
+   Las formas de raza predefinidas vienen con aura/skin configurados
+   pero el usuario puede editarlas desde los otros paneles —
+   esos cambios se guardan en el snapshot de esa forma.
+   Las formas custom son libres.
+═══════════════════════════════════════════════════════════════ */
+(function () {
+  "use strict";
+
+  /* ──────────────────────────────────────────────
+     CATÁLOGO DE RAZAS → transformaciones predefinidas
+     spriteKey: si tiene un skin especial que cargar (null = solo piezas/colores)
+     locked:    si el usuario NO puede cambiar piezas (la skin lo es todo)
+  ────────────────────────────────────────────── */
+  const RACE_TF = {
+    saiyan: [
+      { id:"ssj1",  name:"Super Saiyan",      auraColor:"#ffd600", hairColor:"#ffd600", mult:2,  tag:"SS1",   hint:"Cambiá el cabello desde el panel PELO para personalizar esta forma." },
+      { id:"ssj2",  name:"Super Saiyan 2",    auraColor:"#ffd600", hairColor:"#ffd600", mult:4,  tag:"SS2",   hint:"Personalizá cabello y ropa desde sus paneles. Los cambios se guardan en esta forma." },
+      { id:"ssj3",  name:"Super Saiyan 3",    auraColor:"#ffd600", hairColor:"#ffd600", mult:6,  tag:"SS3",   hint:"Ideal con cabello largo (hm3). Personalizá desde el panel PELO." },
+      { id:"ssjg",  name:"Super Saiyan God",  auraColor:"#ff1744", hairColor:"#ff1744", mult:8,  tag:"SSG",   hint:"Forma divina. Personalizá color de piel y cabello desde sus paneles." },
+      { id:"ssjb",  name:"Super Saiyan Blue", auraColor:"#00b0ff", hairColor:"#00b0ff", mult:10, tag:"SSGSS", hint:"Ki divino azul. Personalizá desde los paneles de color y cabello." },
+      { id:"ssj4",  name:"Super Saiyan 4",    auraColor:"#ff1744", hairColor:"#1a1a1a", mult:8,  tag:"SS4",   special:true, hint:"Esta forma usa un sprite especial. Importá el PNG de la skin en el panel IMPORT." },
+      { id:"ui",    name:"Ultra Instinto",     auraColor:"#e8eaf6", hairColor:"#90a4ae", mult:10, tag:"UI",    hint:"Forma del instinto. Podés personalizar desde los paneles de color." },
+      { id:"ue",    name:"Ultra Ego",          auraColor:"#8b00ff", hairColor:"#8b00ff", mult:10, tag:"UE",    hint:"Forma del ego. Personalizá todo desde los otros paneles." },
+    ],
+    human: [
+      { id:"kk1",   name:"Kaioken",            auraColor:"#ff1744", hairColor:null, mult:3,  tag:"KKx1",  hint:"Aura roja de Kaioken. Podés cambiar ropa y accesorios." },
+      { id:"kk10",  name:"Kaioken ×10",        auraColor:"#ff1744", hairColor:null, mult:5,  tag:"KKx10", hint:"Podés personalizar ropa desde el panel ROPA." },
+      { id:"kk20",  name:"Kaioken ×20",        auraColor:"#ff1744", hairColor:null, mult:7,  tag:"KKx20", hint:"Máxima potencia del Kaioken humano." },
+      { id:"kai",   name:"Modo Maestro",        auraColor:"#ffd600", hairColor:null, mult:5,  tag:"MAES",  hint:"Personalizá todo desde los paneles de piezas." },
+    ],
+    namekian: [
+      { id:"nmk_g", name:"Forma Gigante",      auraColor:"#00e676", hairColor:null, mult:3,  tag:"GNT",   hint:"Fuerza bruta. Combiná con accesorios de poder." },
+      { id:"nmk_s", name:"Super Namekiano",    auraColor:"#76ff03", hairColor:null, mult:6,  tag:"SUP",   hint:"Potencia máxima namekiana. Personalizá desde los paneles." },
+      { id:"nmk_f", name:"Namekiano Oscuro",   auraColor:"#aa00ff", hairColor:null, mult:5,  tag:"OSC",   hint:"Fusión con magia oscura. Podés cambiar ropa y accesorios." },
+    ],
+    android: [
+      { id:"and_o", name:"Sobrecarga",          auraColor:"#00e5ff", hairColor:null, mult:2,  tag:"OVR",   hint:"Podés cambiar ropa y accesorios desde sus paneles." },
+      { id:"and_p", name:"Forma Perfecta",      auraColor:"#00e5ff", hairColor:null, mult:6,  tag:"PRF",   hint:"Forma perfecta del androide. Personalizá piezas desde los paneles." },
+      { id:"and_a", name:"Absorción Total",     auraColor:"#e040fb", hairColor:null, mult:10, tag:"ABS",   special:true, hint:"Esta forma usa un sprite especial. Importá la skin en el panel IMPORT." },
+    ],
+    kaioshin: [
+      { id:"ks_d",  name:"Potencia Divina",     auraColor:"#ffd700", hairColor:null, mult:3,  tag:"DIV",   hint:"Aura dorada de los Kaioshin. Personalizá todo desde los paneles." },
+      { id:"ks_s",  name:"Kai Sagrado",         auraColor:"#ff6a00", hairColor:null, mult:6,  tag:"SAG",   hint:"Poder sagrado máximo. Personalizá desde los paneles de piezas y color." },
+    ],
+    frieza: [
+      { id:"fz_100",  name:"Poder al 100%",     auraColor:"#e040fb", hairColor:null, mult:4,  tag:"100%",  hint:"Forma real de Frieza a máxima potencia." },
+      { id:"fz_gold", name:"Frieza Dorado",     auraColor:"#ffd600", hairColor:null, mult:8,  tag:"GOLD",  special:true, hint:"Esta forma usa un sprite especial. Importá el PNG en el panel IMPORT." },
+      { id:"fz_blk",  name:"Frieza Negro",      auraColor:"#212121", hairColor:null, mult:10, tag:"BLK",   special:true, hint:"Esta forma usa un sprite especial. Importá el PNG en el panel IMPORT." },
+    ],
+    Custom: [
+      { id:"cst_pwr", name:"Modo Poder",        auraColor:"#e040fb", hairColor:null, mult:3,  tag:"PWR",   hint:"Personalizá todo desde los otros paneles y guardá con el botón del slot." },
+    ],
+  };
+
+  /* ──────────────────────────────────────────────
+     ESTADO
+  ────────────────────────────────────────────── */
+  const LS_KEY_TF   = "dragonz_tf_snapshots_v1";
+  const LS_KEY_CUST = "dragonz_tf_custom_v1";
+
+  // Snapshots de apariencia por formId: { formId → appearanceSnapshot }
+  let _snapshots = {};
+  // Base siempre se guarda aquí
+  let _baseSnapshot = null;
+  // Forma activa
+  let _activeId = "base";
+  // Transformaciones custom del usuario
+  let _customTfs = [];
+  // DataURL del spritesheet para la forma custom que se está creando
+  let _tfcSheetDataURL = null;
+
+  /* ──────────────────────────────────────────────
+     PERSISTENCIA
+  ────────────────────────────────────────────── */
+  function _saveStorage() {
+    try {
+      // Guardar snapshots sin imágenes HTMLImageElement
+      const clean = {};
+      Object.entries(_snapshots).forEach(([k, snap]) => {
+        clean[k] = _stripImages(snap);
+      });
+      localStorage.setItem(LS_KEY_TF, JSON.stringify({ active: _activeId, snapshots: clean }));
+      localStorage.setItem(LS_KEY_CUST, JSON.stringify(_customTfs));
+    } catch(e) { console.warn("[TF]", e); }
+  }
+
+  function _loadStorage() {
+    try {
+      const raw = localStorage.getItem(LS_KEY_TF);
+      if (raw) {
+        const p = JSON.parse(raw);
+        _activeId  = p.active || "base";
+        _snapshots = p.snapshots || {};
+      }
+      const rawc = localStorage.getItem(LS_KEY_CUST);
+      if (rawc) _customTfs = JSON.parse(rawc);
+    } catch(e) { _snapshots = {}; _customTfs = []; }
+  }
+
+  function _stripImages(snap) {
+    if (!snap) return snap;
+    const c = JSON.parse(JSON.stringify(snap));
+    // Borrar cualquier campo que sea un objeto HTMLImageElement (no serializable)
+    function strip(obj) {
+      if (!obj || typeof obj !== "object") return;
+      Object.keys(obj).forEach(k => {
+        if (obj[k] && typeof obj[k] === "object" && (obj[k] instanceof HTMLImageElement || obj[k] instanceof HTMLCanvasElement)) {
+          delete obj[k];
+        } else if (obj[k] && typeof obj[k] === "object") {
+          strip(obj[k]);
+        }
+      });
+    }
+    strip(c);
+    return c;
+  }
+
+  /* ──────────────────────────────────────────────
+     HELPERS — leer estado actual del personaje
+  ────────────────────────────────────────────── */
+  function _captureAppearance() {
+    const p = window.player;
+    if (!p) return null;
+    return {
+      faceId:    p.appearance.faceId,
+      hairId:    p.appearance.hairId,
+      topId:     p.appearance.topId,
+      bottomId:  p.appearance.bottomId,
+      shoesId:   p.appearance.shoesId,
+      glovesId:  p.appearance.glovesId || (window.charState && window.charState.glovesId),
+      skinColor: p.appearance.skinColor,
+      eyeColor:  p.appearance.eyeColor,
+      hairColor: p.appearance.hairColor,
+      browColor: p.appearance.browColor,
+      pupilColor:p.appearance.pupilColor,
+      auraId:    p.appearance.auraId    || (window.charState && window.charState.auraId),
+      auraColor: p.appearance.auraColor || (window.charState && window.charState.auraColor),
+      accessoryId: p.appearance.accessoryId || (window.charState && window.charState.accessoryId),
+    };
+  }
+
+  function _applyAppearance(snap) {
+    const p = window.player;
+    if (!p || !snap) return;
+    const fields = ["faceId","hairId","topId","bottomId","shoesId","glovesId",
+                    "skinColor","eyeColor","hairColor","browColor","pupilColor",
+                    "auraId","auraColor","accessoryId"];
+    fields.forEach(f => { if (snap[f] !== undefined) p.appearance[f] = snap[f]; });
+    if (window.charState) {
+      if (snap.auraId)    window.charState.auraId    = snap.auraId;
+      if (snap.auraColor) window.charState.auraColor = snap.auraColor;
+      if (snap.glovesId)  window.charState.glovesId  = snap.glovesId;
+      if (snap.accessoryId) window.charState.accessoryId = snap.accessoryId;
+    }
+    // Sync pickers de color en el DOM
+    _syncColorPicker("auraColorPicker",  "auraColorHex",  "auraColorChips",  snap.auraColor,  window.AURA_PALETTE);
+    _syncColorPicker("hairColorPicker",  "hairColorHex",  "hairColorChips",  snap.hairColor,  window.HAIR_PALETTE);
+    _syncColorPicker("skinColorPicker",  "skinColorHex",  "skinColorChips",  snap.skinColor,  window.SKIN_PALETTE);
+    _syncColorPicker("eyeColorPicker",   "eyeColorHex",   "eyeColorChips",   snap.eyeColor,   window.EYE_PALETTE);
+    if (snap.browColor)  _syncColorPicker("browColorPicker",  "browColorHex",  "browColorChips",  snap.browColor,  window.BROW_PALETTE);
+    if (snap.pupilColor) _syncColorPicker("pupilColorPicker", "pupilColorHex", "pupilColorChips", snap.pupilColor, window.PUPIL_PALETTE);
+    if (window.invalidateHairCache) window.invalidateHairCache();
+    if (window.buildAllGrids) window.buildAllGrids();
+    if (window.updateStats) window.updateStats();
+  }
+
+  function _syncColorPicker(pickerId, hexId, chipsId, color, palette) {
+    if (!color) return;
+    const picker = document.getElementById(pickerId);
+    const hex    = document.getElementById(hexId);
+    if (picker) picker.value = color;
+    if (hex) hex.textContent = color.toUpperCase();
+    // Chips
+    const chips = document.getElementById(chipsId);
+    if (chips && palette) {
+      chips.querySelectorAll(".color-chip").forEach(c => {
+        c.classList.toggle("active", c.dataset.color === color);
+      });
+    }
+  }
+
+  /* ──────────────────────────────────────────────
+     ACTIVAR FORMA
+  ────────────────────────────────────────────── */
+  function _activateForm(id) {
+    const p = window.player;
+    if (!p) return;
+
+    // Guardar snapshot de la forma actual antes de salir
+    if (_activeId === "base") {
+      _baseSnapshot = _captureAppearance();
+    } else {
+      _snapshots[_activeId] = _captureAppearance();
+    }
+
+    _activeId = id;
+
+    if (id === "base") {
+      // Restaurar base
+      if (_baseSnapshot) {
+        _applyAppearance(_baseSnapshot);
+      }
+    } else {
+      // ¿Ya tiene snapshot guardado? Restaurarlo
+      if (_snapshots[id]) {
+        _applyAppearance(_snapshots[id]);
+      } else {
+        // Primera vez: aplicar defaults de la definición
+        const def = _findDef(id);
+        if (def) {
+          const defaults = {
+            auraColor: def.auraColor || "#fdd835",
+            auraId:    "a1",
+          };
+          if (def.hairColor) defaults.hairColor = def.hairColor;
+          // Snapshot inicial = base + overrides de la def
+          _snapshots[id] = Object.assign({}, _captureAppearance(), defaults);
+          _applyAppearance(_snapshots[id]);
+        }
+      }
+    }
+
+    _saveStorage();
+    _render();
+    _updateActiveBar();
+
+    if (id !== "base") {
+      const def = _findDef(id);
+      if (def && def.hint) {
+        window.showToast && window.showToast(def.hint, "warning");
+      }
+    }
+  }
+
+  /* Guardar el estado actual SOBRE la forma activa (desde los otros paneles) */
+  function _saveCurrentFormState() {
+    if (!_activeId || _activeId === "base") {
+      _baseSnapshot = _captureAppearance();
+    } else {
+      _snapshots[_activeId] = _captureAppearance();
+    }
+    _saveStorage();
+  }
+
+  function _findDef(id) {
+    const raceId = (window.player && window.player.appearance.raceId) || "human";
+    const raceTfs = RACE_TF[raceId] || [];
+    return raceTfs.find(t => t.id === id)
+      || _customTfs.find(t => t.id === id)
+      || null;
+  }
+
+  /* ──────────────────────────────────────────────
+     RENDER
+  ────────────────────────────────────────────── */
+  function _render() {
+    const raceId = (window.player && window.player.appearance.raceId) || "human";
+    const raceTfs = RACE_TF[raceId] || [];
+
+    // Base card
+    const baseCard = document.getElementById("tfBaseCard");
+    if (baseCard) {
+      baseCard.classList.toggle("tf-active", _activeId === "base");
+    }
+
+    // Race list
+    const raceList = document.getElementById("tfRaceList");
+    if (raceList) {
+      raceList.innerHTML = "";
+      if (raceTfs.length === 0) {
+        raceList.innerHTML = '<div class="tf-hint">Sin transformaciones predefinidas para esta raza.</div>';
+      } else {
+        raceTfs.forEach(tf => {
+          const card = _makeCard(tf, "race");
+          raceList.appendChild(card);
+        });
+      }
+    }
+
+    // Custom list
+    const custList = document.getElementById("tfCustomList");
+    if (custList) {
+      custList.innerHTML = "";
+      if (_customTfs.length === 0) {
+        custList.innerHTML = '<div class="tf-hint" style="margin-bottom:4px">Aún no hay transformaciones custom.</div>';
+      } else {
+        _customTfs.forEach(tf => {
+          const card = _makeCard(tf, "custom", true);
+          custList.appendChild(card);
+        });
+      }
+    }
+  }
+
+  function _makeCard(tf, tagType, deletable) {
+    const isActive = _activeId === tf.id;
+    const card = document.createElement("div");
+    card.className = "tf-card" + (isActive ? " tf-active" : "");
+    card.innerHTML = `
+      <span class="tf-aura-dot" style="background:${tf.auraColor || "#fdd835"}"></span>
+      <span class="tf-card-name">${tf.name}</span>
+      <span class="tf-card-mult">×${tf.mult}</span>
+      ${tf.special ? `<span class="tf-tag special">SKIN</span>` : `<span class="tf-tag ${tagType}">${tf.tag || "TF"}</span>`}
+      ${deletable ? `<button class="tf-del-btn" data-id="${tf.id}" title="Eliminar">✕</button>` : ""}
+    `;
+    card.addEventListener("click", e => {
+      if (e.target.classList.contains("tf-del-btn")) return;
+      _activateForm(tf.id);
+    });
+    if (deletable) {
+      card.querySelector(".tf-del-btn")?.addEventListener("click", e => {
+        e.stopPropagation();
+        _customTfs = _customTfs.filter(t => t.id !== tf.id);
+        if (_activeId === tf.id) _activateForm("base");
+        _saveStorage();
+        _render();
+        window.showToast && window.showToast("Transformación eliminada","warning");
+      });
+    }
+    return card;
+  }
+
+  function _updateActiveBar() {
+    const bar  = document.getElementById("tfActiveBar");
+    const dot  = document.getElementById("tfActiveAuraDot");
+    const name = document.getElementById("tfActiveName");
+    if (!bar) return;
+    if (_activeId === "base") {
+      bar.style.display = "none";
+    } else {
+      const def = _findDef(_activeId);
+      bar.style.display = "flex";
+      if (dot)  dot.style.background = (def && def.auraColor) || "#fdd835";
+      if (name) name.textContent = (def && def.name) || _activeId;
+    }
+  }
+
+  /* ──────────────────────────────────────────────
+     FORM CUSTOM
+  ────────────────────────────────────────────── */
+  function _initCustomForm() {
+    const multSlider = document.getElementById("tfcMult");
+    const multVal    = document.getElementById("tfcMultVal");
+    const sheetFile  = document.getElementById("tfcSheetFile");
+    const sheetLabel = document.getElementById("tfcSheetLabel");
+    const sheetFname = document.getElementById("tfcSheetFname");
+
+    multSlider?.addEventListener("input", () => {
+      multVal.textContent = "×" + parseFloat(multSlider.value).toFixed(1);
+    });
+
+    sheetFile?.addEventListener("change", e => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        _tfcSheetDataURL = ev.target.result;
+        if (sheetFname) sheetFname.textContent = file.name;
+        if (sheetLabel) { sheetLabel.style.borderColor="#00ff9d"; sheetLabel.style.color="#00ff9d"; }
+      };
+      reader.readAsDataURL(file);
+    });
+
+    document.getElementById("btnAddCustomTf")?.addEventListener("click", () => {
+      _tfcSheetDataURL = null;
+      document.getElementById("tfcName").value = "";
+      document.getElementById("tfcAuraColor").value = "#e040fb";
+      document.getElementById("tfcMult").value = "2";
+      if (multVal) multVal.textContent = "×2.0";
+      if (sheetFname) sheetFname.textContent = "sin archivo";
+      if (sheetLabel) { sheetLabel.style.borderColor=""; sheetLabel.style.color=""; }
+      document.getElementById("tfCustomForm").style.display = "block";
+    });
+
+    document.getElementById("tfcCancel")?.addEventListener("click", () => {
+      document.getElementById("tfCustomForm").style.display = "none";
+    });
+
+    document.getElementById("tfcSave")?.addEventListener("click", () => {
+      const name = document.getElementById("tfcName").value.trim();
+      if (!name) { window.showToast && window.showToast("Ingresá un nombre","error"); return; }
+      const auraColor = document.getElementById("tfcAuraColor").value;
+      const mult = parseFloat(document.getElementById("tfcMult").value) || 2;
+      const id = "ctf_" + Date.now().toString(36);
+      _customTfs.push({ id, name, auraColor, hairColor: null, mult, tag: "CUST", spriteDataURL: _tfcSheetDataURL || null });
+      _saveStorage();
+      document.getElementById("tfCustomForm").style.display = "none";
+      _render();
+      window.showToast && window.showToast("Transformación creada — seleccionala y personalizá desde los otros paneles","success");
+    });
+  }
+
+  /* ──────────────────────────────────────────────
+     HOOK: escuchar cambios desde otros paneles
+     para guardarlos en el snapshot de la forma activa
+  ────────────────────────────────────────────── */
+  function _hookOtherPanels() {
+    // Cada vez que el usuario cambia color/pieza en el creator,
+    // guardamos el estado en el snapshot de la forma activa
+    const watchIds = [
+      "skinColorPicker","eyeColorPicker","hairColorPicker","auraColorPicker",
+      "browColorPicker","pupilColorPicker",
+    ];
+    watchIds.forEach(id => {
+      document.getElementById(id)?.addEventListener("input", () => {
+        requestAnimationFrame(_saveCurrentFormState);
+      });
+    });
+
+    // Color chips
+    document.querySelectorAll(".color-chip").forEach(chip => {
+      chip.addEventListener("click", () => {
+        requestAnimationFrame(_saveCurrentFormState);
+      });
+    });
+
+    // Item cards (pelo, cara, ropa, etc.)
+    document.addEventListener("click", e => {
+      const card = e.target.closest(".item-card");
+      if (card) requestAnimationFrame(_saveCurrentFormState);
+    });
+
+    // Cambio de raza → volver a base y re-renderizar
+    document.getElementById("raceGrid")?.addEventListener("click", e => {
+      const card = e.target.closest(".item-card");
+      if (!card) return;
+      if (_activeId !== "base") {
+        setTimeout(() => { _activeId = "base"; _render(); _updateActiveBar(); }, 50);
+      } else {
+        setTimeout(_render, 50);
+      }
+    });
+  }
+
+  /* ──────────────────────────────────────────────
+     INIT
+  ────────────────────────────────────────────── */
+  function _init() {
+    _loadStorage();
+    _initCustomForm();
+
+    // Base card click
+    document.getElementById("tfBaseCard")?.addEventListener("click", () => _activateForm("base"));
+    // Revert button en el active bar
+    document.getElementById("tfBtnRevert")?.addEventListener("click", () => _activateForm("base"));
+
+    setTimeout(() => {
+      _hookOtherPanels();
+      _baseSnapshot = _captureAppearance(); // snapshot inicial
+      _render();
+      _updateActiveBar();
+      // Si había una forma activa guardada, reaplicarla
+      if (_activeId !== "base" && _snapshots[_activeId]) {
+        _applyAppearance(_snapshots[_activeId]);
+        _updateActiveBar();
+      }
+    }, 600);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", _init);
+  } else {
+    setTimeout(_init, 400);
+  }
+
+  // Exponer para uso externo si se necesita
+  window.TFSystem = { render: _render, saveState: _saveCurrentFormState, activateForm: _activateForm };
+})();
 </script>
 </body>
 </html>
