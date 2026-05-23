@@ -476,25 +476,27 @@
   // ═══════════════════════════════════════════════════════════════
 
   const TOP_CATALOG_MALE = [
-    { id: "sm1", name: "Gi Naranja", spriteKey: "top_sm1", color1: "#ff6a00", color2: "#1565c0", style: "gi"    },
-    { id: "sm2", name: "Gi Azul",    spriteKey: "top_sm2", color1: "#1565c0", color2: "#ffffff", style: "gi"    },
-    { id: "sm3", name: "Armadura",   spriteKey: "top_sm3", color1: "#c0c0c0", color2: "#333333", style: "armor" },
-    { id: "sm4", name: "Gi Verde",   spriteKey: "top_sm4", color1: "#2e7d32", color2: "#ffffff", style: "gi"    },
-    { id: "sm5", name: "Gi Morado",  spriteKey: "top_sm5", color1: "#6a1b9a", color2: "#ffd700", style: "gi"    },
-    { id: "sm6", name: "Gi Rojo",    spriteKey: "top_sm6", color1: "#b71c1c", color2: "#ffffff", style: "gi"    },
-    { id: "sm7", name: "Manga Neg",  spriteKey: "top_sm7", color1: "#1a1a1a", color2: "#444444", style: "plain" },
-    { id: "sm8", name: "Sin ropa",   spriteKey: null,       color1: null,      color2: null,      style: "bare"  },
+    { id: "top_gi_tortuga_m", name: "Gi Tortuga",      spriteKey: "top_sm1", color1: "#ff6a00", color2: "#1565c0", style: "gi"    },
+    { id: "sm2", name: "Arm. Saiyan",     spriteKey: "top_sm2", color1: "#1a1a1a", color2: "#ffffff", style: "armor" },
+    { id: "sm3", name: "Arm. Soldado",    spriteKey: "top_sm3", color1: "#c0c0c0", color2: "#7c4dff", style: "armor" },
+    { id: "sm4", name: "Arm. Patrullero", spriteKey: "top_sm4", color1: "#1565c0", color2: "#f5f5f5", style: "armor" },
+    { id: "sm5", name: "Ropa Casual 1",   spriteKey: "top_sm5", color1: "#37474f", color2: "#ffffff", style: "plain" },
+    { id: "sm6", name: "Ropa Casual 2",   spriteKey: "top_sm6", color1: "#4a148c", color2: "#ffffff", style: "plain" },
+    { id: "sm7", name: "Gi Liviano",      spriteKey: "top_sm7", color1: "#e0e0e0", color2: "#9e9e9e", style: "gi"    },
+    { id: "sm8", name: "R. Androide",     spriteKey: "top_sm8", color1: "#212121", color2: "#00e5ff", style: "plain" },
+    { id: "sm9", name: "Sin ropa",        spriteKey: null,       color1: null,      color2: null,      style: "bare"  },
   ];
 
   const TOP_CATALOG_FEMALE = [
-    { id: "sf1", name: "Gi Rosa",      spriteKey: "top_sf1", color1: "#e91e8c", color2: "#ffffff", style: "gi"    },
-    { id: "sf2", name: "Gi Azul F",    spriteKey: "top_sf2", color1: "#1565c0", color2: "#ffffff", style: "gi"    },
-    { id: "sf3", name: "Armadura F",   spriteKey: "top_sf3", color1: "#c0c0c0", color2: "#333333", style: "armor" },
-    { id: "sf4", name: "Gi Verde F",   spriteKey: "top_sf4", color1: "#2e7d32", color2: "#ffffff", style: "gi"    },
-    { id: "sf5", name: "Gi Naranja F", spriteKey: "top_sf5", color1: "#ff6a00", color2: "#1565c0", style: "gi"    },
-    { id: "sf6", name: "Top Negro",    spriteKey: "top_sf6", color1: "#1a1a1a", color2: "#555555", style: "plain" },
-    { id: "sf7", name: "Gi Morado F",  spriteKey: "top_sf7", color1: "#6a1b9a", color2: "#ffd700", style: "gi"    },
-    { id: "sf8", name: "Sin ropa F",   spriteKey: null,       color1: null,      color2: null,      style: "bare"  },
+    { id: "sf1", name: "Gi Tortuga F",    spriteKey: "top_sf1", color1: "#ff6a00", color2: "#1565c0", style: "gi"    },
+    { id: "sf2", name: "Arm. Saiyan F",   spriteKey: "top_sf2", color1: "#1a1a1a", color2: "#ffffff", style: "armor" },
+    { id: "sf3", name: "Arm. Soldado F",  spriteKey: "top_sf3", color1: "#c0c0c0", color2: "#7c4dff", style: "armor" },
+    { id: "sf4", name: "Arm. Patrol. F",  spriteKey: "top_sf4", color1: "#1565c0", color2: "#f5f5f5", style: "armor" },
+    { id: "sf5", name: "Casual 1 F",      spriteKey: "top_sf5", color1: "#37474f", color2: "#ffffff", style: "plain" },
+    { id: "sf6", name: "Casual 2 F",      spriteKey: "top_sf6", color1: "#4a148c", color2: "#ffffff", style: "plain" },
+    { id: "sf7", name: "Gi Liviano F",    spriteKey: "top_sf7", color1: "#e0e0e0", color2: "#9e9e9e", style: "gi"    },
+    { id: "sf8", name: "R. Androide F",   spriteKey: "top_sf8", color1: "#212121", color2: "#00e5ff", style: "plain" },
+    { id: "sf9", name: "Sin ropa F",      spriteKey: null,       color1: null,      color2: null,      style: "bare"  },
   ];
 
   const TOP_CATALOG_NAMEKIAN = [
@@ -687,7 +689,14 @@
   // ═══════════════════════════════════════════════════════════════
 
   const ACCESSORIES_CATALOG = [
-    { id: "ac_none", name: "Ninguno", type: "none", slot: "over_shirt", color: null, userImage: null, dataURL: null },
+    { id: "ac_none",       name: "Ninguno",             type: "none",    slot: "over_shirt",  color: null,      userImage: null, dataURL: null },
+    { id: "ac_scouter",    name: "Scouter XI",          type: "scouter", slot: "over_shirt",  color: "#43a047", userImage: null, dataURL: null, spriteKey: "acc_scouter"    },
+    { id: "ac_tail",       name: "Cola Saiyajin",       type: "tail",    slot: "under_shirt", color: "#8d6e63", userImage: null, dataURL: null, spriteKey: "acc_tail"       },
+    { id: "ac_cape1",      name: "Capa 1",              type: "cape",    slot: "under_shirt", color: "#b71c1c", userImage: null, dataURL: null, spriteKey: "acc_cape1"      },
+    { id: "ac_cape2",      name: "Capa 2",              type: "cape",    slot: "under_shirt", color: "#1a237e", userImage: null, dataURL: null, spriteKey: "acc_cape2"      },
+    { id: "ac_hood",       name: "Capucha",             type: "mask",    slot: "over_shirt",  color: "#37474f", userImage: null, dataURL: null, spriteKey: "acc_hood"       },
+    { id: "ac_logo_gp",    name: "Logo Pat. Galáctica", type: "logo",   slot: "over_shirt",  color: "#1565c0", userImage: null, dataURL: null, spriteKey: "acc_logo_gp"    },
+    { id: "ac_logo_fe",    name: "Logo Fuerza Esp.",    type: "logo",   slot: "over_shirt",  color: "#b71c1c", userImage: null, dataURL: null, spriteKey: "acc_logo_fe"    },
   ];
 
   const ACCESSORY_TYPES = [
@@ -700,6 +709,7 @@
     { id: "scouter", label: "Scouter",  slot: "over_shirt",  icon: "🔭" },
     { id: "tail",    label: "Cola",     slot: "under_shirt", icon: "🐾" },
     { id: "wings",   label: "Alas",     slot: "under_shirt", icon: "🦋" },
+    { id: "logo",    label: "Logo",     slot: "over_shirt",  icon: "🏅" },
     { id: "other",   label: "Otro",     slot: "over_shirt",  icon: "✨" },
   ];
 
@@ -893,7 +903,7 @@
     return {
       faceId:      face[0]   ? face[0].id   : "fm0",
       hairId:      hair[0]   ? hair[0].id   : "hm1",
-      topId:       shirt[0]  ? shirt[0].id  : "sm1",
+      topId:       shirt[0]  ? shirt[0].id  : "top_gi_tortuga_m",
       bottomId:    pants[0]  ? pants[0].id  : "pm1",
       shoesId:     shoes[0]  ? shoes[0].id  : "shm1",
       glovesId:    gloves[0] ? gloves[0].id : "gm0",
@@ -971,15 +981,15 @@
     hair_hr5: "hair/frieza/hr5_sin.png",       hair_hr6: "hair/frieza/hr6_armadura.png",
     hair_hr7: "hair/frieza/hr7_mascara.png",   hair_hr8: "hair/frieza/hr8_corona.png",
 
-    top_sm1: null,                             top_sm2: "tops/male/sm2_gi_blue.png",
-    top_sm3: "tops/male/sm3_armor.png",        top_sm4: "tops/male/sm4_gi_green.png",
-    top_sm5: "tops/male/sm5_gi_purple.png",    top_sm6: "tops/male/sm6_gi_red.png",
-    top_sm7: "tops/male/sm7_black_sleeves.png",
+    top_sm1: "tops/male/sm1_gi_tortuga.png",      top_sm2: "tops/male/sm2_armor_saiyan.png",
+    top_sm3: "tops/male/sm3_armor_soldado.png",    top_sm4: "tops/male/sm4_armor_patrullero.png",
+    top_sm5: "tops/male/sm5_casual1.png",          top_sm6: "tops/male/sm6_casual2.png",
+    top_sm7: "tops/male/sm7_gi_liviano.png",       top_sm8: "tops/male/sm8_androide.png",
 
-    top_sf1: "tops/female/sf1_gi_pink.png",    top_sf2: "tops/female/sf2_gi_blue.png",
-    top_sf3: "tops/female/sf3_armor.png",       top_sf4: "tops/female/sf4_gi_green.png",
-    top_sf5: "tops/female/sf5_gi_orange.png",   top_sf6: "tops/female/sf6_top_black.png",
-    top_sf7: "tops/female/sf7_gi_purple.png",
+    top_sf1: "tops/female/sf1_gi_tortuga.png",    top_sf2: "tops/female/sf2_armor_saiyan.png",
+    top_sf3: "tops/female/sf3_armor_soldado.png",  top_sf4: "tops/female/sf4_armor_patrullero.png",
+    top_sf5: "tops/female/sf5_casual1.png",        top_sf6: "tops/female/sf6_casual2.png",
+    top_sf7: "tops/female/sf7_gi_liviano.png",     top_sf8: "tops/female/sf8_androide.png",
 
     top_sn1: "tops/namekian/sn1_manto.png",    top_sn2: "tops/namekian/sn2_gi1.png",
     top_sn3: "tops/namekian/sn3_armor.png",     top_sn4: "tops/namekian/sn4_gi2.png",
@@ -1050,6 +1060,14 @@
     glove_gr3: "gloves/frieza/gr3_claw.png",     glove_gr4: "gloves/frieza/gr4_gold.png",
     glove_gr5: "gloves/frieza/gr5_black.png",    glove_gr6: "gloves/frieza/gr6_armor3.png",
     glove_gr7: "gloves/frieza/gr7_crystal.png",
+
+    acc_scouter: "accessories/acc_scouter.png",
+    acc_tail:    "accessories/acc_tail.png",
+    acc_cape1:   "accessories/acc_cape1.png",
+    acc_cape2:   "accessories/acc_cape2.png",
+    acc_hood:    "accessories/acc_hood.png",
+    acc_logo_gp: "accessories/acc_logo_gp.png",
+    acc_logo_fe: "accessories/acc_logo_fe.png",
 
     aura_a1: "auras/a1_yellow.png",  aura_a2: "auras/a2_blue.png",
     aura_a3: "auras/a3_red.png",     aura_a4: "auras/a4_purple.png",
@@ -1257,9 +1275,7 @@
         if (!quiet) console.warn(`[CharacterSystem] No se pudo cargar: ${basePath}${filename}`);
         resolve([key, null]);
       };
-      // Cache-buster: evita que el browser use imágenes eliminadas del servidor
-      const cacheBust = options.cacheBust ? `?v=${options.cacheBust}` : "";
-      img.src = basePath + filename + cacheBust;
+      img.src = basePath + filename;
     });
     const results = await Promise.all(Array.from(entryMap.entries()).map(loadOne));
     return Object.fromEntries(results);
@@ -1465,6 +1481,52 @@
     _tintCache.set(key, off); return off;
   }
 
+  /**
+   * tintClothDetailed — igual que tintFaceDetailed pero para ropa.
+   * colorA reemplaza píxeles rojos (canal rojo dominante).
+   * colorB reemplaza píxeles azules (canal azul dominante).
+   * Si alguno de los dos es null, ese canal se deja sin tocar.
+   */
+  function tintClothDetailed(clothImg, colorA, colorB, cacheKey, w, h, frameCoords) {
+    if (!clothImg || !clothImg.complete || !clothImg.naturalWidth) return null;
+    if (!colorA && !colorB) return null;
+    const fc  = frameCoords ? `${frameCoords.srcX}_${frameCoords.srcY}_${frameCoords.fw}_${frameCoords.fh}` : "full";
+    const key = `clothDetail|${cacheKey}|${w}|${h}|${colorA||"none"}|${colorB||"none"}|${fc}`;
+    if (_tintCache.has(key)) return _tintCache.get(key);
+    if (_tintCache.size > 512) _tintCache.delete(_tintCache.keys().next().value);
+    const off = document.createElement("canvas");
+    off.width = w; off.height = h;
+    const ctx = off.getContext("2d");
+    ctx.imageSmoothingEnabled = false;
+    if (frameCoords) {
+      ctx.drawImage(clothImg, frameCoords.srcX, frameCoords.srcY, frameCoords.fw, frameCoords.fh, 0, 0, w, h);
+    } else {
+      ctx.drawImage(clothImg, 0, 0, clothImg.naturalWidth, clothImg.naturalHeight, 0, 0, w, h);
+    }
+    let imageData;
+    try { imageData = ctx.getImageData(0, 0, w, h); }
+    catch(e) { _tintCache.set(key, off); return off; }
+    const data = imageData.data;
+    const aRgb = colorA ? _hexToRgb(colorA) : null;
+    const bRgb = colorB ? _hexToRgb(colorB) : null;
+    const aHsl = aRgb ? _rgbToHsl(aRgb.r, aRgb.g, aRgb.b) : null;
+    const bHsl = bRgb ? _rgbToHsl(bRgb.r, bRgb.g, bRgb.b) : null;
+    for (let i = 0; i < data.length; i += 4) {
+      if (data[i+3] < 16) continue;
+      const r = data[i], g = data[i+1], b = data[i+2];
+      const isRed  = aHsl && r > 80 && r > g * 1.8 && r > b * 1.8 && (r - Math.max(g, b)) > 40;
+      const isBlue = bHsl && b > 80 && b > r * 1.8 && b > g * 1.5 && (b - Math.max(r, g)) > 40;
+      if (!isRed && !isBlue) continue;
+      const srcL = isRed ? (r / 255) : (b / 255);
+      const hsl  = isRed ? aHsl : bHsl;
+      const tL   = Math.max(0.08, hsl.l * 0.6 + srcL * 0.4);
+      const { r: nr, g: ng, b: nb } = _hslToRgb(hsl.h, hsl.s, tL);
+      data[i]=nr; data[i+1]=ng; data[i+2]=nb;
+    }
+    ctx.putImageData(imageData, 0, 0);
+    _tintCache.set(key, off); return off;
+  }
+
   // ═══════════════════════════════════════════════════════════════
   //  RENDER HELPERS
   // ═══════════════════════════════════════════════════════════════
@@ -1600,12 +1662,20 @@
     }
   }
 
-  function _drawAccessoryLayer(ctx, accDef, screenX, screenY, dw, dh, animator, inCombat, inSpecial) {
+  function _drawAccessoryLayer(ctx, accDef, screenX, screenY, dw, dh, animator, inCombat, inSpecial, imageMap) {
     if (!accDef || accDef.id === "ac_none") return;
     const bundle = resolveCustomSheetBundle(accDef);
     if (bundle?.img?.complete && bundle.img.naturalWidth) {
       _drawVariantSheet(ctx, bundle.img, screenX, screenY, dw, dh, animator, bundle.custom);
       return;
+    }
+    // Accesorios predefinidos con spriteKey (se cargan desde imageMap igual que ropa)
+    if (accDef.spriteKey && imageMap) {
+      const builtinImg = imageMap[accDef.spriteKey];
+      if (builtinImg && builtinImg.complete && builtinImg.naturalWidth) {
+        _drawLayerSprite(ctx, builtinImg, screenX - dw/2, screenY - dh, dw, dh, animator);
+        return;
+      }
     }
     const img = _getAccessoryImage(accDef);
     if (img && img.complete && img.naturalWidth) {
@@ -1747,7 +1817,7 @@
 
     // ── 2. Accesorio under_shirt ───────────────────────────────
     if (accSlot === "under_shirt") {
-      _drawAccessoryLayer(ctx, accDef, screenX, screenY, dw, dh, animator, inCombat, inSpecial);
+      _drawAccessoryLayer(ctx, accDef, screenX, screenY, dw, dh, animator, inCombat, inSpecial, imageMap);
     }
 
     // ── 3. CUERPO con tinte de piel ───────────────────────────
@@ -1767,18 +1837,40 @@
       }
     }
 
+    // Colores de ropa A/B (del appearance del jugador)
+    const clothColorA = app.clothColorA || null;
+    const clothColorB = app.clothColorB || null;
+
+    // Helper: dibuja una capa de ropa con tinte doble si hay colores configurados
+    function _drawClothLayer(clothDef, clothImg) {
+      if (!clothImg || !clothImg.complete || !clothImg.naturalWidth) return;
+      if (clothColorA || clothColorB) {
+        const isSheet = isCompatibleSheet(clothImg) && animator;
+        let frameCoords = null;
+        if (isSheet) {
+          const r = animator.getLayerFrameCoords(clothImg);
+          if (r.srcX + r.fw <= clothImg.naturalWidth && r.srcY + r.fh <= clothImg.naturalHeight)
+            frameCoords = r;
+        }
+        const cacheKey = (clothDef ? clothDef.id : "cloth") + "|" + (clothImg.src || "");
+        const tinted = tintClothDetailed(clothImg, clothColorA, clothColorB, cacheKey, dw, dh, frameCoords);
+        if (tinted) { ctx.imageSmoothingEnabled = false; ctx.drawImage(tinted, destX, destY, dw, dh); return; }
+      }
+      _drawLayerSprite(ctx, clothImg, destX, destY, dw, dh, animator);
+    }
+
     // ── 4. Ropa inferior ──────────────────────────────────────
-    _drawLayerSprite(ctx, getImg(btmDef?.spriteKey),   destX, destY, dw, dh, animator);
+    _drawClothLayer(btmDef,   getImg(btmDef?.spriteKey));
     // ── 5. Calzado ────────────────────────────────────────────
-    _drawLayerSprite(ctx, getImg(shoesDef?.spriteKey), destX, destY, dw, dh, animator);
+    _drawClothLayer(shoesDef, getImg(shoesDef?.spriteKey));
     // ── 6. Cinturón ───────────────────────────────────────────
     if (accSlot === "belt_slot") {
-      _drawAccessoryLayer(ctx, accDef, screenX, screenY, dw, dh, animator, inCombat, inSpecial);
+      _drawAccessoryLayer(ctx, accDef, screenX, screenY, dw, dh, animator, inCombat, inSpecial, imageMap);
     }
     // ── 7. Ropa superior ──────────────────────────────────────
-    _drawLayerSprite(ctx, getImg(topDef?.spriteKey),   destX, destY, dw, dh, animator);
+    _drawClothLayer(topDef,   getImg(topDef?.spriteKey));
     // ── 8. Guantes ────────────────────────────────────────────
-    _drawLayerSprite(ctx, getImg(glvDef?.spriteKey),   destX, destY, dw, dh, animator);
+    _drawClothLayer(glvDef,   getImg(glvDef?.spriteKey));
 
     // ── 9. CARA ───────────────────────────────────────────────
     const faceImg = getImg(faceDef?.spriteKey);
@@ -1838,7 +1930,7 @@
 
     // ── 11. Accesorio over_shirt ──────────────────────────────
     if (accSlot === "over_shirt") {
-      _drawAccessoryLayer(ctx, accDef, screenX, screenY, dw, dh, animator, inCombat, inSpecial);
+      _drawAccessoryLayer(ctx, accDef, screenX, screenY, dw, dh, animator, inCombat, inSpecial, imageMap);
     }
 
     ctx.restore();
@@ -1861,7 +1953,7 @@
       faceColor:   null,
       hairId:      "hm1",
       hairColor:   "#1a1a1a",
-      topId:       "sm1",
+      topId:       "top_gi_tortuga_m",
       bottomId:    "pm1",
       shoesId:     "shm1",
       glovesId:    "gm0",
@@ -1871,6 +1963,8 @@
       eyeColor:    "#3a2a1a",
       browColor:   null,
       pupilColor:  null,
+      clothColorA: null,
+      clothColorB: null,
       accessoryId: "ac_none",
     },
     _animator: null,
@@ -1946,7 +2040,7 @@
 
     SpriteAnimator, initPlayer, preloadAssets, drawPlayer,
 
-    tintHair, tintLayer, tintFaceColor, tintFaceDetailed, invalidateHairCache,
+    tintHair, tintLayer, tintFaceColor, tintFaceDetailed, tintClothDetailed, invalidateHairCache,
     _hexToRgb, _rgbToHsl, _hslToRgb, _tintSprite,
 
     // ── Detección de sheet ──────────────────────────────────────

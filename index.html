@@ -399,6 +399,22 @@
           <input type="color" id="pupilColorPicker" class="color-picker" value="#2979ff"/>
           <span class="color-hex" id="pupilColorHex">#2979FF</span>
         </div>
+
+        <div class="sec-label" style="margin-top:14px;border-top:1px solid var(--border);padding-top:10px">👕 COLOR ROPA A</div>
+        <div style="font-size:9px;color:var(--td);margin-bottom:5px;font-family:var(--fb);line-height:1.4">Color primario de la ropa (requiere sprite con <span style="color:#ff5555">rojo</span> como marcador)</div>
+        <div class="color-chips" id="clothColorAChips"></div>
+        <div class="color-picker-row">
+          <input type="color" id="clothColorAPicker" class="color-picker" value="#ff6a00"/>
+          <span class="color-hex" id="clothColorAHex">#FF6A00</span>
+        </div>
+
+        <div class="sec-label" style="margin-top:12px">👕 COLOR ROPA B</div>
+        <div style="font-size:9px;color:var(--td);margin-bottom:5px;font-family:var(--fb);line-height:1.4">Color secundario / detalles (requiere sprite con <span style="color:#5599ff">azul</span> como marcador)</div>
+        <div class="color-chips" id="clothColorBChips"></div>
+        <div class="color-picker-row">
+          <input type="color" id="clothColorBPicker" class="color-picker" value="#1565c0"/>
+          <span class="color-hex" id="clothColorBHex">#1565C0</span>
+        </div>
       </div>
 
       <!-- ── IMPORTAR SKIN PRINCIPAL ── -->
@@ -637,6 +653,8 @@ const EYE_PALETTE   = ["#1a1a1a","#f5f5f5","#00e676","#2979ff","#b71c1c","#aa00f
 const AURA_PALETTE  = ["#fdd835","#00b0ff","#ff1744","#aa00ff","#00e676","#e8eaf6","#90a4ae","#ff6a00"];
 const BROW_PALETTE  = ["#1a1a1a","#4a3020","#8B4513","#c0840a","#ffd700","#ff4400","#e8eaf6","#aa00ff","#ff69b4","#00e676"];
 const PUPIL_PALETTE = ["#1a1a1a","#2979ff","#00e5ff","#00e676","#b71c1c","#ffd600","#aa00ff","#ff6a00","#e8eaf6","#ff69b4"];
+const CLOTH_A_PALETTE = ["#ff6a00","#ffd600","#b71c1c","#2979ff","#1b5e20","#7b1fa2","#e8eaf6","#1a1a1a","#00e676","#ff69b4"];
+const CLOTH_B_PALETTE = ["#1565c0","#ffffff","#212121","#9e9e9e","#ffd600","#e040fb","#37474f","#8d6e63","#00e5ff","#ff6a00"];
 
 /* ════ Estado global ════ */
 const LS_KEY  = "dragonCreatorZ_slots";
@@ -721,9 +739,11 @@ function _drawThumb(canvas, item, cat) {
     } else {
       if (color) { ctx.fillStyle = color+"88"; ctx.fillRect(4,4,w-8,h-8); }
       const ICONS = { race:"👾", face:"😶", hair:"💇", shirt:"👕", pants:"👖", shoes:"👟", gloves:"🥊", aura:"✨", accessory:"🎽" };
+      const ACC_ICONS = { scouter:"🔭", tail:"🐾", cape:"🧣", mask:"🎭", logo:"🏅", belt:"🥋", bag:"🎒", collar:"📿", brace:"⌚", wings:"🦋", none:"❌", other:"✨" };
+      const icon = cat === "accessory" && item.type ? (ACC_ICONS[item.type] || "🎽") : (ICONS[cat] || "?");
       ctx.font = `${Math.round(h*0.4)}px sans-serif`;
       ctx.textAlign="center"; ctx.textBaseline="middle";
-      ctx.fillText(ICONS[cat]||"?", w/2, h/2);
+      ctx.fillText(icon, w/2, h/2);
       ctx.textAlign="left"; ctx.textBaseline="alphabetic";
     }
   }
@@ -1351,6 +1371,7 @@ function saveToSlot(i) {
       skinColor:player.appearance.skinColor, eyeColor:player.appearance.eyeColor,
       hairColor:player.appearance.hairColor,
       browColor:player.appearance.browColor||null, pupilColor:player.appearance.pupilColor||null,
+      clothColorA:player.appearance.clothColorA||null, clothColorB:player.appearance.clothColorB||null,
       accessoryId:charState.accessoryId||"ac_none",
       spriteSheets:{sheet,base:sheet,pelea:sheet,especial:sheet},
       layerImports: Object.assign({},layerImports),
@@ -1373,9 +1394,11 @@ async function loadFromSlot(i) {
     player.appearance.hairColor=d.hairColor||"#1a1a1a";
     player.appearance.browColor  = d.browColor  || null;
     player.appearance.pupilColor = d.pupilColor || null;
+    player.appearance.clothColorA = d.clothColorA || null;
+    player.appearance.clothColorB = d.clothColorB || null;
     player.appearance.faceId   =d.faceId||"fm0";
     player.appearance.hairId   =d.hairId||"hm1";
-    player.appearance.topId    =d.topId||"sm1";
+    player.appearance.topId    =d.topId||"top_gi_tortuga_m";
     player.appearance.bottomId =d.bottomId||"pm1";
     player.appearance.shoesId  =d.shoesId||"shm1";
     charState.glovesId=d.glovesId||"gm0"; player.appearance.glovesId=charState.glovesId;
@@ -1450,6 +1473,8 @@ async function loadFromSlot(i) {
     refreshColorPicker("hairColorPicker","hairColorHex","hairColorChips",player.appearance.hairColor,HAIR_PALETTE);
     refreshColorPicker("eyeColorPicker","eyeColorHex","eyeColorChips",player.appearance.eyeColor,EYE_PALETTE);
     refreshColorPicker("auraColorPicker","auraColorHex","auraColorChips",charState.auraColor,AURA_PALETTE);
+    if(d.clothColorA) refreshColorPicker("clothColorAPicker","clothColorAHex","clothColorAChips",d.clothColorA,CLOTH_A_PALETTE);
+    if(d.clothColorB) refreshColorPicker("clothColorBPicker","clothColorBHex","clothColorBChips",d.clothColorB,CLOTH_B_PALETTE);
     activeSlotIndex=i; localStorage.setItem(LS_SLOT,String(i));
     renderSlots(); updateStats();
     showToast(`"${d.name}" cargado`,"success");
@@ -1618,8 +1643,12 @@ async function init() {
     // Cejas y pupilas — defaults visibles si no había valor guardado
     player.appearance.browColor  = player.appearance.browColor  || "#8B4513";
     player.appearance.pupilColor = player.appearance.pupilColor || "#2979ff";
+    player.appearance.clothColorA = player.appearance.clothColorA || null;
+    player.appearance.clothColorB = player.appearance.clothColorB || null;
     buildColorPicker("browColorChips","browColorPicker","browColorHex",BROW_PALETTE,"browColor","browColor");
     buildColorPicker("pupilColorChips","pupilColorPicker","pupilColorHex",PUPIL_PALETTE,"pupilColor","pupilColor");
+    buildColorPicker("clothColorAChips","clothColorAPicker","clothColorAHex",CLOTH_A_PALETTE,"clothColorA","clothColorA");
+    buildColorPicker("clothColorBChips","clothColorBPicker","clothColorBHex",CLOTH_B_PALETTE,"clothColorB","clothColorB");
     renderSlots(); updateStats();
   } catch(err) {
     console.error(err); imageMap=imageMap||{};
@@ -1773,6 +1802,8 @@ document.addEventListener("DOMContentLoaded", init);
       hairColor: p.appearance.hairColor,
       browColor: p.appearance.browColor,
       pupilColor:p.appearance.pupilColor,
+      clothColorA: p.appearance.clothColorA || null,
+      clothColorB: p.appearance.clothColorB || null,
       auraId:    p.appearance.auraId    || (window.charState && window.charState.auraId),
       auraColor: p.appearance.auraColor || (window.charState && window.charState.auraColor),
       accessoryId: p.appearance.accessoryId || (window.charState && window.charState.accessoryId),
@@ -1784,6 +1815,7 @@ document.addEventListener("DOMContentLoaded", init);
     if (!p || !snap) return;
     const fields = ["faceId","hairId","topId","bottomId","shoesId","glovesId",
                     "skinColor","eyeColor","hairColor","browColor","pupilColor",
+                    "clothColorA","clothColorB",
                     "auraId","auraColor","accessoryId"];
     fields.forEach(f => { if (snap[f] !== undefined) p.appearance[f] = snap[f]; });
     if (window.charState) {
@@ -1799,6 +1831,8 @@ document.addEventListener("DOMContentLoaded", init);
     _syncColorPicker("eyeColorPicker",   "eyeColorHex",   "eyeColorChips",   snap.eyeColor,   window.EYE_PALETTE);
     if (snap.browColor)  _syncColorPicker("browColorPicker",  "browColorHex",  "browColorChips",  snap.browColor,  window.BROW_PALETTE);
     if (snap.pupilColor) _syncColorPicker("pupilColorPicker", "pupilColorHex", "pupilColorChips", snap.pupilColor, window.PUPIL_PALETTE);
+    if (snap.clothColorA) _syncColorPicker("clothColorAPicker", "clothColorAHex", "clothColorAChips", snap.clothColorA, window.CLOTH_A_PALETTE);
+    if (snap.clothColorB) _syncColorPicker("clothColorBPicker", "clothColorBHex", "clothColorBChips", snap.clothColorB, window.CLOTH_B_PALETTE);
     if (window.invalidateHairCache) window.invalidateHairCache();
     if (window.buildAllGrids) window.buildAllGrids();
     if (window.updateStats) window.updateStats();
@@ -2040,6 +2074,7 @@ document.addEventListener("DOMContentLoaded", init);
     const watchIds = [
       "skinColorPicker","eyeColorPicker","hairColorPicker","auraColorPicker",
       "browColorPicker","pupilColorPicker",
+      "clothColorAPicker","clothColorBPicker",
     ];
     watchIds.forEach(id => {
       document.getElementById(id)?.addEventListener("input", () => {
