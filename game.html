@@ -40,7 +40,7 @@
       #gameCanvas { display:block; position:fixed; top:0; left:0; width:100vw; height:100vh; }
       #hud { position:fixed; inset:0; pointer-events:none; z-index:10; }
 
-      /* ── HAMBURGER ── */
+      /* -- HAMBURGER -- */
       #menuToggleBtn {
         position:fixed; top:12px; left:12px; z-index:120;
         width:44px; height:44px; background:var(--ui-bg); border:1px solid #2a3560;
@@ -85,7 +85,7 @@
       .slot-load-lbl { font-family:var(--font-head); font-size:8px; color:var(--accent); opacity:.7; }
       .slot-empty-label { font-family:var(--font-head); font-size:9px; color:#3d4a6b; text-align:center; padding:6px 0; }
 
-      /* ── HUD TOP ── */
+      /* -- HUD TOP -- */
       .hud-top { position:absolute; top:12px; left:64px; right:12px; display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
       .player-hud { background:var(--ui-bg); border:1px solid #2a3560; border-radius:8px; padding:8px 12px; min-width:180px; backdrop-filter:blur(8px); }
       .player-name { font-family:var(--font-head); font-size:11px; letter-spacing:2px; color:var(--accent); margin-bottom:6px; }
@@ -105,15 +105,15 @@
       .variant-label { font-family:var(--font-head); font-size:8px; letter-spacing:2px; color:#3d4a6b; white-space:nowrap; }
       .variant-select { min-width:110px; background:#12172e; border:1px solid rgba(245,196,0,.35); border-radius:6px; color:var(--accent); font-family:var(--font-head); font-size:9px; letter-spacing:1px; padding:6px 8px; outline:none; cursor:pointer; }
 
-      /* ── MINIMAP ── */
+      /* -- MINIMAP -- */
       .minimap-wrap { position:absolute; top:12px; right:12px; width:90px; height:90px; background:var(--ui-bg); border:1px solid #2a3560; border-radius:6px; overflow:hidden; backdrop-filter:blur(8px); }
       #minimapCanvas { width:100%; height:100%; image-rendering:pixelated; }
       .minimap-label { position:absolute; bottom:4px; left:0; right:0; text-align:center; font-family:var(--font-head); font-size:7px; letter-spacing:2px; color:#3d4a6b; }
 
-      /* ── REGION / ZONA ── */
+      /* -- REGION / ZONA -- */
       .region-label { font-family:var(--font-head); font-size:10px; letter-spacing:3px; color:rgba(255,255,255,.4); pointer-events:none; }
 
-      /* ── PORTAL PANEL ── */
+      /* -- PORTAL PANEL -- */
       #portalPanel {
         position:absolute; bottom:100px; left:50%; transform:translateX(-50%);
         background:var(--ui-bg); border:1px solid rgba(0,229,255,.4); border-radius:12px;
@@ -135,7 +135,7 @@
       .portal-btn-space:hover { background:rgba(50,50,180,.4); box-shadow:0 0 10px rgba(41,121,255,.3); }
       .portal-btn-sky:hover { background:rgba(120,180,255,.4); box-shadow:0 0 10px rgba(129,212,250,.35); }
 
-      /* ── TRAILER PANEL ── */
+      /* -- TRAILER PANEL -- */
       #trailerPanel {
         position:absolute; bottom:100px; left:50%; transform:translateX(-50%);
         background:var(--ui-bg); border:1px solid rgba(245,196,0,.4); border-radius:12px;
@@ -156,7 +156,7 @@
       .trailer-btn-close { background:rgba(255,255,255,.05); border-color:rgba(255,255,255,.2); color:#8892b0; }
       .trailer-btn-enter:hover { background:rgba(245,196,0,.3); box-shadow:0 0 10px rgba(245,196,0,.3); }
 
-      /* ── INTERIOR TRAILER ── */
+      /* -- INTERIOR TRAILER -- */
       #trailerInterior {
         position:fixed; inset:0; display:none; z-index:50;
         background:#0a0510;
@@ -184,7 +184,7 @@
       }
       .trailer-name-label { font-family:var(--font-head); font-size:9px; letter-spacing:2px; color:var(--accent); }
 
-      /* ── SKILLS BAR (PC) ── */
+      /* -- SKILLS BAR (PC) -- */
       .skills-bar { position:absolute; bottom:20px; left:50%; transform:translateX(-50%); display:flex; gap:10px; }
       .skill-btn { width:var(--btn-size); height:var(--btn-size); background:var(--ui-bg); border:2px solid #2a3560; border-radius:10px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; backdrop-filter:blur(8px); position:relative; pointer-events:auto; cursor:pointer; transition:border-color .15s; touch-action:manipulation; }
       .skill-btn:active,.skill-btn.active { border-color:var(--accent); box-shadow:0 0 14px rgba(245,196,0,.4); }
@@ -192,7 +192,7 @@
       .skill-icon { font-size:var(--btn-icon); }
       .skill-key { font-family:var(--font-head); font-size:8px; letter-spacing:1px; color:#3d4a6b; }
 
-      /* ── MOBILE CONTROLS ── */
+      /* -- MOBILE CONTROLS -- */
       .mobile-controls { position:absolute; bottom:0; left:0; right:0; height:230px; display:none; align-items:flex-end; justify-content:space-between; padding:0 16px 16px; pointer-events:auto; }
       .joystick-wrap { position:relative; width:120px; height:120px; flex-shrink:0; }
       #joystickBase { position:absolute; inset:0; background:rgba(255,255,255,.06); border:2px solid rgba(255,255,255,.15); border-radius:50%; backdrop-filter:blur(4px); }
@@ -208,7 +208,7 @@
       .action-btn .btn-icon  { font-size:var(--btn-icon); }
       .action-btn .btn-label { font-family:var(--font-head); font-size:7px; letter-spacing:.5px; color:rgba(255,255,255,.65); }
 
-      /* ── DIALOG ── */
+      /* -- DIALOG -- */
       .dialog-box { position:absolute; bottom:185px; left:50%; transform:translateX(-50%); background:var(--ui-bg); border:1px solid #2a3560; border-radius:8px; padding:16px 18px; max-width:350px; width:92vw; backdrop-filter:blur(12px); pointer-events:auto; display:none; }
       .dialog-box.visible { display:block; }
       .dialog-name { font-family:var(--font-head); font-size:10px; letter-spacing:2px; color:var(--accent); margin-bottom:6px; }
@@ -217,7 +217,7 @@
       .dialog-opt { background:rgba(74,106,255,.1); border:1px solid rgba(74,106,255,.3); border-radius:4px; padding:10px 12px; font-size:13px; color:#c8cfe8; cursor:pointer; transition:all .15s; min-height:44px; display:flex; align-items:center; touch-action:manipulation; }
       .dialog-opt:hover { background:rgba(74,106,255,.25); border-color:rgba(74,106,255,.6); }
 
-      /* ── TOASTS ── */
+      /* -- TOASTS -- */
       #toastHud { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); pointer-events:none; }
       .hud-toast { font-family:var(--font-head); font-size:14px; letter-spacing:3px; color:white; text-shadow:0 0 10px var(--accent); text-align:center; animation:toastPop 2s forwards; white-space:nowrap; position:absolute; }
       .hud-toast.xp  { color:var(--accent); text-shadow:0 0 10px var(--accent); }
@@ -226,7 +226,7 @@
       .hud-toast.info { color:#00e5ff; }
       @keyframes toastPop { 0%{opacity:0;transform:translateY(10px) scale(.8);} 15%{opacity:1;transform:translateY(-10px) scale(1);} 70%{opacity:1;transform:translateY(-20px);} 100%{opacity:0;transform:translateY(-30px);} }
 
-      /* ── INVENTARIO ── */
+      /* -- INVENTARIO -- */
       #inventoryPanel {
         display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
         width:min(340px,92vw); max-height:min(480px,78vh); z-index:130;
@@ -273,7 +273,7 @@
       .shenron-sub { font-size:14px; color:#c8e6c9; margin-top:12px; letter-spacing:2px; }
       @keyframes shenronPulse { 0%,100%{opacity:.85;transform:scale(1);} 50%{opacity:1;transform:scale(1.03);} }
 
-      /* ── RESPONSIVE ── */
+      /* -- RESPONSIVE -- */
       @media (pointer:coarse), (max-width:768px) {
         :root { --btn-size:52px; --btn-icon:19px; }
         #menuBackdrop { display:block; }
@@ -318,7 +318,7 @@
     <div id="screenDead">
       <div class="screen-title">¿QUÉ HACÉS ACÁ?</div>
       <div class="screen-sub">ESTO ES EL LOBBY, NO TE PODÉS MORIR</div>
-      <button id="respawnBtn" onclick="respawn()">⚡ VOLVER</button>
+      <button id="respawnBtn" onclick="respawn()">↩ VOLVER</button>
     </div>
 
     <canvas id="gameCanvas"></canvas>
@@ -327,10 +327,10 @@
     <div id="trailerInterior">
       <canvas id="trailerCanvas"></canvas>
       <div class="trailer-hud-bar">
-        <span class="trailer-name-label" id="trailerOwnerLabel">🏠 TU CASA RODANTE</span>
+        <span class="trailer-name-label" id="trailerOwnerLabel">TU CASA RODANTE</span>
         <input class="trailer-chat-input" id="trailerChatInput" type="text" maxlength="60" placeholder="Chat privado..." onkeydown="if(event.key==='Enter')sendTrailerChat()"/>
         <button class="trailer-send-btn" onclick="sendTrailerChat()">➤</button>
-        <button class="trailer-exit-btn" onclick="exitTrailer()">✕ SALIR</button>
+        <button class="trailer-exit-btn" onclick="exitTrailer()">? SALIR</button>
       </div>
     </div>
 
@@ -354,13 +354,13 @@
           <div class="menu-section-label">Mundos</div>
           <button class="menu-btn" onclick="travelTo('lobby');closeMenu()"><span class="btn-ic">🏠</span> LOBBY BASE</button>
           <button class="menu-btn" onclick="travelTo('earth');closeMenu()"><span class="btn-ic">🌍</span> PLANETA TIERRA</button>
-          <button class="menu-btn" onclick="travelTo('sky');closeMenu()"><span class="btn-ic">☁️</span> MAPA DEL CIELO</button>
+          <button class="menu-btn" onclick="travelTo('sky');closeMenu()"><span class="btn-ic">☁️</span> ATALAYA DE KAMISAMA</button>
           <button class="menu-btn" onclick="travelTo('space');closeMenu()"><span class="btn-ic">🌌</span> ESPACIO</button>
         </div>
 
         <div class="menu-section">
           <div class="menu-section-label">Tu casa rodante</div>
-          <button class="menu-btn" onclick="openMyTrailer();closeMenu()"><span class="btn-ic">🚐</span> ENTRAR A MI TRAILER</button>
+          <button class="menu-btn" onclick="openMyTrailer();closeMenu()"><span class="btn-ic">🚌</span> ENTRAR A MI TRAILER</button>
         </div>
 
         <div class="menu-section">
@@ -370,7 +370,7 @@
 
         <div class="menu-section">
           <div class="menu-section-label">Party / PvP</div>
-          <button class="menu-btn" onclick="PvpSystem&&PvpSystem.togglePartyPanel();closeMenu()"><span class="btn-ic">👥</span> PARTY Y DESAFÍOS</button>
+          <button class="menu-btn" onclick="PvpSystem&&PvpSystem.togglePartyPanel();closeMenu()"><span class="btn-ic">⚔️</span> PARTY Y DESAFÍOS</button>
         </div>
 
         <div class="menu-section">
@@ -384,7 +384,7 @@
         <div class="player-hud">
           <div class="player-name" id="hudPlayerName">GUERRERO Z</div>
           <div class="bar-row"><span class="bar-icon">❤️</span><div class="bar-track"><div class="bar-fill" id="barHp" style="width:100%"></div></div><span class="bar-val" id="valHp">100/100</span></div>
-          <div class="bar-row"><span class="bar-icon">💧</span><div class="bar-track"><div class="bar-fill" id="barKi" style="width:100%"></div></div><span class="bar-val" id="valKi">100/100</span></div>
+          <div class="bar-row"><span class="bar-icon">💙</span><div class="bar-track"><div class="bar-fill" id="barKi" style="width:100%"></div></div><span class="bar-val" id="valKi">100/100</span></div>
           <div class="level-badge"><span class="level-num" id="hudLevel">LV 1</span><div class="xp-track"><div class="xp-fill" id="xpFill" style="width:0%"></div></div></div>
         </div>
         <div class="variant-panel" id="variantPanel">
@@ -402,17 +402,17 @@
 
       <!-- Portal Panel -->
       <div id="portalPanel">
-        <div class="portal-title">✦ PORTAL DE VIAJE</div>
+        <div class="portal-title">🌀 PORTAL DE VIAJE</div>
         <div class="portal-btns" id="portalBtns"></div>
       </div>
 
       <!-- Trailer Panel -->
       <div id="trailerPanel">
-        <div class="trailer-title">🚐 CASA RODANTE</div>
+        <div class="trailer-title">🚌 CASA RODANTE</div>
         <div class="trailer-info" id="trailerPanelInfo">Tu espacio privado</div>
         <div class="trailer-btns">
-          <button class="trailer-btn trailer-btn-enter" id="trailerEnterBtn" onclick="enterTrailerFromPanel()">🚪 ENTRAR</button>
-          <button class="trailer-btn trailer-btn-invite" id="trailerInviteBtn" onclick="inviteToTrailer()">📨 INVITAR</button>
+          <button class="trailer-btn trailer-btn-enter" id="trailerEnterBtn" onclick="enterTrailerFromPanel()">ENTRAR</button>
+          <button class="trailer-btn trailer-btn-invite" id="trailerInviteBtn" onclick="inviteToTrailer()">✉️ INVITAR</button>
           <button class="trailer-btn trailer-btn-close" onclick="closeTrailerPanel()">✕</button>
         </div>
       </div>
@@ -420,11 +420,11 @@
       <!-- Skills bar PC -->
       <div class="skills-bar" id="skillsBar">
         <div class="skill-btn" onclick="interactNearby()" title="Interactuar [Z]"><span class="skill-icon">💬</span><span class="skill-key">Z</span></div>
-        <div class="skill-btn" onclick="openMyTrailer()" title="Mi Trailer [Q]"><span class="skill-icon">🚐</span><span class="skill-key">Q</span></div>
+        <div class="skill-btn" onclick="openMyTrailer()" title="Mi Trailer [Q]"><span class="skill-icon">🚌</span><span class="skill-key">Q</span></div>
         <div class="skill-btn" onclick="openInventoryPanel()" title="Inventario [I]"><span class="skill-icon">🎒</span><span class="skill-key">I</span></div>
         <div class="skill-btn" onclick="sendEmote('wave')" title="Saludar [E]"><span class="skill-icon">👋</span><span class="skill-key">E</span></div>
         <div class="skill-btn" onclick="sendEmote('bow')" title="Reverencia [R]"><span class="skill-icon">🙇</span><span class="skill-key">R</span></div>
-        <div class="skill-btn" id="skillRun" onclick="toggleRunPC()"><span class="skill-icon">🏃</span><span class="skill-key">SHIFT</span></div>
+        <div class="skill-btn" id="skillRun" onclick="toggleRunPC()"><span class="skill-icon">💨</span><span class="skill-key">SHIFT</span></div>
       </div>
 
       <!-- Mobile controls -->
@@ -435,11 +435,11 @@
         </div>
         <div class="action-grid" id="actionGrid">
           <div class="action-btn btn-interact" onclick="interactNearby()"><span class="btn-icon">💬</span><span class="btn-label">HABLAR</span></div>
-          <div class="action-btn btn-trailer" onclick="openMyTrailer()"><span class="btn-icon">🚐</span><span class="btn-label">TRAILER</span></div>
+          <div class="action-btn btn-trailer" onclick="openMyTrailer()"><span class="btn-icon">🚌</span><span class="btn-label">TRAILER</span></div>
           <div class="action-btn btn-emote" onclick="sendEmote('wave')"><span class="btn-icon">👋</span><span class="btn-label">SALUDAR</span></div>
           <div class="action-btn btn-emote" onclick="sendEmote('bow')"><span class="btn-icon">🙇</span><span class="btn-label">REVERENC.</span></div>
           <div class="action-btn btn-run" id="mobileRunBtn" onclick="toggleRunMobile()" style="border-radius:12px;width:100%;grid-column:span 2;height:calc(var(--btn-size)*0.7);">
-            <span class="btn-icon">🏃</span><span class="btn-label" id="runBtnLabel">CORRER: OFF</span>
+            <span class="btn-icon">💨</span><span class="btn-label" id="runBtnLabel">CORRER: OFF</span>
           </div>
         </div>
       </div>
@@ -485,7 +485,7 @@
     <script>
     "use strict";
 
-    // ══ MENÚ ══
+    // -- MENÚ --
     let menuOpen = false;
     function toggleMenu() {
       menuOpen = !menuOpen;
@@ -562,7 +562,7 @@
         const displayName = s.name || "Sin nombre";
         const div = document.createElement("div");
         div.className = "slot-item" + (i === activeSlot ? " active" : "");
-        div.innerHTML = `<div class="slot-num">${i+1}</div><div class="slot-info"><div class="slot-name">${displayName}</div><div class="slot-race">LV ${s.level||1} · ${RACE_LABELS[s.race]||s.race||"?"}</div></div><span class="slot-load-lbl">▶</span>`;
+        div.innerHTML = `<div class="slot-num">${i+1}</div><div class="slot-info"><div class="slot-name">${displayName}</div><div class="slot-race">LV ${s.level||1} · ${RACE_LABELS[s.race]||s.race||"?"}</div></div><span class="slot-load-lbl">CARGAR</span>`;
         div.addEventListener("click", () => { loadSlotInGame(i, s); });
         list.appendChild(div);
       });
@@ -660,11 +660,11 @@
       }
       updatePlayerHud();
       publishMyAppearance(true);
-      showHudToast(`✅ ${player.name} cargado`, "xp");
+      showHudToast(`? ${player.name} cargado`, "xp");
       closeMenu();
     }
 
-    // ══ SPRINT ══
+    // -- SPRINT --
     let isRunning = false;
     function setRunState(val) {
       isRunning = val;
@@ -686,19 +686,19 @@
       return `<div class="action-btn ${cls || "btn-emote"}" onclick="${action}"><span class="btn-icon">${icon}</span><span class="btn-label">${label}</span></div>`;
     }
 
-    // ══ RP ACTIONS — ahora incluye acciones del sheet "special" ══
+    // -- RP ACTIONS — ahora incluye acciones del sheet "special" --
     const RP_ACTIONS = [
       { id:"wave",      icon:"👋", key:"Z", label:"SALUDAR",  title:"Saludar",    anim:"idle",         text:"SALUDO",   color:"#f5c400", sheet:"base" },
-      { id:"train",     icon:"🥋", key:"Q", label:"ENTRENAR", title:"Entrenar",   anim:"training",     text:"ENTRENA",  color:"#ff7043", sheet:"special", hold:2200 },
+      { id:"train",     icon:"💪", key:"Q", label:"ENTRENAR", title:"Entrenar",   anim:"training",     text:"ENTRENA",  color:"#ff7043", sheet:"special", hold:2200 },
       { id:"meditate",  icon:"🧘", key:"E", label:"MEDITAR",  title:"Meditar",    anim:"meditate",     text:"MEDITA",   color:"#00e5ff", sheet:"base",    hold:2200 },
       { id:"sit",       icon:"🪑", key:"R", label:"SENTARSE", title:"Sentarse",   anim:"sit",          text:"SENTADO",  color:"#c8cfe8", sheet:"special", hold:1800 },
       { id:"warmup",    icon:"🔥", key:"F", label:"CALENTAR", title:"Calentar",   anim:"run",          text:"CALIENTA", color:"#ffca28", sheet:"base",    hold:1600 },
-      { id:"emote",     icon:"✨", key:"C", label:"EMOTE",    title:"Emote",      anim:"emote",        text:"EMOTE",    color:"#aa00ff", sheet:"special" },
-      { id:"eat",       icon:"🍙", key:"V", label:"COMER",    title:"Comer",      anim:"eat_drink",    text:"COME",     color:"#66bb6a", sheet:"special", objectIcon:"🍙", hold:1300 },
-      { id:"object",    icon:"🎒", key:"B", label:"OBJETO",   title:"Objeto",     anim:"hold_item",    text:"OBJETO",   color:"#90caf9", sheet:"special", objectIcon:"🎒", hold:1300 },
+      { id:"emote",     icon:"🎭", key:"C", label:"EMOTE",    title:"Emote",      anim:"emote",        text:"EMOTE",    color:"#aa00ff", sheet:"special" },
+      { id:"eat",       icon:"🍖", key:"V", label:"COMER",    title:"Comer",      anim:"eat_drink",    text:"COME",     color:"#66bb6a", sheet:"special", objectIcon:"🍖", hold:1300 },
+      { id:"object",    icon:"📦", key:"B", label:"OBJETO",   title:"Objeto",     anim:"hold_item",    text:"OBJETO",   color:"#90caf9", sheet:"special", objectIcon:"📦", hold:1300 },
     ];
 
-    // ══ Resolución de animación por sheet para el animator ══
+    // -- Resolución de animación por sheet para el animator --
     // Ahora setSpecialMode es soportado
     function _setAnimatorSheet(sheet) {
       if (!csAnimator) return;
@@ -722,20 +722,20 @@
           skills.innerHTML = PS.getPcSkillsHtml();
         } else if (controlMode === "combat") {
           skills.innerHTML = [
-            makePcSkill({ icon:"🥊", key:"Z", title:"Combo 1", action:"performCombatAction('combo1')" }),
-            makePcSkill({ icon:"💥", key:"Q", title:"Combo 2", action:"performCombatAction('combo2')" }),
-            makePcSkill({ icon:"🔵", key:"E", title:"Ataque especial 1", action:"performCombatAction('special1')" }),
-            makePcSkill({ icon:"🟣", key:"R", title:"Ataque especial 2", action:"performCombatAction('special2')" }),
-            makePcSkill({ icon:"🪽", key:"F", title:"Volar", action:"performCombatAction('fly')", id:"skillFly", cls:isFlying?"run-active":"" }),
-            makePcSkill({ icon:"✨", key:"C", title:"Z-Vanish", action:"performCombatAction('vanish')" }),
-            makePcSkill({ icon:"💬", key:"RP", title:"Volver a rol", action:"setControlMode('rp')" }),
+            makePcSkill({ icon:"👊", key:"Z", title:"Combo 1", action:"performCombatAction('combo1')" }),
+            makePcSkill({ icon:"⚡", key:"Q", title:"Combo 2", action:"performCombatAction('combo2')" }),
+            makePcSkill({ icon:"💥", key:"E", title:"Ataque especial 1", action:"performCombatAction('special1')" }),
+            makePcSkill({ icon:"🌟", key:"R", title:"Ataque especial 2", action:"performCombatAction('special2')" }),
+            makePcSkill({ icon:"🦅", key:"F", title:"Volar", action:"performCombatAction('fly')", id:"skillFly", cls:isFlying?"run-active":"" }),
+            makePcSkill({ icon:"💨", key:"C", title:"Z-Vanish", action:"performCombatAction('vanish')" }),
+            makePcSkill({ icon:"🔄", key:"RP", title:"Volver a rol", action:"setControlMode('rp')" }),
           ].join("");
         } else {
           skills.innerHTML = RP_ACTIONS.map(a =>
             makePcSkill({ icon:a.icon, key:a.key, title:`${a.title} [${a.key}]`, action:`performRpAction('${a.id}')` })
           ).concat([
             makePcSkill({ icon:"⚔️", key:"X", title:"Modo combate [X]", action:"setControlMode('combat')" }),
-            makePcSkill({ icon:"🏃", key:"SHIFT", title:"Correr", action:"toggleRunPC()", id:"skillRun", cls:isRunning?"run-active":"" }),
+            makePcSkill({ icon:"💨", key:"SHIFT", title:"Correr", action:"toggleRunPC()", id:"skillRun", cls:isRunning?"run-active":"" }),
           ]).concat([
             makePcSkill({ icon:"💬", key:"G", title:"Interactuar [G]", action:"interactNearby()", id:"skillInteract" }),
           ]).join("");
@@ -746,13 +746,13 @@
           grid.innerHTML = PS.getMobileActionsHtml();
         } else if (controlMode === "combat") {
           grid.innerHTML = [
-            makeMobileAction({ icon:"🥊", label:"COMBO 1", action:"performCombatAction('combo1')", cls:"btn-emote" }),
-            makeMobileAction({ icon:"💥", label:"COMBO 2", action:"performCombatAction('combo2')", cls:"btn-emote" }),
-            makeMobileAction({ icon:"🔵", label:"ESP. 1", action:"performCombatAction('special1')", cls:"btn-interact" }),
-            makeMobileAction({ icon:"🟣", label:"ESP. 2", action:"performCombatAction('special2')", cls:"btn-interact" }),
-            makeMobileAction({ icon:"🪽", label:isFlying?"VUELO ON":"VOLAR", action:"performCombatAction('fly')", cls:"btn-run" + (isFlying ? " run-active" : "") }),
-            makeMobileAction({ icon:"✨", label:"Z-VANISH", action:"performCombatAction('vanish')", cls:"btn-trailer" }),
-            `<div class="action-btn btn-run" onclick="setControlMode('rp')" style="border-radius:12px;width:100%;grid-column:span 2;height:calc(var(--btn-size)*0.7);"><span class="btn-icon">💬</span><span class="btn-label">VOLVER A RP</span></div>`,
+            makeMobileAction({ icon:"👊", label:"COMBO 1", action:"performCombatAction('combo1')", cls:"btn-emote" }),
+            makeMobileAction({ icon:"⚡", label:"COMBO 2", action:"performCombatAction('combo2')", cls:"btn-emote" }),
+            makeMobileAction({ icon:"💥", label:"ESP. 1", action:"performCombatAction('special1')", cls:"btn-interact" }),
+            makeMobileAction({ icon:"🌟", label:"ESP. 2", action:"performCombatAction('special2')", cls:"btn-interact" }),
+            makeMobileAction({ icon:"🦅", label:isFlying?"VUELO ON":"VOLAR", action:"performCombatAction('fly')", cls:"btn-run" + (isFlying ? " run-active" : "") }),
+            makeMobileAction({ icon:"💨", label:"Z-VANISH", action:"performCombatAction('vanish')", cls:"btn-trailer" }),
+            `<div class="action-btn btn-run" onclick="setControlMode('rp')" style="border-radius:12px;width:100%;grid-column:span 2;height:calc(var(--btn-size)*0.7);"><span class="btn-icon">🔄</span><span class="btn-label">VOLVER A RP</span></div>`,
           ].join("");
         } else {
           grid.innerHTML = RP_ACTIONS.map((a, idx) =>
@@ -761,13 +761,13 @@
               makeMobileAction({ icon:"⚔️", label:"COMBATE", action:"setControlMode('combat')", cls:"btn-interact" }),
           ]).concat([
             makeMobileAction({ icon:"💬", label:"HABLAR", action:"interactNearby()", cls:"btn-interact" }),
-            `<div class="action-btn btn-run ${isRunning ? "run-active" : ""}" id="mobileRunBtn" onclick="toggleRunMobile()" style="border-radius:12px;width:100%;height:calc(var(--btn-size)*0.7);"><span class="btn-icon">🏃</span><span class="btn-label" id="runBtnLabel">CORRER: ${isRunning ? "ON" : "OFF"}</span></div>`,
+            `<div class="action-btn btn-run ${isRunning ? "run-active" : ""}" id="mobileRunBtn" onclick="toggleRunMobile()" style="border-radius:12px;width:100%;height:calc(var(--btn-size)*0.7);"><span class="btn-icon">💨</span><span class="btn-label" id="runBtnLabel">CORRER: ${isRunning ? "ON" : "OFF"}</span></div>`,
           ]).join("");
         }
       }
     }
 
-    // ══ CONTROL MODE — actualizado con setSpecialMode ══
+    // -- CONTROL MODE — actualizado con setSpecialMode --
     function setControlMode(mode) {
       if (mode === "pvp") {
         controlMode = "pvp";
@@ -801,7 +801,7 @@
     }
     window.setControlMode = setControlMode;
 
-    // ══ FIREBASE ══
+    // -- FIREBASE --
     const firebaseConfig = {
       apiKey: "AIzaSyBYZwK41XAUkLeRlWQRms0oEyJ1QXMQVg8",
       authDomain: "dragon-world-z.firebaseapp.com",
@@ -815,7 +815,7 @@
     FirebaseCharacterService.initFirebase(firebaseConfig);
     const db = firebase.database();
 
-    // ══ CANVAS ══
+    // -- CANVAS --
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
     const minimapCanvas = document.getElementById("minimapCanvas");
@@ -831,7 +831,7 @@
     resizeCanvas();
     window.addEventListener("resize", resizeCanvas);
 
-    // ══ MULTIPLAYER ══
+    // -- MULTIPLAYER --
     const otherPlayers = {}, otherPlayerAnimators = {}, otherPlayerAccessoryImages = {};
     const otherPlayerVariantImages = {};
     const otherPlayerPreviewImages = {};
@@ -1482,7 +1482,7 @@
             }
             const remoteVariantId = app.variantId || "base";
             const remoteVariantCfg = app.variantCustomizations?.[remoteVariantId];
-            // Cargar sheets de variante (exploración, combate, especial y unificado)
+            // Cargar sheets de variante (exploraciónn, combate, especial y unificado)
             ["spriteDataURL:spriteImage", "sheet:spriteImage", "combatSpriteDataURL:combatSpriteImage", "specialSpriteDataURL:specialSpriteImage"].forEach(pair => {
               const [urlKey, imgKey] = pair.split(":");
               if (remoteVariantCfg?.[urlKey]) {
@@ -1557,18 +1557,25 @@
       document.head.appendChild(style);
       const panel=document.createElement("div");
       panel.id="mpHudPanel";
-      panel.innerHTML=`<div id="mpHudHead" onclick="toggleMpChat()"><span>CHAT</span><span id="mpPlayerCount">...</span><span>▾</span></div><div id="mpChatBody"><div id="mpChatBox"></div><div style="display:flex;gap:4px;"><input id="mpChatInput" type="text" maxlength="60" placeholder="Mensaje..." onkeydown="if(event.key==='Enter')sendChatMsg()"/><button id="mpChatSend" onclick="sendChatMsg()">➤</button></div></div>`;
+      panel.innerHTML=`<div id="mpHudHead" onclick="toggleMpChat()"><span>CHAT</span><span id="mpPlayerCount">...</span><span>?</span></div><div id="mpChatBody"><div id="mpChatBox"></div><div style="display:flex;gap:4px;"><input id="mpChatInput" type="text" maxlength="60" placeholder="Mensaje..." onkeydown="if(event.key==='Enter')sendChatMsg()"/><button id="mpChatSend" onclick="sendChatMsg()">?</button></div></div>`;
       hud.appendChild(panel);
     }
 
     const TILE=48, CAM_LERP=0.12, SPRITE_DRAW_W=120, SPRITE_DRAW_H=148;
 
-    // ══ MAP DEFINITIONS ══
+    // -- MAP DEFINITIONS --
     const MAPS = {
       lobby:  { w:80, h:60, name:"BASE LOBBY",     bgColor:"#0a1020" },
       earth:  { w:120, h:80, name:"PLANETA TIERRA", bgColor:"#0a1510" },
-      sky:    { w:120, h:80, name:"MAPA DEL CIELO", bgColor:"#87CEEB", alwaysFly:true },
+      sky:    { w:120, h:80, name:"ATALAYA DE KAMISAMA", bgColor:"#87CEEB", alwaysFly:true },
       space:  { w:120, h:80, name:"ESPACIO",        bgColor:"#08090f" },
+      capsule_corp: { w:96, h:72, name:"CORPORACION CAPSULA", bgColor:"#0b1424", indoor:true },
+      karin_tower: { w:84, h:86, name:"TORRE DE KARIN", bgColor:"#13110d", indoor:true },
+      galactic_patrol: { w:104, h:78, name:"PATRULLA GALACTICA", bgColor:"#07131f", indoor:true },
+      frieza_ship: { w:112, h:112, name:"NAVE DE FREEZER", bgColor:"#080711", indoor:true },
+      planet_central: { w:100, h:76, name:"PLANETA CENTRAL", bgColor:"#160b0b", indoor:true },
+      planet_namek: { w:100, h:76, name:"PLANETA NAMEK", bgColor:"#062119", indoor:true },
+      planet_vegeta: { w:100, h:76, name:"PLANETA VEGETA", bgColor:"#201006", indoor:true },
     };
 
     const MAP_STARTS = {
@@ -1576,18 +1583,56 @@
       earth: { x:60, y:40 },
       sky:   { x:60, y:40 },
       space: { x:60, y:40 },
+      capsule_corp: { x:48, y:62 },
+      karin_tower: { x:42, y:74 },
+      galactic_patrol: { x:52, y:66 },
+      frieza_ship: { x:56, y:87 },
+      planet_central: { x:50, y:66 },
+      planet_namek: { x:50, y:66 },
+      planet_vegeta: { x:50, y:66 },
     };
 
     const PORTAL_DESTINATIONS = {
       lobby: [
-        { map:"earth", label:"🌍 TIERRA", cls:"portal-btn-earth" },
-        { map:"space", label:"🌌 ESPACIO", cls:"portal-btn-space" },
+        { map:"earth", label:"TIERRA", cls:"portal-btn-earth" },
+        { map:"space", label:"ESPACIO", cls:"portal-btn-space" },
       ],
       earth: [
-        { map:"sky", label:"☁️ CIELO", cls:"portal-btn-sky" },
+        { map:"capsule_corp", label:"CORPORACION CAPSULA", cls:"portal-btn-earth" },
+        { map:"karin_tower", label:"TORRE DE KARIN", cls:"portal-btn-earth" },
+        { map:"sky", label:"ATALAYA DE KAMISAMA", cls:"portal-btn-sky" },
       ],
       sky: [
-        { map:"earth", label:"🌍 TIERRA", cls:"portal-btn-earth" },
+        { map:"earth", label:"TIERRA", cls:"portal-btn-earth" },
+      ],
+      space: [
+        { map:"frieza_ship", label:"NAVE DE FREEZER", cls:"portal-btn-space" },
+        { map:"galactic_patrol", label:"PATRULLA GALACTICA", cls:"portal-btn-space" },
+        { map:"planet_central", label:"PLANETA CENTRAL", cls:"portal-btn-space" },
+        { map:"planet_namek", label:"PLANETA NAMEK", cls:"portal-btn-space" },
+        { map:"planet_vegeta", label:"PLANETA VEGETA", cls:"portal-btn-space" },
+      ],
+      capsule_corp: [
+        { map:"earth", label:"SALIR A TIERRA", cls:"portal-btn-earth" },
+      ],
+      karin_tower: [
+        { map:"earth", label:"BAJAR A TIERRA", cls:"portal-btn-earth" },
+        { map:"sky", label:"SUBIR A LA ATALAYA", cls:"portal-btn-sky" },
+      ],
+      galactic_patrol: [
+        { map:"space", label:"SALIR AL ESPACIO", cls:"portal-btn-space" },
+      ],
+      frieza_ship: [
+        { map:"space", label:"SALIR AL ESPACIO", cls:"portal-btn-space" },
+      ],
+      planet_central: [
+        { map:"space", label:"VOLVER AL ESPACIO", cls:"portal-btn-space" },
+      ],
+      planet_namek: [
+        { map:"space", label:"VOLVER AL ESPACIO", cls:"portal-btn-space" },
+      ],
+      planet_vegeta: [
+        { map:"space", label:"VOLVER AL ESPACIO", cls:"portal-btn-space" },
       ],
     };
 
@@ -1624,6 +1669,8 @@
       for (let y=0;y<h;y++) map[y][40]=2;
       for (let x=20;x<w;x++) map[40][x]=2;
       for (let y=8;y<12;y++) for (let x=54;x<58;x++) map[y][x]=3;
+      for (let y=34;y<37;y++) for (let x=43;x<46;x++) map[y][x]=3;
+      for (let y=20;y<23;y++) for (let x=86;x<90;x++) map[y][x]=3;
       return map;
     }
 
@@ -1647,13 +1694,114 @@
       [[15,55,8],[40,20,7],[60,70,6],[90,50,9],[100,30,8]].forEach(([cx,cy,r])=>{
         for(let y=cy-r;y<cy+r;y++) for(let x=cx-r;x<cx+r;x++) if(y>=0&&y<h&&x>=0&&x<w&&Math.hypot(x-cx,y-cy)<r) map[y][x]=13;
       });
+      for (let y=22;y<26;y++) for (let x=31;x<35;x++) map[y][x]=3;
+      for (let y=15;y<19;y++) for (let x=86;x<90;x++) map[y][x]=3;
+      for (let y=43;y<47;y++) for (let x=65;x<69;x++) map[y][x]=3;
+      for (let y=53;y<57;y++) for (let x=90;x<94;x++) map[y][x]=3;
+      for (let y=29;y<33;y++) for (let x=101;x<105;x++) map[y][x]=3;
+      return map;
+    }
+
+    function createMap(w, h, base) {
+      const map = [];
+      for (let y=0;y<h;y++){map[y]=[];for(let x=0;x<w;x++)map[y][x]=base;}
+      return map;
+    }
+
+    function fillRectMap(map, x, y, w, h, tile) {
+      for (let yy=y; yy<y+h; yy++) for (let xx=x; xx<x+w; xx++) {
+        if (map[yy] && map[yy][xx] !== undefined) map[yy][xx] = tile;
+      }
+    }
+
+    function addRoom(map, x, y, w, h, floor=16, wall=17) {
+      fillRectMap(map, x, y, w, h, floor);
+      fillRectMap(map, x, y, w, 1, wall);
+      fillRectMap(map, x, y+h-1, w, 1, wall);
+      fillRectMap(map, x, y, 1, h, wall);
+      fillRectMap(map, x+w-1, y, 1, h, wall);
+    }
+
+    function generateFacilityMap(kind) {
+      const def = MAPS[kind];
+      const map = createMap(def.w, def.h, 17);
+      const floor = kind === "karin_tower" ? 20 : kind === "galactic_patrol" ? 19 : 16;
+      const wall = kind === "karin_tower" ? 21 : 17;
+      fillRectMap(map, 8, 8, def.w-16, def.h-16, floor);
+      fillRectMap(map, 12, Math.floor(def.h/2)-3, def.w-24, 6, 18);
+      fillRectMap(map, Math.floor(def.w/2)-3, 12, 6, def.h-24, 18);
+      const rooms = [
+        [10,10,18,14],[34,8,24,16],[64,10,20,18],
+        [10,32,20,16],[36,30,22,18],[66,34,20,14],
+        [12,54,22,12],[42,54,18,12],[66,54,18,12],
+      ];
+      rooms.forEach(([x,y,w,h], i) => addRoom(map, x, y, w, h, i%3===0 ? floor : 16, wall));
+      fillRectMap(map, Math.floor(def.w/2)-2, def.h-10, 4, 4, 3);
+      if (kind === "karin_tower") fillRectMap(map, Math.floor(def.w/2)+5, 10, 4, 4, 3);
+      for (let i=0;i<34;i++) {
+        const x = 14 + (i*17)%(def.w-28), y = 14 + (i*23)%(def.h-28);
+        if (map[y]?.[x] !== wall && map[y]?.[x] !== 3) map[y][x] = 22 + (i%4);
+      }
+      return map;
+    }
+
+    function generatePlanetInterior(kind) {
+      const def = MAPS[kind];
+      const map = createMap(def.w, def.h, 17);
+      const paletteFloor = kind === "planet_namek" ? 26 : kind === "planet_vegeta" ? 28 : 27;
+      fillRectMap(map, 8, 8, def.w-16, def.h-16, paletteFloor);
+      fillRectMap(map, 14, 18, def.w-28, 5, 18);
+      fillRectMap(map, 14, 38, def.w-28, 5, 18);
+      fillRectMap(map, 22, 12, 5, def.h-24, 18);
+      fillRectMap(map, 50, 12, 5, def.h-24, 18);
+      fillRectMap(map, 74, 12, 5, def.h-24, 18);
+      [[10,10,18,12],[32,10,20,12],[58,10,28,12],[10,28,24,14],[40,28,22,14],[68,28,20,14],[12,50,24,14],[42,50,20,14],[68,50,20,14]]
+        .forEach(([x,y,w,h]) => addRoom(map, x, y, w, h, paletteFloor, 17));
+      fillRectMap(map, 48, def.h-10, 4, 4, 3);
+      for (let i=0;i<28;i++) {
+        const x = 12 + (i*19)%(def.w-24), y = 12 + (i*29)%(def.h-24);
+        if (map[y]?.[x] !== 17 && map[y]?.[x] !== 3) map[y][x] = 22 + (i%4);
+      }
+      return map;
+    }
+
+    function generateFriezaShipMap() {
+      const { w, h } = MAPS.frieza_ship;
+      const map = createMap(w, h, 17);
+      const cx = Math.floor(w/2), cy = Math.floor(h/2);
+      for (let y=0;y<h;y++) for (let x=0;x<w;x++) {
+        const d = Math.hypot(x-cx, y-cy);
+        if (d > 24 && d < 43) map[y][x] = 18;
+        if (d > 43 && d < 48) map[y][x] = 17;
+        if (d > 16 && d <= 24) map[y][x] = 16;
+      }
+      for (let a=0; a<360; a+=45) {
+        const rad = a * Math.PI / 180;
+        for (let r=18; r<48; r++) {
+          const x = Math.round(cx + Math.cos(rad)*r);
+          const y = Math.round(cy + Math.sin(rad)*r);
+          fillRectMap(map, x-1, y-1, 3, 3, 18);
+        }
+      }
+      [[15,15,22,16],[75,15,22,16],[15,80,22,16],[75,80,22,16],[45,6,22,14],[45,92,22,14]]
+        .forEach(([x,y,w,h]) => addRoom(map, x, y, w, h, 16, 17));
+      fillRectMap(map, cx-3, cy-3, 6, 6, 29);
+      fillRectMap(map, cx-2, cy+31, 4, 4, 3);
+      for (let i=0;i<44;i++) {
+        const a = i * Math.PI * 2 / 44;
+        const r = 31 + (i%3)*3;
+        const x = Math.round(cx + Math.cos(a)*r);
+        const y = Math.round(cy + Math.sin(a)*r);
+        if (map[y]?.[x] === 18) map[y][x] = 22 + (i%4);
+      }
       return map;
     }
 
     const TILE_COLORS = {
       0:"#2d5a27",1:"#1565c0",2:"#5a5a6e",3:"#8b1fff",4:"#c9a84c",5:"#08090f",
       6:"#3a3040",7:"#1a3a18",8:"#c9a84c",9:"#616161",10:"#04080f",11:"#2a2a3a",12:"#3a1a0a",13:"#1a1a3a",
-      14:"#87CEEB",15:"#b8e4f8",
+      14:"#87CEEB",15:"#b8e4f8",16:"#263044",17:"#090d16",18:"#586173",19:"#102a38",20:"#a98242",21:"#3d2b16",
+      22:"#334155",23:"#294760",24:"#6b3b68",25:"#66512a",26:"#1f6b50",27:"#4d2420",28:"#7a3515",29:"#31104a",
     };
 
     function isWalkable(tx, ty, mapKey) {
@@ -1664,7 +1812,7 @@
       if (tx<0||ty<0||tx>=mapDef.w||ty>=mapDef.h) return false;
       if (mapDef.alwaysFly) return true;
       const t = map[ty]?.[tx];
-      return t !== 5 && t !== 11;
+      return t !== 5 && t !== 11 && t !== 17 && t !== 21;
     }
 
     function loadCharacterData(){let slot=0;try{const qs=new URLSearchParams(window.location.search);const rs=qs.get("slot");if(rs!=null)slot=parseInt(rs,10);else{const ra=localStorage.getItem("dragonCreatorZ_activeSlot");if(ra!=null)slot=parseInt(ra,10);}}catch(e){}if(!Number.isFinite(slot))slot=0;slot=Math.max(0,Math.min(10,slot));try{const raw=localStorage.getItem("dragonCreatorZ_slots");if(raw){const slots=JSON.parse(raw);const d=Array.isArray(slots)?slots[slot]:null;if(d&&d.name)return d;if(Array.isArray(slots)){const any=slots.find(s=>s&&s.name);if(any)return any;}}}catch(e){}return null;}
@@ -1751,23 +1899,48 @@
     window.addEventListener("touchmove", (e) => { e.preventDefault(); if(!joystick.active)return; const t=e.touches[0]; const dx=t.clientX-joystick.startX,dy=t.clientY-joystick.startY; const maxR=40,dist=Math.sqrt(dx*dx+dy*dy); const nx=dist>maxR?(dx/dist)*maxR:dx,ny=dist>maxR?(dy/dist)*maxR:dy; joystick.dx=nx/maxR; joystick.dy=ny/maxR; jk.style.transform=`translate(${nx}px,${ny}px)`; }, {passive:false});
     window.addEventListener("touchend", () => { if(!joystick.active)return; joystick.active=false; joystick.dx=0; joystick.dy=0; jk.style.transform="translate(0,0)"; });
 
-    // ══ NPCs ══
+    // -- NPCs --
     const NPC_DEFS = {
       lobby: [
-        { id:"director",name:"DIRECTOR Z",x:40*TILE,y:20*TILE,color:"#f5c400",dialogs:[{text:"¡Bienvenido a la Base! Este es el punto de encuentro de todos los guerreros. Aquí planifican sus aventuras antes de viajar.",opts:[{label:"¿A dónde puedo viajar?",next:1},{label:"¡Gracias!",next:-1}]},{text:"Tenés dos destinos: la Tierra, con sus ciudades y zonas emblemáticas, y el Espacio, con naves y planetas. Usá el portal al sur.",opts:[{label:"Entendido.",next:-1}]}]},
-        { id:"mecanico",name:"MECÁNICO",x:18*TILE,y:30*TILE,color:"#9e9e9e",dialogs:[{text:"Eh, ¿tu casa rodante está bien? Las trailers son el espacio personal de cada guerrero. Podés decorarla e invitar gente.",opts:[{label:"¿Cómo la invoco?",next:1},{label:"Ok.",next:-1}]},{text:"Presioná Q (o el botón TRAILER) para invocarla. Va a aparecer en el mapa. ¡Nadie puede entrar sin que vos los invites!",opts:[{label:"Genial.",next:-1}]}]},
-        { id:"portero",name:"GUARDIÁN DEL PORTAL",x:40*TILE,y:40*TILE,color:"#8b1fff",dialogs:[{text:"Este portal conecta con los otros mundos. Tierra y Espacio. ¿Listo para partir?",opts:[{label:"Ir a la Tierra",next:-2},{label:"Ir al Espacio",next:-3},{label:"No, quedo acá.",next:-1}]}]},
+        { id:"director",name:"DIRECTOR Z",x:40*TILE,y:20*TILE,color:"#f5c400",dialogs:[{text:"¡Bienvenido a la Base! Este es el punto de encuentro de todos los guerreros. Aquí planifican sus aventuras antes de viajar.",opts:[{label:"¡A dónde puedo viajar?",next:1},{label:"¡Gracias!",next:-1}]},{text:"Tenés dos destinos: la Tierra, con sus ciudades y zonas emblemáticas, y el Espacio, con naves y planetas. Usá el portal al sur.",opts:[{label:"Entendido.",next:-1}]}]},
+        { id:"mecanico",name:"MECÁNICO",x:18*TILE,y:30*TILE,color:"#9e9e9e",dialogs:[{text:"Eh, ¡tu casa rodante está bien? Las trailers son el espacio personal de cada guerrero. Podés decorarla e invitar gente.",opts:[{label:"¡Cómo la invoco?",next:1},{label:"Ok.",next:-1}]},{text:"Presioná Q (o el botón TRAILER) para invocarla. Va a aparecer en el mapa. ¡Nadie puede entrar sin que vos los invites!",opts:[{label:"Genial.",next:-1}]}]},
+        { id:"portero",name:"GUARDIÁN DEL PORTAL",x:40*TILE,y:40*TILE,color:"#8b1fff",dialogs:[{text:"Este portal conecta con los otros mundos. Tierra y Espacio. ¡Listo para partir?",opts:[{label:"Ir a la Tierra",next:-2},{label:"Ir al Espacio",next:-3},{label:"No, quedo acá.",next:-1}]}]},
       ],
       earth: [
-        { id:"bulma",name:"BULMA",x:45*TILE,y:38*TILE,color:"#2979ff",dialogs:[{text:"¡Estás en Ciudad Oeste! Capsule Corp está aquí cerca.",opts:[{label:"¿Qué hay en el bosque?",next:1},{label:"Gracias.",next:-1}]},{text:"En el bosque encontrarás la Kame-House si cruzás el océano.",opts:[{label:"Entendido.",next:-1}]}]},
+        { id:"bulma",name:"BULMA",x:45*TILE,y:38*TILE,color:"#2979ff",dialogs:[{text:"¡Estás en Ciudad Oeste! Capsule Corp está aquí cerca.",opts:[{label:"Qué hay en el bosque?",next:1},{label:"Gracias.",next:-1}]},{text:"En el bosque encontrarás la Kame-House si cruzás el ocano.",opts:[{label:"Entendido.",next:-1}]}]},
         { id:"krillin",name:"KRILLIN",x:38*TILE,y:42*TILE,color:"#ff9800",dialogs:[{text:"¡Oe! Este es el planeta Tierra. Zona de roleplay libre.",opts:[{label:"¡Perfecto!",next:-1}]}]},
       ],
       space: [
-        { id:"ginyu",name:"CAP. GINYU",x:32*TILE,y:22*TILE,color:"#e040fb",dialogs:[{text:"Bienvenido a la nave de Frieza... El Planeta Central está al sureste.",opts:[{label:"¿Qué es el Planeta Central?",next:1},{label:"Gracias.",next:-1}]},{text:"Es la sede de la Patrulla Intergaláctica.",opts:[{label:"Interesante.",next:-1}]}]},
-        { id:"jaco",name:"JACO",x:82*TILE,y:17*TILE,color:"#00e5ff",dialogs:[{text:"¡Alto! Esta es la base de la Patrulla Intergaláctica.",opts:[{label:"¿Cómo los reclamo?",next:1},{label:"Ok.",next:-1}]},{text:"En el roleplay, simplemente declarás tu planeta.",opts:[{label:"Perfecto.",next:-1}]}]},
+        { id:"ginyu",name:"CAP. GINYU",x:32*TILE,y:22*TILE,color:"#e040fb",dialogs:[{text:"Bienvenido a la nave de Freezer... El Planeta Central est al sureste.",opts:[{label:"¡Qué es el Planeta Central?",next:1},{label:"Gracias.",next:-1}]},{text:"Es la sede de la Patrulla Intergaláctica.",opts:[{label:"Interesante.",next:-1}]}]},
+        { id:"jaco",name:"JACO",x:82*TILE,y:17*TILE,color:"#00e5ff",dialogs:[{text:"¡Alto! Esta es la base de la Patrulla Intergaláctica.",opts:[{label:"¡Cómo los reclamo?",next:1},{label:"Ok.",next:-1}]},{text:"En el roleplay, simplemente declarás tu planeta.",opts:[{label:"Perfecto.",next:-1}]}]},
       ],
       sky: [
-        { id:"cloud_sage",name:"SABIO DE LAS NUBES",x:60*TILE,y:58*TILE,color:"#81d4fa",dialogs:[{text:"Bienvenido al Mapa del Cielo. Aquí todos vuelan por defecto. El portal al sur te lleva de vuelta a la Tierra.",opts:[{label:"¡Entendido!",next:-1}]}]},
+        { id:"popo",name:"MR. POPO",x:60*TILE,y:48*TILE,color:"#ffffff",dialogs:[{text:"Bienvenido a la Atalaya de Kamisama. Desde aqui se observa la Tierra completa.",opts:[{label:"Entendido.",next:-1}]}]},
+        { id:"kami",name:"KAMISAMA",x:60*TILE,y:30*TILE,color:"#7cffb2",dialogs:[{text:"La Atalaya flota sobre el mundo. Entrena, medita y vuelve cuando estes listo.",opts:[{label:"Gracias.",next:-1}]}]},
+      ],
+      capsule_corp: [
+        { id:"brief",name:"DR. BRIEF",x:32*TILE,y:18*TILE,color:"#00e5ff",dialogs:[{text:"Capsule Corp tiene laboratorios, hangares, dormitorios y salas de prueba. Recorre lo que quieras.",opts:[{label:"Genial.",next:-1}]}]},
+        { id:"engineer",name:"INGENIERA CAPSULA",x:70*TILE,y:48*TILE,color:"#f5c400",dialogs:[{text:"Los paneles y maquinas estan listos para roleplay tecnico.",opts:[{label:"Perfecto.",next:-1}]}]},
+      ],
+      karin_tower: [
+        { id:"karin",name:"KARIN",x:42*TILE,y:28*TILE,color:"#ffffff",dialogs:[{text:"Esta torre tiene salas de entrenamiento, descanso y miradores. La salida inferior vuelve a Tierra.",opts:[{label:"Entendido.",next:-1}]}]},
+      ],
+      galactic_patrol: [
+        { id:"merus",name:"MERUS",x:52*TILE,y:28*TILE,color:"#00e5ff",dialogs:[{text:"Base de la Patrulla Galactica: celdas, oficinas, hangar y sala tactica.",opts:[{label:"A patrullar.",next:-1}]}]},
+        { id:"jaco2",name:"JACO",x:76*TILE,y:50*TILE,color:"#f5c400",dialogs:[{text:"No toques los controles rojos. Bueno... salvo que sea dramatico.",opts:[{label:"Claro.",next:-1}]}]},
+      ],
+      frieza_ship: [
+        { id:"zarbon",name:"ZARBON",x:56*TILE,y:18*TILE,color:"#00ff9d",dialogs:[{text:"La nave de Freezer es un anillo: recorre la rosca y llegaras a las camaras principales.",opts:[{label:"Entendido.",next:-1}]}]},
+        { id:"dodoria",name:"DODORIA",x:80*TILE,y:56*TILE,color:"#ff6a8a",dialogs:[{text:"Aqui hay salas de mando, medbay, arsenal y camaras de soldados.",opts:[{label:"Bien.",next:-1}]}]},
+      ],
+      planet_central: [
+        { id:"central_guard",name:"GUARDIA CENTRAL",x:50*TILE,y:26*TILE,color:"#e040fb",dialogs:[{text:"El Planeta Central tiene oficinas, plaza interior, muelles y salas de reunion.",opts:[{label:"Gracias.",next:-1}]}]},
+      ],
+      planet_namek: [
+        { id:"namek_elder",name:"ANCIANO NAMEK",x:50*TILE,y:26*TILE,color:"#00ff9d",dialogs:[{text:"Namek tiene casas organicas, corredores de piedra y camaras de meditacion.",opts:[{label:"Paz.",next:-1}]}]},
+      ],
+      planet_vegeta: [
+        { id:"saiyan_guard",name:"GUARDIA SAIYAN",x:50*TILE,y:26*TILE,color:"#ff6a00",dialogs:[{text:"Planeta Vegeta: sala de guerra, dormitorios de escuadron y arena de entrenamiento.",opts:[{label:"A entrenar.",next:-1}]}]},
       ],
     };
 
@@ -1775,13 +1948,33 @@
     let activeNpc = null, dialogPage = 0;
     let particles = [], combatEffects = [];
 
-    // ══ TRAILERS ══
+    // -- TRAILERS --
     const trailers = {};
     let myTrailerSpawned = false;
     let inTrailer = false;
     let trailerOwner = null;
     const TRAILER_W = 6*TILE, TRAILER_H = 4*TILE;
     const trailerPanelTarget = { id:null, owner:null };
+    const VEHICLE_SPRITES = {};
+    const VEHICLE_SPRITE_PATHS = {
+      exterior: "Vehiculo_Exterior/exterior.png",
+      topFloor: "Vehiculo_interiores/Piso_arriba/fondo.png",
+      cockpit: "Vehiculo_interiores/cabina_conduccion/fondo.png",
+      bottomFloor: "Vehiculo_interiores/Piso_abajo/fondo.png",
+      topFloorTile: "Vehiculo_interiores/Piso_arriba/piso.png",
+      cockpitTile: "Vehiculo_interiores/cabina_conduccion/piso.png",
+      bottomFloorTile: "Vehiculo_interiores/Piso_abajo/piso.png",
+      console: "Vehiculo_interiores/cabina_conduccion/consola.png",
+      bed: "Vehiculo_interiores/Piso_arriba/cama.png",
+      engine: "Vehiculo_interiores/Piso_abajo/motor.png",
+    };
+
+    Object.entries(VEHICLE_SPRITE_PATHS).forEach(([key, src]) => {
+      const img = new Image();
+      img.onload = () => { VEHICLE_SPRITES[key] = img; };
+      img.onerror = () => {};
+      img.src = src;
+    });
 
     function spawnMyTrailer() {
       if (!myPlayerId) return;
@@ -1842,7 +2035,7 @@
         db.ref("chat").push().set({id:myPlayerId,name:"SISTEMA",text:msg,t:Date.now()});
         db.ref("trailerInvites/" + myPlayerId).set({ ownerName:player.name, t:Date.now() });
       }
-      showHudToast("📨 Invitación enviada","info");
+      showHudToast("📨 Invitacion enviada","info");
       document.getElementById("trailerPanel").classList.remove("visible");
       gameState = "playing";
     }
@@ -1866,18 +2059,44 @@
     function drawTrailerInterior() {
       const w = trailerCanvas.width || window.innerWidth;
       const h = trailerCanvas.height || window.innerHeight - 60;
-      tCtx.fillStyle = "#1a0f2e"; tCtx.fillRect(0, 0, w, h);
-      tCtx.fillStyle = "#2a1a40";
-      for (let y=0;y<h;y+=48) for (let x=0;x<w;x+=48) { if(((x/48+y/48)%2)===0){tCtx.fillStyle="#2a1a40";}else{tCtx.fillStyle="#231535";}tCtx.fillRect(x,y,48,48); }
-      tCtx.fillStyle = "#3a2a55";
-      tCtx.fillRect(0,0,w,80); tCtx.fillRect(0,h-80,w,80); tCtx.fillRect(0,0,80,h); tCtx.fillRect(w-80,0,80,h);
-      tCtx.fillStyle = "#0a2040"; tCtx.fillRect(120,20,140,50);
-      tCtx.strokeStyle = "#3a6090"; tCtx.lineWidth = 4; tCtx.strokeRect(120,20,140,50);
-      tCtx.fillStyle = "#ffffff";
-      for (let i=0;i<20;i++) { const sx=120+Math.sin(i*1.7)*50+70, sy=20+Math.sin(i*2.3)*15+25; tCtx.beginPath(); tCtx.arc(sx,sy,1,0,Math.PI*2); tCtx.fill(); }
-      tCtx.fillStyle = "#5d3a1a"; tCtx.fillRect(w/2-80,h/2-20,160,40);
-      tCtx.fillStyle = "#6d4a2a"; tCtx.fillRect(w/2-80,h/2-30,160,10);
-      for (const ox of [-50,50]) { tCtx.fillStyle = "#4a2a0a"; tCtx.fillRect(w/2+ox-15,h/2+18,30,30); }
+      const sections = [
+        { key:"topFloor", tile:"topFloorTile", label:"PISO ARRIBA", color:"#231535", y:0, h:h*.34 },
+        { key:"cockpit", tile:"cockpitTile", label:"CABINA DE CONDUCCION", color:"#10233a", y:h*.34, h:h*.32 },
+        { key:"bottomFloor", tile:"bottomFloorTile", label:"PISO ABAJO", color:"#1a1924", y:h*.66, h:h*.34 },
+      ];
+      tCtx.fillStyle = "#08090f"; tCtx.fillRect(0, 0, w, h);
+      sections.forEach((sec, idx) => {
+        const bg = VEHICLE_SPRITES[sec.key];
+        const tile = VEHICLE_SPRITES[sec.tile];
+        if (bg) {
+          tCtx.drawImage(bg, 0, sec.y, w, sec.h);
+        } else {
+          for (let yy=sec.y; yy<sec.y+sec.h; yy+=48) for (let xx=0; xx<w; xx+=48) {
+            if (tile) tCtx.drawImage(tile, xx, yy, 48, 48);
+            else {
+              tCtx.fillStyle = ((xx/48+yy/48)%2)===0 ? sec.color : "rgba(255,255,255,.035)";
+              tCtx.fillRect(xx, yy, 48, 48);
+            }
+          }
+        }
+        tCtx.fillStyle = "rgba(0,0,0,.35)";
+        tCtx.fillRect(0, sec.y, w, 28);
+        tCtx.fillStyle = idx === 1 ? "#00e5ff" : "#f5c400";
+        tCtx.font = "bold 10px Orbitron,monospace";
+        tCtx.textAlign = "left";
+        tCtx.fillText(sec.label, 18, sec.y + 19);
+      });
+      tCtx.fillStyle = "rgba(255,255,255,.16)";
+      tCtx.fillRect(0,h*.34,w,2); tCtx.fillRect(0,h*.66,w,2);
+      if (VEHICLE_SPRITES.console) tCtx.drawImage(VEHICLE_SPRITES.console, w/2-90, h*.43, 180, 78);
+      else {
+        tCtx.fillStyle = "#0a2040"; tCtx.fillRect(w/2-90,h*.43,180,70);
+        tCtx.strokeStyle = "#3a6090"; tCtx.lineWidth = 4; tCtx.strokeRect(w/2-90,h*.43,180,70);
+      }
+      if (VEHICLE_SPRITES.bed) tCtx.drawImage(VEHICLE_SPRITES.bed, w-230, h*.12, 160, 80);
+      else { tCtx.fillStyle = "#5d3a1a"; tCtx.fillRect(w-230,h*.12,160,46); tCtx.fillStyle="#7b532b"; tCtx.fillRect(w-230,h*.12-10,160,12); }
+      if (VEHICLE_SPRITES.engine) tCtx.drawImage(VEHICLE_SPRITES.engine, 80, h*.74, 150, 90);
+      else { tCtx.fillStyle="#3d4658"; tCtx.fillRect(80,h*.75,150,70); tCtx.fillStyle="#00e5ff"; tCtx.fillRect(98,h*.77,30,14); tCtx.fillRect(148,h*.77,48,14); }
       tCtx.fillStyle = "rgba(245,196,0,0.8)"; tCtx.font = "bold 14px Orbitron,monospace"; tCtx.textAlign = "center";
       tCtx.fillText(trailerOwner===myPlayerId ? "TU CASA RODANTE" : `CASA DE ${trailers[trailerOwner]?.ownerName||"?"}`, w/2, h-100);
       tCtx.textAlign = "left";
@@ -1924,7 +2143,7 @@
         const closeBtn = document.createElement("button");
         closeBtn.className = "portal-btn";
         closeBtn.style.cssText = "background:rgba(245,196,0,.1);border-color:var(--accent);color:var(--accent)";
-        closeBtn.textContent = "✕ CERRAR";
+        closeBtn.textContent = "? CERRAR";
         closeBtn.onclick = () => { document.getElementById("portalPanel").classList.remove("visible"); gameState = "playing"; };
         container.appendChild(closeBtn);
       }
@@ -1959,7 +2178,7 @@
       document.getElementById("dialogBox").classList.remove("visible");
     }
 
-    // ══ performRpAction — actualizado para 3 sheets ══
+    // -- performRpAction — actualizado para 3 sheets --
     function performRpAction(actionId) {
       const action = RP_ACTIONS.find(a => a.id === actionId) || RP_ACTIONS[0];
       const hold = action.hold || 900;
@@ -1967,7 +2186,7 @@
 
       if (csAnimator) {
         const sheet = action.sheet || "base";
-        // Configurar el modo del animador según el sheet de la acción
+        // Configurar el modo del animador según el sheet de la accin
         if (sheet === "special") {
           csAnimator.setSpecialMode && csAnimator.setSpecialMode(true);
           csAnimator.play(action.anim || "sit", () => {
@@ -1984,7 +2203,7 @@
             }
           });
         } else {
-          // Sheet base — asegurar que no esté en modo special
+          // Sheet base — asegurar que no est en modo special
           if (csAnimator.specialMode) csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
           if (!isCombatMode && csAnimator.battleMode) csAnimator.setBattleMode && csAnimator.setBattleMode(false);
           const anim = action.anim || "idle";
@@ -2033,7 +2252,7 @@
         if (MAPS[currentMap]?.alwaysFly) {
           isFlying = true;
           if (csAnimator) { csAnimator.setSpecialMode && csAnimator.setSpecialMode(false); csAnimator.play("fly"); }
-          showHudToast("En el cielo siempre volás", "info"); return;
+          showHudToast("En el cielo siempre vols", "info"); return;
         }
         isFlying = !isFlying;
         if (csAnimator) {
@@ -2102,7 +2321,7 @@
         setTimeout(() => {
           loadScreen.style.display = "none";
           gameState = "playing";
-          const toastIcon = mapKey === "sky" ? "☁️" : mapKey === "space" ? "🌌" : "🌍";
+          const toastIcon = mapKey === "sky" ? "☁️" : mapKey === "space" ? "🌌" : (MAPS[mapKey]?.indoor ? "🚪" : "🌍");
           showHudToast(`${toastIcon} ${MAPS[mapKey].name}`, "info");
           if (MAPS[mapKey]?.alwaysFly) showHudToast("Modo vuelo activado", "info");
         }, 400);
@@ -2130,7 +2349,7 @@
       setTimeout(() => el.remove(), 2000);
     }
 
-    // ══ INVENTARIO ══
+    // -- INVENTARIO --
     let invSelectedId = null;
 
     function getItemCtx() {
@@ -2175,7 +2394,7 @@
       const listEl = document.getElementById("invList");
       if (!IS || !listEl) return;
       const inv = IS.getInventory();
-      if (!inv.length) { listEl.innerHTML = '<div class="inv-empty">Vacío</div>'; return; }
+      if (!inv.length) { listEl.innerHTML = '<div class="inv-empty">Vacáo</div>'; return; }
       listEl.innerHTML = "";
       inv.forEach((entry) => {
         const def = IS.ITEM_DEFS[entry.id]; if (!def) return;
@@ -2185,7 +2404,7 @@
         const cvs = document.createElement("canvas"); cvs.className = "inv-item-canvas"; cvs.width = 32; cvs.height = 32;
         drawItemIconCanvas(entry.id, cvs);
         const name = document.createElement("span"); name.className = "inv-item-name"; name.textContent = def.name;
-        const qty = document.createElement("span"); qty.className = "inv-item-qty"; qty.textContent = "×" + entry.qty;
+        const qty = document.createElement("span"); qty.className = "inv-item-qty"; qty.textContent = "" + entry.qty;
         row.appendChild(cvs); row.appendChild(name); row.appendChild(qty);
         listEl.appendChild(row);
       });
@@ -2202,7 +2421,7 @@
       detail.innerHTML = "";
       const preview = document.createElement("canvas"); preview.className = "inv-preview"; preview.width = 64; preview.height = 64;
       drawItemIconCanvas(itemId, preview); detail.appendChild(preview);
-      const title = document.createElement("div"); title.className = "inv-detail-name"; title.textContent = def.name + " ×" + entry.qty; detail.appendChild(title);
+      const title = document.createElement("div"); title.className = "inv-detail-name"; title.textContent = def.name + " " + entry.qty; detail.appendChild(title);
       const desc = document.createElement("div"); desc.className = "inv-detail-desc"; desc.textContent = def.desc || ""; detail.appendChild(desc);
       const actionsWrap = document.createElement("div"); actionsWrap.className = "inv-actions";
       actions.forEach((act) => {
@@ -2215,7 +2434,7 @@
       detail.appendChild(actionsWrap);
       if (IS.countDragonBalls() > 0) {
         const hint = document.createElement("div"); hint.className = "inv-balls-hint";
-        hint.textContent = `Esferas del dragón: ${IS.countDragonBalls()}/7`;
+        hint.textContent = `Esferas del dragn: ${IS.countDragonBalls()}/7`;
         detail.appendChild(hint);
       }
     }
@@ -2233,7 +2452,7 @@
 
     let gameState = "loading";
 
-    // ══ updatePlayer — actualizado para manejar special mode correctamente ══
+    // -- updatePlayer  actualizado para manejar special mode correctamente --
     function updatePlayer(dt) {
       if (gameState !== "playing") return;
       if (window.PvpSystem) window.PvpSystem.update(dt);
@@ -2266,7 +2485,7 @@
               csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
               csAnimator.play(isRunning ? "run" : "walk");
             }
-            // Si está quieto en special mode, dejar que la animación siga
+            // Si est quieto en special mode, dejar que la animación siga
           } else if ((controlMode === "pvp" || isCombatMode) && csAnimator.battleMode) {
             if (isFlying) csAnimator.play("knockback_fly");
             else if (player.moving) csAnimator.play("dash");
@@ -2305,7 +2524,7 @@
       const ptx=Math.floor(player.x/TILE), pty=Math.floor(player.y/TILE);
       const tile=worldMaps[currentMap]?.[pty]?.[ptx];
       if (tile===3 && !document.getElementById("portalPanel").classList.contains("visible") && gameState==="playing") {
-        showHudToast("⭐ Portal — presioná Z","info");
+        showHudToast("? Portal  presion Z","info");
       }
     }
 
@@ -2390,26 +2609,40 @@
         ctx.fillStyle="#00e5ff"; ctx.fillRect(bx,by,8*TILE,4);
         ctx.fillStyle="rgba(255,255,255,.7)"; ctx.font="bold 9px Orbitron,monospace";
         ctx.fillText("CAPSULE CORP",bx+4*TILE,by-6);
-        const kx=8*TILE-cam.x, ky=38*TILE-cam.y;
-        ctx.fillStyle="#e53935"; ctx.beginPath(); ctx.arc(kx,ky,22,0,Math.PI*2); ctx.fill();
-        ctx.fillStyle="rgba(255,255,255,.7)"; ctx.fillText("KAME-HOUSE",kx,ky-28);
+        const kx=88*TILE-cam.x, ky=22*TILE-cam.y;
+        ctx.fillStyle="#d6b574"; ctx.fillRect(kx-18,ky-140,36,140);
+        ctx.fillStyle="#f5f1d0"; ctx.beginPath(); ctx.arc(kx,ky-154,36,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle="rgba(255,255,255,.8)"; ctx.fillText("TORRE DE KARIN",kx,ky-198);
         const skyPx=56*TILE-cam.x, skyPy=10*TILE-cam.y;
         const skyPhase=Date.now()*.002;
         ctx.fillStyle=`rgba(129,212,250,${0.25+0.15*Math.sin(skyPhase)})`;
         ctx.beginPath(); ctx.ellipse(skyPx+2*TILE,skyPy+2*TILE,2*TILE,1.5*TILE,0,0,Math.PI*2); ctx.fill();
-        ctx.fillStyle="rgba(255,255,255,.75)"; ctx.fillText("PORTAL AL CIELO",skyPx+2*TILE,skyPy-6);
+        ctx.fillStyle="rgba(255,255,255,.75)"; ctx.fillText("ATALAYA DE KAMISAMA",skyPx+2*TILE,skyPy-6);
       } else if (currentMap==="space") {
         const bx=20*TILE-cam.x, by=15*TILE-cam.y;
         ctx.fillStyle="#1a1a3a"; ctx.fillRect(bx,by,25*TILE,15*TILE);
         ctx.fillStyle="#e040fb"; ctx.fillRect(bx,by,25*TILE,4);
         ctx.fillStyle="rgba(255,255,255,.7)"; ctx.font="bold 9px Orbitron,monospace";
-        ctx.fillText("NAVE DE FRIEZA",bx+12*TILE,by-6);
+        ctx.fillText("NAVE DE FREEZER",bx+12*TILE,by-6);
         const cx=67*TILE-cam.x, cy=45*TILE-cam.y;
         const grd=ctx.createRadialGradient(cx,cy,2,cx,cy,12*TILE);
         grd.addColorStop(0,"#4a2010"); grd.addColorStop(1,"#1a0808");
         ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(cx,cy,12*TILE,0,Math.PI*2); ctx.fill();
         ctx.fillStyle="rgba(255,255,255,.7)"; ctx.fillText("PLANETA CENTRAL",cx,cy-13*TILE-6);
+        ctx.fillStyle="#102a38"; ctx.fillRect(78*TILE-cam.x,10*TILE-cam.y,18*TILE,10*TILE);
+        ctx.fillStyle="#00e5ff"; ctx.fillText("PATRULLA GALACTICA",87*TILE-cam.x,9*TILE-cam.y);
+        ctx.fillStyle="#1f6b50"; ctx.beginPath(); ctx.arc(92*TILE-cam.x,55*TILE-cam.y,7*TILE,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle="#7a3515"; ctx.beginPath(); ctx.arc(103*TILE-cam.x,31*TILE-cam.y,6*TILE,0,Math.PI*2); ctx.fill();
       } else if (currentMap==="sky") {
+        const ax=46*TILE-cam.x, ay=22*TILE-cam.y;
+        ctx.fillStyle="#f6f0d8"; ctx.beginPath(); ctx.ellipse(ax+14*TILE,ay+10*TILE,16*TILE,7*TILE,0,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle="#d6d0bd"; ctx.beginPath(); ctx.ellipse(ax+14*TILE,ay+10*TILE,9*TILE,3*TILE,0,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle="#b34747"; ctx.fillRect(ax+9*TILE,ay+7*TILE,10*TILE,5*TILE);
+        ctx.fillStyle="#fff7dd"; ctx.fillRect(ax+10*TILE,ay+5*TILE,8*TILE,2*TILE);
+        ctx.fillStyle="#2d1a10"; ctx.fillRect(ax+11*TILE,ay+9*TILE,2*TILE,3*TILE);
+        ctx.fillStyle="rgba(30,80,120,.25)"; ctx.beginPath(); ctx.ellipse(ax+14*TILE,ay+15*TILE,7*TILE,1.4*TILE,0,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle="rgba(255,255,255,.9)"; ctx.font="bold 10px Orbitron,monospace";
+        ctx.fillText("ATALAYA DE KAMISAMA",ax+14*TILE,ay+2*TILE);
         const px=58*TILE-cam.x, py=72*TILE-cam.y;
         const phase=Date.now()*.002;
         ctx.fillStyle=`rgba(129,212,250,${0.35+0.15*Math.sin(phase)})`;
@@ -2418,6 +2651,22 @@
         ctx.lineWidth=2; ctx.stroke();
         ctx.fillStyle="rgba(255,255,255,.85)"; ctx.font="bold 9px Orbitron,monospace";
         ctx.fillText("PORTAL A TIERRA",px+2*TILE,py-8);
+      } else if (MAPS[currentMap]?.indoor) {
+        const labels = {
+          capsule_corp:["LABORATORIOS","HANGAR","SALA DE CAPSULAS","DORMITORIOS"],
+          karin_tower:["MIRADOR","SALA DE KARIN","DOJO","DESCANSO"],
+          galactic_patrol:["SALA TACTICA","CELDAS","HANGAR","OFICINAS"],
+          frieza_ship:["PUENTE DE MANDO","MEDBAY","ARSENAL","CAMARAS","NUCLEO"],
+          planet_central:["PLAZA","MUELLES","OFICINAS","ARCHIVO"],
+          planet_namek:["CASAS NAMEK","MEDITACION","AGUA SAGRADA","CONSEJO"],
+          planet_vegeta:["SALA DE GUERRA","ARENA","BARRACAS","ARSENAL"],
+        }[currentMap] || [];
+        ctx.fillStyle="rgba(255,255,255,.68)";
+        ctx.font="bold 8px Orbitron,monospace";
+        labels.forEach((txt,i) => {
+          const x=(18+(i%3)*28)*TILE-cam.x, y=(14+Math.floor(i/3)*28)*TILE-cam.y;
+          ctx.fillText(txt,x,y);
+        });
       }
       ctx.textAlign = "left";
     }
@@ -2428,15 +2677,19 @@
         const sx = tr.x - cam.x, sy = tr.y - cam.y;
         if (sx<-200||sx>canvas.width+200||sy<-200||sy>canvas.height+200) continue;
         ctx.fillStyle = "rgba(0,0,0,.25)"; ctx.fillRect(sx+8,sy+6,TRAILER_W,TRAILER_H);
-        ctx.fillStyle = tid===myPlayerId ? "#3a2a10" : "#1a2a3a";
-        ctx.fillRect(sx,sy,TRAILER_W,TRAILER_H);
-        ctx.fillStyle = tid===myPlayerId ? "#f5c400" : "#00e5ff";
-        ctx.fillRect(sx,sy,TRAILER_W,4);
-        ctx.fillStyle="#1a1a1a";
-        ctx.beginPath(); ctx.arc(sx+TILE*.8,sy+TRAILER_H+5,10,0,Math.PI*2); ctx.fill();
-        ctx.beginPath(); ctx.arc(sx+TRAILER_W-TILE*.8,sy+TRAILER_H+5,10,0,Math.PI*2); ctx.fill();
-        ctx.fillStyle="rgba(100,180,255,.4)"; ctx.fillRect(sx+12,sy+14,24,18); ctx.fillRect(sx+TRAILER_W-36,sy+14,24,18);
-        ctx.fillStyle="rgba(255,255,255,.15)"; ctx.fillRect(sx+TRAILER_W/2-10,sy+TRAILER_H-30,20,30);
+        if (VEHICLE_SPRITES.exterior) {
+          ctx.drawImage(VEHICLE_SPRITES.exterior, sx, sy, TRAILER_W, TRAILER_H);
+        } else {
+          ctx.fillStyle = tid===myPlayerId ? "#3a2a10" : "#1a2a3a";
+          ctx.fillRect(sx,sy,TRAILER_W,TRAILER_H);
+          ctx.fillStyle = tid===myPlayerId ? "#f5c400" : "#00e5ff";
+          ctx.fillRect(sx,sy,TRAILER_W,4);
+          ctx.fillStyle="#1a1a1a";
+          ctx.beginPath(); ctx.arc(sx+TILE*.8,sy+TRAILER_H+5,10,0,Math.PI*2); ctx.fill();
+          ctx.beginPath(); ctx.arc(sx+TRAILER_W-TILE*.8,sy+TRAILER_H+5,10,0,Math.PI*2); ctx.fill();
+          ctx.fillStyle="rgba(100,180,255,.4)"; ctx.fillRect(sx+12,sy+14,24,18); ctx.fillRect(sx+TRAILER_W-36,sy+14,24,18);
+          ctx.fillStyle="rgba(255,255,255,.15)"; ctx.fillRect(sx+TRAILER_W/2-10,sy+TRAILER_H-30,20,30);
+        }
         ctx.fillStyle="rgba(255,255,255,.8)"; ctx.font="bold 9px Orbitron,monospace"; ctx.textAlign="center";
         ctx.fillText(`🚐 ${tr.ownerName}`, sx+TRAILER_W/2, sy-8);
         if (Math.hypot(tr.x-player.x, tr.y-player.y) < 80) {
@@ -2470,7 +2723,7 @@
       });
     }
 
-    // ══ drawPlayerChar — actualizado para spriteVariantId con "special" ══
+    // -- drawPlayerChar  actualizado para spriteVariantId con "special" --
     function drawPlayerChar() {
       const sx=player.x-cam.x, sy=player.y-cam.y;
       const CS=window.CharacterSystem;
@@ -2497,7 +2750,7 @@
         const _dispH = (savedChar && savedChar.displayH) || CS.DISPLAY_H || 220;
         const _scaleW = _dispW / 180, _scaleH = _dispH / 220;
         const _drawW = _baseW * _scaleW, _drawH = _baseH * _scaleH;
-        // Sombra proporcional al tamaño real del sprite en pantalla
+        // Sombra proporcional al tamao real del sprite en pantalla
         ctx.fillStyle="rgba(0,0,0,0.3)"; ctx.beginPath(); ctx.ellipse(sx, sy+3, _drawW*0.3, _drawW*0.1, 0, 0, Math.PI*2); ctx.fill();
         ctx.save();
         ctx.translate(sx,sy);
@@ -2605,7 +2858,7 @@
     function goBack() { window.location.href="index.html"; }
     window.goBack=goBack;
 
-    // ══ LOAD GAME ══
+    // -- LOAD GAME --
     async function loadGame() {
       const steps=[
         ["GENERANDO MUNDOS...", ()=>{
@@ -2613,6 +2866,13 @@
           worldMaps.earth = generateEarthMap();
           worldMaps.sky = generateSkyMap();
           worldMaps.space = generateSpaceMap();
+          worldMaps.capsule_corp = generateFacilityMap("capsule_corp");
+          worldMaps.karin_tower = generateFacilityMap("karin_tower");
+          worldMaps.galactic_patrol = generateFacilityMap("galactic_patrol");
+          worldMaps.frieza_ship = generateFriezaShipMap();
+          worldMaps.planet_central = generatePlanetInterior("planet_central");
+          worldMaps.planet_namek = generatePlanetInterior("planet_namek");
+          worldMaps.planet_vegeta = generatePlanetInterior("planet_vegeta");
         }],
         ["INVENTARIO...", ()=>{
           if (window.ItemSystem) {

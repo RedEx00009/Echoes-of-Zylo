@@ -946,6 +946,35 @@
     frieza_male_fight:   "Skins/ArcosianoBattle.png",
     frieza_male_special: "Skins/ArcasianoSpecial.png",
 
+    // ── Transformaciones preset ──────────────────────────────────
+    tf_ozaru:          "Skins/Ozaru.png",
+    tf_ozaru_fight:    "Skins/OzaruBattle.png",
+    tf_ozaru_special:  "Skins/OzaruSpecial.png",
+
+    tf_lssj:           "Skins/LSSJ.png",
+    tf_lssj_fight:     "Skins/LSSJBattle.png",
+    tf_lssj_special:   "Skins/LSSJSpecial.png",
+
+    tf_ssj4:           "Skins/SS4.png",
+    tf_ssj4_fight:     "Skins/SS4Battle.png",
+    tf_ssj4_special:   "Skins/SS4Special.png",
+
+    tf_5forma:         "Skins/5Forma.png",
+    tf_5forma_fight:   "Skins/5FormaBattle.png",
+    tf_5forma_special: "Skins/5FormaSpecial.png",
+
+    tf_gigante:        "Skins/Gigante.png",
+    tf_gigante_fight:  "Skins/GiganteBattle.png",
+    tf_gigante_special:"Skins/GiganteSpecial.png",
+
+    tf_bersk:          "Skins/Berserker.png",
+    tf_bersk_fight:    "Skins/BerserkerBattle.png",
+    tf_bersk_special:  "Skins/BerserkerSpecial.png",
+
+    tf_maq:            "Skins/Maquinacion.png",
+    tf_maq_fight:      "Skins/MaquinacionBattle.png",
+    tf_maq_special:    "Skins/MaquinacionSpecial.png",
+
     face_fm1: "face/male/fm1_eyes_normal.png",  face_fm2: "face/male/fm2_eyes_fierce.png",
     face_fm3: "face/male/fm3_scar1.png",         face_fm4: "face/male/fm4_scar2.png",
     face_fm5: "face/male/fm5_war_marks.png",     face_fm6: "face/male/fm6_paint.png",
