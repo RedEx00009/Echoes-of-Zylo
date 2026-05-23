@@ -480,6 +480,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
     <script src="character-system.js"></script>
     <script src="firebase-character-service.js"></script>
+    <script src="transformation-system.js"></script>
 
     <script>
     "use strict";
@@ -634,12 +635,12 @@
         CS.player.appearance.faceColor = slotData.faceColor || null;
         CS.player.appearance.browColor = slotData.browColor || null;
         CS.player.appearance.pupilColor = slotData.pupilColor || null;
-        CS.player.appearance.hairId = slotData.hair || "hm1";
+        CS.player.appearance.hairId = slotData.hairId || slotData.hair || "hm1";
         CS.player.appearance.hairColor = slotData.hairColor || "#1a1a1a";
-        CS.player.appearance.topId = slotData.shirt || "top_gi_tortuga_m";
-        CS.player.appearance.bottomId = slotData.pants || "pm1";
-        CS.player.appearance.shoesId = slotData.shoes || "shm1";
-        CS.player.appearance.glovesId = slotData.gloves || "gm0";
+        CS.player.appearance.topId = slotData.topId || slotData.shirt || "top_gi_tortuga_m";
+        CS.player.appearance.bottomId = slotData.bottomId || slotData.pants || "pm1";
+        CS.player.appearance.shoesId = slotData.shoesId || slotData.shoes || "shm1";
+        CS.player.appearance.glovesId = slotData.glovesId || slotData.gloves || "gm0";
         CS.player.appearance.skinColor = slotData.skinColor || "#e8c898";
         CS.player.appearance.eyeColor = slotData.eyeColor || "#3a2a1a";
         CS.player.appearance.auraId = slotData.aura || "a0";
@@ -848,8 +849,8 @@
 
     function getNetworkGridTarget(img, maxDim) {
       const CS = window.CharacterSystem;
-      const cols = CS?.MAX_COLS || 5;
-      const rows = CS?.TOTAL_ROWS || 12;
+      const cols = CS?.MAX_COLS || 6;
+      const rows = CS?.TOTAL_ROWS || 37;
       const aspect = cols / rows;
       const imgAspect = img.naturalWidth / img.naturalHeight;
       const isGrid = img.naturalWidth >= cols * 8 && img.naturalHeight >= rows * 8 && Math.abs(imgAspect - aspect) < 0.08;
@@ -863,7 +864,7 @@
     function getNetworkVariantGridTarget(img, frameCount, maxDim) {
       const cols = Math.max(1, Math.min(24, parseInt(frameCount || 6, 10) || 6));
       const CS = window.CharacterSystem;
-      const rows = CS?.TOTAL_ROWS || 12;
+      const rows = CS?.TOTAL_ROWS || 37;
       const aspect = cols / rows;
       const imgAspect = img.naturalWidth / img.naturalHeight;
       const isGrid = img.naturalWidth >= cols * 8 && img.naturalHeight >= rows * 8 && Math.abs(imgAspect - aspect) < 0.08;
@@ -1153,13 +1154,13 @@
     function renderAppearancePreview(CS) {
       if (!CS || !csImageMap || !csAnimator) return null;
       try {
-        const pw = 144, ph = Math.round(SPRITE_DRAW_H * (144 / SPRITE_DRAW_W));
+        const pw = 144, ph = Math.round((CS.DISPLAY_H || SPRITE_DRAW_H) * (144 / (CS.DISPLAY_W || SPRITE_DRAW_W)));
         const c = document.createElement("canvas");
         c.width = pw; c.height = ph;
         const cctx = c.getContext("2d");
         cctx.clearRect(0, 0, pw, ph);
         const sx = pw / 2, sy = ph - 4;
-        const scaleX = pw / CS.FRAME_W, scaleY = ph / CS.FRAME_H;
+        const scaleX = pw / (CS.DISPLAY_W || CS.FRAME_W), scaleY = ph / (CS.DISPLAY_H || CS.FRAME_H);
         cctx.save();
         cctx.translate(sx, sy);
         cctx.scale(scaleX, scaleY);
@@ -1212,12 +1213,12 @@
         eyeColor: app?.eyeColor || sc.eyeColor || "#3a2a1a",
         browColor: app?.browColor ?? sc.browColor ?? null,
         pupilColor: app?.pupilColor ?? sc.pupilColor ?? null,
-        hairId: app?.hairId || sc.hair || defs.hairId || null,
+        hairId: app?.hairId || sc.hairId || sc.hair || defs.hairId || null,
         hairColor: app?.hairColor || sc.hairColor || "#1a1a1a",
-        topId: app?.topId || sc.shirt || defs.topId || null,
-        bottomId: app?.bottomId || sc.pants || defs.bottomId || null,
-        shoesId: app?.shoesId || sc.shoes || defs.shoesId || null,
-        glovesId: app?.glovesId || sc.gloves || defs.glovesId || "gm0",
+        topId: app?.topId || sc.topId || sc.shirt || defs.topId || null,
+        bottomId: app?.bottomId || sc.bottomId || sc.pants || defs.bottomId || null,
+        shoesId: app?.shoesId || sc.shoesId || sc.shoes || defs.shoesId || null,
+        glovesId: app?.glovesId || sc.glovesId || sc.gloves || defs.glovesId || "gm0",
         skinColor: app?.skinColor || sc.skinColor || "#e8c898",
         auraId: app?.auraId || sc.aura || "a0",
         auraColor: app?.auraColor || sc.auraColor || player.auraColor || "#fdd835",
@@ -1375,6 +1376,17 @@
       if (now - mpLastSend < MP_SEND_RATE) return;
       mpLastSend = now;
       let animAction;
+      const pvpLockedAnim = window.PvpSystem?.getLockedAnim?.();
+      if (pvpLockedAnim) {
+        db.ref("players/" + myPlayerId).update({
+          x:Math.floor(player.x), y:Math.floor(player.y), facing:player.facing,
+          animAction:pvpLockedAnim, combatMode:true, specialMode:false,
+          flying:isFlying, hp:player.hp, maxHp:player.maxHp,
+          strength:player.strength, defense:player.defense,
+          level:player.level, map:currentMap, t:Date.now(),
+        });
+        return;
+      }
       // Determinar animación actual incluyendo special mode
       if (csAnimator?.specialMode) {
         animAction = csAnimator.action || "sit";
@@ -1400,7 +1412,7 @@
     function _drawRemotePreviewSprite(sx, sy, img, facing, p) {
       ctx.fillStyle = "rgba(0,0,0,0.3)";
       ctx.beginPath();
-      ctx.ellipse(sx, sy + 3, 16, 5, 0, 0, Math.PI * 2);
+      ctx.ellipse(sx, sy + 3, SPRITE_DRAW_W*0.28, SPRITE_DRAW_W*0.09, 0, 0, Math.PI * 2);
       ctx.fill();
       const dw = SPRITE_DRAW_W, dh = SPRITE_DRAW_H;
       const dx = sx - dw / 2, dy = sy - dh;
@@ -1501,14 +1513,13 @@
               accessoryId: remoteAccId, auraPhase: (now * 0.003) % (Math.PI * 2),
               viewKey: null, spriteVariantId: remSpriteVariantId,
             };
-            ctx.fillStyle = "rgba(0,0,0,0.3)";
-            ctx.beginPath();
-            ctx.ellipse(sx, sy + 3, 16, 5, 0, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.save();
             const remoteMobileScale = (window.matchMedia?.("(pointer:coarse)").matches && window.innerHeight < 520) ? 0.84 : 1;
+            const _rdrawW = SPRITE_DRAW_W * remoteMobileScale, _rdrawH = SPRITE_DRAW_H * remoteMobileScale;
+            const _rdw = CS.DISPLAY_W || 180, _rdh = CS.DISPLAY_H || 220;
+            ctx.fillStyle = "rgba(0,0,0,0.3)"; ctx.beginPath(); ctx.ellipse(sx, sy+3, _rdrawW*0.3, _rdrawW*0.1, 0, 0, Math.PI*2); ctx.fill();
+            ctx.save();
             ctx.translate(sx, sy);
-            ctx.scale((SPRITE_DRAW_W * remoteMobileScale) / CS.FRAME_W, (SPRITE_DRAW_H * remoteMobileScale) / CS.FRAME_H);
+            ctx.scale(_rdrawW / _rdw, _rdrawH / _rdh);
             ctx.translate(-sx, -sy);
             ctx.imageSmoothingEnabled = true;
             CS.drawPlayer(ctx, sx, sy, remCSPlayer, csImageMap, anim, remState);
@@ -1544,7 +1555,7 @@
       hud.appendChild(panel);
     }
 
-    const TILE=48, CAM_LERP=0.12, SPRITE_DRAW_W=56, SPRITE_DRAW_H=82;
+    const TILE=48, CAM_LERP=0.12, SPRITE_DRAW_W=120, SPRITE_DRAW_H=148;
 
     // ══ MAP DEFINITIONS ══
     const MAPS = {
@@ -1662,7 +1673,7 @@
 
     const player = {
       name:savedChar?.name||"Guerrero Z", race:raceId, auraColor, charColor,
-      x:40*TILE, y:30*TILE, w:28, h:44, vx:0, vy:0,
+      x:40*TILE, y:30*TILE, w:44, h:64, vx:0, vy:0,
       speed:2.2+(raceStats.speed/100)*1.8,
       facing:1, moving:false,
       level:savedChar?.level||1, xp:0, xpToNext:100,
@@ -2236,7 +2247,13 @@
         CS.player.direction = player.facing;
         const rpLocked = performance.now() < rpActionUntil;
         const atkLocked = csAnimator.meta && !csAnimator.meta.loop;
-        if (!rpLocked && !atkLocked) {
+        const pvpLockedAnim = window.PvpSystem?.getLockedAnim?.();
+        if (pvpLockedAnim && csAnimator.action !== pvpLockedAnim) {
+          csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
+          csAnimator.setBattleMode && csAnimator.setBattleMode(true);
+          csAnimator.play(pvpLockedAnim);
+        }
+        if (!rpLocked && !atkLocked && !pvpLockedAnim) {
           if (csAnimator.specialMode) {
             // En modo special: si el jugador se mueve, salir del special mode
             if (player.moving) {
@@ -2468,11 +2485,14 @@
           viewKey:null,
           spriteVariantId,
         };
-        ctx.fillStyle="rgba(0,0,0,0.3)"; ctx.beginPath(); ctx.ellipse(sx,sy+3,16,5,0,0,Math.PI*2); ctx.fill();
         const mobileSpriteScale = (window.matchMedia?.("(pointer:coarse)").matches && window.innerHeight < 520) ? 0.84 : 1;
+        const _drawW = SPRITE_DRAW_W * mobileSpriteScale, _drawH = SPRITE_DRAW_H * mobileSpriteScale;
+        const _dispW = CS.DISPLAY_W || 180, _dispH = CS.DISPLAY_H || 220;
+        // Sombra proporcional al tamaño real del sprite en pantalla
+        ctx.fillStyle="rgba(0,0,0,0.3)"; ctx.beginPath(); ctx.ellipse(sx, sy+3, _drawW*0.3, _drawW*0.1, 0, 0, Math.PI*2); ctx.fill();
         ctx.save();
         ctx.translate(sx,sy);
-        ctx.scale((SPRITE_DRAW_W*mobileSpriteScale)/CS.FRAME_W,(SPRITE_DRAW_H*mobileSpriteScale)/CS.FRAME_H);
+        ctx.scale(_drawW/_dispW, _drawH/_dispH);
         ctx.translate(-sx,-sy);
         ctx.imageSmoothingEnabled=true;
         CS.drawPlayer(ctx,sx,sy,CS.player,csImageMap,csAnimator,csState);
@@ -2614,12 +2634,12 @@
                 CS.player.appearance.eyeColor=savedChar.eyeColor||"#3a2a1a";
                 CS.player.appearance.browColor=savedChar.browColor||null;
                 CS.player.appearance.pupilColor=savedChar.pupilColor||null;
-                CS.player.appearance.hairId=savedChar.hair||defs.hairId;
+                CS.player.appearance.hairId=savedChar.hairId||savedChar.hair||defs.hairId;
                 CS.player.appearance.hairColor=savedChar.hairColor||"#1a1a1a";
-                CS.player.appearance.topId=savedChar.shirt||defs.topId;
-                CS.player.appearance.bottomId=savedChar.pants||defs.bottomId;
-                CS.player.appearance.shoesId=savedChar.shoes||defs.shoesId;
-                CS.player.appearance.glovesId=savedChar.gloves||defs.glovesId;
+                CS.player.appearance.topId=savedChar.topId||savedChar.shirt||defs.topId;
+                CS.player.appearance.bottomId=savedChar.bottomId||savedChar.pants||defs.bottomId;
+                CS.player.appearance.shoesId=savedChar.shoesId||savedChar.shoes||defs.shoesId;
+                CS.player.appearance.glovesId=savedChar.glovesId||savedChar.gloves||defs.glovesId;
                 CS.player.appearance.skinColor=savedChar.skinColor||"#e8c898";
                 CS.player.appearance.auraId=savedChar.aura||"a0";
                 CS.player.appearance.auraColor=savedChar.auraColor||"#fdd835";

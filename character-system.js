@@ -57,8 +57,9 @@
   //  CONSTANTES DE DISPLAY  (tamaño en pantalla, no del sprite)
   // ═══════════════════════════════════════════════════════════════
 
-  const DISPLAY_W = 180;
-  const DISPLAY_H = 220;
+  // Mutables — se pueden cambiar vía CharacterSystem.setDisplaySize(w, h)
+  let DISPLAY_W = 180;
+  let DISPLAY_H = 220;
   const IMPORTED_LAYER_SCALE = 1.0;
 
   // Fallback si no se puede leer el sheet (96×96 era el valor antiguo)
@@ -1981,6 +1982,21 @@
     player._animator = new SpriteAnimator("idle");
   }
 
+  /**
+   * Cambia el tamaño de display del sprite en tiempo real.
+   * Llamar desde el UI cuando el usuario ajusta W/H.
+   * @param {number} w - Ancho en píxeles de display
+   * @param {number} h - Alto en píxeles de display
+   */
+  function setDisplaySize(w, h) {
+    if (w > 0) DISPLAY_W = Math.round(w);
+    if (h > 0) DISPLAY_H = Math.round(h);
+  }
+
+  function getDisplaySize() {
+    return { w: DISPLAY_W, h: DISPLAY_H };
+  }
+
   // ═══════════════════════════════════════════════════════════════
   //  EXPORT
   // ═══════════════════════════════════════════════════════════════
@@ -2039,6 +2055,7 @@
     AURA_VIEW_META,    AURA_ACTIONS_META,
 
     SpriteAnimator, initPlayer, preloadAssets, drawPlayer,
+    setDisplaySize, getDisplaySize,
 
     tintHair, tintLayer, tintFaceColor, tintFaceDetailed, tintClothDetailed, invalidateHairCache,
     _hexToRgb, _rgbToHsl, _hslToRgb, _tintSprite,

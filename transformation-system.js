@@ -49,10 +49,10 @@
   //  CONSTANTES
   // ═══════════════════════════════════════════════════════════════════
 
-  const MULTIPLIER_MIN = 0.5;
+  const MULTIPLIER_MIN = 0.1;
   const MULTIPLIER_MAX = 10;
-  const MULTIPLIER_STEP = 0.5;
-  const MULTIPLIER_PRESETS = [0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 8, 9, 10];
+  const MULTIPLIER_STEP = 0.1;
+  const MULTIPLIER_PRESETS = [0.3, 0.5, 1, 1.5, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
   const STORAGE_KEY_TRANSFORMS = "dragonz_transformations_v1";
   const STORAGE_KEY_FUSIONS    = "dragonz_fusions_v1";
@@ -62,6 +62,63 @@
     { id: "potara",   label: "Fusión Potara",   anim: "fusion_potara",   icon: "💍", color: "#ffd700" },
     { id: "custom",   label: "Custom",          anim: "fusion_metamoru", icon: "✨", color: "#e040fb" },
   ];
+
+  // ═══════════════════════════════════════════════════════════════════
+  //  CATÁLOGO DE TRANSFORMACIONES POR RAZA
+  //  Usado por getDefaultTransformationsForRace() para pre-poblar slots
+  //  y por el creator de index.html como fuente de verdad.
+  // ═══════════════════════════════════════════════════════════════════
+
+  const RACE_TRANSFORMATIONS = {
+    saiyan: [
+      { id:"s_ozaru",  name:"Ozaru",            auraColor:"#4caf50", hairColor:null,     multiplier:2,   kiCost:30, kiDrainRate:2,  tag:"OZR",  skinSlot:true,  hint:"Gran bestia simia. Asigná una skin de Ozaru." },
+      { id:"ssj1",     name:"Super Saiyan",     auraColor:"#ffd600", hairColor:"#ffd600",multiplier:4,   kiCost:20, kiDrainRate:1,  tag:"SS1",  hint:"Clásico SS. Pelo dorado." },
+      { id:"ssj3",     name:"Super Saiyan 3",   auraColor:"#ffd600", hairColor:"#ffd600",multiplier:6,   kiCost:40, kiDrainRate:3,  tag:"SS3",  hint:"Cabello largo SS3." },
+      { id:"ssj4",     name:"Super Saiyan 4",   auraColor:"#ff1744", hairColor:"#1a1a1a",multiplier:8,   kiCost:50, kiDrainRate:4,  tag:"SS4",  skinSlot:true,  hint:"Forma animal. Asigná una skin SS4." },
+    ],
+    human: [
+      { id:"h_sh",     name:"Super Humano",     auraColor:"#ffd600", hairColor:null,     multiplier:2,   kiCost:10, kiDrainRate:0,  tag:"SH",   hint:"Potencial humano desbloqueado." },
+      { id:"h_pot",    name:"Liberar Potencial",auraColor:"#e8eaf6", hairColor:null,     multiplier:4,   kiCost:20, kiDrainRate:1,  tag:"POT",  hint:"Todo el potencial liberado." },
+      { id:"h_max",    name:"Máximo Poder",     auraColor:"#ff6a00", hairColor:null,     multiplier:6,   kiCost:35, kiDrainRate:2,  tag:"MAX",  skinSlot:true,  hint:"Máximo poder humano." },
+      { id:"h_brut",   name:"Forma Brutal",     auraColor:"#ff1744", hairColor:null,     multiplier:8,   kiCost:50, kiDrainRate:4,  tag:"BRUT", skinSlot:true,  hint:"Forma bestial." },
+    ],
+    namekian: [
+      { id:"nmk_g",    name:"Forma Gigante",    auraColor:"#00e676", hairColor:null,     multiplier:2,   kiCost:20, kiDrainRate:2,  tag:"GNT",  skinSlot:true,  hint:"Namekiano gigante." },
+      { id:"nmk_s",    name:"Super Namekiano",  auraColor:"#76ff03", hairColor:null,     multiplier:4,   kiCost:30, kiDrainRate:1,  tag:"SUP",  hint:"Potencia máxima namekiana." },
+      { id:"nmk_bsrk", name:"Berserker",        auraColor:"#aa00ff", hairColor:null,     multiplier:6,   kiCost:40, kiDrainRate:3,  tag:"BSK",  skinSlot:true,  hint:"Modo oscuro berserker." },
+      { id:"nmk_ult",  name:"Ultimate",         auraColor:"#00e5ff", hairColor:null,     multiplier:8,   kiCost:50, kiDrainRate:4,  tag:"ULT",  skinSlot:true,  hint:"Poder definitivo namekiano." },
+    ],
+    android: [
+      { id:"and_over",  name:"Sobrecarga",      auraColor:"#00e5ff", hairColor:null,     multiplier:2,   kiCost:0,  kiDrainRate:0,  tag:"OVR",  hint:"Sobrecarga de energía." },
+      { id:"and_upd",   name:"Actualización",   auraColor:"#76ff03", hairColor:null,     multiplier:4,   kiCost:0,  kiDrainRate:0,  tag:"UPD",  hint:"Sistema actualizado." },
+      { id:"and_super", name:"Super Androide",  auraColor:"#e040fb", hairColor:null,     multiplier:6,   kiCost:0,  kiDrainRate:2,  tag:"S-A",  skinSlot:true,  hint:"Super androide." },
+      { id:"and_maq",   name:"Maquinación",     auraColor:"#ff1744", hairColor:null,     multiplier:8,   kiCost:0,  kiDrainRate:3,  tag:"MAQ",  skinSlot:true,  hint:"Maquinación final." },
+    ],
+    kaioshin: [
+      { id:"ks_d",  name:"Potencia Divina",     auraColor:"#ffd700", hairColor:null,     multiplier:3,   kiCost:20, kiDrainRate:1,  tag:"DIV",  hint:"Aura dorada de los Kaioshin." },
+      { id:"ks_s",  name:"Kai Sagrado",         auraColor:"#ff6a00", hairColor:null,     multiplier:6,   kiCost:40, kiDrainRate:2,  tag:"SAG",  hint:"Poder sagrado máximo." },
+    ],
+    frieza: [
+      { id:"fz_f1",   name:"Primera Forma",    auraColor:"#e040fb", hairColor:null,     multiplier:0.3, kiCost:0,  kiDrainRate:0,  tag:"F-1",  skinSlot:true,  hint:"Primera forma Frost Demon. ×0.3." },
+      { id:"fz_f2",   name:"Segunda Forma",    auraColor:"#e040fb", hairColor:null,     multiplier:0.4, kiCost:0,  kiDrainRate:0,  tag:"F-2",  skinSlot:true,  hint:"Segunda forma. ×0.4." },
+      { id:"fz_f3",   name:"Tercera Forma",    auraColor:"#e040fb", hairColor:null,     multiplier:0.5, kiCost:0,  kiDrainRate:0,  tag:"F-3",  skinSlot:true,  hint:"Tercera forma. ×0.5." },
+      { id:"fz_base", name:"Forma Base",       auraColor:"#e040fb", hairColor:null,     multiplier:1,   kiCost:0,  kiDrainRate:0,  tag:"BASE", skinSlot:true,  hint:"Forma base real. ×1." },
+    ],
+    Custom: [
+      { id:"cst_pwr", name:"Modo Poder",        auraColor:"#e040fb", hairColor:null,     multiplier:3,   kiCost:20, kiDrainRate:1,  tag:"PWR",  hint:"Personalizá todo." },
+    ],
+  };
+
+  /**
+   * Retorna las transformaciones predeterminadas para una raza dada.
+   * Útil para pre-poblar el slot de un personaje nuevo.
+   * @param {string} raceId
+   * @returns {TransformDef[]}
+   */
+  function getDefaultTransformationsForRace(raceId) {
+    const defs = RACE_TRANSFORMATIONS[raceId] || RACE_TRANSFORMATIONS["human"];
+    return defs.map(d => Object.assign({ animSheet: "base" }, d));
+  }
 
   // ═══════════════════════════════════════════════════════════════════
   //  ESTADO INTERNO
@@ -216,6 +273,9 @@
       kiCost:       def.kiCost       ?? 20,
       kiDrainRate:  def.kiDrainRate  ?? 0,
       animSheet:    def.animSheet    || "base",
+      skinSlot:     def.skinSlot     || false,
+      tag:          def.tag          || null,
+      hint:         def.hint         || null,
       order:        def.order        ?? list.length,
     };
 
@@ -396,13 +456,15 @@
     });
 
     // Spritesheet personalizado → inyectarlo como free customization
-    if (def.spriteDataURL) {
+    // Prioridad: spriteDataURL propio de la TF, luego skinDataURL del TFSkinSystem
+    const sheetURL = def.spriteDataURL || def.skinDataURL || null;
+    if (sheetURL) {
       const existingFcId = player._transformFcId;
       if (existingFcId) CS.removeUserAccessory(existingFcId);
       const fcEntry = CS.addFreeCustomizationSheet({
         name:    def.name + " Sheet",
-        dataURL: def.spriteDataURL,
-        userImage: _loadImage(def.spriteDataURL),
+        dataURL: sheetURL,
+        userImage: _loadImage(sheetURL),
       });
       app.accessoryId        = fcEntry.id;
       player._transformFcId  = fcEntry.id;
@@ -906,7 +968,7 @@
               <div class="ts-field">
                 <label class="ts-label">MULTIPLICADOR  <span id="tfMultDisplay" class="ts-mult-val">×2.0</span></label>
                 <div class="ts-mult-row">
-                  <input class="ts-input" id="tfMult" type="range" min="0.5" max="10" step="0.5" value="2" style="flex:1"/>
+                  <input class="ts-input" id="tfMult" type="range" min="0.1" max="10" step="0.1" value="2" style="flex:1"/>
                 </div>
                 <div class="ts-swatch-row" id="tfMultPresets"></div>
                 <p class="ts-hint">Multiplica HP, Ki, ATK y DEF. ×0.5 = forma debilitada, ×10 = ultra-instinto.</p>
@@ -1008,7 +1070,7 @@
               <div class="ts-field">
                 <label class="ts-label">MULTIPLICADOR  <span id="fuMultDisplay" class="ts-mult-val">×2.0</span></label>
                 <div class="ts-mult-row">
-                  <input class="ts-input" id="fuMult" type="range" min="0.5" max="10" step="0.5" value="2" style="flex:1"/>
+                  <input class="ts-input" id="fuMult" type="range" min="0.1" max="10" step="0.1" value="2" style="flex:1"/>
                 </div>
                 <div class="ts-swatch-row" id="fuMultPresets"></div>
               </div>
@@ -1791,6 +1853,10 @@
     // Constantes expuestas
     MULTIPLIER_MIN, MULTIPLIER_MAX, MULTIPLIER_STEP, MULTIPLIER_PRESETS,
     FUSION_TYPES,
+
+    // Catálogo de TFs por raza
+    RACE_TRANSFORMATIONS,
+    getDefaultTransformationsForRace,
   };
 
   window.TransformationSystem = TransformationSystem;

@@ -586,8 +586,11 @@
     if (!anim) return cb && cb();
     if (anim.setBattleMode) anim.setBattleMode(true);
     anim.play(animName, () => {
-      if (cb) cb();
-      else anim.play(G.flying ? "fly_combat" : "combat_idle");
+      const finish = () => {
+        if (cb) cb();
+        else anim.play(G.flying ? "fly_combat" : "combat_idle");
+      };
+      setTimeout(finish, Math.max(0, myLockUntil - Date.now()));
     });
     writeCombatAnim(animName);
   }
@@ -834,6 +837,8 @@
       isFighter,
       isSpectator,
       isInDuel: () => !!(activeChallenge && activeChallenge.status === "active"),
+      isAnimLocked: () => Date.now() < myLockUntil,
+      getLockedAnim: () => (Date.now() < myLockUntil ? myLockAnim : null),
       performPvpAction,
       releaseBlock,
       togglePartyPanel,
