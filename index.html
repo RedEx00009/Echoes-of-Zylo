@@ -1447,6 +1447,8 @@ function saveToSlot(i) {
       spriteSheets:{sheet,base:sheet,pelea:sheet,especial:sheet},
       layerImports: Object.assign({},layerImports),
       transformations: tfState,
+      displayW: parseInt(document.getElementById("spriteWSlider")?.value||"180",10)||180,
+      displayH: parseInt(document.getElementById("spriteHSlider")?.value||"220",10)||220,
     };
     savedSlots[i]=d; activeSlotIndex=i;
     localStorage.setItem(LS_SLOT,String(i));
@@ -1562,6 +1564,18 @@ async function loadFromSlot(i) {
     activeSlotIndex=i; localStorage.setItem(LS_SLOT,String(i));
     if (window.TFSystem && typeof window.TFSystem.importSlotState === "function") {
       window.TFSystem.importSlotState(d.transformations || null, { persist:true, applyActive:true });
+    }
+    // Restaurar sliders y preview canvas (el tamaño en juego lo maneja game.html per-player)
+    if (d.displayW || d.displayH) {
+      const rw = d.displayW || 180, rh = d.displayH || 220;
+      const wSlider = document.getElementById("spriteWSlider");
+      const hSlider = document.getElementById("spriteHSlider");
+      if (wSlider) { wSlider.value = rw; document.getElementById("spriteWVal").textContent = rw; document.getElementById("spriteWInput").value = rw; }
+      if (hSlider) { hSlider.value = rh; document.getElementById("spriteHVal").textContent = rh; document.getElementById("spriteHInput").value = rh; }
+      const pc = document.getElementById("previewCanvas");
+      if (pc) { pc.width = rw; pc.height = rh; }
+      const CS = window.CharacterSystem;
+      if (CS && typeof CS.setDisplaySize === "function") CS.setDisplaySize(rw, rh);
     }
     renderSlots(); updateStats();
     showToast(`"${d.name}" cargado`,"success");
