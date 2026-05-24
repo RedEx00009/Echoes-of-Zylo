@@ -2163,63 +2163,55 @@ document.addEventListener("DOMContentLoaded", init);
     const p = window.player;
     if (!p) return;
 
-    // Guardar snapshot de la forma actual antes de salir
-    // IMPORTANTE: solo guardamos el estado actual SI ya estamos en modo edición de TF.
-    // Si estamos en base y cambiamos a una TF, NO sobreescribimos _baseSnapshot con
-    // el estado actual (que puede tener cambios hechos por el usuario en otros paneles
-    // que no pertenecen a la base sino que el usuario estaba "probando").
+    // ── Guardar el estado actual antes de cambiar de forma ──────────
     if (_activeId === "base") {
-      // Solo actualizar _baseSnapshot si no existe todavía (primera vez)
-      if (!_baseSnapshot) {
-        _baseSnapshot = _captureAppearance();
-      }
+      // SIEMPRE actualizamos el snapshot base al salir de él,
+      // así cuando el usuario vuelva de una TF ve exactamente
+      // el personaje que tenía (incluyendo cambios recientes).
+      _baseSnapshot = _captureAppearance();
     } else {
-      // Salimos de una TF: guardar los cambios que el usuario hizo sobre ella
-      _snapshots[_activeId] = _captureAppearance();
-      // Preservar datos de skin que no vienen de player.appearance
-      const existing = _snapshots[_activeId];
+      // Salimos de una TF: guardar sus cambios
+      const snap = _captureAppearance();
+      const existing = _snapshots[_activeId] || {};
       const prev = _findDef(_activeId);
-      if (prev && prev.spriteDataURL && !existing.spriteDataURL) existing.spriteDataURL = prev.spriteDataURL;
-      if (prev && prev.transformVariantId && !existing.transformVariantId) existing.transformVariantId = prev.transformVariantId;
+      if ((existing.spriteDataURL || (prev && prev.spriteDataURL)) && !snap.spriteDataURL)
+        snap.spriteDataURL = existing.spriteDataURL || prev.spriteDataURL;
+      if ((existing.transformVariantId || (prev && prev.transformVariantId)) && !snap.transformVariantId)
+        snap.transformVariantId = existing.transformVariantId || prev.transformVariantId;
+      _snapshots[_activeId] = snap;
     }
 
     _activeId = id;
 
     if (id === "base") {
-      // Restaurar el estado base original
+      // ── Volver a base: restaurar el personaje original ──────────
       if (_baseSnapshot) {
         _applyAppearance(_baseSnapshot);
       }
     } else {
-      // ¿Ya tiene snapshot guardado? Restaurarlo
+      // ── Entrar a una TF ─────────────────────────────────────────
       if (_snapshots[id]) {
+        // Ya tiene apariencia guardada: aplicarla
         _applyAppearance(_snapshots[id]);
       } else {
-        // Primera vez activando esta TF: el snapshot inicial es base + aura de la def
+        // Primera vez: construir snapshot inicial desde base +
+        // cualquier campo de apariencia que la definición ya tenga guardado
         const def = _findDef(id);
         const baseState = _baseSnapshot || _captureAppearance();
-        if (def) {
-          const defaults = {
-            auraColor: def.auraColor || "#fdd835",
-            auraId:    def.auraId || "a1",
-          };
-          if (def.spriteDataURL) {
-            defaults.spriteDataURL = def.spriteDataURL;
-            defaults.transformVariantId = "tf_" + String(def.id).replace(/[^a-zA-Z0-9_-]/g, "_");
-          }
-          // Copiar campos de apariencia que ya estén en la definición (guardados previamente)
-          const COPY_FIELDS = ["hairId","faceId","topId","bottomId","shoesId","glovesId",
-                               "accessoryId","hairColor","skinColor","eyeColor","browColor",
-                               "pupilColor","clothColorA","clothColorB"];
-          COPY_FIELDS.forEach(f => { if (def[f] !== undefined && def[f] !== null) defaults[f] = def[f]; });
-          // Snapshot inicial = estado BASE + overrides de la definición
-          _snapshots[id] = Object.assign({}, baseState, defaults);
-          _applyAppearance(_snapshots[id]);
-        } else {
-          // Sin definición: empezar desde el estado base
-          _snapshots[id] = Object.assign({}, baseState);
-          _applyAppearance(_snapshots[id]);
+        const defaults = {
+          auraColor: (def && def.auraColor) || "#fdd835",
+          auraId:    (def && def.auraId)    || "a1",
+        };
+        if (def && def.spriteDataURL) {
+          defaults.spriteDataURL     = def.spriteDataURL;
+          defaults.transformVariantId = "tf_" + String(def.id).replace(/[^a-zA-Z0-9_-]/g, "_");
         }
+        const COPY_FIELDS = ["hairId","faceId","topId","bottomId","shoesId","glovesId",
+                             "accessoryId","hairColor","skinColor","eyeColor","browColor",
+                             "pupilColor","clothColorA","clothColorB"];
+        if (def) COPY_FIELDS.forEach(f => { if (def[f] != null) defaults[f] = def[f]; });
+        _snapshots[id] = Object.assign({}, baseState, defaults);
+        _applyAppearance(_snapshots[id]);
       }
     }
 
@@ -2232,11 +2224,11 @@ document.addEventListener("DOMContentLoaded", init);
 
     if (id !== "base") {
       const def = _findDef(id);
-      if (def && def.hint) {
-        window.showToast && window.showToast(def.hint, "warning");
-      } else {
-        window.showToast && window.showToast("✏️ Editando: " + ((def && def.name) || id) + " — cambiá cara/pelo/ropa/colores y guardá", "warning");
-      }
+      const nombre = (def && def.name) || id;
+      window.showToast && window.showToast(
+        "⚡ " + nombre + " — cambiá pelo/ropa/colores desde los paneles y se guarda automáticamente",
+        "warning"
+      );
     }
   }
 
@@ -2457,6 +2449,12 @@ document.addEventListener("DOMContentLoaded", init);
     _tfcSheetDataURL = tf?.spriteDataURL || null;
     _tfcSelectedSkinName = tf?.skinName || null;
 
+    // Al abrir el form de edición, activar la TF en el canvas
+    // para que el usuario la vea y todos los cambios vayan a SU snapshot
+    if (tf && _activeId !== tf.id) {
+      _activateForm(tf.id);
+    }
+
     const form = document.getElementById("tfCustomForm");
     const title = document.getElementById("tfcFormTitle");
     const nameInput = document.getElementById("tfcName");
@@ -2515,6 +2513,100 @@ document.addEventListener("DOMContentLoaded", init);
       reader.readAsDataURL(file);
     });
 
+    // ── _buildTfcSection ─────────────────────────────────────────────
+    // Puebla grids/chips del formulario de TF y aplica cambios en
+    // tiempo real al canvas, guardándolos siempre en la TF activa.
+    function _buildTfcSection(sectionId) {
+      const race   = _currentRace();
+      const gender = _currentGender();
+
+      function _liveApply(fn) {
+        fn();
+        if (window.invalidateHairCache) window.invalidateHairCache();
+        // Garantizar que _activeId sea la TF editada antes de guardar
+        if (_editingCustomTfId && _activeId !== _editingCustomTfId) {
+          _activateForm(_editingCustomTfId);
+        }
+        requestAnimationFrame(_saveCurrentFormState);
+      }
+
+      function _tfcGrid(gridId, catalog, cat, activeFn, selectFn) {
+        buildGrid(gridId, catalog, cat, activeFn, item => _liveApply(() => selectFn(item)));
+      }
+
+      function _tfcColorRow(chipsId, pickerId, hexId, palette, prop, isCharState) {
+        const chipsEl  = document.getElementById(chipsId);
+        const pickerEl = document.getElementById(pickerId);
+        const hexEl    = document.getElementById(hexId);
+        if (!chipsEl || !pickerEl) return;
+        const getVal = () => (isCharState ? charState[prop] : player.appearance[prop]) || palette[0];
+        const setVal = hex => {
+          if (isCharState) charState[prop] = hex; else player.appearance[prop] = hex;
+          pickerEl.value = hex;
+          if (hexEl) hexEl.textContent = hex.toUpperCase();
+          chipsEl.querySelectorAll(".color-chip").forEach(c => c.classList.toggle("active", c.dataset.color === hex));
+          _liveApply(() => {});
+        };
+        chipsEl.innerHTML = "";
+        palette.forEach(hex => {
+          const ch = document.createElement("div");
+          ch.className = "color-chip" + (getVal() === hex ? " active" : "");
+          ch.style.background = hex; ch.dataset.color = hex; ch.title = hex;
+          ch.addEventListener("click", () => setVal(hex));
+          chipsEl.appendChild(ch);
+        });
+        pickerEl.value = getVal();
+        if (hexEl) hexEl.textContent = getVal().toUpperCase();
+        const np = pickerEl.cloneNode(true);
+        pickerEl.parentNode.replaceChild(np, pickerEl);
+        np.addEventListener("input", e => setVal(e.target.value));
+      }
+
+      if (sectionId === "tfc-pelo") {
+        _tfcGrid("tfc-hairGrid", getCatalogFor("hair", race, gender), "hair",
+          i => player.appearance.hairId === i.id, i => { player.appearance.hairId = i.id; });
+        _tfcColorRow("tfc-hairColorChips","tfc-hairColorPicker","tfc-hairColorHex", HAIR_PALETTE,"hairColor",false);
+      }
+      else if (sectionId === "tfc-cara") {
+        _tfcGrid("tfc-faceGrid", getCatalogFor("face", race, gender), "face",
+          i => player.appearance.faceId === i.id, i => { player.appearance.faceId = i.id; });
+      }
+      else if (sectionId === "tfc-ropa") {
+        _tfcGrid("tfc-topGrid",    getCatalogFor("shirt",  race, gender), "shirt",
+          i => player.appearance.topId === i.id,    i => { player.appearance.topId = i.id; });
+        _tfcGrid("tfc-bottomGrid", getCatalogFor("pants",  race, gender), "pants",
+          i => player.appearance.bottomId === i.id, i => { player.appearance.bottomId = i.id; });
+        _tfcGrid("tfc-shoesGrid",  getCatalogFor("shoes",  race, gender), "shoes",
+          i => player.appearance.shoesId === i.id,  i => { player.appearance.shoesId = i.id; });
+        _tfcGrid("tfc-glovesGrid", getCatalogFor("gloves", race, gender), "gloves",
+          i => (charState.glovesId || player.appearance.glovesId) === i.id,
+          i => { charState.glovesId = i.id; player.appearance.glovesId = i.id; });
+      }
+      else if (sectionId === "tfc-accs") {
+        const visAcc = (window.ACCESSORIES_CATALOG || []).filter(a => !a.isFreeCustomization);
+        _tfcGrid("tfc-accGrid", visAcc, "accessory",
+          i => (charState.accessoryId || "ac_none") === i.id,
+          i => { charState.accessoryId = i.id; player.appearance.accessoryId = i.id; });
+      }
+      else if (sectionId === "tfc-aura") {
+        _tfcGrid("tfc-auraGrid", window.AURAS_CATALOG || [], "aura",
+          i => (charState.auraId || "a1") === i.id,
+          i => { charState.auraId = i.id; player.appearance.auraId = i.id;
+                 charState.auraColor = i.color || "#fdd835"; player.appearance.auraColor = charState.auraColor; });
+        _tfcColorRow("tfc-auraColorChips","tfc-auraColorPicker","tfc-auraColorHex", AURA_PALETTE,"auraColor",true);
+      }
+      else if (sectionId === "tfc-color") {
+        const CLOTH_A = window.CLOTH_A_PALETTE || ["#ff6a00","#ffd700","#00e676","#2979ff","#aa00ff","#e8eaf6","#1a1a1a"];
+        const CLOTH_B = window.CLOTH_B_PALETTE || ["#1565c0","#7b1fa2","#b71c1c","#1a237e","#004d40","#37474f","#e8eaf6"];
+        _tfcColorRow("tfc-skinColorChips",   "tfc-skinColorPicker",   "tfc-skinColorHex",   SKIN_PALETTE,  "skinColor",  false);
+        _tfcColorRow("tfc-eyeColorChips",    "tfc-eyeColorPicker",    "tfc-eyeColorHex",    EYE_PALETTE,   "eyeColor",   false);
+        _tfcColorRow("tfc-browColorChips",   "tfc-browColorPicker",   "tfc-browColorHex",   BROW_PALETTE,  "browColor",  false);
+        _tfcColorRow("tfc-pupilColorChips",  "tfc-pupilColorPicker",  "tfc-pupilColorHex",  PUPIL_PALETTE, "pupilColor", false);
+        _tfcColorRow("tfc-clothColorAChips", "tfc-clothColorAPicker", "tfc-clothColorAHex", CLOTH_A,       "clothColorA",false);
+        _tfcColorRow("tfc-clothColorBChips", "tfc-clothColorBPicker", "tfc-clothColorBHex", CLOTH_B,       "clothColorB",false);
+      }
+    }
+
     // ── Secciones colapsables ──
     document.querySelectorAll(".tfc-sec-toggle").forEach(btn => {
       btn.addEventListener("click", () => {
@@ -2525,7 +2617,6 @@ document.addEventListener("DOMContentLoaded", init);
         btn.classList.toggle("open", opening);
         const arrow = btn.querySelector(".tfc-arrow");
         if (arrow) arrow.textContent = opening ? "▲" : "▼";
-        // Poblar los grids la primera vez que se abre
         if (opening) _buildTfcSection(btn.dataset.target);
       });
     });
@@ -2533,7 +2624,12 @@ document.addEventListener("DOMContentLoaded", init);
     document.getElementById("btnAddCustomTf")?.addEventListener("click", () => _openCustomForm(null));
 
     document.getElementById("tfcCancel")?.addEventListener("click", () => {
+      // Revertir cambios no guardados del formulario
+      if (_editingCustomTfId && _snapshots[_editingCustomTfId]) {
+        _applyAppearance(_snapshots[_editingCustomTfId]);
+      }
       _editingCustomTfId = null;
+      _activateForm("base");
       document.getElementById("tfCustomForm").style.display = "none";
     });
 
