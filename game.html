@@ -273,6 +273,39 @@
       .shenron-sub { font-size:14px; color:#c8e6c9; margin-top:12px; letter-spacing:2px; }
       @keyframes shenronPulse { 0%,100%{opacity:.85;transform:scale(1);} 50%{opacity:1;transform:scale(1.03);} }
 
+      /* -- TRANSFORMATION DROPDOWN -- */
+      .trans-dropdown-wrap { position:relative; display:inline-flex; align-items:center; justify-content:center; }
+      #transDropdownMenu {
+        display:none; position:fixed; bottom:auto; left:0;
+        background:var(--ui-bg); border:1px solid rgba(245,196,0,.35); border-radius:10px;
+        min-width:200px; max-width:240px; z-index:50; backdrop-filter:blur(14px);
+        box-shadow:0 -4px 24px rgba(0,0,0,.55); padding:6px; overflow:hidden;
+        pointer-events:auto;
+      }
+      #transDropdownMenu.open { display:block; }
+      .trans-drop-header { font-family:var(--font-head); font-size:8px; letter-spacing:2px; color:#3d4a6b; padding:5px 8px 4px; border-bottom:1px solid rgba(42,53,96,.6); margin-bottom:4px; }
+      .trans-drop-item {
+        display:flex; align-items:center; gap:8px; padding:8px 10px;
+        border-radius:7px; cursor:pointer; transition:background .12s;
+        pointer-events:auto; touch-action:manipulation;
+      }
+      .trans-drop-item:hover, .trans-drop-item.active-tr { background:rgba(245,196,0,.12); }
+      .trans-drop-item.active-tr { border:1px solid rgba(245,196,0,.3); }
+      .trans-drop-icon { font-size:16px; flex-shrink:0; }
+      .trans-drop-info { flex:1; min-width:0; }
+      .trans-drop-name { font-family:var(--font-head); font-size:9px; color:#e8eaf6; letter-spacing:.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+      .trans-drop-level { font-size:8px; color:#4a5880; letter-spacing:.5px; margin-top:1px; }
+      .trans-drop-revert {
+        width:100%; margin-top:4px; padding:8px; border-radius:6px;
+        background:rgba(255,23,68,.1); border:1px solid rgba(255,23,68,.3);
+        color:#ff5252; font-family:var(--font-head); font-size:9px; letter-spacing:1px;
+        cursor:pointer; touch-action:manipulation; transition:background .12s;
+      }
+      .trans-drop-revert:hover { background:rgba(255,23,68,.22); }
+      .trans-drop-empty { font-family:var(--font-head); font-size:9px; color:#3d4a6b; text-align:center; padding:10px; }
+      .skill-btn.trans-active { border-color:#aa00ff; box-shadow:0 0 14px rgba(170,0,255,.5); }
+      .action-btn.trans-active { border-color:#aa00ff; box-shadow:0 0 14px rgba(170,0,255,.5); }
+
       /* -- RESPONSIVE -- */
       @media (pointer:coarse), (max-width:768px) {
         :root { --btn-size:52px; --btn-icon:19px; }
@@ -449,6 +482,13 @@
         <div class="dialog-name" id="dialogName">NPC</div>
         <div class="dialog-text" id="dialogText"></div>
         <div class="dialog-opts" id="dialogOpts"></div>
+      </div>
+
+      <!-- Transformation Dropdown -->
+      <div id="transDropdownMenu">
+        <div class="trans-drop-header">⚡ TRANSFORMACIONES</div>
+        <div id="transDropList"></div>
+        <button class="trans-drop-revert" onclick="revertTransformationInGame()">↩ FORMA BASE</button>
       </div>
 
       <div id="toastHud"></div>
@@ -678,6 +718,176 @@
     function toggleRunMobile() { setRunState(!isRunning); }
     window.toggleRunPC = toggleRunPC; window.toggleRunMobile = toggleRunMobile;
 
+    // -- TRANSFORMACIONES DROPDOWN --
+    let transDropOpen = false;
+
+    function getTransDropAnchor() {
+      // Intenta anclar al botón PC, luego mobile
+      return document.getElementById("skillTransBtn") || document.getElementById("mobileTransBtn");
+    }
+
+    function positionTransDropdown(anchor) {
+      const menu = document.getElementById("transDropdownMenu");
+      if (!anchor || !menu) return;
+      const rect = anchor.getBoundingClientRect();
+      const menuW = 220;
+      let left = rect.left + rect.width / 2 - menuW / 2;
+      // Evitar que se salga por los bordes
+      left = Math.max(8, Math.min(left, window.innerWidth - menuW - 8));
+      menu.style.left = left + "px";
+      menu.style.bottom = (window.innerHeight - rect.top + 8) + "px";
+      menu.style.transform = "none";
+    }
+
+    function renderTransDropList() {
+      const list = document.getElementById("transDropList");
+      if (!list) return;
+      const TS = window.TransformationsSystem;
+      if (!TS) { list.innerHTML = '<div class="trans-drop-empty">Sistema no cargado</div>'; return; }
+
+      // Cargar transformaciones guardadas en localStorage
+      let saved = [];
+      try {
+        const raw = localStorage.getItem("dragonCreatorZ_transformations");
+        if (raw) saved = JSON.parse(raw);
+      } catch(e) {}
+
+      // También chequear si están guardadas dentro del slot activo
+      if (!Array.isArray(saved) || saved.length === 0) {
+        try {
+          const slotRaw = localStorage.getItem("dragonCreatorZ_slots");
+          const activeSlot = parseInt(localStorage.getItem("dragonCreatorZ_activeSlot") || "0", 10);
+          if (slotRaw) {
+            const slots = JSON.parse(slotRaw);
+            const slot = slots[activeSlot];
+            if (slot?.transformations) saved = slot.transformations;
+          }
+        } catch(e) {}
+      }
+
+      if (!Array.isArray(saved) || saved.length === 0) {
+        list.innerHTML = '<div class="trans-drop-empty">Sin transformaciones guardadas<br><span style="font-size:8px;color:#2a3560">Créalas en el editor de personaje</span></div>';
+        return;
+      }
+
+      // Registrar todas en el catálogo del TransformationsSystem si no están ya
+      saved.forEach(tr => {
+        if (!TS.TRANSFORMATIONS.find(t => t.id === tr.id)) {
+          TS.registerTransformation(tr);
+        }
+      });
+
+      const activeTr = TS.playerTransState?.activeTransformation;
+      list.innerHTML = saved.map(tr => {
+        const isActive = activeTr && activeTr.id === tr.id;
+        const aura = tr.auraColor || "#fdd835";
+        const mStr = tr.multipliers?.str ?? tr.multStr ?? 1;
+        const mSpd = tr.multipliers?.spd ?? tr.multSpd ?? 1;
+        return `<div class="trans-drop-item${isActive ? ' active-tr' : ''}" onclick="applyTransformationFromDrop('${tr.id}')" style="${isActive ? `border-left:3px solid ${aura};` : ''}">
+          <span class="trans-drop-icon" style="text-shadow:0 0 8px ${aura}">${tr.icon || '⚡'}</span>
+          <div class="trans-drop-info">
+            <div class="trans-drop-name" style="${isActive ? `color:${aura}` : ''}">${tr.name}</div>
+            <div class="trans-drop-level">Lv ${tr.level || 1} · STR ×${mStr} · SPD ×${mSpd}</div>
+          </div>
+          ${isActive ? '<span style="font-size:10px;color:'+aura+'">●</span>' : ''}
+        </div>`;
+      }).join("");
+    }
+
+    function toggleTransDropdown(e) {
+      if (e) { e.stopPropagation(); }
+      const menu = document.getElementById("transDropdownMenu");
+      if (!menu) return;
+      transDropOpen = !transDropOpen;
+      if (transDropOpen) {
+        renderTransDropList();
+        menu.classList.add("open");
+        const anchor = getTransDropAnchor();
+        positionTransDropdown(anchor);
+      } else {
+        menu.classList.remove("open");
+      }
+    }
+    window.toggleTransDropdown = toggleTransDropdown;
+
+    function closeTransDropdown() {
+      transDropOpen = false;
+      document.getElementById("transDropdownMenu")?.classList.remove("open");
+    }
+
+    function applyTransformationFromDrop(trId) {
+      const TS = window.TransformationsSystem;
+      if (!TS) return;
+      // Buscar en localStorage y registrar si no está en catálogo
+      let saved = [];
+      try { const raw = localStorage.getItem("dragonCreatorZ_transformations"); if (raw) saved = JSON.parse(raw); } catch(e) {}
+      const trData = saved.find(t => t.id === trId);
+      if (trData && !TS.TRANSFORMATIONS.find(t => t.id === trId)) {
+        // Normalizar formato: multStr → multipliers.str
+        const normalized = Object.assign({}, trData);
+        if (!normalized.multipliers) {
+          normalized.multipliers = {
+            str: trData.multStr || 1,
+            spd: trData.multSpd || 1,
+            def: trData.multDef || 1,
+            ki:  trData.multKi  || 1,
+          };
+        }
+        TS.registerTransformation(normalized);
+      }
+      const result = TS.transformPlayer(trId);
+      if (result.success) {
+        const tr = result.transformation;
+        showHudToast(`⚡ ${tr.name}`, "xp");
+        if (tr.skinDataURL && window.csAnimator && window.csAnimator.setTransformationSkin) {
+          window.csAnimator.setTransformationSkin(tr.skinDataURL);
+        }
+        if (tr.auraColor && window.player) {
+          window.player.auraColor = tr.auraColor;
+        }
+        publishMyAppearance && publishMyAppearance(true);
+      } else {
+        showHudToast("⚠️ Transformación no disponible", "info");
+      }
+      closeTransDropdown();
+      renderActionBars();
+    }
+    window.applyTransformationFromDrop = applyTransformationFromDrop;
+
+    function revertTransformationInGame() {
+      const TS = window.TransformationsSystem;
+      if (!TS) return;
+      TS.revertTransformation();
+      if (window.player) window.player.auraColor = window.player.savedAuraColor || "#fdd835";
+      showHudToast("↩ Forma base restaurada", "info");
+      if (window.csAnimator && window.csAnimator.setTransformationSkin) {
+        window.csAnimator.setTransformationSkin(null);
+      }
+      publishMyAppearance && publishMyAppearance(true);
+      closeTransDropdown();
+      renderActionBars();
+    }
+    window.revertTransformationInGame = revertTransformationInGame;
+
+    // Cerrar dropdown al hacer click fuera
+    document.addEventListener("click", (e) => {
+      if (!transDropOpen) return;
+      const menu = document.getElementById("transDropdownMenu");
+      const btnPc = document.getElementById("skillTransBtn");
+      const btnMob = document.getElementById("mobileTransBtn");
+      if (menu && !menu.contains(e.target) && e.target !== btnPc && e.target !== btnMob && !btnPc?.contains(e.target) && !btnMob?.contains(e.target)) {
+        closeTransDropdown();
+      }
+    });
+
+    // Tecla T para abrir dropdown de transformaciones
+    document.addEventListener("keydown", (e) => {
+      if (e.code === "KeyT" && !e.repeat && document.activeElement?.tagName !== "INPUT" && document.activeElement?.tagName !== "TEXTAREA") {
+        toggleTransDropdown(null);
+      }
+    });
+
+
     function makePcSkill({ icon, key, title, action, id, cls }) {
       return `<div class="skill-btn ${cls || ""}" ${id ? `id="${id}"` : ""} onclick="${action}" title="${title}"><span class="skill-icon">${icon}</span><span class="skill-key">${key}</span></div>`;
     }
@@ -731,6 +941,7 @@
             makePcSkill({ icon:"🔄", key:"RP", title:"Volver a rol", action:"setControlMode('rp')" }),
           ].join("");
         } else {
+          const transActive = window.TransformationsSystem?.playerTransState?.activeTransformation;
           skills.innerHTML = RP_ACTIONS.map(a =>
             makePcSkill({ icon:a.icon, key:a.key, title:`${a.title} [${a.key}]`, action:`performRpAction('${a.id}')` })
           ).concat([
@@ -738,6 +949,7 @@
             makePcSkill({ icon:"💨", key:"SHIFT", title:"Correr", action:"toggleRunPC()", id:"skillRun", cls:isRunning?"run-active":"" }),
           ]).concat([
             makePcSkill({ icon:"💬", key:"G", title:"Interactuar [G]", action:"interactNearby()", id:"skillInteract" }),
+            `<div class="skill-btn trans-dropdown-wrap ${transActive ? 'trans-active' : ''}" id="skillTransBtn" onclick="toggleTransDropdown(event)" title="Transformaciones [T]"><span class="skill-icon">⚡</span><span class="skill-key">${transActive ? '★' : 'T'}</span></div>`,
           ]).join("");
         }
       }
@@ -755,12 +967,14 @@
             `<div class="action-btn btn-run" onclick="setControlMode('rp')" style="border-radius:12px;width:100%;grid-column:span 2;height:calc(var(--btn-size)*0.7);"><span class="btn-icon">🔄</span><span class="btn-label">VOLVER A RP</span></div>`,
           ].join("");
         } else {
+          const transActiveMob = window.TransformationsSystem?.playerTransState?.activeTransformation;
           grid.innerHTML = RP_ACTIONS.map((a, idx) =>
             makeMobileAction({ icon:a.icon, label:a.label, action:`performRpAction('${a.id}')`, cls:idx % 2 ? "btn-trailer" : "btn-emote" })
           ).concat([
               makeMobileAction({ icon:"⚔️", label:"COMBATE", action:"setControlMode('combat')", cls:"btn-interact" }),
           ]).concat([
             makeMobileAction({ icon:"💬", label:"HABLAR", action:"interactNearby()", cls:"btn-interact" }),
+            `<div class="action-btn btn-emote ${transActiveMob ? 'trans-active' : ''}" id="mobileTransBtn" onclick="toggleTransDropdown(event)"><span class="btn-icon">⚡</span><span class="btn-label">${transActiveMob ? '★ TRANS' : 'TRANSF.'}</span></div>`,
             `<div class="action-btn btn-run ${isRunning ? "run-active" : ""}" id="mobileRunBtn" onclick="toggleRunMobile()" style="border-radius:12px;width:100%;height:calc(var(--btn-size)*0.7);"><span class="btn-icon">💨</span><span class="btn-label" id="runBtnLabel">CORRER: ${isRunning ? "ON" : "OFF"}</span></div>`,
           ]).join("");
         }

@@ -182,66 +182,133 @@
     .start-btn{width:calc(100% - 20px);margin:8px 10px;padding:12px;background:linear-gradient(135deg,rgba(245,196,0,.2),rgba(255,106,0,.2));border:1px solid var(--accent);border-radius:var(--r);color:var(--accent);font-family:var(--fh);font-size:11px;letter-spacing:2px;cursor:pointer;transition:all var(--tr);flex-shrink:0}
     .start-btn:hover{background:linear-gradient(135deg,rgba(245,196,0,.35),rgba(255,106,0,.3));box-shadow:0 0 16px rgba(245,196,0,.3)}
 
-    /* ── Transform tab & cards ── */
-    .cat-tab[data-cat="transform"].active{color:#e040fb;border-bottom-color:#e040fb;background:rgba(224,64,251,.06)}
-    .tfc-section{margin-bottom:5px;border:1px solid rgba(255,255,255,.07);border-radius:5px;overflow:hidden}
-    .tfc-sec-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:rgba(255,255,255,.04);border:none;color:var(--td);font-family:var(--fh);font-size:8px;letter-spacing:1px;cursor:pointer;transition:all .15s;text-align:left}
-    .tfc-sec-toggle:hover{background:rgba(224,64,251,.08);color:var(--tp)}
-    .tfc-sec-toggle.open{background:rgba(224,64,251,.1);color:#e040fb}
-    .tfc-sec-body{padding:8px 8px 10px;background:#080c18;border-top:1px solid rgba(255,255,255,.06)}
-    .tf-card{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg-card);border:2px solid var(--border);border-radius:6px;cursor:pointer;transition:all .15s;margin-bottom:4px;user-select:none}
-    .tf-card:hover{border-color:rgba(224,64,251,.5);background:rgba(224,64,251,.05)}
-    .tf-card.tf-active{border-color:#e040fb!important;background:rgba(224,64,251,.1)!important;box-shadow:0 0 10px rgba(224,64,251,.2)}
-    .tf-card.tf-card-base.tf-active{border-color:var(--accent)!important;background:rgba(245,196,0,.08)!important;box-shadow:0 0 10px rgba(245,196,0,.15)}
-    .tf-aura-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;border:2px solid rgba(255,255,255,.2)}
-    .tf-card-name{flex:1;font-family:var(--fh);font-size:9px;letter-spacing:.5px;color:var(--tp);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .tf-card.tf-active .tf-card-name{color:#e040fb}
-    .tf-card.tf-card-base.tf-active .tf-card-name{color:var(--accent)}
-    .tf-card-mult{font-family:var(--fh);font-size:8px;color:var(--tm);letter-spacing:.3px}
-    .tf-tag{font-family:var(--fh);font-size:6px;letter-spacing:.5px;padding:2px 5px;border-radius:3px;background:rgba(0,229,255,.1);color:var(--cyan);border:1px solid rgba(0,229,255,.25);flex-shrink:0}
-    .tf-tag.race{background:rgba(74,106,255,.1);color:var(--glow);border-color:rgba(74,106,255,.25)}
-    .tf-tag.custom{background:rgba(224,64,251,.1);color:#e040fb;border-color:rgba(224,64,251,.3)}
-    .tf-tag.special{background:rgba(245,196,0,.1);color:var(--accent);border-color:rgba(245,196,0,.3)}
-    .tf-edit-btn,.tf-del-btn{background:none;border:none;color:var(--tm);cursor:pointer;font-size:11px;padding:2px 4px;transition:color .15s;flex-shrink:0;line-height:1}
-    .tf-edit-btn:hover{color:var(--cyan)}
-    .tf-del-btn:hover{color:var(--red)}
-    .tf-hint{font-size:8px;color:var(--tm);font-family:var(--fb);line-height:1.4;margin:5px 0 2px;padding:5px 8px;background:rgba(255,255,255,.02);border-left:2px solid var(--border);border-radius:0 4px 4px 0}
-    .tf-quick-btn{background:var(--bg-card);border:1px solid rgba(224,64,251,.25);border-radius:var(--r);padding:5px 2px;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:1px;color:var(--td);font-family:var(--fh);font-size:13px;letter-spacing:.3px;line-height:1.2}
-    .tf-quick-btn span{font-size:7px;letter-spacing:.3px}
-    .tf-quick-btn:hover{border-color:#e040fb;color:#e040fb;background:rgba(224,64,251,.08)}
-
-    /* ── Banner de edición de TF ── */
-    #tfEditingBanner{display:none;position:absolute;top:0;left:0;right:0;z-index:20;padding:5px 10px;background:rgba(224,64,251,.18);border-bottom:2px solid #e040fb;align-items:center;gap:7px;font-family:var(--fh);font-size:8px;letter-spacing:1px;color:#e040fb;backdrop-filter:blur(4px)}
-    #tfEditingBanner.visible{display:flex!important}
-    @keyframes tfDotPulse{from{opacity:.35}to{opacity:1}}
-    #tfBannerDot{width:7px;height:7px;border-radius:50%;background:#e040fb;flex-shrink:0;animation:tfDotPulse .7s ease-in-out infinite alternate}
-    #tfBannerName{color:#fff;font-weight:700;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    #tfBannerSave{padding:3px 8px;background:rgba(224,64,251,.22);border:1px solid #e040fb;border-radius:4px;color:#e040fb;font-family:var(--fh);font-size:7px;letter-spacing:.5px;cursor:pointer;flex-shrink:0;pointer-events:auto}
-    #tfBannerRevert{padding:3px 8px;background:rgba(255,23,68,.1);border:1px solid rgba(255,23,68,.45);border-radius:4px;color:var(--red);font-family:var(--fh);font-size:7px;cursor:pointer;flex-shrink:0;pointer-events:auto}
-    body.tf-editing-mode .left-panel{border-right-color:rgba(224,64,251,.4)!important;box-shadow:inset -2px 0 10px rgba(224,64,251,.07)}
-    body.tf-editing-mode .cat-tab.active:not([data-cat="transform"]){border-bottom-color:#e040fb!important;color:#e040fb!important}
-
     /* ── Toast ── */
     #toastContainer{position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:6px;pointer-events:none}
+
+    /* ════ TRANSFORMACIONES ════ */
+    .trans-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(6px)}
+    .trans-modal-overlay.hidden{display:none}
+    .trans-modal{background:var(--bg-panel);border:1px solid var(--border);border-radius:10px;width:min(900px,98vw);max-height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 8px 64px rgba(74,106,255,.3)}
+    .trans-modal-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);flex-shrink:0}
+    .trans-modal-title{font-family:var(--fh);font-size:13px;font-weight:900;letter-spacing:2px;color:var(--tp)}
+    .trans-modal-close{background:transparent;border:none;color:var(--td);font-size:18px;cursor:pointer;line-height:1;padding:2px 6px;transition:color var(--tr)}
+    .trans-modal-close:hover{color:var(--red)}
+    /* Split layout: preview left, form right */
+    .trans-modal-body{flex:1;overflow:hidden;display:flex;min-height:0}
+    .trans-modal-preview-col{width:220px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;border-right:1px solid var(--border);background:radial-gradient(ellipse at 50% 60%,#0f1535 0%,var(--bg-panel) 70%);padding:14px 10px 12px;gap:10px;position:relative;overflow:hidden}
+    .trans-modal-preview-col::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 80%,rgba(74,106,255,.06) 0%,transparent 70%);pointer-events:none}
+    .tm-preview-aura-glow{position:absolute;bottom:60px;left:50%;transform:translateX(-50%);width:120px;height:30px;border-radius:50%;filter:blur(12px);opacity:.6;transition:background .4s}
+    .tm-preview-label{font-family:var(--fh);font-size:7px;letter-spacing:2px;color:var(--tm);text-align:center}
+    .tm-preview-name{font-family:var(--fh);font-size:10px;font-weight:700;letter-spacing:1px;color:var(--tp);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:190px}
+    .tm-preview-level{font-family:var(--fh);font-size:8px;letter-spacing:1px;color:var(--td);text-align:center}
+    .tm-preview-stats{width:100%;display:flex;flex-direction:column;gap:3px;margin-top:4px}
+    .tm-preview-stat-row{display:flex;align-items:center;gap:5px;font-size:8px;font-family:var(--fh);letter-spacing:.3px}
+    .tm-preview-stat-label{color:var(--td);width:28px;text-align:right;flex-shrink:0}
+    .tm-preview-stat-bar-wrap{flex:1;height:4px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden}
+    .tm-preview-stat-bar{height:100%;border-radius:2px;transition:width .3s ease}
+    .tm-preview-stat-val{color:var(--tp);min-width:20px;text-align:right;font-size:8px}
+    .trans-modal-form-col{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+    .trans-modal-form-scroll{flex:1;overflow-y:auto;padding:16px 18px;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+    .trans-modal-form-scroll::-webkit-scrollbar{width:3px}
+    .trans-modal-form-scroll::-webkit-scrollbar-thumb{background:var(--border)}
+    .trans-form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+    .trans-form-row.full{grid-template-columns:1fr}
+    .trans-field{display:flex;flex-direction:column;gap:4px}
+    .trans-field label{font-family:var(--fh);font-size:8px;letter-spacing:1.5px;color:var(--td)}
+    .trans-field input[type="text"],.trans-field input[type="number"]{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:7px 10px;color:var(--tp);font-family:var(--fb);font-size:12px;outline:none;transition:border-color var(--tr);width:100%}
+    .trans-field input:focus{border-color:var(--cyan)}
+    .trans-aura-row{display:flex;gap:5px;flex-wrap:wrap;margin-top:3px}
+    .trans-aura-chip{width:22px;height:22px;border-radius:4px;cursor:pointer;border:2px solid transparent;transition:all var(--tr);flex-shrink:0}
+    .trans-aura-chip:hover{transform:scale(1.15)}
+    .trans-aura-chip.active{border-color:white;box-shadow:0 0 6px rgba(255,255,255,.4)}
+    .trans-aura-custom{display:flex;align-items:center;gap:6px;margin-top:5px}
+    .trans-skin-import{width:100%;display:flex;align-items:center;gap:8px;background:rgba(224,64,251,.05);border:1px dashed rgba(224,64,251,.3);border-radius:var(--r);padding:7px 10px;cursor:pointer;color:var(--magenta);font-family:var(--fh);font-size:8px;letter-spacing:1px;transition:all var(--tr)}
+    .trans-skin-import:hover{background:rgba(224,64,251,.12);border-color:var(--magenta)}
+    .trans-skin-import.loaded{border-color:var(--green);color:var(--green);background:rgba(0,255,157,.05)}
+    .trans-skin-import input[type="file"]{display:none}
+    .trans-stats-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:6px}
+    .trans-stat{display:flex;flex-direction:column;align-items:center;gap:3px}
+    .trans-stat label{font-family:var(--fh);font-size:7px;letter-spacing:1px;color:var(--td);text-align:center}
+    .trans-stat input{width:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:4px;padding:4px;color:var(--tp);font-family:var(--fh);font-size:10px;text-align:center;outline:none}
+    .trans-stat input:focus{border-color:var(--accent)}
+    .trans-modal-footer{padding:12px 18px;border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0}
+    .trans-save-btn{flex:1;padding:10px;background:linear-gradient(135deg,rgba(224,64,251,.2),rgba(74,106,255,.2));border:1px solid var(--magenta);border-radius:var(--r);color:var(--magenta);font-family:var(--fh);font-size:10px;letter-spacing:2px;cursor:pointer;transition:all var(--tr)}
+    .trans-save-btn:hover{background:linear-gradient(135deg,rgba(224,64,251,.35),rgba(74,106,255,.3));box-shadow:0 0 16px rgba(224,64,251,.3)}
+    .trans-cancel-btn{padding:10px 18px;background:transparent;border:1px solid var(--border);border-radius:var(--r);color:var(--td);font-family:var(--fh);font-size:10px;letter-spacing:1px;cursor:pointer;transition:all var(--tr)}
+    .trans-cancel-btn:hover{border-color:var(--td);color:var(--tp)}
+
+    /* ── Tabs internos del modal de transformación ── */
+    .tm-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto}
+    .tm-tab{padding:8px 12px;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--tm);font-family:var(--fh);font-size:8px;letter-spacing:1.5px;cursor:pointer;transition:all var(--tr);white-space:nowrap}
+    .tm-tab:hover{color:var(--td)}
+    .tm-tab.active{color:var(--magenta);border-bottom-color:var(--magenta)}
+    .tm-panel{display:none}.tm-panel.visible{display:block}
+
+    /* ── Mini preview dentro del modal ── */
+    .tm-preview-wrap{display:flex;gap:14px;align-items:flex-start;margin-bottom:12px}
+    .tm-canvas-wrap{background:radial-gradient(ellipse at 50% 60%,#0f1535,var(--bg-card));border:1px solid var(--border);border-radius:var(--r);padding:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+    #tmPreviewCanvas{image-rendering:pixelated}
+
+    /* ── Grillas del modal ── */
+    .tm-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:6px}
+    .tm-grid.cols3{grid-template-columns:repeat(3,1fr)}
+    .tm-card{background:var(--bg-card);border:2px solid var(--border);border-radius:4px;padding:4px 2px;cursor:pointer;transition:all var(--tr);display:flex;flex-direction:column;align-items:center;gap:2px;font-family:var(--fb);font-size:8px;font-weight:600;color:var(--td);text-align:center;line-height:1.2}
+    .tm-card:hover{border-color:var(--accent);color:var(--tp)}
+    .tm-card.active{border-color:var(--magenta);color:var(--magenta);background:rgba(224,64,251,.08);box-shadow:0 0 8px rgba(224,64,251,.2)}
+    .tm-canvas{image-rendering:pixelated;width:100%;border-radius:2px;background:var(--bg-deep)}
+    .tm-name{font-size:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;padding:0 1px}
+    .tm-sec{font-family:var(--fh);font-size:7px;letter-spacing:2px;color:var(--td);margin:10px 0 5px;text-transform:uppercase}
+    .tm-sec:first-child{margin-top:0}
+    .tm-color-chips{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:5px}
+    .tm-chip{width:20px;height:20px;border-radius:3px;cursor:pointer;flex-shrink:0;border:2px solid transparent;transition:all var(--tr)}
+    .tm-chip:hover{transform:scale(1.2)}
+    .tm-chip.active{border-color:white;box-shadow:0 0 5px rgba(255,255,255,.4)}
+    .tm-picker-row{display:flex;align-items:center;gap:6px;margin-bottom:8px}
+    .tm-picker{width:26px;height:26px;border-radius:4px;border:1px solid var(--border);cursor:pointer;padding:0;background:none;outline:none;flex-shrink:0}
+    .tm-picker::-webkit-color-swatch-wrapper{padding:2px}
+    .tm-picker::-webkit-color-swatch{border:none;border-radius:2px}
+    .tm-hex{font-family:var(--fh);font-size:8px;color:var(--td);letter-spacing:1px}
+    .tm-inherit-note{font-size:9px;color:var(--td);font-family:var(--fb);line-height:1.4;background:rgba(0,229,255,.05);border:1px solid rgba(0,229,255,.15);border-radius:4px;padding:5px 8px;margin-bottom:8px}
+
+    /* Panel de transformaciones en el panel derecho */
+    .trans-section{padding:8px 10px;border-top:1px solid var(--border);flex-shrink:0}
+    .trans-section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+    .trans-section-title{font-family:var(--fh);font-size:8px;letter-spacing:3px;color:var(--td)}
+    .trans-add-btn{padding:3px 10px;background:rgba(224,64,251,.1);border:1px solid rgba(224,64,251,.4);border-radius:4px;color:var(--magenta);font-family:var(--fh);font-size:8px;letter-spacing:1px;cursor:pointer;transition:all var(--tr)}
+    .trans-add-btn:hover{background:rgba(224,64,251,.2);border-color:var(--magenta)}
+    .trans-list{display:flex;flex-direction:column;gap:4px;max-height:160px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+    .trans-list::-webkit-scrollbar{width:3px}
+    .trans-list::-webkit-scrollbar-thumb{background:var(--border)}
+    .trans-slot{display:flex;align-items:center;gap:6px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:5px 7px;cursor:pointer;transition:all var(--tr);position:relative;overflow:hidden}
+    .trans-slot::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--slot-color,var(--magenta))}
+    .trans-slot:hover{border-color:var(--accent);background:var(--bg-hover)}
+    .trans-slot.active-trans{border-color:var(--slot-color,var(--magenta));box-shadow:0 0 8px rgba(224,64,251,.2)}
+    .trans-slot-canvas{width:32px;height:40px;image-rendering:pixelated;border-radius:3px;background:var(--bg-deep);flex-shrink:0}
+    .trans-slot-info{flex:1;min-width:0}
+    .trans-slot-name{font-family:var(--fh);font-size:9px;letter-spacing:.5px;color:var(--tp);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .trans-slot-sub{font-size:9px;color:var(--td);margin-top:1px}
+    .trans-slot-actions{display:flex;gap:3px;flex-shrink:0}
+    .trans-slot-edit{background:transparent;border:1px solid var(--border);border-radius:3px;padding:2px 5px;color:var(--td);font-size:9px;cursor:pointer;transition:all var(--tr)}
+    .trans-slot-edit:hover{border-color:var(--cyan);color:var(--cyan)}
+    .trans-slot-del{background:transparent;border:none;color:var(--tm);font-size:11px;cursor:pointer;transition:color var(--tr);padding:2px 3px}
+    .trans-slot-del:hover{color:var(--red)}
+    .trans-preview-badge{position:absolute;top:6px;left:8px;z-index:2;font-family:var(--fh);font-size:7px;letter-spacing:1px;padding:2px 7px;border-radius:3px;border:1px solid;background:rgba(224,64,251,.1);border-color:rgba(224,64,251,.5);color:var(--magenta)}
+    .trans-base-badge{background:rgba(0,229,255,.08);border-color:rgba(0,229,255,.3);color:var(--cyan)}
+
+    /* Tabs del panel central: transformaciones */
+    .sheet-tab.active-trans{color:var(--magenta);border-bottom-color:var(--magenta);background:rgba(224,64,251,.05)}
+    .anim-panel-trans{display:none;padding:6px 10px}
+    .anim-panel-trans.visible{display:block}
+    .trans-selector-bar{display:flex;gap:4px;flex-wrap:wrap}
+    .trans-preview-btn{padding:4px 10px;font-family:var(--fh);font-size:7px;letter-spacing:1px;background:var(--bg-card);border:2px solid var(--border);border-radius:4px;color:var(--td);cursor:pointer;transition:all var(--tr);position:relative}
+    .trans-preview-btn:hover{border-color:var(--accent);color:var(--tp)}
+    .trans-preview-btn.active{border-color:var(--btn-color,var(--magenta));color:var(--btn-color,var(--magenta));background:rgba(224,64,251,.1)}
     .toast{padding:8px 14px;border-radius:var(--r);font-family:var(--fh);font-size:9px;letter-spacing:1px;pointer-events:none;animation:toastIn .25s ease;box-shadow:0 4px 16px rgba(0,0,0,.5)}
     @keyframes toastIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
     .toast.success{background:#0d2a1e;border:1px solid #00ff9d;color:#00ff9d}
     .toast.error{background:#2a0d0d;border:1px solid var(--red);color:var(--red)}
     .toast.warning{background:#2a1e0d;border:1px solid var(--accent);color:var(--accent)}
 
-    /* ── Skin card de transformación ── */
-    .tfskin-card{
-      background:var(--bg-card);border:2px solid var(--border);border-radius:var(--r);
-      padding:5px 3px;cursor:pointer;transition:all var(--tr);
-      display:flex;flex-direction:column;align-items:center;gap:3px;
-      font-family:var(--fb);font-size:8px;font-weight:600;letter-spacing:.3px;
-      color:var(--td);text-align:center;line-height:1.2;position:relative;
-    }
-    .tfskin-card:hover{border-color:#e040fb;color:var(--tp);background:rgba(224,64,251,.06)}
-    .tfskin-card.active{border-color:#e040fb;color:#e040fb;background:rgba(224,64,251,.1);box-shadow:0 0 8px rgba(224,64,251,.2)}
-    .tfskin-card canvas{image-rendering:pixelated;width:100%;border-radius:3px;background:var(--bg-deep)}
-    .tfskin-card .tfskin-del{position:absolute;top:2px;right:2px;background:none;border:none;color:var(--tm);cursor:pointer;font-size:9px;line-height:1;padding:1px;transition:color .15s}
-    .tfskin-card .tfskin-del:hover{color:var(--red)}
     /* ── RESPONSIVE: tablets / phones / landscape ── */
     @media (max-width:1100px) {
       .creator-layout{grid-template-columns:220px 1fr 220px;height:calc(100vh - 52px)}
@@ -306,7 +373,8 @@
       <button class="cat-tab" data-cat="aura"><span class="cat-icon">🌟</span>AURA</button>
       <button class="cat-tab" data-cat="color"><span class="cat-icon">🎨</span>COLOR</button>
       <button class="cat-tab" data-cat="import"><span class="cat-icon">📂</span>IMPORT</button>
-      <button class="cat-tab" data-cat="transform"><span class="cat-icon">⚡</span>TRANSF.</button>
+      <button class="cat-tab" data-cat="trans-creator"><span class="cat-icon">⚡</span>TRANS.</button>
+
     </div>
 
     <div class="left-scroll">
@@ -486,209 +554,76 @@
         <button id="btnClearSkin" style="margin-top:8px;width:100%;padding:7px;background:rgba(255,23,68,.08);border:1px solid rgba(255,23,68,.3);border-radius:4px;color:rgba(255,23,68,.7);font-family:var(--fh);font-size:8px;letter-spacing:1px;cursor:pointer;transition:all .15s">✕ LIMPIAR SKIN</button>
       </div>
 
-      <!-- ── TRANSFORMACIONES ── -->
-      <div class="cat-panel" id="panel-transform">
-
-        <!-- Forma activa (indicador) -->
-        <div id="tfActiveBar" style="display:none;align-items:center;gap:7px;padding:6px 10px;margin-bottom:8px;background:rgba(224,64,251,.08);border:1px solid rgba(224,64,251,.4);border-radius:5px">
-          <span id="tfActiveAuraDot" style="width:10px;height:10px;border-radius:50%;background:#fdd835;flex-shrink:0"></span>
-          <span id="tfActiveName" style="flex:1;font-family:var(--fh);font-size:9px;letter-spacing:.5px;color:#e040fb"></span>
-          <button id="tfBtnRevert" style="padding:3px 9px;background:rgba(255,23,68,.1);border:1px solid rgba(255,23,68,.4);border-radius:4px;color:var(--red);font-family:var(--fh);font-size:7px;letter-spacing:.5px;cursor:pointer;transition:all .15s">↩ BASE</button>
+      <!-- ── TRANSFORMACIONES (Creator Panel) ── -->
+      <div class="cat-panel" id="panel-trans-creator">
+        <div class="sec-label">⚡ TRANSFORMACIONES</div>
+        <div style="font-size:10px;color:var(--td);line-height:1.5;margin-bottom:10px;font-family:var(--fb)">
+          Creá y personalizá las formas transformadas de tu personaje. Cada transformación modifica
+          <span style="color:var(--green)">fuerza</span>, <span style="color:var(--magenta)">velocidad</span>,
+          <span style="color:var(--accent2)">defensa</span> y <span style="color:var(--cyan)">ki</span>.
+          El HP <strong style="color:var(--red)">nunca</strong> se ve afectado.
         </div>
 
-        <!-- Lista de formas -->
-        <div class="sec-label">FORMA BASE</div>
-        <div id="tfBaseCard" class="tf-card tf-card-base">
-          <span class="tf-aura-dot" style="background:#fdd835"></span>
-          <span class="tf-card-name">Forma Base</span>
-          <span class="tf-tag">BASE</span>
-        </div>
-
-        <div id="tfRaceSection" style="display:none">
-          <div class="sec-label" style="margin-top:10px">TRANSFORMACIONES DE RAZA</div>
-          <div id="tfRaceList"></div>
-        </div>
-
-        <div id="tfCustomSection">
-          <div class="sec-label" style="margin-top:10px">CUSTOM</div>
-          <div id="tfCustomList"></div>
-        </div>
-
-        <button id="btnAddCustomTf" style="width:100%;margin-top:8px;padding:8px;background:rgba(224,64,251,.07);border:1px dashed rgba(224,64,251,.35);border-radius:5px;color:#e040fb;font-family:var(--fh);font-size:8px;letter-spacing:1px;cursor:pointer;transition:all .15s">+ AGREGAR TRANSFORMACIÓN CUSTOM</button>
-
-        <!-- ══ FORM COMPLETO ══ -->
-        <div id="tfCustomForm" style="display:none;margin-top:10px;background:#0a0e1a;border:1px solid rgba(224,64,251,.4);border-radius:8px;padding:12px">
-          <div id="tfcFormTitle" style="font-family:var(--fh);font-size:9px;letter-spacing:2px;color:#e040fb;margin-bottom:10px">NUEVA TRANSFORMACIÓN</div>
-
-          <!-- Nombre -->
-          <div style="margin-bottom:8px">
-            <label class="sec-label" style="margin:0 0 4px">NOMBRE</label>
-            <input id="tfcName" type="text" maxlength="28" placeholder="Ej: Vegeta" style="width:100%;padding:7px 10px;background:#12172e;border:1px solid #2a3560;border-radius:5px;color:#e8eaf6;font-family:Rajdhani,sans-serif;font-size:13px;outline:none"/>
-          </div>
-
-          <!-- Aura + Mult -->
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-            <div>
-              <label class="sec-label" style="margin:0 0 4px">COLOR AURA</label>
-              <input id="tfcAuraColor" type="color" value="#e040fb" style="width:100%;height:30px;padding:2px;background:#12172e;border:1px solid #2a3560;border-radius:5px;cursor:pointer;outline:none"/>
-            </div>
-            <div>
-              <label class="sec-label" style="margin:0 0 4px">MULTIPLICADOR</label>
-              <div style="display:flex;align-items:center;gap:6px">
-                <input id="tfcMult" type="range" min="0.1" max="10" step="0.1" value="2" style="flex:1;accent-color:#e040fb;cursor:pointer"/>
-                <span id="tfcMultVal" style="font-family:var(--fh);font-size:10px;color:#e040fb;min-width:30px">×2.0</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- ── PELO ── -->
-          <div class="tfc-section">
-            <button class="tfc-sec-toggle" data-target="tfc-pelo">💇 CABELLO <span class="tfc-arrow">▼</span></button>
-            <div id="tfc-pelo" class="tfc-sec-body" style="display:none">
-              <div class="sec-label">ESTILO</div>
-              <div class="item-grid" id="tfc-hairGrid"></div>
-              <div class="sec-label" style="margin-top:8px">COLOR CABELLO</div>
-              <div class="color-chips" id="tfc-hairColorChips"></div>
-              <div class="color-picker-row">
-                <input type="color" id="tfc-hairColorPicker" class="color-picker" value="#1a1a1a"/>
-                <span class="color-hex" id="tfc-hairColorHex">#1A1A1A</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- ── CARA ── -->
-          <div class="tfc-section">
-            <button class="tfc-sec-toggle" data-target="tfc-cara">😶 CARA / OJOS <span class="tfc-arrow">▼</span></button>
-            <div id="tfc-cara" class="tfc-sec-body" style="display:none">
-              <div class="item-grid" id="tfc-faceGrid"></div>
-            </div>
-          </div>
-
-          <!-- ── ROPA ── -->
-          <div class="tfc-section">
-            <button class="tfc-sec-toggle" data-target="tfc-ropa">👕 ROPA <span class="tfc-arrow">▼</span></button>
-            <div id="tfc-ropa" class="tfc-sec-body" style="display:none">
-              <div class="sec-label">SUPERIOR</div>
-              <div class="item-grid" id="tfc-topGrid"></div>
-              <div class="sec-label" style="margin-top:6px">INFERIOR</div>
-              <div class="item-grid" id="tfc-bottomGrid"></div>
-              <div class="sec-label" style="margin-top:6px">CALZADO</div>
-              <div class="item-grid" id="tfc-shoesGrid"></div>
-              <div class="sec-label" style="margin-top:6px">GUANTES</div>
-              <div class="item-grid" id="tfc-glovesGrid"></div>
-            </div>
-          </div>
-
-          <!-- ── ACCESORIOS ── -->
-          <div class="tfc-section">
-            <button class="tfc-sec-toggle" data-target="tfc-accs">✨ ACCESORIOS <span class="tfc-arrow">▼</span></button>
-            <div id="tfc-accs" class="tfc-sec-body" style="display:none">
-              <div class="item-grid cols3" id="tfc-accGrid"></div>
-            </div>
-          </div>
-
-          <!-- ── AURA ── -->
-          <div class="tfc-section">
-            <button class="tfc-sec-toggle" data-target="tfc-aura">🌟 AURA <span class="tfc-arrow">▼</span></button>
-            <div id="tfc-aura" class="tfc-sec-body" style="display:none">
-              <div class="item-grid cols3" id="tfc-auraGrid"></div>
-              <div class="sec-label" style="margin-top:8px">COLOR AURA</div>
-              <div class="color-chips" id="tfc-auraColorChips"></div>
-              <div class="color-picker-row">
-                <input type="color" id="tfc-auraColorPicker" class="color-picker" value="#fdd835"/>
-                <span class="color-hex" id="tfc-auraColorHex">#FDD835</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- ── COLORES ── -->
-          <div class="tfc-section">
-            <button class="tfc-sec-toggle" data-target="tfc-color">🎨 COLORES <span class="tfc-arrow">▼</span></button>
-            <div id="tfc-color" class="tfc-sec-body" style="display:none">
-              <div class="sec-label">PIEL</div>
-              <div class="color-chips" id="tfc-skinColorChips"></div>
-              <div class="color-picker-row">
-                <input type="color" id="tfc-skinColorPicker" class="color-picker" value="#e8c898"/>
-                <span class="color-hex" id="tfc-skinColorHex">#E8C898</span>
-              </div>
-              <div class="sec-label" style="margin-top:8px">OJOS</div>
-              <div class="color-chips" id="tfc-eyeColorChips"></div>
-              <div class="color-picker-row">
-                <input type="color" id="tfc-eyeColorPicker" class="color-picker" value="#3a2a1a"/>
-                <span class="color-hex" id="tfc-eyeColorHex">#3A2A1A</span>
-              </div>
-              <div class="sec-label" style="margin-top:8px">CEJAS</div>
-              <div class="color-chips" id="tfc-browColorChips"></div>
-              <div class="color-picker-row">
-                <input type="color" id="tfc-browColorPicker" class="color-picker" value="#1a1a1a"/>
-                <span class="color-hex" id="tfc-browColorHex">#1A1A1A</span>
-              </div>
-              <div class="sec-label" style="margin-top:8px">PUPILAS</div>
-              <div class="color-chips" id="tfc-pupilColorChips"></div>
-              <div class="color-picker-row">
-                <input type="color" id="tfc-pupilColorPicker" class="color-picker" value="#2979ff"/>
-                <span class="color-hex" id="tfc-pupilColorHex">#2979FF</span>
-              </div>
-              <div class="sec-label" style="margin-top:8px">ROPA COLOR A</div>
-              <div class="color-chips" id="tfc-clothColorAChips"></div>
-              <div class="color-picker-row">
-                <input type="color" id="tfc-clothColorAPicker" class="color-picker" value="#ff6a00"/>
-                <span class="color-hex" id="tfc-clothColorAHex">#FF6A00</span>
-              </div>
-              <div class="sec-label" style="margin-top:8px">ROPA COLOR B</div>
-              <div class="color-chips" id="tfc-clothColorBChips"></div>
-              <div class="color-picker-row">
-                <input type="color" id="tfc-clothColorBPicker" class="color-picker" value="#1565c0"/>
-                <span class="color-hex" id="tfc-clothColorBHex">#1565C0</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- ── SKIN PNG ── -->
-          <div class="tfc-section">
-            <button class="tfc-sec-toggle" data-target="tfc-skin">📂 SKIN PNG <span class="tfc-arrow">▼</span></button>
-            <div id="tfc-skin" class="tfc-sec-body" style="display:none">
-              <label id="tfcSheetLabel" style="display:flex;align-items:center;gap:8px;padding:7px 10px;cursor:pointer;background:rgba(0,229,255,.05);border:1px dashed rgba(0,229,255,.3);border-radius:5px;color:#00e5ff;font-family:var(--fh);font-size:8px;letter-spacing:1px;transition:all .15s;margin-bottom:8px">
-                <span>📁 IMPORTAR PNG</span>
-                <span id="tfcSheetFname" style="font-size:8px;color:#8892b0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">sin archivo</span>
-                <input type="file" id="tfcSheetFile" accept="image/png,image/webp,image/jpeg" style="display:none"/>
-              </label>
-              <div class="sec-label" style="margin-bottom:6px">SKINS DEL CATÁLOGO</div>
-              <div id="tfcSkinCatalog" class="item-grid cols3"></div>
-            </div>
-          </div>
-
-          <!-- Guardar / Cancelar -->
-          <div style="display:flex;gap:8px;margin-top:12px">
-            <button id="tfcSave" style="flex:1;padding:8px;background:rgba(224,64,251,.15);border:1px solid rgba(224,64,251,.5);border-radius:6px;color:#e040fb;font-family:var(--fh);font-size:9px;letter-spacing:1px;cursor:pointer">💾 GUARDAR</button>
-            <button id="tfcCancel" style="padding:8px 14px;background:transparent;border:1px solid #2a3560;border-radius:6px;color:#8892b0;font-family:var(--fh);font-size:9px;cursor:pointer">CANCELAR</button>
-          </div>
-        </div><!-- /tfCustomForm -->
-
-        <!-- Skins de TF de raza -->
-        <div id="tfSkinsSection" style="display:none;margin-top:10px">
-          <div class="sec-label" style="display:flex;align-items:center;justify-content:space-between">
-            <span id="tfSkinsSectionLabel">🎭 SKINS DE TRANSFORMACIÓN</span>
-            <span style="font-size:7px;color:var(--tm);letter-spacing:.5px">OPCIONAL</span>
-          </div>
-          <div style="font-size:9px;color:var(--td);line-height:1.4;margin-bottom:7px;font-family:var(--fb)">Asigná una skin especial a la transformación activa.</div>
-          <div id="tfSkinGrid" class="item-grid cols3" style="margin-bottom:6px"></div>
-          <label id="tfSkinImportLabel" class="import-layer" style="margin-top:4px">
-            <span>📁</span><span>CARGAR SKIN PNG</span>
-            <span class="import-layer-fname" id="tfSkinImportName">sin archivo</span>
-            <input type="file" id="tfSkinImportFile" accept="image/png,image/webp,image/jpeg" style="display:none"/>
-          </label>
-          <div id="tfSkinActiveInfo" style="display:none;margin-top:7px;padding:7px 10px;background:rgba(224,64,251,.06);border:1px solid rgba(224,64,251,.3);border-radius:5px;align-items:center;gap:8px">
-            <canvas id="tfSkinPreviewCanvas" width="36" height="44" style="image-rendering:pixelated;border-radius:3px;flex-shrink:0;border:1px solid rgba(224,64,251,.4)"></canvas>
-            <div style="flex:1;min-width:0">
-              <div id="tfSkinActiveName" style="font-family:var(--fh);font-size:8px;color:#e040fb;letter-spacing:.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Sin skin</div>
-              <div style="font-size:8px;color:var(--td);margin-top:2px;font-family:var(--fb)">Skin activa en esta forma</div>
-            </div>
-            <button id="tfSkinClear" style="padding:3px 8px;background:rgba(255,23,68,.1);border:1px solid rgba(255,23,68,.4);border-radius:4px;color:var(--red);font-family:var(--fh);font-size:7px;cursor:pointer;flex-shrink:0">✕</button>
+        <!-- Lista de transformaciones -->
+        <div class="sec-label" style="margin-top:4px">TRANSFORMACIONES CREADAS</div>
+        <div id="transCreatorList" style="display:flex;flex-direction:column;gap:4px;margin-bottom:6px;min-height:44px">
+          <div id="transCreatorEmpty" style="font-family:var(--fh);font-size:8px;color:var(--tm);letter-spacing:1px;text-align:center;padding:14px 0;border:1px dashed rgba(255,255,255,.08);border-radius:var(--r)">
+            Sin transformaciones creadas
           </div>
         </div>
 
-      </div><!-- /panel-transform -->
+        <!-- Botón agregar -->
+        <button id="btnAddTransCreator" style="
+          width:100%;margin-top:2px;padding:9px;
+          background:linear-gradient(135deg,rgba(224,64,251,.1),rgba(74,106,255,.1));
+          border:1px dashed rgba(224,64,251,.45);border-radius:var(--r);
+          color:var(--magenta);font-family:var(--fh);font-size:9px;letter-spacing:2px;
+          cursor:pointer;transition:all var(--tr);display:flex;align-items:center;justify-content:center;gap:6px
+        ">⚡ NUEVA TRANSFORMACIÓN</button>
+
+        <!-- Info multiplicadores -->
+        <div class="sec-label" style="margin-top:14px;border-top:1px solid var(--border);padding-top:10px">
+          MULTIPLICADORES (x0.3 → x10)
+        </div>
+        <div style="font-size:9px;color:var(--td);line-height:1.7;font-family:var(--fb);margin-bottom:8px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 10px">
+            <span>💥 <span style="color:var(--red)">STR</span> — Fuerza</span>
+            <span>⚡ <span style="color:var(--magenta)">SPD</span> — Velocidad</span>
+            <span>🛡️ <span style="color:var(--accent2)">DEF</span> — Defensa</span>
+            <span>💙 <span style="color:var(--cyan)">KI</span> — Ki</span>
+          </div>
+        </div>
+        <div style="
+          background:rgba(255,23,68,.06);border:1px solid rgba(255,23,68,.22);
+          border-radius:var(--r);padding:6px 9px;margin-bottom:10px;
+          font-family:var(--fh);font-size:8px;letter-spacing:.5px;color:rgba(255,120,120,.85);line-height:1.5
+        ">🔒 HP actual y HP máximo <strong>nunca</strong> son modificados</div>
+
+        <!-- Selector forma activa -->
+        <div class="sec-label">FORMA ACTIVA</div>
+        <div id="transCreatorActiveBar" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px">
+          <button class="trans-preview-btn active" data-trans-creator-idx="-1"
+            style="--btn-color:var(--cyan);padding:4px 10px;font-family:var(--fh);font-size:7px;
+            letter-spacing:1px;background:rgba(0,229,255,.1);border:2px solid var(--cyan);
+            border-radius:4px;color:var(--cyan);cursor:pointer;transition:all var(--tr)">BASE</button>
+        </div>
+
+        <!-- Preview de stats -->
+        <div class="sec-label">STATS CON FORMA ACTIVA</div>
+        <div style="
+          background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);
+          padding:8px 10px;font-family:var(--fh);font-size:8px;letter-spacing:.5px;
+          color:var(--td);line-height:2.1
+        ">
+          <div style="display:flex;justify-content:space-between"><span>💥 STR</span><span id="tcsStr" style="color:var(--tp)">—</span></div>
+          <div style="display:flex;justify-content:space-between"><span>⚡ SPD</span><span id="tcsSp"  style="color:var(--tp)">—</span></div>
+          <div style="display:flex;justify-content:space-between"><span>🛡️ DEF</span><span id="tcsDef" style="color:var(--tp)">—</span></div>
+          <div style="display:flex;justify-content:space-between"><span>💙 KI</span> <span id="tcsKi"  style="color:var(--tp)">—</span></div>
+          <div style="display:flex;justify-content:space-between;border-top:1px solid var(--border);margin-top:4px;padding-top:4px;opacity:.5">
+            <span>❤️ HP</span><span style="color:var(--green);font-size:7px">SIN CAMBIOS (protegido)</span>
+          </div>
+        </div>
+      </div>
 
     </div><!-- /left-scroll -->
   </aside>
@@ -699,6 +634,7 @@
       <button class="sheet-tab active-base" data-sheet="base">● BASE</button>
       <button class="sheet-tab" data-sheet="combat">✕ COMBATE</button>
       <button class="sheet-tab" data-sheet="special">✦ ESPECIAL</button>
+      <button class="sheet-tab" data-sheet="trans">⚡ TRANS.</button>
     </div>
     <div class="anim-panels-wrap">
       <div class="anim-panel visible" id="panelBase">
@@ -718,11 +654,18 @@
         <div class="anim-row"><span class="anim-row-label">ACCIONES</span><button class="anim-btn" data-sheet="special" data-anim="training">TRAIN</button><button class="anim-btn" data-sheet="special" data-anim="sit">SENTAR</button><button class="anim-btn" data-sheet="special" data-anim="emote">EMOTE</button><button class="anim-btn" data-sheet="special" data-anim="carry_player">CARRY</button></div>
         <div class="anim-row"><span class="anim-row-label">ITEMS</span><button class="anim-btn" data-sheet="special" data-anim="hold_item">HOLD</button><button class="anim-btn" data-sheet="special" data-anim="use_item">USE</button><button class="anim-btn" data-sheet="special" data-anim="eat_drink">COMER</button><button class="anim-btn" data-sheet="special" data-anim="drive">DRIVE</button></div>
       </div>
+      <div class="anim-panel-trans" id="panelTrans">
+        <div class="anim-row"><span class="anim-row-label">VISTA</span></div>
+        <div class="trans-selector-bar" id="transSelectorBar">
+          <button class="trans-preview-btn active" data-trans-idx="-1" style="--btn-color:var(--cyan)">BASE</button>
+        </div>
+      </div>
     </div>
     <div class="preview-area">
       <div class="preview-bg"></div>
       <div class="preview-canvas-wrap"><canvas id="previewCanvas" width="180" height="220"></canvas></div>
       <div class="sheet-indicator" id="sheetIndicator">🌍 BASE</div>
+      <div class="trans-preview-badge trans-base-badge hidden" id="transPreviewBadge">⚡ BASE</div>
     </div>
     <div class="name-section">
       <label class="name-label">NOMBRE DEL PERSONAJE</label>
@@ -759,12 +702,214 @@
         <input type="file" id="characterImportInput" accept=".json,application/json" style="display:none"/>
       </div>
     </div>
+    <!-- Transformaciones -->
+    <div class="trans-section">
+      <div class="trans-section-header">
+        <div class="trans-section-title">⚡ TRANSFORMACIONES</div>
+        <button class="trans-add-btn" id="btnAddTrans">+ NUEVA</button>
+      </div>
+      <div class="trans-list" id="transList">
+        <div style="font-family:var(--fh);font-size:8px;color:var(--tm);letter-spacing:1px;text-align:center;padding:10px" id="transEmpty">Sin transformaciones</div>
+      </div>
+    </div>
     <button class="start-btn" id="btnStart">⚔️ COMENZAR A JUGAR</button>
   </aside>
+
+  <!-- ══ TRANSFORMATION MODAL ══ -->
+  <div class="trans-modal-overlay hidden" id="transModalOverlay">
+    <div class="trans-modal">
+      <div class="trans-modal-header">
+        <div class="trans-modal-title" id="transModalTitle">⚡ NUEVA TRANSFORMACIÓN</div>
+        <button class="trans-modal-close" id="transModalClose">✕</button>
+      </div>
+      <div class="trans-modal-body">
+
+        <!-- ═══ COLUMNA IZQUIERDA: Preview grande del personaje ═══ -->
+        <div class="trans-modal-preview-col">
+          <div class="tm-preview-label">VISTA PREVIA</div>
+          <canvas id="tmPreviewCanvas" width="160" height="220" style="image-rendering:pixelated;z-index:1;position:relative"></canvas>
+          <div class="tm-preview-aura-glow" id="tmAuraGlow"></div>
+          <div class="tm-preview-name" id="tmPreviewName">Nueva Transformación</div>
+          <div class="tm-preview-level" id="tmPreviewLevel">Nivel 1</div>
+          <!-- Mini stats preview -->
+          <div class="tm-preview-stats" id="tmStatsBars">
+            <div class="tm-preview-stat-row">
+              <span class="tm-preview-stat-label">STR</span>
+              <div class="tm-preview-stat-bar-wrap"><div class="tm-preview-stat-bar str-bar" id="tmBarStr" style="width:80%"></div></div>
+              <span class="tm-preview-stat-val" id="tmValStr">80</span>
+            </div>
+            <div class="tm-preview-stat-row">
+              <span class="tm-preview-stat-label">SPD</span>
+              <div class="tm-preview-stat-bar-wrap"><div class="tm-preview-stat-bar spd-bar" id="tmBarSpd" style="width:80%"></div></div>
+              <span class="tm-preview-stat-val" id="tmValSpd">80</span>
+            </div>
+            <div class="tm-preview-stat-row">
+              <span class="tm-preview-stat-label">DEF</span>
+              <div class="tm-preview-stat-bar-wrap"><div class="tm-preview-stat-bar def-bar" id="tmBarDef" style="width:80%"></div></div>
+              <span class="tm-preview-stat-val" id="tmValDef">80</span>
+            </div>
+            <div class="tm-preview-stat-row">
+              <span class="tm-preview-stat-label">KI</span>
+              <div class="tm-preview-stat-bar-wrap"><div class="tm-preview-stat-bar ki-bar" id="tmBarKi" style="width:80%"></div></div>
+              <span class="tm-preview-stat-val" id="tmValKi">80</span>
+            </div>
+          </div>
+          <!-- Animación selector en el modal -->
+          <div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:center;margin-top:4px">
+            <button class="tm-anim-btn active" data-tm-anim="idle" style="padding:3px 7px;font-family:var(--fh);font-size:7px;letter-spacing:1px;background:rgba(0,229,255,.1);border:1px solid var(--cyan);border-radius:4px;color:var(--cyan);cursor:pointer;transition:all .15s">IDLE</button>
+            <button class="tm-anim-btn" data-tm-anim="walk" style="padding:3px 7px;font-family:var(--fh);font-size:7px;letter-spacing:1px;background:var(--bg-card);border:1px solid var(--border);border-radius:4px;color:var(--td);cursor:pointer;transition:all .15s">WALK</button>
+            <button class="tm-anim-btn" data-tm-anim="fly" style="padding:3px 7px;font-family:var(--fh);font-size:7px;letter-spacing:1px;background:var(--bg-card);border:1px solid var(--border);border-radius:4px;color:var(--td);cursor:pointer;transition:all .15s">FLY</button>
+            <button class="tm-anim-btn" data-tm-anim="meditate" style="padding:3px 7px;font-family:var(--fh);font-size:7px;letter-spacing:1px;background:var(--bg-card);border:1px solid var(--border);border-radius:4px;color:var(--td);cursor:pointer;transition:all .15s">MED.</button>
+          </div>
+        </div>
+
+        <!-- ═══ COLUMNA DERECHA: Formulario con tabs ═══ -->
+        <div class="trans-modal-form-col">
+          <!-- ── Tabs internos del modal ── -->
+          <div class="tm-tabs" style="margin:0;padding:0 14px;border-bottom:1px solid var(--border)">
+            <button class="tm-tab active" data-tm="general">⚡ GENERAL</button>
+            <button class="tm-tab" data-tm="cara">😶 CARA</button>
+            <button class="tm-tab" data-tm="pelo">💇 PELO</button>
+            <button class="tm-tab" data-tm="ropa">👕 ROPA</button>
+            <button class="tm-tab" data-tm="colores">🎨 COLORES</button>
+            <button class="tm-tab" data-tm="stats">📊 STATS</button>
+          </div>
+          <div class="trans-modal-form-scroll">
+
+        <!-- ─── PANEL: GENERAL ─── -->
+        <div class="tm-panel visible" id="tm-general">
+          <div class="trans-field" style="margin-bottom:10px">
+            <label>NOMBRE</label>
+            <input type="text" id="transNameInput" maxlength="24" placeholder="ej: Super Saiyan" autocomplete="off"/>
+          </div>
+          <div class="trans-form-row" style="margin-bottom:10px;gap:8px">
+            <div class="trans-field">
+              <label>NIVEL</label>
+              <input type="number" id="transLevelInput" min="1" max="99" value="1"/>
+            </div>
+          </div>
+          <div class="trans-field">
+            <label>COLOR DE AURA</label>
+            <div class="trans-aura-row" id="transAuraChips"></div>
+            <div class="trans-aura-custom">
+              <input type="color" class="color-picker" id="transAuraColorPicker" value="#fdd835"/>
+              <span class="color-hex" id="transAuraColorHex">#FDD835</span>
+              <span style="font-size:10px;color:var(--td);margin-left:4px;font-family:var(--fb)">Custom</span>
+            </div>
+          </div>
+          <div class="tm-sec" style="margin-top:12px">SPRITESHEET CUSTOM (PNG opcional)</div>
+          <div class="tm-inherit-note">Si no cargás PNG, el personaje usa sus sprites base con los colores de transformación que configurés en las otras pestañas.</div>
+          <label class="trans-skin-import" id="transImportLabel">
+            <span>📁</span><span id="transImportText">ELEGIR PNG DE TRANSFORMACIÓN</span>
+            <span style="font-size:8px;color:var(--td);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="transImportFname">Sin cargar</span>
+            <input type="file" accept="image/png" id="transImportInput"/>
+          </label>
+          <button id="transClearSkin" style="margin-top:5px;width:100%;padding:5px;background:rgba(255,23,68,.06);border:1px solid rgba(255,23,68,.25);border-radius:4px;color:rgba(255,23,68,.6);font-family:var(--fh);font-size:8px;letter-spacing:1px;cursor:pointer;transition:all .15s">✕ QUITAR SKIN CUSTOM</button>
+        </div>
+
+        <!-- ─── PANEL: CARA ─── -->
+        <div class="tm-panel" id="tm-cara">
+          <div class="tm-inherit-note">Las opciones no seleccionadas heredan la apariencia base del personaje.</div>
+          <div class="tm-sec">CARA / OJOS</div>
+          <div class="tm-grid" id="tmFaceGrid"></div>
+        </div>
+
+        <!-- ─── PANEL: PELO ─── -->
+        <div class="tm-panel" id="tm-pelo">
+          <div class="tm-inherit-note">Elegí el cabello y color para esta transformación.</div>
+          <div class="tm-sec">CABELLO</div>
+          <div class="tm-grid" id="tmHairGrid"></div>
+          <div class="tm-sec">COLOR DE CABELLO</div>
+          <div class="tm-color-chips" id="tmHairColorChips"></div>
+          <div class="tm-picker-row">
+            <input type="color" class="tm-picker" id="tmHairColorPicker" value="#fdd835"/>
+            <span class="tm-hex" id="tmHairColorHex">#FDD835</span>
+          </div>
+        </div>
+
+        <!-- ─── PANEL: ROPA ─── -->
+        <div class="tm-panel" id="tm-ropa">
+          <div class="tm-inherit-note">Configurá la ropa específica de esta transformación.</div>
+          <div class="tm-sec">👕 ROPA SUPERIOR</div>
+          <div class="tm-grid" id="tmTopGrid"></div>
+          <div class="tm-sec">👖 ROPA INFERIOR</div>
+          <div class="tm-grid" id="tmBottomGrid"></div>
+          <div class="tm-sec">👟 CALZADO</div>
+          <div class="tm-grid" id="tmShoesGrid"></div>
+          <div class="tm-sec">🥊 GUANTES</div>
+          <div class="tm-grid" id="tmGlovesGrid"></div>
+        </div>
+
+        <!-- ─── PANEL: COLORES ─── -->
+        <div class="tm-panel" id="tm-colores">
+          <div class="tm-inherit-note">Colores del cuerpo en esta forma. Dejá sin seleccionar para heredar del personaje base.</div>
+          <div class="tm-sec">COLOR DE PIEL</div>
+          <div class="tm-color-chips" id="tmSkinColorChips"></div>
+          <div class="tm-picker-row">
+            <input type="color" class="tm-picker" id="tmSkinColorPicker" value="#e8c898"/>
+            <span class="tm-hex" id="tmSkinColorHex">#E8C898</span>
+          </div>
+          <div class="tm-sec">COLOR OJOS</div>
+          <div class="tm-color-chips" id="tmEyeColorChips"></div>
+          <div class="tm-picker-row">
+            <input type="color" class="tm-picker" id="tmEyeColorPicker" value="#3a2a1a"/>
+            <span class="tm-hex" id="tmEyeColorHex">#3A2A1A</span>
+          </div>
+          <div class="tm-sec">COLOR CEJAS</div>
+          <div class="tm-color-chips" id="tmBrowColorChips"></div>
+          <div class="tm-picker-row">
+            <input type="color" class="tm-picker" id="tmBrowColorPicker" value="#fdd835"/>
+            <span class="tm-hex" id="tmBrowColorHex">#FDD835</span>
+          </div>
+          <div class="tm-sec">COLOR PUPILAS</div>
+          <div class="tm-color-chips" id="tmPupilColorChips"></div>
+          <div class="tm-picker-row">
+            <input type="color" class="tm-picker" id="tmPupilColorPicker" value="#00e5ff"/>
+            <span class="tm-hex" id="tmPupilColorHex">#00E5FF</span>
+          </div>
+          <div class="tm-sec">COLOR ROPA A (primario)</div>
+          <div class="tm-color-chips" id="tmClothAChips"></div>
+          <div class="tm-picker-row">
+            <input type="color" class="tm-picker" id="tmClothAColorPicker" value="#ff6a00"/>
+            <span class="tm-hex" id="tmClothAColorHex">#FF6A00</span>
+          </div>
+          <div class="tm-sec">COLOR ROPA B (secundario)</div>
+          <div class="tm-color-chips" id="tmClothBChips"></div>
+          <div class="tm-picker-row">
+            <input type="color" class="tm-picker" id="tmClothBColorPicker" value="#1565c0"/>
+            <span class="tm-hex" id="tmClothBColorHex">#1565C0</span>
+          </div>
+        </div>
+
+        <!-- ─── PANEL: STATS ─── -->
+        <div class="tm-panel" id="tm-stats">
+          <div class="trans-field">
+            <label>MULTIPLICADORES (respecto a la forma base · rango x0.3–x10)</label>
+            <div class="trans-stats-grid" style="margin-top:10px">
+              <div class="trans-stat"><label>💙 KI</label><input type="number" id="tsMult_ki" min="0.3" max="10" step="0.1" value="1"/></div>
+              <div class="trans-stat"><label>💥 STR</label><input type="number" id="tsMult_str" min="0.3" max="10" step="0.1" value="1"/></div>
+              <div class="trans-stat"><label>🛡️ DEF</label><input type="number" id="tsMult_def" min="0.3" max="10" step="0.1" value="1"/></div>
+              <div class="trans-stat"><label>⚡ SPD</label><input type="number" id="tsMult_spd" min="0.3" max="10" step="0.1" value="1"/></div>
+            </div>
+            <div style="margin-top:8px;font-size:9px;color:rgba(255,100,100,.8);font-family:var(--fh);letter-spacing:.5px;background:rgba(255,23,68,.06);border:1px solid rgba(255,23,68,.2);border-radius:4px;padding:6px 8px">
+              🔒 HP actual y HP máximo nunca se modifican
+            </div>
+          </div>
+        </div>
+          </div><!-- /trans-modal-form-scroll -->
+        </div><!-- /trans-modal-form-col -->
+      </div><!-- /trans-modal-body -->
+      <div class="trans-modal-footer">
+        <button class="trans-cancel-btn" id="transModalCancel">CANCELAR</button>
+        <button class="trans-save-btn" id="transModalSave">💾 GUARDAR TRANSFORMACIÓN</button>
+      </div>
+    </div>
+  </div>
 
 </main>
 <div id="toastContainer"></div>
 
+<script src="transformations-system.js"></script>
 <script src="character-system.js"></script>
 <script>
 "use strict";
@@ -1498,6 +1643,11 @@ function buildCharState() {
 
 function loop(now) {
   requestAnimationFrame(loop);
+  // Despacha al loop activo (permite que el sistema de transformaciones lo parchee)
+  if (window._activeLoop && window._activeLoop !== loop) {
+    window._activeLoop(now);
+    return;
+  }
   _auraPhase++;
   animator.update(now); finalAnim.update(now);
   const ps = buildCharState();
@@ -1544,15 +1694,9 @@ function _stripVariants(customs) {
 
 function saveToSlot(i) {
   try {
-    if (window.TFSystem && typeof window.TFSystem.saveState === "function") {
-      window.TFSystem.saveState();
-    }
     const variantId=player.appearance.variantId||"base";
     const cfg=player.appearance.variantCustomizations?.[variantId]||{};
     const sheet=cfg.spriteDataURL||null;
-    const tfState = window.TFSystem && typeof window.TFSystem.exportSlotState === "function"
-      ? window.TFSystem.exportSlotState()
-      : null;
     const d={
       name: document.getElementById("charName").value||"Guerrero Z",
       level:1, race:_currentRace(), gender:_currentGender(), variantId,
@@ -1569,7 +1713,6 @@ function saveToSlot(i) {
       accessoryId:charState.accessoryId||"ac_none",
       spriteSheets:{sheet,base:sheet,pelea:sheet,especial:sheet},
       layerImports: Object.assign({},layerImports),
-      transformations: tfState,
       displayW: parseInt(document.getElementById("spriteWSlider")?.value||"180",10)||180,
       displayH: parseInt(document.getElementById("spriteHSlider")?.value||"220",10)||220,
     };
@@ -1583,18 +1726,6 @@ function saveToSlot(i) {
 async function loadFromSlot(i) {
   try {
     const d=savedSlots[i]; if(!d) throw new Error("Slot vacío");
-    if (window.TFSystem && typeof window.TFSystem.importSlotState === "function") {
-      window.TFSystem.importSlotState(d.transformations || null, { persist:true, applyActive:false });
-    } else if (d.transformations) {
-      try {
-        localStorage.setItem("dragonz_tf_snapshots_v1", JSON.stringify({
-          active: d.transformations.active || "base",
-          snapshots: d.transformations.snapshots || {},
-          baseSnapshot: d.transformations.baseSnapshot || null,
-        }));
-        localStorage.setItem("dragonz_tf_custom_v1", JSON.stringify(d.transformations.customTfs || []));
-      } catch(e) {}
-    }
     player.appearance.raceId   =d.race||"human";
     player.appearance.gender   =d.gender||"male";
     player.appearance.variantId=d.variantId||"base";
@@ -1685,9 +1816,6 @@ async function loadFromSlot(i) {
     if(d.clothColorA) refreshColorPicker("clothColorAPicker","clothColorAHex","clothColorAChips",d.clothColorA,CLOTH_A_PALETTE);
     if(d.clothColorB) refreshColorPicker("clothColorBPicker","clothColorBHex","clothColorBChips",d.clothColorB,CLOTH_B_PALETTE);
     activeSlotIndex=i; localStorage.setItem(LS_SLOT,String(i));
-    if (window.TFSystem && typeof window.TFSystem.importSlotState === "function") {
-      window.TFSystem.importSlotState(d.transformations || null, { persist:true, applyActive:true });
-    }
     if (d.displayW || d.displayH) {
       const rw = d.displayW || 180, rh = d.displayH || 220;
       const wSlider = document.getElementById("spriteWSlider");
@@ -1831,6 +1959,25 @@ function initEvents() {
   document.getElementById("btnStart").addEventListener("click",()=>{
     try{
       saveToSlot(activeSlotIndex);
+      // Guardar transformaciones en localStorage para que game.html las pueda leer
+      try {
+        const transToSave = (window.transformations || []).map(tr => ({
+          id: tr.id, name: tr.name, level: tr.level,
+          auraColor: tr.auraColor,
+          icon: tr.icon || "⚡",
+          races: tr.races || ["all"],
+          multipliers: {
+            str: tr.multStr || 1,
+            spd: tr.multSpd || 1,
+            def: tr.multDef || 1,
+            ki:  tr.multKi  || 1,
+          },
+          skinDataURL: tr.skinDataURL || null,
+          appearance: tr.appearance || {},
+        }));
+        localStorage.setItem("dragonCreatorZ_transformations", JSON.stringify(transToSave));
+        localStorage.setItem("dragonCreatorZ_trans_slot", String(activeSlotIndex));
+      } catch(te) { console.warn("[DC] Error guardando transformaciones:", te); }
       setTimeout(()=>{window.location.href=`game.html?slot=${activeSlotIndex}`;},200);
     }catch(e){console.error(e);showToast("Error al iniciar","error");}
   });
@@ -1886,1365 +2033,996 @@ async function init() {
 
 document.addEventListener("DOMContentLoaded", init);
 
-/* ═══════════════════════════════════════════════════════════════
+/* ════════════════════════════════════════════════════════
    SISTEMA DE TRANSFORMACIONES
-   ─────────────────────────────────────────────────────────────
-   Cada forma guarda su propio snapshot de apariencia.
-   Las formas de raza predefinidas vienen con aura/skin configurados
-   pero el usuario puede editarlas desde los otros paneles —
-   esos cambios se guardan en el snapshot de esa forma.
-   Las formas custom son libres.
-═══════════════════════════════════════════════════════════════ */
-(function () {
-  "use strict";
-
-  /* ──────────────────────────────────────────────
-     CATÁLOGO DE RAZAS → transformaciones predefinidas
-     spriteKey: si tiene un skin especial que cargar (null = solo piezas/colores)
-     locked:    si el usuario NO puede cambiar piezas (la skin lo es todo)
-  ────────────────────────────────────────────── */
-  const RACE_TF = {};
-
-  /* ----------------
-     ESTADO
-  ────────────────────────────────────────────── */
-  const LS_KEY_TF   = "dragonz_tf_snapshots_v1";
-  const LS_KEY_CUST = "dragonz_tf_custom_v1";
-
-  // Snapshots de apariencia por formId: { formId → appearanceSnapshot }
-  let _snapshots = {};
-  // Base siempre se guarda aquí
-  let _baseSnapshot = null;
-  // Forma activa
-  let _activeId = "base";
-  // Transformaciones custom del usuario
-  let _customTfs = [];
-  // DataURL del spritesheet para la forma custom que se está creando
-  let _tfcSheetDataURL = null;
-  let _tfcSelectedSkinName = null;
-  let _editingCustomTfId = null;
-
-  const CUSTOM_TF_SKINS = [
-    { name:"LSSJ Hombre", formName:"LSSJ", path:"Skins/LSSJ_Hombre.png", color:"#ffd600" },
-    { name:"LSSJ Mujer", formName:"LSSJ", path:"Skins/LSSJ_Mujer.png", color:"#ffe76a" },
-    { name:"Ozaru", formName:"Ozaru", path:"Skins/Ozaru.png", color:"#4caf50" },
-    { name:"5ta Forma", formName:"5ta Forma", path:"Skins/5Forma.png", color:"#e040fb" },
-    { name:"Maquinacion Hombre", formName:"Maquinacion", path:"Skins/Maquinacion_Hombre.png", color:"#ff1744" },
-    { name:"Maquinacion Mujer", formName:"Maquinacion", path:"Skins/Maquinacion_Mujer.png", color:"#ff6a8a" },
-  ];
-
-  /* ──────────────────────────────────────────────
-     PERSISTENCIA
-  ────────────────────────────────────────────── */
-  function _saveStorage() {
-    try {
-      // Guardar snapshots sin imágenes HTMLImageElement
-      const clean = {};
-      Object.entries(_snapshots).forEach(([k, snap]) => {
-        clean[k] = _stripImages(snap);
-      });
-      localStorage.setItem(LS_KEY_TF, JSON.stringify({ active: _activeId, snapshots: clean, baseSnapshot: _stripImages(_baseSnapshot) }));
-      localStorage.setItem(LS_KEY_CUST, JSON.stringify(_customTfs));
-    } catch(e) { console.warn("[TF]", e); }
-  }
-
-  function _loadStorage() {
-    try {
-      const raw = localStorage.getItem(LS_KEY_TF);
-      if (raw) {
-        const p = JSON.parse(raw);
-        _activeId  = p.active || "base";
-        _snapshots = p.snapshots || {};
-        _baseSnapshot = p.baseSnapshot || null;
-      }
-      const rawc = localStorage.getItem(LS_KEY_CUST);
-      if (rawc) _customTfs = JSON.parse(rawc);
-    } catch(e) { _snapshots = {}; _customTfs = []; }
-  }
-
-  function _stripImages(snap) {
-    if (!snap) return snap;
-    const c = JSON.parse(JSON.stringify(snap));
-    // Borrar cualquier campo que sea un objeto HTMLImageElement (no serializable)
-    function strip(obj) {
-      if (!obj || typeof obj !== "object") return;
-      Object.keys(obj).forEach(k => {
-        if (obj[k] && typeof obj[k] === "object" && (obj[k] instanceof HTMLImageElement || obj[k] instanceof HTMLCanvasElement)) {
-          delete obj[k];
-        } else if (obj[k] && typeof obj[k] === "object") {
-          strip(obj[k]);
-        }
-      });
-    }
-    strip(c);
-    return c;
-  }
-
-  function _cloneClean(value) {
-    return value == null ? value : JSON.parse(JSON.stringify(_stripImages(value)));
-  }
-
-  function _buildSlotState() {
-    const cleanSnaps = {};
-    Object.entries(_snapshots || {}).forEach(([k, snap]) => {
-      cleanSnaps[k] = _cloneClean(snap);
-    });
-    return {
-      version: 1,
-      active: _activeId || "base",
-      snapshots: cleanSnaps,
-      baseSnapshot: _cloneClean(_baseSnapshot),
-      customTfs: _cloneClean(_customTfs || []),
-    };
-  }
-
-  function _exportSlotState() {
-    _saveCurrentFormState();
-    return _buildSlotState();
-  }
-
-  function _syncActiveSlotTransformations() {
-    try {
-      const raw = localStorage.getItem("dragonCreatorZ_slots");
-      if (!raw) return;
-      const slots = JSON.parse(raw);
-      if (!Array.isArray(slots)) return;
-      const idx = parseInt(localStorage.getItem("dragonCreatorZ_activeSlot") || "0", 10);
-      if (!Number.isFinite(idx) || !slots[idx]) return;
-      slots[idx].transformations = _buildSlotState();
-      localStorage.setItem("dragonCreatorZ_slots", JSON.stringify(slots));
-      if (Array.isArray(window.savedSlots) && window.savedSlots[idx]) {
-        window.savedSlots[idx].transformations = slots[idx].transformations;
-      }
-    } catch(e) {}
-  }
-
-  function _importSlotState(state, opts) {
-    const options = opts || {};
-    if (!state) {
-      _activeId = "base";
-      _snapshots = {};
-      _baseSnapshot = _captureAppearance();
-      _customTfs = [];
-    } else {
-      _activeId = state.active || "base";
-      _snapshots = _cloneClean(state.snapshots || {});
-      _baseSnapshot = _cloneClean(state.baseSnapshot || null);
-      _customTfs = Array.isArray(state.customTfs) ? _cloneClean(state.customTfs) : [];
-    }
-    if (options.persist !== false) _saveStorage();
-    _render();
-    _updateActiveBar();
-    if (typeof _updateEditingBanner === "function") _updateEditingBanner();
-    if (typeof _updateSkinsSection  === "function") _updateSkinsSection();
-    if (options.applyActive !== false) {
-      if (_activeId === "base") {
-        if (_baseSnapshot) _applyAppearance(_baseSnapshot);
-      } else if (_snapshots[_activeId]) {
-        _applyAppearance(_snapshots[_activeId]);
-      }
-    }
-    _syncActiveSlotTransformations();
-  }
-
-  /* ──────────────────────────────────────────────
-     HELPERS — leer estado actual del personaje
-  ────────────────────────────────────────────── */
-  function _captureAppearance() {
-    const p = window.player;
-    if (!p) return null;
-    return {
-      faceId:    p.appearance.faceId,
-      variantId: p.appearance.variantId,
-      hairId:    p.appearance.hairId,
-      topId:     p.appearance.topId,
-      bottomId:  p.appearance.bottomId,
-      shoesId:   p.appearance.shoesId,
-      glovesId:  p.appearance.glovesId || (window.charState && window.charState.glovesId),
-      skinColor: p.appearance.skinColor,
-      eyeColor:  p.appearance.eyeColor,
-      hairColor: p.appearance.hairColor,
-      browColor: p.appearance.browColor,
-      pupilColor:p.appearance.pupilColor,
-      clothColorA: p.appearance.clothColorA || null,
-      clothColorB: p.appearance.clothColorB || null,
-      auraId:    p.appearance.auraId    || (window.charState && window.charState.auraId),
-      auraColor: p.appearance.auraColor || (window.charState && window.charState.auraColor),
-      accessoryId: p.appearance.accessoryId || (window.charState && window.charState.accessoryId),
-    };
-  }
-
-  function _appearanceFieldsFromSnapshot(snap) {
-    if (!snap) return {};
-    const fields = ["faceId","variantId","hairId","topId","bottomId","shoesId","glovesId",
-                    "skinColor","eyeColor","hairColor","browColor","pupilColor",
-                    "clothColorA","clothColorB","auraId","auraColor","accessoryId",
-                    "spriteDataURL","transformVariantId"];
-    const out = {};
-    fields.forEach(f => {
-      if (snap[f] !== undefined) out[f] = snap[f];
-    });
-    return out;
-  }
-
-  function _syncCustomDefAppearance(id, snap) {
-    const tf = _customTfs.find(t => t.id === id);
-    if (!tf || !snap) return;
-    Object.assign(tf, _appearanceFieldsFromSnapshot(snap));
-  }
-
-  function _applyAppearance(snap) {
-    const p = window.player;
-    if (!p || !snap) return;
-    const fields = ["faceId","variantId","hairId","topId","bottomId","shoesId","glovesId",
-                    "skinColor","eyeColor","hairColor","browColor","pupilColor",
-                    "clothColorA","clothColorB",
-                    "auraId","auraColor","accessoryId"];
-    fields.forEach(f => { if (snap[f] !== undefined) p.appearance[f] = snap[f]; });
-    if (snap.spriteDataURL) {
-      const tfVariantId = snap.transformVariantId || ("tf_" + String(_activeId || "custom").replace(/[^a-zA-Z0-9_-]/g, "_"));
-      p.appearance.variantCustomizations ||= {};
-      const img = new Image();
-      img.src = snap.spriteDataURL;
-      p.appearance.variantCustomizations[tfVariantId] = {
-        id: tfVariantId,
-        label: snap.name || "Transformacion",
-        spriteDataURL: snap.spriteDataURL,
-        spriteImage: img,
-        animFrames: 6,
-        rowCount: 37,
-        scale: 1,
-      };
-      p.appearance.variantId = tfVariantId;
-      p.appearance.topId = null;
-      p.appearance.bottomId = null;
-      p.appearance.shoesId = null;
-      p.appearance.glovesId = null;
-    }
-    if (window.charState) {
-      if (snap.auraId)    window.charState.auraId    = snap.auraId;
-      if (snap.auraColor) window.charState.auraColor = snap.auraColor;
-      if (snap.glovesId)  window.charState.glovesId  = snap.glovesId;
-      if (snap.accessoryId) window.charState.accessoryId = snap.accessoryId;
-    }
-    // Sync pickers de color en el DOM
-    _syncColorPicker("auraColorPicker",  "auraColorHex",  "auraColorChips",  snap.auraColor,  window.AURA_PALETTE);
-    _syncColorPicker("hairColorPicker",  "hairColorHex",  "hairColorChips",  snap.hairColor,  window.HAIR_PALETTE);
-    _syncColorPicker("skinColorPicker",  "skinColorHex",  "skinColorChips",  snap.skinColor,  window.SKIN_PALETTE);
-    _syncColorPicker("eyeColorPicker",   "eyeColorHex",   "eyeColorChips",   snap.eyeColor,   window.EYE_PALETTE);
-    if (snap.browColor)  _syncColorPicker("browColorPicker",  "browColorHex",  "browColorChips",  snap.browColor,  window.BROW_PALETTE);
-    if (snap.pupilColor) _syncColorPicker("pupilColorPicker", "pupilColorHex", "pupilColorChips", snap.pupilColor, window.PUPIL_PALETTE);
-    if (snap.clothColorA) _syncColorPicker("clothColorAPicker", "clothColorAHex", "clothColorAChips", snap.clothColorA, window.CLOTH_A_PALETTE);
-    if (snap.clothColorB) _syncColorPicker("clothColorBPicker", "clothColorBHex", "clothColorBChips", snap.clothColorB, window.CLOTH_B_PALETTE);
-    if (window.invalidateHairCache) window.invalidateHairCache();
-    if (window.buildAllGrids) window.buildAllGrids();
-    if (window.updateStats) window.updateStats();
-  }
-
-  function _syncColorPicker(pickerId, hexId, chipsId, color, palette) {
-    if (!color) return;
-    const picker = document.getElementById(pickerId);
-    const hex    = document.getElementById(hexId);
-    if (picker) picker.value = color;
-    if (hex) hex.textContent = color.toUpperCase();
-    // Chips
-    const chips = document.getElementById(chipsId);
-    if (chips && palette) {
-      chips.querySelectorAll(".color-chip").forEach(c => {
-        c.classList.toggle("active", c.dataset.color === color);
-      });
-    }
-  }
-
-  /* ──────────────────────────────────────────────
-     ACTIVAR FORMA
-  ────────────────────────────────────────────── */
-  function _activateForm(id) {
-    const p = window.player;
-    if (!p) return;
-
-    // ── Guardar el estado actual antes de cambiar de forma ──────────
-    if (_activeId === "base") {
-      // SIEMPRE actualizamos el snapshot base al salir de él,
-      // así cuando el usuario vuelva de una TF ve exactamente
-      // el personaje que tenía (incluyendo cambios recientes).
-      _baseSnapshot = _captureAppearance();
-    } else {
-      // Salimos de una TF: guardar sus cambios
-      const snap = _captureAppearance();
-      const existing = _snapshots[_activeId] || {};
-      const prev = _findDef(_activeId);
-      if ((existing.spriteDataURL || (prev && prev.spriteDataURL)) && !snap.spriteDataURL)
-        snap.spriteDataURL = existing.spriteDataURL || prev.spriteDataURL;
-      if ((existing.transformVariantId || (prev && prev.transformVariantId)) && !snap.transformVariantId)
-        snap.transformVariantId = existing.transformVariantId || prev.transformVariantId;
-      _snapshots[_activeId] = snap;
-    }
-
-    _activeId = id;
-
-    if (id === "base") {
-      // ── Volver a base: restaurar el personaje original ──────────
-      if (_baseSnapshot) {
-        _applyAppearance(_baseSnapshot);
-      }
-    } else {
-      // ── Entrar a una TF ─────────────────────────────────────────
-      if (_snapshots[id]) {
-        // Ya tiene apariencia guardada: aplicarla
-        _applyAppearance(_snapshots[id]);
-      } else {
-        // Primera vez: construir snapshot inicial desde base +
-        // cualquier campo de apariencia que la definición ya tenga guardado
-        const def = _findDef(id);
-        const baseState = _baseSnapshot || _captureAppearance();
-        const defaults = {
-          auraColor: (def && def.auraColor) || "#fdd835",
-          auraId:    (def && def.auraId)    || "a1",
-        };
-        if (def && def.spriteDataURL) {
-          defaults.spriteDataURL     = def.spriteDataURL;
-          defaults.transformVariantId = "tf_" + String(def.id).replace(/[^a-zA-Z0-9_-]/g, "_");
-        }
-        const COPY_FIELDS = ["hairId","faceId","topId","bottomId","shoesId","glovesId",
-                             "accessoryId","hairColor","skinColor","eyeColor","browColor",
-                             "pupilColor","clothColorA","clothColorB"];
-        if (def) COPY_FIELDS.forEach(f => { if (def[f] != null) defaults[f] = def[f]; });
-        _snapshots[id] = Object.assign({}, baseState, defaults);
-        _applyAppearance(_snapshots[id]);
-      }
-    }
-
-    _saveStorage();
-    _syncActiveSlotTransformations();
-    _render();
-    _updateActiveBar();
-    _updateEditingBanner();
-    _updateSkinsSection();
-
-    if (id !== "base") {
-      const def = _findDef(id);
-      const nombre = (def && def.name) || id;
-      window.showToast && window.showToast(
-        "⚡ " + nombre + " — cambiá pelo/ropa/colores desde los paneles y se guarda automáticamente",
-        "warning"
-      );
-    }
-  }
-
-  /* Guardar el estado actual SOBRE la forma activa (desde los otros paneles) */
-  function _saveCurrentFormState() {
-    if (!_activeId || _activeId === "base") {
-      // En modo base: actualizar el snapshot base SIN afectar otras formas
-      _baseSnapshot = _captureAppearance();
-    } else {
-      const snap = _captureAppearance();
-      const existing = _snapshots[_activeId] || {};
-      const def = _findDef(_activeId);
-      // Preservar datos que no vienen de player.appearance
-      if ((existing.spriteDataURL || (def && def.spriteDataURL)) && !snap.spriteDataURL) {
-        snap.spriteDataURL = existing.spriteDataURL || def.spriteDataURL;
-      }
-      if ((existing.transformVariantId || (def && def.transformVariantId)) && !snap.transformVariantId) {
-        snap.transformVariantId = existing.transformVariantId || def.transformVariantId;
-      }
-      if (existing.name && !snap.name) snap.name = existing.name;
-      _snapshots[_activeId] = snap;
-      // Sincronizar también en customTfs para que el slot lo persista
-      _syncCustomDefAppearance(_activeId, snap);
-    }
-    _saveStorage();
-    _syncActiveSlotTransformations();
-    _render();
-    _updateActiveBar();
-  }
-
-  function _findDef(id) {
-    return _customTfs.find(t => t.id === id) || null;
-  }
-
-  /* ──────────────────────────────────────────────
-     RENDER
-  ────────────────────────────────────────────── */
-  function _render() {
-    const raceTfs = [];
-
-    // Base card
-    const baseCard = document.getElementById("tfBaseCard");
-    if (baseCard) {
-      baseCard.classList.toggle("tf-active", _activeId === "base");
-    }
-
-    // Race list
-    const raceList = document.getElementById("tfRaceList");
-    if (raceList) {
-      raceList.innerHTML = "";
-      if (raceTfs.length === 0) {
-        raceList.innerHTML = '<div class="tf-hint">Sin transformaciones predefinidas para esta raza.</div>';
-      } else {
-        raceTfs.forEach(tf => {
-          const card = _makeCard(tf, "race");
-          raceList.appendChild(card);
-        });
-      }
-    }
-
-    // Custom list
-    const custList = document.getElementById("tfCustomList");
-    if (custList) {
-      custList.innerHTML = "";
-      if (_customTfs.length === 0) {
-        custList.innerHTML = '<div class="tf-hint" style="margin-bottom:4px">Aún no hay transformaciones custom.</div>';
-      } else {
-        _customTfs.forEach(tf => {
-          const card = _makeCard(tf, "custom", true);
-          custList.appendChild(card);
-        });
-      }
-    }
-  }
-
-  function _makeCard(tf, tagType, deletable) {
-    const isActive = _activeId === tf.id;
-    const card = document.createElement("div");
-    card.className = "tf-card" + (isActive ? " tf-active" : "");
-    const multDisplay = tf.mult < 1 ? `×${tf.mult}` : `×${tf.mult}`;
-    card.innerHTML = `
-      <span class="tf-aura-dot" style="background:${tf.auraColor || "#fdd835"}"></span>
-      <span class="tf-card-name">${tf.name}</span>
-      <span class="tf-card-mult">${multDisplay}</span>
-      ${tf.skinSlot || tf.spriteDataURL ? `<span class="tf-tag special">SKIN</span>` : `<span class="tf-tag ${tagType}">${tf.tag || "TF"}</span>`}
-      ${deletable ? `<button class="tf-edit-btn" data-id="${tf.id}" title="Editar">✎</button><button class="tf-del-btn" data-id="${tf.id}" title="Eliminar">✕</button>` : ""}
-    `;
-    card.addEventListener("click", e => {
-      if (e.target.closest(".tf-edit-btn,.tf-del-btn")) return;
-      _activateForm(tf.id);
-    });
-    if (deletable) {
-      card.querySelector(".tf-edit-btn")?.addEventListener("click", e => {
-        e.stopPropagation();
-        _activateForm(tf.id);
-        setTimeout(() => _openCustomForm(tf.id), 0);
-      });
-      card.querySelector(".tf-del-btn")?.addEventListener("click", e => {
-        e.stopPropagation();
-        if (_activeId === tf.id) _activateForm("base");
-        delete _snapshots[tf.id];
-        _customTfs = _customTfs.filter(t => t.id !== tf.id);
-        _saveStorage();
-        _syncActiveSlotTransformations();
-        _render();
-        window.showToast && window.showToast("Transformación eliminada","warning");
-      });
-    }
-    return card;
-  }
-
-  function _updateActiveBar() {
-    const bar  = document.getElementById("tfActiveBar");
-    const dot  = document.getElementById("tfActiveAuraDot");
-    const name = document.getElementById("tfActiveName");
-    const qnav = document.getElementById("tfQuickNav");
-    if (!bar) return;
-    // Guardar el id activo en el dataset para que TFSkinSystem lo lea
-    bar.dataset.tfId = _activeId || "base";
-    if (_activeId === "base") {
-      bar.style.display = "none";
-      if (qnav) qnav.style.display = "none";
-    } else {
-      const def = _findDef(_activeId);
-      bar.style.display = "flex";
-      if (dot)  dot.style.background = (def && def.auraColor) || "#fdd835";
-      if (name) name.textContent = (def && def.name) || _activeId;
-      if (qnav) qnav.style.display = "block";
-    }
-  }
-
-  function _updateEditingBanner() {
-    const banner = document.getElementById("tfEditingBanner");
-    if (!banner) return;
-    if (_activeId === "base") {
-      banner.classList.remove("visible");
-      document.body.classList.remove("tf-editing-mode");
-    } else {
-      const def  = _findDef(_activeId);
-      const name = (def && def.name) || _activeId;
-      const dot  = document.getElementById("tfBannerDot");
-      const nm   = document.getElementById("tfBannerName");
-      if (dot) dot.style.background = (def && def.auraColor) || "#e040fb";
-      if (nm)  nm.textContent = name;
-      banner.classList.add("visible");
-      document.body.classList.add("tf-editing-mode");
-    }
-  }
-
-  function _updateSkinsSection() {
-    const section = document.getElementById("tfSkinsSection");
-    if (!section) return;
-    if (_activeId === "base") {
-      section.style.display = "none";
-    } else {
-      section.style.display = "block";
-      const labelEl = document.getElementById("tfSkinsSectionLabel");
-      const def = _findDef(_activeId);
-      if (labelEl) labelEl.textContent = "🎭 SKIN PARA: " + ((def && def.name) || _activeId);
-    }
-  }
-
-  /* ──────────────────────────────────────────────
-     FORM CUSTOM
-  ────────────────────────────────────────────── */
-  function _loadSkinAsDataURL(path) {
-    return new Promise(resolve => {
-      const img = new Image();
-      img.onload = () => {
-        const c = document.createElement("canvas");
-        c.width = img.naturalWidth;
-        c.height = img.naturalHeight;
-        c.getContext("2d").drawImage(img, 0, 0);
-        resolve(c.toDataURL("image/png"));
-      };
-      img.onerror = () => resolve(null);
-      img.src = path;
-    });
-  }
-
-  function _renderCustomSkinCatalog() {
-    const grid = document.getElementById("tfcSkinCatalog");
-    if (!grid) return;
-    grid.innerHTML = "";
-    CUSTOM_TF_SKINS.forEach(skin => {
-      const card = document.createElement("button");
-      card.type = "button";
-      card.className = "tfskin-card";
-      card.style.minHeight = "52px";
-      card.innerHTML = `
-        <span style="width:10px;height:10px;border-radius:50%;background:${skin.color};display:block;margin:2px auto 5px"></span>
-        <div class="item-name">${skin.name}</div>
-      `;
-      card.addEventListener("click", async () => {
-        const dataURL = await _loadSkinAsDataURL(skin.path);
-        if (!dataURL) {
-          window.showToast && window.showToast("No se encontro " + skin.path, "error");
-          return;
-        }
-        _tfcSheetDataURL = dataURL;
-        _tfcSelectedSkinName = skin.name;
-        const nameInput = document.getElementById("tfcName");
-        if (nameInput && !nameInput.value.trim()) nameInput.value = skin.formName || skin.name;
-        const fname = document.getElementById("tfcSheetFname");
-        const label = document.getElementById("tfcSheetLabel");
-        if (fname) fname.textContent = skin.name;
-        if (label) { label.style.borderColor="#00ff9d"; label.style.color="#00ff9d"; }
-        grid.querySelectorAll(".tfskin-card").forEach(btn => btn.classList.remove("active"));
-        card.classList.add("active");
-      });
-      grid.appendChild(card);
-    });
-  }
-
-  function _openCustomForm(editId) {
-    const tf = editId ? _customTfs.find(t => t.id === editId) : null;
-    _editingCustomTfId = tf ? tf.id : null;
-    _tfcSheetDataURL = tf?.spriteDataURL || null;
-    _tfcSelectedSkinName = tf?.skinName || null;
-
-    // Al abrir el form de edición, activar la TF en el canvas
-    // para que el usuario la vea y todos los cambios vayan a SU snapshot
-    if (tf && _activeId !== tf.id) {
-      _activateForm(tf.id);
-    }
-
-    const form = document.getElementById("tfCustomForm");
-    const title = document.getElementById("tfcFormTitle");
-    const nameInput = document.getElementById("tfcName");
-    const auraInput = document.getElementById("tfcAuraColor");
-    const multInput = document.getElementById("tfcMult");
-    const multVal = document.getElementById("tfcMultVal");
-    const sheetLabel = document.getElementById("tfcSheetLabel");
-    const sheetFname = document.getElementById("tfcSheetFname");
-    const saveBtn = document.getElementById("tfcSave");
-    const sheetFile = document.getElementById("tfcSheetFile");
-
-    if (title) title.textContent = tf ? "EDITAR TRANSFORMACIÓN" : "NUEVA TRANSFORMACIÓN";
-    if (nameInput) nameInput.value = tf?.name || "";
-    if (auraInput) auraInput.value = tf?.auraColor || "#e040fb";
-    if (multInput) multInput.value = String(tf?.mult || 2);
-    if (multVal) multVal.textContent = "×" + parseFloat(multInput?.value || "2").toFixed(1);
-    if (sheetFname) sheetFname.textContent = tf?.skinName || (tf?.spriteDataURL ? "skin custom" : "sin archivo");
-    if (sheetFile) sheetFile.value = "";
-    if (saveBtn) saveBtn.textContent = tf ? "💾 ACTUALIZAR" : "💾 GUARDAR";
-    if (sheetLabel) {
-      const hasSheet = !!tf?.spriteDataURL;
-      sheetLabel.style.borderColor = hasSheet ? "#00ff9d" : "";
-      sheetLabel.style.color = hasSheet ? "#00ff9d" : "";
-    }
-    _renderCustomSkinCatalog();
-    if (_tfcSelectedSkinName) {
-      document.getElementById("tfcSkinCatalog")?.querySelectorAll(".tfskin-card").forEach(card => {
-        card.classList.toggle("active", card.textContent.includes(_tfcSelectedSkinName));
-      });
-    }
-    if (form) form.style.display = "block";
-  }
-
-  function _initCustomForm() {
-    const multSlider = document.getElementById("tfcMult");
-    const multVal    = document.getElementById("tfcMultVal");
-    const sheetFile  = document.getElementById("tfcSheetFile");
-    const sheetLabel = document.getElementById("tfcSheetLabel");
-    const sheetFname = document.getElementById("tfcSheetFname");
-
-    multSlider?.addEventListener("input", () => {
-      multVal.textContent = "×" + parseFloat(multSlider.value).toFixed(1);
-    });
-
-    sheetFile?.addEventListener("change", e => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = ev => {
-        _tfcSheetDataURL = ev.target.result;
-        _tfcSelectedSkinName = file.name.replace(/\.[^.]+$/, "");
-        if (sheetFname) sheetFname.textContent = file.name;
-        if (sheetLabel) { sheetLabel.style.borderColor="#00ff9d"; sheetLabel.style.color="#00ff9d"; }
-        document.getElementById("tfcSkinCatalog")?.querySelectorAll(".tfskin-card").forEach(btn => btn.classList.remove("active"));
-      };
-      reader.readAsDataURL(file);
-    });
-
-    // ── _buildTfcSection ─────────────────────────────────────────────
-    // Puebla grids/chips del formulario de TF y aplica cambios en
-    // tiempo real al canvas, guardándolos siempre en la TF activa.
-    function _buildTfcSection(sectionId) {
-      const race   = _currentRace();
-      const gender = _currentGender();
-
-      function _liveApply(fn) {
-        fn();
-        if (window.invalidateHairCache) window.invalidateHairCache();
-        // Garantizar que _activeId sea la TF editada antes de guardar
-        if (_editingCustomTfId && _activeId !== _editingCustomTfId) {
-          _activateForm(_editingCustomTfId);
-        }
-        requestAnimationFrame(_saveCurrentFormState);
-      }
-
-      function _tfcGrid(gridId, catalog, cat, activeFn, selectFn) {
-        buildGrid(gridId, catalog, cat, activeFn, item => _liveApply(() => selectFn(item)));
-      }
-
-      function _tfcColorRow(chipsId, pickerId, hexId, palette, prop, isCharState) {
-        const chipsEl  = document.getElementById(chipsId);
-        const pickerEl = document.getElementById(pickerId);
-        const hexEl    = document.getElementById(hexId);
-        if (!chipsEl || !pickerEl) return;
-        const getVal = () => (isCharState ? charState[prop] : player.appearance[prop]) || palette[0];
-        const setVal = hex => {
-          if (isCharState) charState[prop] = hex; else player.appearance[prop] = hex;
-          pickerEl.value = hex;
-          if (hexEl) hexEl.textContent = hex.toUpperCase();
-          chipsEl.querySelectorAll(".color-chip").forEach(c => c.classList.toggle("active", c.dataset.color === hex));
-          _liveApply(() => {});
-        };
-        chipsEl.innerHTML = "";
-        palette.forEach(hex => {
-          const ch = document.createElement("div");
-          ch.className = "color-chip" + (getVal() === hex ? " active" : "");
-          ch.style.background = hex; ch.dataset.color = hex; ch.title = hex;
-          ch.addEventListener("click", () => setVal(hex));
-          chipsEl.appendChild(ch);
-        });
-        pickerEl.value = getVal();
-        if (hexEl) hexEl.textContent = getVal().toUpperCase();
-        const np = pickerEl.cloneNode(true);
-        pickerEl.parentNode.replaceChild(np, pickerEl);
-        np.addEventListener("input", e => setVal(e.target.value));
-      }
-
-      if (sectionId === "tfc-pelo") {
-        _tfcGrid("tfc-hairGrid", getCatalogFor("hair", race, gender), "hair",
-          i => player.appearance.hairId === i.id, i => { player.appearance.hairId = i.id; });
-        _tfcColorRow("tfc-hairColorChips","tfc-hairColorPicker","tfc-hairColorHex", HAIR_PALETTE,"hairColor",false);
-      }
-      else if (sectionId === "tfc-cara") {
-        _tfcGrid("tfc-faceGrid", getCatalogFor("face", race, gender), "face",
-          i => player.appearance.faceId === i.id, i => { player.appearance.faceId = i.id; });
-      }
-      else if (sectionId === "tfc-ropa") {
-        _tfcGrid("tfc-topGrid",    getCatalogFor("shirt",  race, gender), "shirt",
-          i => player.appearance.topId === i.id,    i => { player.appearance.topId = i.id; });
-        _tfcGrid("tfc-bottomGrid", getCatalogFor("pants",  race, gender), "pants",
-          i => player.appearance.bottomId === i.id, i => { player.appearance.bottomId = i.id; });
-        _tfcGrid("tfc-shoesGrid",  getCatalogFor("shoes",  race, gender), "shoes",
-          i => player.appearance.shoesId === i.id,  i => { player.appearance.shoesId = i.id; });
-        _tfcGrid("tfc-glovesGrid", getCatalogFor("gloves", race, gender), "gloves",
-          i => (charState.glovesId || player.appearance.glovesId) === i.id,
-          i => { charState.glovesId = i.id; player.appearance.glovesId = i.id; });
-      }
-      else if (sectionId === "tfc-accs") {
-        const visAcc = (window.ACCESSORIES_CATALOG || []).filter(a => !a.isFreeCustomization);
-        _tfcGrid("tfc-accGrid", visAcc, "accessory",
-          i => (charState.accessoryId || "ac_none") === i.id,
-          i => { charState.accessoryId = i.id; player.appearance.accessoryId = i.id; });
-      }
-      else if (sectionId === "tfc-aura") {
-        _tfcGrid("tfc-auraGrid", window.AURAS_CATALOG || [], "aura",
-          i => (charState.auraId || "a1") === i.id,
-          i => { charState.auraId = i.id; player.appearance.auraId = i.id;
-                 charState.auraColor = i.color || "#fdd835"; player.appearance.auraColor = charState.auraColor; });
-        _tfcColorRow("tfc-auraColorChips","tfc-auraColorPicker","tfc-auraColorHex", AURA_PALETTE,"auraColor",true);
-      }
-      else if (sectionId === "tfc-color") {
-        const CLOTH_A = window.CLOTH_A_PALETTE || ["#ff6a00","#ffd700","#00e676","#2979ff","#aa00ff","#e8eaf6","#1a1a1a"];
-        const CLOTH_B = window.CLOTH_B_PALETTE || ["#1565c0","#7b1fa2","#b71c1c","#1a237e","#004d40","#37474f","#e8eaf6"];
-        _tfcColorRow("tfc-skinColorChips",   "tfc-skinColorPicker",   "tfc-skinColorHex",   SKIN_PALETTE,  "skinColor",  false);
-        _tfcColorRow("tfc-eyeColorChips",    "tfc-eyeColorPicker",    "tfc-eyeColorHex",    EYE_PALETTE,   "eyeColor",   false);
-        _tfcColorRow("tfc-browColorChips",   "tfc-browColorPicker",   "tfc-browColorHex",   BROW_PALETTE,  "browColor",  false);
-        _tfcColorRow("tfc-pupilColorChips",  "tfc-pupilColorPicker",  "tfc-pupilColorHex",  PUPIL_PALETTE, "pupilColor", false);
-        _tfcColorRow("tfc-clothColorAChips", "tfc-clothColorAPicker", "tfc-clothColorAHex", CLOTH_A,       "clothColorA",false);
-        _tfcColorRow("tfc-clothColorBChips", "tfc-clothColorBPicker", "tfc-clothColorBHex", CLOTH_B,       "clothColorB",false);
-      }
-    }
-
-    // ── Secciones colapsables ──
-    document.querySelectorAll(".tfc-sec-toggle").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const body = document.getElementById(btn.dataset.target);
-        if (!body) return;
-        const opening = body.style.display === "none";
-        body.style.display = opening ? "block" : "none";
-        btn.classList.toggle("open", opening);
-        const arrow = btn.querySelector(".tfc-arrow");
-        if (arrow) arrow.textContent = opening ? "▲" : "▼";
-        if (opening) _buildTfcSection(btn.dataset.target);
-      });
-    });
-
-    document.getElementById("btnAddCustomTf")?.addEventListener("click", () => _openCustomForm(null));
-
-    document.getElementById("tfcCancel")?.addEventListener("click", () => {
-      // Revertir cambios no guardados del formulario
-      if (_editingCustomTfId && _snapshots[_editingCustomTfId]) {
-        _applyAppearance(_snapshots[_editingCustomTfId]);
-      }
-      _editingCustomTfId = null;
-      _activateForm("base");
-      document.getElementById("tfCustomForm").style.display = "none";
-    });
-
-    document.getElementById("tfcSave")?.addEventListener("click", () => {
-      const name = document.getElementById("tfcName").value.trim();
-      if (!name) { window.showToast && window.showToast("Ingresá un nombre","error"); return; }
-      const auraColor = document.getElementById("tfcAuraColor").value;
-      const mult = parseFloat(document.getElementById("tfcMult").value) || 2;
-      const id = _editingCustomTfId || ("ctf_" + Date.now().toString(36));
-      const isNew = !_customTfs.find(t => t.id === id);
-
-      // Para una TF nueva: el snapshot inicial parte del estado BASE (no del estado actual
-      // que puede tener cambios temporales), más el aura elegida.
-      // Para editar una existente: conservar el snapshot actual (con los cambios que ya hizo).
-      let currentSnap;
-      if (isNew) {
-        // Punto de partida: estado base guardado (sin transformaciones previas)
-        const baseState = _baseSnapshot || _captureAppearance();
-        currentSnap = Object.assign({}, baseState, {
-          name,
-          auraColor,
-          auraId: window.charState?.auraId || window.player?.appearance?.auraId || "a1",
-          spriteDataURL: _tfcSheetDataURL || null,
-          transformVariantId: _tfcSheetDataURL ? "tf_" + String(id).replace(/[^a-zA-Z0-9_-]/g, "_") : null,
-        });
-      } else {
-        // Editando existente: conservar snapshot actual + actualizar campos del form
-        const existingSnap = _snapshots[id] || _captureAppearance();
-        currentSnap = Object.assign({}, existingSnap, {
-          name,
-          auraColor,
-          auraId: window.charState?.auraId || window.player?.appearance?.auraId || existingSnap.auraId || "a1",
-          spriteDataURL: _tfcSheetDataURL !== null ? _tfcSheetDataURL : (existingSnap.spriteDataURL || null),
-          transformVariantId: _tfcSheetDataURL ? "tf_" + String(id).replace(/[^a-zA-Z0-9_-]/g, "_") : (existingSnap.transformVariantId || null),
-        });
-      }
-
-      const def = Object.assign({
-        id, tag: "CUST",
-      }, _appearanceFieldsFromSnapshot(currentSnap), {
-        name, auraColor, mult,
-        skinName: _tfcSelectedSkinName || null,
-        spriteDataURL: currentSnap.spriteDataURL || null,
-      });
-      const existingIndex = _customTfs.findIndex(t => t.id === id);
-      if (existingIndex === -1) _customTfs.push(def);
-      else _customTfs[existingIndex] = Object.assign({}, _customTfs[existingIndex], def);
-      _snapshots[id] = currentSnap;
-      if (_activeId === id) _applyAppearance(_snapshots[id]);
-      _saveStorage();
-      _syncActiveSlotTransformations();
-      _editingCustomTfId = null;
-      document.getElementById("tfCustomForm").style.display = "none";
-      _render();
-      _updateActiveBar();
-      // Activar la TF recién creada para que el usuario empiece a personalizarla
-      if (isNew) {
-        setTimeout(() => _activateForm(id), 80);
-        window.showToast && window.showToast("✅ \"" + name + "\" creada — ahora elegí pelo/ropa/colores para esta forma y guardá con 💾", "success");
-      } else {
-        window.showToast && window.showToast("💾 \"" + name + "\" actualizada", "success");
-      }
-    });
-  }
-
-  /* ──────────────────────────────────────────────
-     HOOK: escuchar cambios desde otros paneles
-     para guardarlos en el snapshot de la forma activa
-  ────────────────────────────────────────────── */
-  function _hookOtherPanels() {
-    // Cada vez que el usuario cambia color/pieza en el creator,
-    // guardamos el estado en el snapshot de la forma activa
-    const watchIds = [
-      "skinColorPicker","eyeColorPicker","hairColorPicker","auraColorPicker",
-      "browColorPicker","pupilColorPicker",
-      "clothColorAPicker","clothColorBPicker",
-    ];
-    watchIds.forEach(id => {
-      document.getElementById(id)?.addEventListener("input", () => {
-        requestAnimationFrame(_saveCurrentFormState);
-      });
-    });
-
-    // Color chips
-    document.querySelectorAll(".color-chip").forEach(chip => {
-      chip.addEventListener("click", () => {
-        requestAnimationFrame(_saveCurrentFormState);
-      });
-    });
-
-    // Item cards (pelo, cara, ropa, etc.)
-    document.addEventListener("click", e => {
-      const card = e.target.closest(".item-card");
-      if (card) requestAnimationFrame(_saveCurrentFormState);
-    });
-
-    // Cambio de raza → volver a base y re-renderizar
-    document.getElementById("raceGrid")?.addEventListener("click", e => {
-      const card = e.target.closest(".item-card");
-      if (!card) return;
-      if (_activeId !== "base") {
-        setTimeout(() => { _activeId = "base"; _render(); _updateActiveBar(); }, 50);
-      } else {
-        setTimeout(_render, 50);
-      }
-    });
-  }
-
-  /* ──────────────────────────────────────────────
-     INIT
-  ────────────────────────────────────────────── */
-  function _init() {
-    _loadStorage();
-    _initCustomForm();
-    _renderCustomSkinCatalog();
-
-    // Inyectar banner de edición en la preview-area
-    const previewArea = document.querySelector(".preview-area");
-    if (previewArea && !document.getElementById("tfEditingBanner")) {
-      previewArea.style.position = "relative";
-      const banner = document.createElement("div");
-      banner.id = "tfEditingBanner";
-      banner.innerHTML = `
-        <span id="tfBannerDot"></span>
-        <span style="letter-spacing:.5px;flex-shrink:0">EDITANDO:</span>
-        <span id="tfBannerName">—</span>
-        <span id="tfBannerHint" style="font-size:7px;color:rgba(224,64,251,.7);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Cambiá cara/ropa/colores — se guardan en esta forma</span>
-        <button id="tfBannerSave">💾 GUARDAR</button>
-        <button id="tfBannerRevert">↩ BASE</button>
-      `;
-      previewArea.insertBefore(banner, previewArea.firstChild);
-      banner.querySelector("#tfBannerSave").addEventListener("click", () => {
-        _saveCurrentFormState();
-        window.showToast && window.showToast("Cambios guardados en la transformación","success");
-      });
-      banner.querySelector("#tfBannerRevert").addEventListener("click", () => _activateForm("base"));
-    }
-
-    // Base card click
-    document.getElementById("tfBaseCard")?.addEventListener("click", () => _activateForm("base"));
-    // Revert button en el active bar
-    document.getElementById("tfBtnRevert")?.addEventListener("click", () => _activateForm("base"));
-
-    // Quick-nav: botones de acceso rápido a tabs de personalización
-    document.querySelectorAll(".tf-quick-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const cat = btn.dataset.cat;
-        if (!cat) return;
-        // Activar el tab correspondiente
-        document.querySelectorAll(".cat-tab").forEach(t => t.classList.remove("active"));
-        document.querySelectorAll(".cat-panel").forEach(p => p.classList.remove("visible"));
-        const targetTab = document.querySelector(`.cat-tab[data-cat="${cat}"]`);
-        const targetPanel = document.getElementById(`panel-${cat}`);
-        if (targetTab) targetTab.classList.add("active");
-        if (targetPanel) targetPanel.classList.add("visible");
-      });
-    });
-
-    // Botón guardar cambios del quick-nav
-    document.getElementById("tfQuickSave")?.addEventListener("click", () => {
-      _saveCurrentFormState();
-      window.showToast && window.showToast("💾 Cambios guardados en la transformación", "success");
-    });
-
-    setTimeout(() => {
-      _hookOtherPanels();
-      // Capturar el snapshot base ANTES de aplicar cualquier TF guardada
-      // Esto garantiza que siempre podemos volver al estado original
-      if (!_baseSnapshot) {
-        _baseSnapshot = _captureAppearance();
-      }
-      _render();
-      _updateActiveBar();
-      _updateEditingBanner();
-      _updateSkinsSection();
-      // Si había una forma activa guardada, reaplicarla
-      if (_activeId !== "base" && _snapshots[_activeId]) {
-        _applyAppearance(_snapshots[_activeId]);
-        _updateActiveBar();
-        _updateEditingBanner();
-        _updateSkinsSection();
-      }
-    }, 600);
-  }
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", _init);
-  } else {
-    setTimeout(_init, 400);
-  }
-
-  // Exponer para uso externo si se necesita
-  window.TFSystem = {
-    render: _render,
-    saveState: _saveCurrentFormState,
-    activateForm: _activateForm,
-    exportSlotState: _exportSlotState,
-    importSlotState: _importSlotState,
+   ════════════════════════════════════════════════════════ */
+
+const TRANS_AURA_PALETTE = [
+  "#fdd835","#ffffff","#00b0ff","#ff1744","#aa00ff",
+  "#00e676","#ff6a00","#e040fb","#00e5ff","#90a4ae"
+];
+
+// Estado global de transformaciones
+let transformations = []; // array de objetos de transformación
+let activeTransIndex = -1; // -1 = forma base
+let editingTransIndex = null; // null = nueva, N = editar
+let _transEditSkinDataURL = null; // dataURL temporal del spritesheet custom
+
+/* ── Modelo de una transformación ── */
+function _makeTrans(data={}) {
+  return {
+    id:    data.id    || `tr_${Date.now()}_${Math.random().toString(36).slice(2,5)}`,
+    name:  data.name  || "Transformación",
+    level: data.level || 1,
+    auraColor: data.auraColor || "#fdd835",
+    multHp:  data.multHp  || 1,
+    multKi:  data.multKi  || 1,
+    multStr: data.multStr || 1,
+    multDef: data.multDef || 1,
+    multSpd: data.multSpd || 1,
+    skinDataURL: data.skinDataURL || null,
+    skinImage:   null, // runtime only
+    // ── Apariencia visual propia de la transformación ──
+    // null = heredar del personaje base; valor = override
+    appearance: {
+      faceId:     data.appearance?.faceId     ?? null,
+      hairId:     data.appearance?.hairId     ?? null,
+      topId:      data.appearance?.topId      ?? null,
+      bottomId:   data.appearance?.bottomId   ?? null,
+      shoesId:    data.appearance?.shoesId    ?? null,
+      glovesId:   data.appearance?.glovesId   ?? null,
+      skinColor:  data.appearance?.skinColor  ?? null,
+      hairColor:  data.appearance?.hairColor  ?? null,
+      eyeColor:   data.appearance?.eyeColor   ?? null,
+      browColor:  data.appearance?.browColor  ?? null,
+      pupilColor: data.appearance?.pupilColor ?? null,
+      clothColorA:data.appearance?.clothColorA?? null,
+      clothColorB:data.appearance?.clothColorB?? null,
+    },
   };
-})();
+}
 
-/* ══════════════════════════════════════════════════════════════
-   SPRITE SIZE CONTROLS (W / H del personaje)
-══════════════════════════════════════════════════════════════ */
-(function() {
-  const DEFAULT_W = 180, DEFAULT_H = 220;
+/* ── Carga la imagen de skin si hay dataURL ── */
+async function _loadTransSkinImage(tr) {
+  if (!tr.skinDataURL || tr.skinImage) return;
+  try {
+    tr.skinImage = await _loadImageFromDataURL(tr.skinDataURL);
+  } catch(e) { tr.skinImage = null; }
+}
 
-  function _applySize(w, h) {
-    const CS = window.CharacterSystem;
-    if (!CS) return;
-    // Usar el setter oficial si existe, de lo contrario mutación directa
-    if (typeof CS.setDisplaySize === "function") {
-      CS.setDisplaySize(w, h);
-    } else {
-      CS.DISPLAY_W = w;
-      CS.DISPLAY_H = h;
+/* ── Colores de aura → CSS var para slots ── */
+const _transColors = [
+  "#fdd835","#00e5ff","#ff1744","#aa00ff","#00e676",
+  "#ff6a00","#e040fb","#ffffff","#00b0ff","#90a4ae"
+];
+function _transColor(i) { return _transColors[i % _transColors.length]; }
+
+/* ══ RENDER DE LA LISTA DE TRANSFORMACIONES ══ */
+function renderTransList() {
+  const list = document.getElementById("transList");
+  const empty = document.getElementById("transEmpty");
+  list.innerHTML = "";
+
+  if (transformations.length === 0) {
+    if (empty) { empty.style.display = "block"; list.appendChild(empty); }
+    // Sync panel izquierdo de Transformaciones
+    setTimeout(() => { if (window._renderTransCreatorList) window._renderTransCreatorList(); }, 0);
+    return;
+  }
+  if (empty) empty.style.display = "none";
+
+  transformations.forEach((tr, i) => {
+    const slot = document.createElement("div");
+    const col = tr.auraColor || _transColor(i);
+    slot.className = "trans-slot" + (activeTransIndex === i ? " active-trans" : "");
+    slot.style.setProperty("--slot-color", col);
+
+    // Mini canvas
+    const cv = document.createElement("canvas");
+    cv.className = "trans-slot-canvas";
+    cv.width = 32; cv.height = 40;
+    slot.appendChild(cv);
+    // Dibuja el personaje o la skin custom
+    setTimeout(() => _drawTransThumb(cv, tr), 0);
+
+    const info = document.createElement("div");
+    info.className = "trans-slot-info";
+    info.innerHTML = `<div class="trans-slot-name">${tr.name}</div><div class="trans-slot-sub" style="color:${col}">Nv.${tr.level} · ×${tr.multStr} STR</div>`;
+    slot.appendChild(info);
+
+    const actions = document.createElement("div");
+    actions.className = "trans-slot-actions";
+    const editBtn = document.createElement("button");
+    editBtn.className = "trans-slot-edit"; editBtn.textContent = "✏️";
+    editBtn.title = "Editar";
+    editBtn.addEventListener("click", e => { e.stopPropagation(); openTransModal(i); });
+    const delBtn = document.createElement("button");
+    delBtn.className = "trans-slot-del"; delBtn.textContent = "✕";
+    delBtn.title = "Eliminar";
+    delBtn.addEventListener("click", e => {
+      e.stopPropagation();
+      transformations.splice(i, 1);
+      if (activeTransIndex === i) activateTrans(-1);
+      else if (activeTransIndex > i) activeTransIndex--;
+      renderTransList(); renderTransSelectorBar();
+    });
+    actions.appendChild(editBtn); actions.appendChild(delBtn);
+    slot.appendChild(actions);
+
+    slot.addEventListener("click", () => activateTrans(i));
+    list.appendChild(slot);
+  });
+  // Sync panel izquierdo de Transformaciones
+  setTimeout(() => { if (window._renderTransCreatorList) window._renderTransCreatorList(); }, 0);
+}
+function _drawTransThumb(cv, tr) {
+  const ctx = cv.getContext("2d");
+  ctx.clearRect(0,0,cv.width,cv.height);
+  ctx.fillStyle = "#0d1020"; ctx.fillRect(0,0,cv.width,cv.height);
+  const img = tr.skinImage || null;
+  if (img && img.complete && img.naturalWidth) {
+    ctx.imageSmoothingEnabled = false;
+    const fw = Math.floor(img.naturalWidth / 6);
+    const fh = Math.floor(img.naturalHeight / 37);
+    const scale = Math.min(cv.width/fw, cv.height/fh) * 0.9;
+    const dw = Math.round(fw*scale), dh = Math.round(fh*scale);
+    ctx.drawImage(img, 0, 0, fw, fh, Math.round((cv.width-dw)/2), Math.round((cv.height-dh)/2), dw, dh);
+  } else {
+    // Fallback: aura glow circle
+    const cx=cv.width/2, cy=cv.height/2;
+    const grad = ctx.createRadialGradient(cx,cy,2,cx,cy,14);
+    grad.addColorStop(0, (tr.auraColor||"#fdd835")+"cc");
+    grad.addColorStop(1, "transparent");
+    ctx.fillStyle = grad; ctx.fillRect(0,0,cv.width,cv.height);
+    ctx.fillStyle = tr.auraColor||"#fdd835";
+    ctx.font = "18px sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle";
+    ctx.fillText("⚡", cx, cy);
+  }
+}
+
+/* ══ BARRA DE SELECTOR EN EL PANEL CENTRAL ══ */
+function renderTransSelectorBar() {
+  const bar = document.getElementById("transSelectorBar");
+  if (!bar) return;
+  bar.innerHTML = "";
+  // Botón BASE
+  const baseBtn = document.createElement("button");
+  baseBtn.className = "trans-preview-btn" + (activeTransIndex === -1 ? " active" : "");
+  baseBtn.dataset.transIdx = "-1";
+  baseBtn.style.setProperty("--btn-color","var(--cyan)");
+  baseBtn.textContent = "BASE";
+  baseBtn.addEventListener("click", () => activateTrans(-1));
+  bar.appendChild(baseBtn);
+
+  transformations.forEach((tr, i) => {
+    const btn = document.createElement("button");
+    btn.className = "trans-preview-btn" + (activeTransIndex === i ? " active" : "");
+    btn.dataset.transIdx = String(i);
+    btn.style.setProperty("--btn-color", tr.auraColor || "#e040fb");
+    btn.textContent = tr.name;
+    btn.addEventListener("click", () => activateTrans(i));
+    bar.appendChild(btn);
+  });
+}
+
+/* ══ ACTIVAR TRANSFORMACIÓN ══ */
+function activateTrans(idx) {
+  activeTransIndex = idx;
+  renderTransList();
+  renderTransSelectorBar();
+  // Badge en el preview
+  const badge = document.getElementById("transPreviewBadge");
+  if (idx === -1) {
+    badge?.classList.add("hidden");
+  } else {
+    const tr = transformations[idx];
+    if (badge) {
+      badge.classList.remove("hidden","trans-base-badge");
+      badge.style.borderColor = tr.auraColor || "var(--magenta)";
+      badge.style.color       = tr.auraColor || "var(--magenta)";
+      badge.style.background  = (tr.auraColor||"#e040fb")+"18";
+      badge.textContent = `⚡ ${tr.name}`;
     }
-    // Actualizar canvas de preview al nuevo tamaño
-    const pc = document.getElementById("previewCanvas");
-    if (pc) { pc.width = w; pc.height = h; }
-    // Forzar re-render si hay un loop activo
-    if (typeof window.renderFrame === "function") window.renderFrame();
+    // Actualizar aura al color de la transformación
+    charState.auraColor = tr.auraColor || charState.auraColor;
+  }
+  // Update stats con multiplicadores
+  updateStatsWithTrans();
+}
+
+/* Stats con multiplicadores de transformación */
+function updateStatsWithTrans() {
+  const base = RACE_STATS[_currentRace()] || RACE_STATS.human;
+  let mult = { hp:1, ki:1, str:1, def:1, spd:1 };
+  if (activeTransIndex >= 0) {
+    const tr = transformations[activeTransIndex];
+    mult = { hp:tr.multHp, ki:tr.multKi, str:tr.multStr, def:tr.multDef, spd:tr.multSpd };
+  }
+  const cap = v => Math.min(99, Math.round(v));
+  [
+    ["health","barHealth","valHealth", cap(base.health * mult.hp)],
+    ["ki","barKi","valKi",             cap(base.ki     * mult.ki)],
+    ["strength","barStr","valStr",     cap(base.strength* mult.str)],
+    ["defense","barDef","valDef",      cap(base.defense * mult.def)],
+    ["speed","barSpd","valSpd",        cap(base.speed   * mult.spd)],
+  ].forEach(([,barId,valId,n])=>{
+    const el = document.getElementById(barId); if(el) el.style.width=n+"%";
+    const ve = document.getElementById(valId); if(ve) ve.textContent=n;
+  });
+}
+
+/* ══ MODAL DE EDICIÓN — con editor visual completo ══ */
+
+// Estado temporal del modal
+let _tmAppearance  = {};    // draft de appearance mientras el modal está abierto
+let _tmAnimator    = null;  // SpriteAnimator temporal para el mini-preview
+let _tmAnimFrame   = null;  // handle de rAF del mini-preview
+let _tmEditSkinImage = null; // imagen runtime del PNG custom en edición
+
+function _tmStopPreview() {
+  if (_tmAnimFrame) { cancelAnimationFrame(_tmAnimFrame); _tmAnimFrame = null; }
+}
+
+function _tmStartPreview() {
+  _tmStopPreview();
+  const cv = document.getElementById("tmPreviewCanvas");
+  if (!cv) return;
+  const ctx = cv.getContext("2d");
+  if (!_tmAnimator) _tmAnimator = new SpriteAnimator("idle");
+  let phase = 0;
+
+  function _updateModalSidePanel() {
+    // Name
+    const nameEl = document.getElementById("tmPreviewName");
+    if (nameEl) nameEl.textContent = document.getElementById("transNameInput")?.value?.trim() || "Nueva Transformación";
+    const lvlEl = document.getElementById("tmPreviewLevel");
+    if (lvlEl) lvlEl.textContent = `Nivel ${document.getElementById("transLevelInput")?.value || 1}`;
+    // Aura glow
+    const auraColor = document.getElementById("transAuraColorPicker")?.value || "#fdd835";
+    const glowEl = document.getElementById("tmAuraGlow");
+    if (glowEl) glowEl.style.background = auraColor;
+    // Stats bars
+    const base = typeof RACE_STATS !== "undefined" ? (RACE_STATS[_currentRace()] || RACE_STATS.human) : {strength:80,speed:80,defense:80,ki:80};
+    const cap = v => Math.min(99, Math.round(v));
+    const multStr = parseFloat(document.getElementById("tsMult_str")?.value) || 1;
+    const multSpd = parseFloat(document.getElementById("tsMult_spd")?.value) || 1;
+    const multDef = parseFloat(document.getElementById("tsMult_def")?.value) || 1;
+    const multKi  = parseFloat(document.getElementById("tsMult_ki")?.value)  || 1;
+    const vStr = cap(base.strength * Math.max(0.3, Math.min(10, multStr)));
+    const vSpd = cap(base.speed    * Math.max(0.3, Math.min(10, multSpd)));
+    const vDef = cap(base.defense  * Math.max(0.3, Math.min(10, multDef)));
+    const vKi  = cap(base.ki       * Math.max(0.3, Math.min(10, multKi)));
+    [["tmBarStr","tmValStr",vStr],["tmBarSpd","tmValSpd",vSpd],["tmBarDef","tmValDef",vDef],["tmBarKi","tmValKi",vKi]].forEach(([bid,vid,v])=>{
+      const b=document.getElementById(bid); if(b) b.style.width=v+"%";
+      const vv=document.getElementById(vid); if(vv) vv.textContent=v;
+    });
   }
 
-  function _syncAll(w, h) {
-    document.getElementById("spriteWSlider").value = w;
-    document.getElementById("spriteWVal").textContent = w;
-    document.getElementById("spriteWInput").value = w;
-    document.getElementById("spriteHSlider").value = h;
-    document.getElementById("spriteHVal").textContent = h;
-    document.getElementById("spriteHInput").value = h;
-    _applySize(w, h);
+  function frame(now) {
+    _tmAnimFrame = requestAnimationFrame(frame);
+    _tmAnimator.update(now); phase++;
+    _updateModalSidePanel();
+    // Player temporal con el draft de apariencia
+    const tp = { direction:1, appearance: Object.assign({}, player.appearance) };
+    const app = _tmAppearance;
+    if (app.faceId)      tp.appearance.faceId      = app.faceId;
+    if (app.hairId)      tp.appearance.hairId      = app.hairId;
+    if (app.topId)       tp.appearance.topId       = app.topId;
+    if (app.bottomId)    tp.appearance.bottomId    = app.bottomId;
+    if (app.shoesId)     tp.appearance.shoesId     = app.shoesId;
+    if (app.glovesId)    tp.appearance.glovesId    = app.glovesId;
+    if (app.skinColor)   tp.appearance.skinColor   = app.skinColor;
+    if (app.hairColor)   tp.appearance.hairColor   = app.hairColor;
+    if (app.eyeColor)    tp.appearance.eyeColor    = app.eyeColor;
+    if (app.browColor)   tp.appearance.browColor   = app.browColor;
+    if (app.pupilColor)  tp.appearance.pupilColor  = app.pupilColor;
+    if (app.clothColorA) tp.appearance.clothColorA = app.clothColorA;
+    if (app.clothColorB) tp.appearance.clothColorB = app.clothColorB;
+    // Si hay PNG custom, inyectarlo
+    if (_transEditSkinDataURL && _tmEditSkinImage) {
+      const varId = player.appearance.variantId || "base";
+      tp.appearance.variantCustomizations = Object.assign({}, tp.appearance.variantCustomizations || {});
+      tp.appearance.variantCustomizations[varId] = Object.assign({}, tp.appearance.variantCustomizations[varId] || {});
+      tp.appearance.variantCustomizations[varId].spriteImage   = _tmEditSkinImage;
+      tp.appearance.variantCustomizations[varId].spriteDataURL = _transEditSkinDataURL;
+    }
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    // Aura glow en el canvas
+    const auraColor = document.getElementById("transAuraColorPicker")?.value || "#fdd835";
+    const grd = ctx.createRadialGradient(cv.width/2, cv.height-20, 2, cv.width/2, cv.height-20, 60);
+    grd.addColorStop(0, auraColor+"55"); grd.addColorStop(1,"transparent");
+    ctx.fillStyle = grd; ctx.fillRect(0,0,cv.width,cv.height);
+    const ps = {
+      glovesId:    app.glovesId || charState?.glovesId || "gm0",
+      auraId:      charState?.auraId || "a0",
+      auraColor:   auraColor,
+      accessoryId: charState?.accessoryId || "ac_none",
+      auraPhase:   phase, viewKey: null,
+    };
+    drawPlayer(ctx, cv.width/2, cv.height - 4, tp, imageMap, _tmAnimator, ps);
+  }
+  requestAnimationFrame(frame);
+}
+
+// Construye una mini grilla de items para el modal
+function _tmBuildGrid(containerId, catalog, cat, getActiveFn, onSelectFn) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = "";
+  catalog.forEach(item => {
+    const card = document.createElement("div");
+    card.className = "tm-card" + (getActiveFn(item) ? " active" : "");
+    card.dataset.id = item.id;
+    if (item.spriteKey !== undefined) {
+      const cv = document.createElement("canvas");
+      cv.className = "tm-canvas"; cv.width = 40; cv.height = 40; cv.style.height = "40px";
+      card.appendChild(cv);
+      setTimeout(() => _drawThumb(cv, item, cat), 0);
+    } else if (item.color || item.color1) {
+      const dot = document.createElement("div");
+      dot.style.cssText = `width:22px;height:22px;border-radius:50%;background:${item.color||item.color1};flex-shrink:0`;
+      card.appendChild(dot);
+    }
+    const lbl = document.createElement("div");
+    lbl.className = "tm-name"; lbl.textContent = item.name;
+    card.appendChild(lbl);
+    card.addEventListener("click", () => {
+      onSelectFn(item);
+      el.querySelectorAll(".tm-card").forEach(c => c.classList.remove("active"));
+      card.classList.add("active");
+    });
+    el.appendChild(card);
+  });
+}
+
+// Construye chips de color en el modal
+function _tmBuildColorChips(chipsId, pickerId, hexId, palette, propKey) {
+  const chipsEl  = document.getElementById(chipsId);
+  const pickerEl = document.getElementById(pickerId);
+  const hexEl    = document.getElementById(hexId);
+  if (!chipsEl) return;
+  chipsEl.innerHTML = "";
+  const cur = _tmAppearance[propKey] || "";
+  palette.forEach(hex => {
+    const ch = document.createElement("div");
+    ch.className = "tm-chip" + (hex === cur ? " active" : "");
+    ch.style.background = hex; ch.dataset.color = hex; ch.title = hex;
+    ch.addEventListener("click", () => {
+      _tmAppearance[propKey] = hex;
+      if (pickerEl) pickerEl.value = hex;
+      if (hexEl)    hexEl.textContent = hex.toUpperCase();
+      chipsEl.querySelectorAll(".tm-chip").forEach(c => c.classList.remove("active"));
+      ch.classList.add("active");
+      invalidateHairCache();
+    });
+    chipsEl.appendChild(ch);
+  });
+  if (pickerEl) {
+    pickerEl.value = cur || palette[0];
+    pickerEl.oninput = e => {
+      _tmAppearance[propKey] = e.target.value;
+      if (hexEl) hexEl.textContent = e.target.value.toUpperCase();
+      chipsEl.querySelectorAll(".tm-chip").forEach(c => c.classList.remove("active"));
+      invalidateHairCache();
+    };
+  }
+}
+
+// Pobla todas las grillas del modal según raza/género actuales
+function _tmPopulateGrids() {
+  const race   = _currentRace();
+  const gender = _currentGender();
+  const app    = _tmAppearance;
+
+  _tmBuildGrid("tmFaceGrid", getCatalogFor("face", race, gender), "face",
+    item => app.faceId === item.id,
+    item => { app.faceId = item.id; invalidateHairCache(); });
+  _tmBuildGrid("tmHairGrid", getCatalogFor("hair", race, gender), "hair",
+    item => app.hairId === item.id,
+    item => { app.hairId = item.id; invalidateHairCache(); });
+  _tmBuildGrid("tmTopGrid",    getCatalogFor("shirt",  race, gender), "shirt",
+    item => app.topId    === item.id, item => { app.topId    = item.id; invalidateHairCache(); });
+  _tmBuildGrid("tmBottomGrid", getCatalogFor("pants",  race, gender), "pants",
+    item => app.bottomId === item.id, item => { app.bottomId = item.id; invalidateHairCache(); });
+  _tmBuildGrid("tmShoesGrid",  getCatalogFor("shoes",  race, gender), "shoes",
+    item => app.shoesId  === item.id, item => { app.shoesId  = item.id; invalidateHairCache(); });
+  _tmBuildGrid("tmGlovesGrid", getCatalogFor("gloves", race, gender), "gloves",
+    item => app.glovesId === item.id, item => { app.glovesId = item.id; invalidateHairCache(); });
+
+  _tmBuildColorChips("tmHairColorChips",  "tmHairColorPicker",  "tmHairColorHex",  HAIR_PALETTE,    "hairColor");
+  _tmBuildColorChips("tmSkinColorChips",  "tmSkinColorPicker",  "tmSkinColorHex",  SKIN_PALETTE,    "skinColor");
+  _tmBuildColorChips("tmEyeColorChips",   "tmEyeColorPicker",   "tmEyeColorHex",   EYE_PALETTE,     "eyeColor");
+  _tmBuildColorChips("tmBrowColorChips",  "tmBrowColorPicker",  "tmBrowColorHex",  BROW_PALETTE,    "browColor");
+  _tmBuildColorChips("tmPupilColorChips", "tmPupilColorPicker", "tmPupilColorHex", PUPIL_PALETTE,   "pupilColor");
+  _tmBuildColorChips("tmClothAChips",     "tmClothAColorPicker","tmClothAColorHex",CLOTH_A_PALETTE, "clothColorA");
+  _tmBuildColorChips("tmClothBChips",     "tmClothBColorPicker","tmClothBColorHex",CLOTH_B_PALETTE, "clothColorB");
+}
+
+function openTransModal(editIdx=null) {
+  editingTransIndex     = editIdx;
+  _transEditSkinDataURL = null;
+  _tmEditSkinImage      = null;
+
+  const tr = editIdx !== null ? transformations[editIdx] : null;
+  // Inicializar draft de appearance
+  _tmAppearance = tr?.appearance ? Object.assign({}, tr.appearance) : {};
+
+  const overlay = document.getElementById("transModalOverlay");
+  const title   = document.getElementById("transModalTitle");
+  title.textContent = editIdx !== null ? `✏️ EDITAR: ${tr.name}` : "⚡ NUEVA TRANSFORMACIÓN";
+
+  document.getElementById("transNameInput").value  = tr?.name  ?? "";
+  document.getElementById("transLevelInput").value = tr?.level ?? 1;
+  document.getElementById("transAuraColorPicker").value = tr?.auraColor ?? "#fdd835";
+  document.getElementById("transAuraColorHex").textContent = (tr?.auraColor ?? "#fdd835").toUpperCase();
+  document.getElementById("tsMult_ki").value  = tr?.multKi  ?? 1;
+  document.getElementById("tsMult_str").value = tr?.multStr ?? 1;
+  document.getElementById("tsMult_def").value = tr?.multDef ?? 1;
+  document.getElementById("tsMult_spd").value = tr?.multSpd ?? 1;
+
+  const hasSkin = !!tr?.skinDataURL;
+  document.getElementById("transImportLabel").className = "trans-skin-import" + (hasSkin ? " loaded" : "");
+  document.getElementById("transImportFname").textContent = hasSkin ? "Skin cargada ✓" : "Sin cargar";
+  document.getElementById("transImportText").textContent  = hasSkin ? "CAMBIAR PNG"    : "ELEGIR PNG DE TRANSFORMACIÓN";
+  if (hasSkin) { _transEditSkinDataURL = tr.skinDataURL; _tmEditSkinImage = tr.skinImage || null; }
+
+  _buildTransAuraChips(tr?.auraColor ?? "#fdd835");
+
+  // Reset al tab General
+  document.querySelectorAll(".tm-tab").forEach(t => t.classList.remove("active"));
+  document.querySelectorAll(".tm-panel").forEach(p => p.classList.remove("visible"));
+  document.querySelector(".tm-tab[data-tm='general']")?.classList.add("active");
+  document.getElementById("tm-general")?.classList.add("visible");
+
+  _tmPopulateGrids();
+  // Reset animation selector buttons in modal
+  document.querySelectorAll(".tm-anim-btn").forEach(b => {
+    b.style.background = "var(--bg-card)";
+    b.style.borderColor = "var(--border)";
+    b.style.color = "var(--td)";
+  });
+  const defaultAnimBtn = document.querySelector(".tm-anim-btn[data-tm-anim='idle']");
+  if (defaultAnimBtn) {
+    defaultAnimBtn.style.background = "rgba(0,229,255,.1)";
+    defaultAnimBtn.style.borderColor = "var(--cyan)";
+    defaultAnimBtn.style.color = "var(--cyan)";
+  }
+  if (_tmAnimator) _tmAnimator.play("idle");
+  overlay.classList.remove("hidden");
+  _tmStartPreview();
+}
+
+function _buildTransAuraChips(activeColor) {
+  const chips = document.getElementById("transAuraChips");
+  chips.innerHTML = "";
+  TRANS_AURA_PALETTE.forEach(hex => {
+    const c = document.createElement("div");
+    c.className = "trans-aura-chip" + (hex===activeColor?" active":"");
+    c.style.background = hex;
+    c.title = hex;
+    c.addEventListener("click", () => {
+      chips.querySelectorAll(".trans-aura-chip").forEach(x=>x.classList.remove("active"));
+      c.classList.add("active");
+      document.getElementById("transAuraColorPicker").value = hex;
+      document.getElementById("transAuraColorHex").textContent = hex.toUpperCase();
+    });
+    chips.appendChild(c);
+  });
+}
+
+function closeTransModal() {
+  _tmStopPreview();
+  document.getElementById("transModalOverlay").classList.add("hidden");
+  editingTransIndex     = null;
+  _transEditSkinDataURL = null;
+  _tmEditSkinImage      = null;
+  _tmAppearance         = {};
+}
+
+async function saveTransModal() {
+  const name      = document.getElementById("transNameInput").value.trim() || "Transformación";
+  const level     = parseInt(document.getElementById("transLevelInput").value) || 1;
+  const auraColor = document.getElementById("transAuraColorPicker").value || "#fdd835";
+  const multKi    = parseFloat(document.getElementById("tsMult_ki").value)  || 1;
+  const multStr   = parseFloat(document.getElementById("tsMult_str").value) || 1;
+  const multDef   = parseFloat(document.getElementById("tsMult_def").value) || 1;
+  const multSpd   = parseFloat(document.getElementById("tsMult_spd").value) || 1;
+
+  // Limpiar nulos del draft (solo guardar overrides reales)
+  const cleanAppearance = {};
+  Object.entries(_tmAppearance).forEach(([k, v]) => { if (v !== null && v !== undefined && v !== "") cleanAppearance[k] = v; });
+
+  const data = { name, level, auraColor, multHp:1, multKi, multStr, multDef, multSpd, appearance: cleanAppearance };
+  if (_transEditSkinDataURL) data.skinDataURL = _transEditSkinDataURL;
+
+  if (editingTransIndex !== null) {
+    const existing = transformations[editingTransIndex];
+    data.id = existing.id;
+    if (!data.skinDataURL && existing.skinDataURL) data.skinDataURL = existing.skinDataURL;
+    transformations[editingTransIndex] = _makeTrans(data);
+    // Si había skin custom, preservar la imagen runtime
+    if (_tmEditSkinImage) transformations[editingTransIndex].skinImage = _tmEditSkinImage;
+    else await _loadTransSkinImage(transformations[editingTransIndex]);
+    showToast(`Transformación "${name}" actualizada`, "success");
+  } else {
+    const tr = _makeTrans(data);
+    if (_tmEditSkinImage) tr.skinImage = _tmEditSkinImage;
+    else await _loadTransSkinImage(tr);
+    transformations.push(tr);
+    showToast(`Transformación "${name}" creada`, "success");
   }
 
-  function _clamp(v, min, max) { return Math.max(min, Math.min(max, parseInt(v)||DEFAULT_W)); }
+  closeTransModal();
+  renderTransList();
+  renderTransSelectorBar();
+}
 
-  document.addEventListener("DOMContentLoaded", () => {
-    const wSlider = document.getElementById("spriteWSlider");
-    const hSlider = document.getElementById("spriteHSlider");
-    const wInput  = document.getElementById("spriteWInput");
-    const hInput  = document.getElementById("spriteHInput");
-    const btnReset= document.getElementById("btnResetSize");
-    if (!wSlider) return;
+/* ══ HOOK EN EL RENDER LOOP para aplicar skin de transformación ══ */
+// Guardamos el drawPlayer original para usarlo en _activeLoop
+window._origDrawPlayerFn = drawPlayer;
 
-    const getW = () => _clamp(wSlider.value, 40, 400);
-    const getH = () => _clamp(hSlider.value, 40, 500);
-
-    wSlider.addEventListener("input", () => {
-      document.getElementById("spriteWVal").textContent = wSlider.value;
-      wInput.value = wSlider.value;
-      _applySize(getW(), getH());
-    });
-    hSlider.addEventListener("input", () => {
-      document.getElementById("spriteHVal").textContent = hSlider.value;
-      hInput.value = hSlider.value;
-      _applySize(getW(), getH());
-    });
-    wInput.addEventListener("change", () => {
-      const v = _clamp(wInput.value, 40, 400);
-      wInput.value = v;
-      wSlider.value = v;
-      document.getElementById("spriteWVal").textContent = v;
-      _applySize(v, getH());
-    });
-    hInput.addEventListener("change", () => {
-      const v = _clamp(hInput.value, 40, 500);
-      hInput.value = v;
-      hSlider.value = v;
-      document.getElementById("spriteHVal").textContent = v;
-      _applySize(getW(), v);
-    });
-    btnReset?.addEventListener("click", () => {
-      _syncAll(DEFAULT_W, DEFAULT_H);
-      window.showToast && window.showToast("Tamaño reseteado a 180×220", "success");
+/* ══ INTEGRACIÓN CON TABS DEL PANEL CENTRAL ══ */
+function _initTransTab() {
+  // Extender el handler de sheet-tabs para incluir "trans"
+  document.querySelectorAll(".sheet-tab[data-sheet='trans']").forEach(tab => {
+    tab.addEventListener("click", () => {
+      if (activeSheet === "trans") return;
+      document.querySelectorAll(".sheet-tab").forEach(t=>t.classList.remove("active-base","active-combat","active-special","active-trans"));
+      tab.classList.add("active-trans");
+      document.querySelectorAll(".anim-panel").forEach(p=>p.classList.remove("visible"));
+      document.querySelectorAll(".anim-panel-trans").forEach(p=>p.classList.remove("visible"));
+      document.getElementById("panelTrans").classList.add("visible");
+      activeSheet = "trans"; activeViewKey = null;
+      animator.setBattleMode(false); finalAnim.setBattleMode(false);
+      animator.setSpecialMode?.(false); finalAnim.setSpecialMode?.(false);
+      _playAnim("idle","base");
+      const ind = document.getElementById("sheetIndicator");
+      ind.className = "sheet-indicator special";
+      ind.textContent = "⚡ TRANS.";
     });
   });
-})();
 
-/* ══════════════════════════════════════════════════════════════
-   TRANSFORMATION SKIN SYSTEM
-   Skins PNG asignables a transformaciones concretas
-══════════════════════════════════════════════════════════════ */
-(function() {
-  "use strict";
+  // ── Tabs internos del modal de transformación ──
+  document.querySelectorAll(".tm-tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+      const target = tab.dataset.tm;
+      document.querySelectorAll(".tm-tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".tm-panel").forEach(p => p.classList.remove("visible"));
+      tab.classList.add("active");
+      document.getElementById(`tm-${target}`)?.classList.add("visible");
+    });
+  });
 
-  // Catálogo de skins predefinidas por nombre (sin imagen real — el usuario las carga)
-  const PRESET_SKIN_NAMES = [
-    { id:"sk_lssj_h", name:"LSSJ Hombre", color:"#ffd600", paths:{ base:"Skins/LSSJ_Hombre.png" } },
-    { id:"sk_lssj_m", name:"LSSJ Mujer", color:"#ffe76a", paths:{ base:"Skins/LSSJ_Mujer.png" } },
-    { id:"sk_ozaru",  name:"Ozaru", color:"#4caf50", paths:{ base:"Skins/Ozaru.png" } },
-    { id:"sk_5forma", name:"5ta Forma", color:"#e040fb", paths:{ base:"Skins/5Forma.png" } },
-    { id:"sk_maq_h",  name:"Maquinacion Hombre", color:"#ff1744", paths:{ base:"Skins/Maquinacion_Hombre.png" } },
-    { id:"sk_maq_m",  name:"Maquinacion Mujer", color:"#ff6a8a", paths:{ base:"Skins/Maquinacion_Mujer.png" } },
-    { id:"sk_custom", name:"Custom +", color:"#00e5ff", isAdd:true },
-  ];
+  // Botón + del panel derecho
+  document.getElementById("btnAddTrans").addEventListener("click", () => openTransModal(null));
 
-  // Carga un PNG desde una ruta y devuelve su dataURL
-  function _loadPresetSkinURL(path) {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.onload = () => {
-        const c = document.createElement("canvas");
-        c.width = img.naturalWidth; c.height = img.naturalHeight;
-        c.getContext("2d").drawImage(img, 0, 0);
-        resolve(c.toDataURL("image/png"));
-      };
-      img.onerror = () => resolve(null);
-      img.src = path;
+  // Modal close
+  document.getElementById("transModalClose").addEventListener("click",  closeTransModal);
+  document.getElementById("transModalCancel").addEventListener("click", closeTransModal);
+  document.getElementById("transModalOverlay").addEventListener("click", e => {
+    if (e.target === document.getElementById("transModalOverlay")) closeTransModal();
+  });
+  document.getElementById("transModalSave").addEventListener("click", saveTransModal);
+
+  // Aura color picker
+  document.getElementById("transAuraColorPicker").addEventListener("input", e => {
+    const hex = e.target.value;
+    document.getElementById("transAuraColorHex").textContent = hex.toUpperCase();
+    const chips = document.getElementById("transAuraChips");
+    chips.querySelectorAll(".trans-aura-chip").forEach(c=>c.classList.remove("active"));
+  });
+
+  // Live update: name + level labels in preview column
+  document.getElementById("transNameInput")?.addEventListener("input", () => {
+    const nameEl = document.getElementById("tmPreviewName");
+    if (nameEl) nameEl.textContent = document.getElementById("transNameInput").value.trim() || "Nueva Transformación";
+  });
+  document.getElementById("transLevelInput")?.addEventListener("input", () => {
+    const lvlEl = document.getElementById("tmPreviewLevel");
+    if (lvlEl) lvlEl.textContent = `Nivel ${document.getElementById("transLevelInput").value || 1}`;
+  });
+
+  // Animation buttons inside the modal preview
+  document.querySelectorAll(".tm-anim-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const anim = btn.dataset.tmAnim;
+      if (_tmAnimator) _tmAnimator.play(anim);
+      document.querySelectorAll(".tm-anim-btn").forEach(b => {
+        b.style.background = "var(--bg-card)";
+        b.style.borderColor = "var(--border)";
+        b.style.color = "var(--td)";
+      });
+      btn.style.background = "rgba(0,229,255,.1)";
+      btn.style.borderColor = "var(--cyan)";
+      btn.style.color = "var(--cyan)";
+    });
+  });
+
+  // Import skin para transformación
+  document.getElementById("transImportInput").addEventListener("change", async e => {
+    const file = e.target.files[0]; e.target.value = "";
+    if (!file) return;
+    try {
+      const dataURL = await _readFileAsDataURL(file);
+      _transEditSkinDataURL = dataURL;
+      document.getElementById("transImportLabel").classList.add("loaded");
+      document.getElementById("transImportFname").textContent = file.name;
+      document.getElementById("transImportText").textContent  = "CAMBIAR PNG";
+      showToast("Skin de transformación lista","success");
+    } catch(err) { showToast("Error al cargar imagen","error"); }
+  });
+
+  // Quitar skin custom del modal
+  document.getElementById("transClearSkin").addEventListener("click", () => {
+    _transEditSkinDataURL = null;
+    document.getElementById("transImportLabel").classList.remove("loaded");
+    document.getElementById("transImportFname").textContent = "Sin cargar";
+    document.getElementById("transImportText").textContent  = "ELEGIR PNG DE TRANSFORMACIÓN";
+    showToast("Skin de transformación quitada","warning");
+  });
+
+  renderTransList();
+  renderTransSelectorBar();
+}
+
+/* ── Integración con updateStats original ── */
+const _origUpdateStats = updateStats;
+// Sobreescribir updateStats para que aplique multiplicadores
+window.updateStats = function() { updateStatsWithTrans(); };
+
+/* ── Llamar init de transformaciones al final del init principal ── */
+const _origInit = init;
+// No podemos sobreescribir init fácilmente, así que usamos un MutationObserver o simplemente
+// lo inicializamos via DOMContentLoaded adicional. Como init ya está siendo llamado, añadimos
+// un hook al final via el evento "load".
+window.addEventListener("load", () => {
+  setTimeout(() => {
+    try { _initTransTab(); } catch(e) { console.warn("Trans init error:", e); }
+  }, 100);
+});
+
+/* ── Integrar skin de transformación en el render loop ──
+   Sobreescribir la función loop para que use _drawPlayerWithTrans */
+const _baseLoop = window.loop; // guarda referencia a loop original
+// Sobrescribir requestAnimationFrame una sola vez via reemplazo del loop
+// La forma más limpia: reemplazar las llamadas a drawPlayer en el loop
+// Como loop ya usa drawPlayer (constante del import), lo hacemos via iMap injection
+// Añadimos una clave especial al imageMap que drawPlayer puede usar... pero no tenemos control.
+// La solución más confiable: patch directo sobre el charState para inyectar un override de skin.
+
+// Mejor approach: monkeypatch en el loop vía wrapping del drawPlayer global
+// Guardamos el drawPlayer original en window para poder usarlo
+window._origDrawPlayerFn = drawPlayer;
+
+// Patch del loop: recorremos el render loop y sobreescribimos temporalmente
+// el spriteImage del variantCustomization antes de cada draw
+const _origLoopFn = loop;
+/* ── Patch del loop: inyectar skin de transformación via _activeLoop ── */
+window._activeLoop = function transLoop(now) {
+  _auraPhase++;
+  animator.update(now); finalAnim.update(now);
+  const ps = buildCharState();
+  // Aplicar aura de transformación activa
+  if (activeTransIndex >= 0 && transformations[activeTransIndex]) {
+    ps.auraColor = transformations[activeTransIndex].auraColor || ps.auraColor;
+  }
+  // Inyectar skin de transformación temporalmente
+  const tr = activeTransIndex >= 0 ? transformations[activeTransIndex] : null;
+  const varId = player.appearance?.variantId || "base";
+  let origImg = null, origURL = null;
+  if (tr?.skinImage) {
+    if (!player.appearance.variantCustomizations) player.appearance.variantCustomizations = {};
+    if (!player.appearance.variantCustomizations[varId]) player.appearance.variantCustomizations[varId] = {};
+    origImg = player.appearance.variantCustomizations[varId].spriteImage;
+    origURL = player.appearance.variantCustomizations[varId].spriteDataURL;
+    player.appearance.variantCustomizations[varId].spriteImage   = tr.skinImage;
+    player.appearance.variantCustomizations[varId].spriteDataURL = tr.skinDataURL;
+  }
+  previewCtx.clearRect(0,0,previewCanvas.width,previewCanvas.height);
+  window._origDrawPlayerFn(previewCtx, previewCanvas.width/2, previewCanvas.height-16, player, imageMap, animator, ps);
+  finalCtx.clearRect(0,0,finalCanvas.width,finalCanvas.height);
+  finalCtx.save();
+  const fw=finalCanvas.width, fh=finalCanvas.height;
+  finalCtx.translate(fw/2,fh/2);
+  if (uiFlipped) finalCtx.scale(-uiZoom,uiZoom); else finalCtx.scale(uiZoom,uiZoom);
+  finalCtx.translate(-fw/2,-fh/2);
+  const fp = Object.assign({},player,{direction:1,appearance:Object.assign({},player.appearance)});
+  if (tr?.skinImage) {
+    if (!fp.appearance.variantCustomizations) fp.appearance.variantCustomizations = {};
+    fp.appearance.variantCustomizations = Object.assign({},fp.appearance.variantCustomizations);
+    if (!fp.appearance.variantCustomizations[varId]) fp.appearance.variantCustomizations[varId] = {};
+    fp.appearance.variantCustomizations[varId] = Object.assign({},fp.appearance.variantCustomizations[varId]);
+    fp.appearance.variantCustomizations[varId].spriteImage   = tr.skinImage;
+    fp.appearance.variantCustomizations[varId].spriteDataURL = tr.skinDataURL;
+  }
+  window._origDrawPlayerFn(finalCtx, fw/2, fh-16, fp, imageMap, finalAnim, ps);
+  finalCtx.restore();
+  // Restaurar
+  if (tr?.skinImage && origImg !== undefined) {
+    player.appearance.variantCustomizations[varId].spriteImage   = origImg;
+    player.appearance.variantCustomizations[varId].spriteDataURL = origURL;
+  }
+};
+
+/* ════════════════════════════════════════════════════════
+   PANEL IZQUIERDO — TRANSFORMACIONES (cat-tab "trans-creator")
+   Integración del catálogo del panel con el sistema de tabs existente
+   ════════════════════════════════════════════════════════ */
+
+(function initTransCreatorPanel() {
+
+  /* ── Referencia al sistema modular (si está cargado) ── */
+  const TS = window.TransformationsSystem || null;
+
+  /* ── Inicializar el botón "+ NUEVA TRANSFORMACIÓN" del panel izquierdo ──
+     Redirige al botón existente del panel derecho (btnAddTrans) para
+     reutilizar el modal ya funcional sin duplicar código. */
+  function _hookAddBtn() {
+    const btn = document.getElementById("btnAddTransCreator");
+    if (!btn) return;
+    btn.addEventListener("click", () => {
+      // Abre el modal de transformaciones existente del panel derecho
+      if (typeof openTransModal === "function") openTransModal(null);
+    });
+    btn.addEventListener("mouseenter", () => {
+      btn.style.background = "linear-gradient(135deg,rgba(224,64,251,.22),rgba(74,106,255,.22))";
+      btn.style.borderColor = "var(--magenta)";
+    });
+    btn.addEventListener("mouseleave", () => {
+      btn.style.background = "linear-gradient(135deg,rgba(224,64,251,.1),rgba(74,106,255,.1))";
+      btn.style.borderColor = "rgba(224,64,251,.45)";
     });
   }
 
-  // Aplica los 3 sprites (base/fight/special) de un preset a la TF activa
-  async function _applyPresetSkinToTf(preset) {
-    const tfId = _readActiveTfId();
-    if (!tfId || tfId === "base") {
-      window.showToast && window.showToast("Seleccioná una transformación primero", "error");
+  /* ── Renderiza la lista compacta en el panel izquierdo ──
+     Usa item-card style para ser visualmente consistente con
+     las demás categorías (Raza, Cara, Ropa, Accesorios). */
+  function renderTransCreatorList() {
+    const listEl = document.getElementById("transCreatorList");
+    if (!listEl) return;
+    listEl.innerHTML = "";
+
+    // Si no hay transformaciones, mostrar placeholder
+    if (!window.transformations || window.transformations.length === 0) {
+      const empty = document.createElement("div");
+      empty.id = "transCreatorEmpty";
+      empty.style.cssText = [
+        "font-family:var(--fh);font-size:8px;color:var(--tm);letter-spacing:1px",
+        "text-align:center;padding:14px 0;border:1px dashed rgba(255,255,255,.08)",
+        "border-radius:var(--r);width:100%"
+      ].join(";");
+      empty.textContent = "Sin transformaciones creadas";
+      listEl.appendChild(empty);
+      _updateCreatorStatsPreview();
+      _updateCreatorActiveBar();
       return;
     }
-    window.showToast && window.showToast("Cargando skin " + preset.name + "...", "warning");
-    const baseURL = await _loadPresetSkinURL(preset.paths.base);
-    if (!baseURL) {
-      window.showToast && window.showToast("No se encontró Skins/" + preset.paths.base.split("/")[1], "error");
-      return;
-    }
-    // Guardar en skinMap
-    _skinMap[preset.id] = { name: preset.name, dataURL: baseURL };
-    _save();
 
-    // Asignar a la TF activa con un solo spritesheet
-    const tfList = window.TFSystem ? window.TFSystem.getTransformations(
-      parseInt(localStorage.getItem("dragonCreatorZ_activeSlot")||"0", 10)
-    ) : [];
-    const tfDef = tfList.find(t => t.id === tfId);
-    if (tfDef) {
-      tfDef.spriteDataURL = baseURL;
-    }
+    // Grilla de item-cards (mismo estilo que RAZA, ACCESORIOS, etc.)
+    listEl.style.display = "grid";
+    listEl.style.gridTemplateColumns = "repeat(3, 1fr)";
+    listEl.style.gap = "5px";
 
-    _assignSkinToActiveTf(preset.name, baseURL);
-    _renderSkinGrid();
-    window.showToast && window.showToast("Skin " + preset.name + " aplicada ✓", "success");
-  }
-
-  // Map: tfId → { name, dataURL }
-  let _skinMap = {};
-  const LS_KEY_SKINS = "dragonz_tf_skins_v1";
-
-  function _save() {
-    try {
-      // Guardar sólo skins sin dataURL gigantes en preview (guardar completo)
-      const toSave = {};
-      Object.entries(_skinMap).forEach(([k, v]) => {
-        toSave[k] = { name: v.name };
-        // Guardar dataURL sólo si no excede 2MB
-        if (v.dataURL && v.dataURL.length < 2 * 1024 * 1024) toSave[k].dataURL = v.dataURL;
-      });
-      localStorage.setItem(LS_KEY_SKINS, JSON.stringify(toSave));
-    } catch(e) {}
-  }
-
-  function _load() {
-    try {
-      const raw = localStorage.getItem(LS_KEY_SKINS);
-      if (raw) _skinMap = JSON.parse(raw);
-    } catch(e) { _skinMap = {}; }
-  }
-
-  function _getActiveTfId() {
-    return window.TFSystem?._activeId || null; // no expuesto directamente
-    // Fallback: leer desde el bar
-  }
-
-  function _readActiveTfId() {
-    const nameEl = document.getElementById("tfActiveName");
-    // No tenemos el id directamente; usamos la propiedad interna si está expuesta
-    // TFSystem no expone _activeId directamente, así que lo leemos del DOM de otra forma
-    // Mejor: guardar el id en el dataset del bar
-    const bar = document.getElementById("tfActiveBar");
-    return bar?.dataset?.tfId || null;
-  }
-
-  function _updateActiveBarTfId(id) {
-    const bar = document.getElementById("tfActiveBar");
-    if (bar) bar.dataset.tfId = id || "";
-  }
-
-  function _drawSkinThumb(canvas, dataURL) {
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "#0d1020";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    if (!dataURL) return;
-    const img = new Image();
-    img.onload = () => {
-      ctx.imageSmoothingEnabled = false;
-      // Mostrar el primer frame idle (fila 1)
-      const fw = Math.floor(img.naturalWidth / 6);
-      const fh = Math.floor(img.naturalHeight / 37);
-      const sx = 0, sy = fh; // fila 1 (idle)
-      const scale = Math.min(canvas.width / fw, canvas.height / fh) * 0.9;
-      const dw = Math.round(fw * scale), dh = Math.round(fh * scale);
-      const dx = Math.round((canvas.width - dw) / 2);
-      const dy = Math.round((canvas.height - dh) / 2);
-      ctx.drawImage(img, sx, sy, fw, fh, dx, dy, dw, dh);
-    };
-    img.src = dataURL;
-  }
-
-  function _updateSkinActiveInfo(tfId) {
-    const infoEl = document.getElementById("tfSkinActiveInfo");
-    const nameEl = document.getElementById("tfSkinActiveName");
-    const previewCv = document.getElementById("tfSkinPreviewCanvas");
-    if (!infoEl) return;
-    const skin = tfId ? _skinMap[tfId] : null;
-    if (skin && skin.dataURL) {
-      infoEl.style.display = "flex";
-      if (nameEl) nameEl.textContent = skin.name || "Skin cargada";
-      _drawSkinThumb(previewCv, skin.dataURL);
-    } else {
-      infoEl.style.display = "none";
-    }
-  }
-
-  function _assignSkinToActiveTf(name, dataURL) {
-    const tfId = _readActiveTfId();
-    if (!tfId || tfId === "base") {
-      window.showToast && window.showToast("Seleccioná una transformación primero", "error");
-      return;
-    }
-    _skinMap[tfId] = { name, dataURL };
-    _save();
-    _updateSkinActiveInfo(tfId);
-    _renderSkinGrid();
-    // Aplicar al snapshot de la TF activa
-    if (window.TFSystem && window.TFSystem.saveState) {
-      // Guardar spriteDataURL en el snapshot
-      const snap = window._tfGetSnapshotForActive ? window._tfGetSnapshotForActive() : null;
-      if (snap) snap.spriteDataURL = dataURL;
-    }
-    window.showToast && window.showToast(`Skin "${name}" asignada a esta forma`, "success");
-  }
-
-  function _renderSkinGrid() {
-    const grid = document.getElementById("tfSkinGrid");
-    if (!grid) return;
-    grid.innerHTML = "";
-    const tfId = _readActiveTfId();
-
-    PRESET_SKIN_NAMES.forEach(preset => {
-      if (preset.isAdd) {
-        // Botón "Cargar custom"
-        const card = document.createElement("div");
-        card.className = "tfskin-card";
-        card.style.borderStyle = "dashed";
-        card.style.borderColor = "rgba(0,229,255,.3)";
-        card.style.color = "var(--cyan)";
-        card.innerHTML = `<span style="font-size:18px;line-height:1.4">${preset.icon}</span><div class="item-name">${preset.name}</div>`;
-        card.addEventListener("click", () => {
-          document.getElementById("tfSkinImportFile")?.click();
-        });
-        grid.appendChild(card);
-        return;
-      }
-
-      const skin = _skinMap[preset.id]; // skin guardada para este preset
-      const isActive = tfId && _skinMap[tfId]?.name === preset.name;
-
+    window.transformations.forEach((tr, i) => {
       const card = document.createElement("div");
-      card.className = "tfskin-card" + (isActive ? " active" : "");
-      card.style.borderColor = isActive ? "#e040fb" : "";
+      card.className = "item-card" + (window.activeTransIndex === i ? " active" : "");
+      card.style.borderColor = window.activeTransIndex === i ? (tr.auraColor || "var(--magenta)") : "";
+      card.title = `${tr.name}\nNivel ${tr.level}\n${_getMultSummary(tr)}`;
 
+      // Mini canvas con glow del aura
       const cv = document.createElement("canvas");
-      cv.width = 40; cv.height = 48;
+      cv.className = "item-canvas";
+      cv.width = 48; cv.height = 48;
       cv.style.height = "48px";
       card.appendChild(cv);
+      setTimeout(() => _drawTransCardThumb(cv, tr, i), 0);
 
-      if (skin?.dataURL) {
-        _drawSkinThumb(cv, skin.dataURL);
-        // Botón eliminar esta skin del preset
-        const del = document.createElement("button");
-        del.className = "tfskin-del";
-        del.textContent = "✕";
-        del.title = "Eliminar skin";
-        del.addEventListener("click", e => {
-          e.stopPropagation();
-          delete _skinMap[preset.id];
-          // Si esta skin estaba asignada a la tf activa, quitarla
-          if (tfId && _skinMap[tfId]?.name === preset.name) {
-            delete _skinMap[tfId];
-            _updateSkinActiveInfo(tfId);
-          }
-          _save();
-          _renderSkinGrid();
-        });
-        card.appendChild(del);
-      } else {
-        // Ícono placeholder
-        const iconEl = document.createElement("div");
-        iconEl.style.cssText = "font-size:18px;line-height:1;margin:6px 0 2px;opacity:.5";
-        iconEl.textContent = preset.icon;
-        card.replaceChildren(iconEl);
-        // También necesitamos canvas para que funcione visualmente
-        const dot = document.createElement("div");
-        dot.style.cssText = `width:8px;height:8px;border-radius:50%;background:${preset.color};margin:2px auto`;
-        card.appendChild(dot);
-      }
-
+      // Nombre
       const label = document.createElement("div");
       label.className = "item-name";
-      label.textContent = preset.name;
+      label.textContent = tr.name;
       card.appendChild(label);
 
+      // Click: activar transformación
       card.addEventListener("click", () => {
-        if (preset.paths) {
-          // Skin preset: cargar desde Skins/ directamente
-          _applyPresetSkinToTf(preset);
-        } else if (!skin?.dataURL) {
-          window._tfSkinTargetPreset = preset;
-          document.getElementById("tfSkinImportFile")?.click();
-        } else {
-          _assignSkinToActiveTf(preset.name, skin.dataURL);
+        if (typeof activateTrans === "function") {
+          activateTrans(window.activeTransIndex === i ? -1 : i);
         }
+        // Sincronizar con TransformationsSystem si está disponible
+        if (TS) {
+          if (window.activeTransIndex >= 0) {
+            const tsSys = TS.TRANSFORMATIONS.find(t => t.id === tr.id);
+            if (tsSys) TS.transformPlayer(tsSys.id, { raceId: _currentRace() });
+          } else {
+            TS.revertTransformation();
+          }
+        }
+        renderTransCreatorList();
+        _updateCreatorStatsPreview();
+        _updateCreatorActiveBar();
       });
 
-      grid.appendChild(card);
+      listEl.appendChild(card);
     });
+
+    _updateCreatorStatsPreview();
+    _updateCreatorActiveBar();
   }
 
-  // Hook: actualizar el skin grid cuando cambia la tf activa
-  // Parchamos TFSystem._updateActiveBar para que también actualice el skin info
-  function _patchTFSystem() {
-    const orig = window.TFSystem;
-    if (!orig) return;
+  /* Dibuja el thumbnail de una transformación en el panel izquierdo */
+  function _drawTransCardThumb(cv, tr, idx) {
+    const ctx = cv.getContext("2d");
+    const w = cv.width, h = cv.height;
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = "#0d1020";
+    ctx.fillRect(0, 0, w, h);
 
-    // Sobrescribir activateForm para trackear tfId en el bar
-    const origActivate = orig.activateForm;
-    orig.activateForm = function(id) {
-      _updateActiveBarTfId(id);
-      if (origActivate) origActivate(id);
-      setTimeout(() => {
-        _updateSkinActiveInfo(id);
-        _renderSkinGrid();
-      }, 50);
-    };
+    // Si tiene skin custom, intentar dibujarla
+    if (tr.skinImage && tr.skinImage.complete && tr.skinImage.naturalWidth) {
+      ctx.imageSmoothingEnabled = false;
+      const fw = Math.floor(tr.skinImage.naturalWidth / 6);
+      const fh = Math.floor(tr.skinImage.naturalHeight / 37);
+      const scale = Math.min(w / fw, h / fh) * 0.88;
+      const dw = Math.round(fw * scale), dh = Math.round(fh * scale);
+      ctx.drawImage(tr.skinImage, 0, 0, fw, fh,
+        Math.round((w - dw) / 2), Math.round((h - dh) / 2), dw, dh);
+      return;
+    }
 
-    // Base card click también
-    document.getElementById("tfBaseCard")?.addEventListener("click", () => {
-      setTimeout(() => {
-        _updateActiveBarTfId("base");
-        _updateSkinActiveInfo("base");
-        _renderSkinGrid();
-      }, 80);
-    });
+    // Fallback: glow radial + emoji aura
+    const col = tr.auraColor || "#e040fb";
+    const grd = ctx.createRadialGradient(w/2, h/2, 2, w/2, h/2, w * 0.6);
+    grd.addColorStop(0, col + "99");
+    grd.addColorStop(1, "transparent");
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, w, h);
+    ctx.font = `${Math.round(h * 0.38)}px sans-serif`;
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(tr.icon || "⚡", w / 2, h / 2);
+    ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
   }
 
-  // File import
-  function _initImport() {
-    const file = document.getElementById("tfSkinImportFile");
-    const label = document.getElementById("tfSkinImportLabel");
-    const fname = document.getElementById("tfSkinImportName");
-    if (!file) return;
+  /* Actualiza el preview de stats en el panel de transformaciones */
+  function _updateCreatorStatsPreview() {
+    const baseRaceStats = window.RACE_STATS?.[window._currentRace?.() || "human"] || { strength:80, ki:80, defense:80, speed:80 };
+    const base = { str: baseRaceStats.strength, ki: baseRaceStats.ki, def: baseRaceStats.defense, spd: baseRaceStats.speed };
 
-    file.addEventListener("change", e => {
-      const f = e.target.files?.[0];
-      if (!f) return;
-      const reader = new FileReader();
-      reader.onload = ev => {
-        const dataURL = ev.target.result;
-        const name = f.name.replace(/\.[^.]+$/, "");
-        if (fname) fname.textContent = f.name;
-        if (label) { label.style.borderColor = "#00ff9d"; label.style.color = "#00ff9d"; }
+    let str = base.str, spd = base.spd, def = base.def, ki = base.ki;
+    const idx = window.activeTransIndex;
+    if (idx >= 0 && window.transformations?.[idx]) {
+      const tr = window.transformations[idx];
+      const cap = v => Math.min(99, Math.round(v));
+      str = cap(base.str * _clamp(tr.multStr || 1));
+      spd = cap(base.spd * _clamp(tr.multSpd || 1));
+      def = cap(base.def * _clamp(tr.multDef || 1));
+      ki  = cap(base.ki  * _clamp(tr.multKi  || 1));
+    }
 
-        // Si hay un preset target, guardarlo ahí también
-        const preset = window._tfSkinTargetPreset;
-        if (preset && preset.id) {
-          _skinMap[preset.id] = { name: preset.name, dataURL };
-          window._tfSkinTargetPreset = null;
+    const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    setEl("tcsStr", str);
+    setEl("tcsSp",  spd);
+    setEl("tcsDef", def);
+    setEl("tcsKi",  ki);
+  }
+
+  /* Actualiza la barra de botones de forma activa */
+  function _updateCreatorActiveBar() {
+    const bar = document.getElementById("transCreatorActiveBar");
+    if (!bar) return;
+    bar.innerHTML = "";
+
+    // Botón BASE
+    const baseBtn = document.createElement("button");
+    baseBtn.className = "trans-preview-btn" + (window.activeTransIndex === -1 ? " active" : "");
+    baseBtn.dataset.transCreatorIdx = "-1";
+    baseBtn.style.cssText = [
+      "--btn-color:var(--cyan)",
+      "padding:4px 10px;font-family:var(--fh);font-size:7px;letter-spacing:1px",
+      window.activeTransIndex === -1
+        ? "background:rgba(0,229,255,.1);border:2px solid var(--cyan);color:var(--cyan)"
+        : "background:var(--bg-card);border:2px solid var(--border);color:var(--td)",
+      "border-radius:4px;cursor:pointer;transition:all var(--tr)"
+    ].join(";");
+    baseBtn.textContent = "BASE";
+    baseBtn.addEventListener("click", () => {
+      if (typeof activateTrans === "function") activateTrans(-1);
+      if (TS) TS.revertTransformation();
+      renderTransCreatorList();
+      _updateCreatorStatsPreview();
+      _updateCreatorActiveBar();
+    });
+    bar.appendChild(baseBtn);
+
+    (window.transformations || []).forEach((tr, i) => {
+      const btn = document.createElement("button");
+      const isActive = window.activeTransIndex === i;
+      const col = tr.auraColor || "#e040fb";
+      btn.style.cssText = [
+        `--btn-color:${col}`,
+        "padding:4px 8px;font-family:var(--fh);font-size:7px;letter-spacing:1px",
+        isActive
+          ? `background:${col}20;border:2px solid ${col};color:${col}`
+          : "background:var(--bg-card);border:2px solid var(--border);color:var(--td)",
+        "border-radius:4px;cursor:pointer;transition:all var(--tr);max-width:72px",
+        "white-space:nowrap;overflow:hidden;text-overflow:ellipsis"
+      ].join(";");
+      btn.textContent = tr.name;
+      btn.title = tr.name;
+      btn.addEventListener("click", () => {
+        if (typeof activateTrans === "function") activateTrans(i);
+        if (TS) {
+          const tsSys = TS.TRANSFORMATIONS.find(t => t.id === tr.id);
+          if (tsSys) TS.transformPlayer(tsSys.id, { raceId: window._currentRace?.() || "human" });
         }
-
-        _assignSkinToActiveTf(name, dataURL);
-        file.value = "";
-      };
-      reader.readAsDataURL(f);
-    });
-
-    document.getElementById("tfSkinClear")?.addEventListener("click", () => {
-      const tfId = _readActiveTfId();
-      if (tfId && _skinMap[tfId]) {
-        delete _skinMap[tfId];
-        _save();
-        _updateSkinActiveInfo(tfId);
-        _renderSkinGrid();
-        if (fname) fname.textContent = "sin archivo";
-        if (label) { label.style.borderColor = ""; label.style.color = ""; }
-        window.showToast && window.showToast("Skin removida de esta forma", "warning");
-      }
+        renderTransCreatorList();
+        _updateCreatorStatsPreview();
+        _updateCreatorActiveBar();
+      });
+      bar.appendChild(btn);
     });
   }
 
-  function _init() {
-    _load();
-    _initImport();
-    _renderSkinGrid();
-    setTimeout(_patchTFSystem, 800);
+  /* Helper: resumen de multiplicadores */
+  function _getMultSummary(tr) {
+    return `STR ×${tr.multStr||1}  SPD ×${tr.multSpd||1}  DEF ×${tr.multDef||1}  KI ×${tr.multKi||1}`;
   }
 
+  /* Helper: clamp de multiplicador al rango permitido */
+  function _clamp(v) {
+    const n = parseFloat(v);
+    return isFinite(n) ? Math.max(0.3, Math.min(10, n)) : 1;
+  }
+
+  /* ── Observador: cada vez que se guarda/borra una transformación del panel
+     derecho, re-renderizar el panel izquierdo ──
+     Usamos MutationObserver sobre el transList del panel derecho. */
+  function _watchTransList() {
+    const transListEl = document.getElementById("transList");
+    if (!transListEl) return;
+    const observer = new MutationObserver(() => {
+      renderTransCreatorList();
+    });
+    observer.observe(transListEl, { childList: true, subtree: true });
+  }
+
+  /* ── Arranque ── */
+  function boot() {
+    _hookAddBtn();
+    renderTransCreatorList();
+    _watchTransList();
+
+    // Sincronizar con TransformationsSystem si está disponible
+    if (TS && window.RACE_STATS) {
+      const race = window._currentRace ? window._currentRace() : "human";
+      const rs = window.RACE_STATS[race] || window.RACE_STATS.human;
+      TS.syncBaseStats({ str: rs.strength, spd: rs.speed, def: rs.defense, ki: rs.ki });
+    }
+  }
+
+  // Ejecutar cuando el DOM esté listo
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", _init);
+    document.addEventListener("DOMContentLoaded", boot);
   } else {
-    setTimeout(_init, 500);
+    setTimeout(boot, 200); // asegurar que el init principal ya corrió
   }
 
-  window.TFSkinSystem = { renderGrid: _renderSkinGrid, getSkin: id => _skinMap[id] };
+  // Re-sincronizar al cambiar de raza (hook en updateStats)
+  const _prevUpdateStats2 = window.updateStats;
+  window.updateStats = function() {
+    if (_prevUpdateStats2) _prevUpdateStats2();
+    _updateCreatorStatsPreview();
+    if (TS && window.RACE_STATS && window._currentRace) {
+      const rs = window.RACE_STATS[window._currentRace()] || window.RACE_STATS.human;
+      TS.syncBaseStats({ str: rs.strength, spd: rs.speed, def: rs.defense, ki: rs.ki });
+    }
+  };
+
+  // Exponer render para que el sistema de transformaciones lo llame
+  window._renderTransCreatorList = renderTransCreatorList;
+  window._updateCreatorActiveBar = _updateCreatorActiveBar;
+
 })();
+
 </script>
 </body>
 </html>
