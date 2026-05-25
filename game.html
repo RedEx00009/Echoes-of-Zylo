@@ -739,20 +739,14 @@
       menu.style.transform = "none";
     }
 
-    function renderTransDropList() {
-      const list = document.getElementById("transDropList");
-      if (!list) return;
-      const TS = window.TransformationsSystem;
-      if (!TS) { list.innerHTML = '<div class="trans-drop-empty">Sistema no cargado</div>'; return; }
-
-      // Cargar transformaciones guardadas en localStorage
+    function _loadSavedTransformations() {
+      // Fuente 1: clave separada dragonCreatorZ_transformations
       let saved = [];
       try {
         const raw = localStorage.getItem("dragonCreatorZ_transformations");
         if (raw) saved = JSON.parse(raw);
       } catch(e) {}
-
-      // También chequear si están guardadas dentro del slot activo
+      // Fuente 2 (más confiable): transformaciones dentro del slot activo
       if (!Array.isArray(saved) || saved.length === 0) {
         try {
           const slotRaw = localStorage.getItem("dragonCreatorZ_slots");
@@ -760,12 +754,35 @@
           if (slotRaw) {
             const slots = JSON.parse(slotRaw);
             const slot = slots[activeSlot];
-            if (slot?.transformations) saved = slot.transformations;
+            if (Array.isArray(slot?.transformations)) saved = slot.transformations;
           }
         } catch(e) {}
       }
+      // Normalizar formato (multStr → multipliers.str)
+      return (Array.isArray(saved) ? saved : []).map(tr => {
+        if (!tr.multipliers) {
+          tr.multipliers = {
+            str: tr.multStr || 1,
+            spd: tr.multSpd || 1,
+            def: tr.multDef || 1,
+            ki:  tr.multKi  || 1,
+          };
+        }
+        if (!tr.icon) tr.icon = "⚡";
+        return tr;
+      });
+    }
+    window._loadSavedTransformations = _loadSavedTransformations;
 
-      if (!Array.isArray(saved) || saved.length === 0) {
+    function renderTransDropList() {
+      const list = document.getElementById("transDropList");
+      if (!list) return;
+      const TS = window.TransformationsSystem;
+      if (!TS) { list.innerHTML = '<div class="trans-drop-empty">Sistema no cargado</div>'; return; }
+
+      const saved = _loadSavedTransformations();
+
+      if (saved.length === 0) {
         list.innerHTML = '<div class="trans-drop-empty">Sin transformaciones guardadas<br><span style="font-size:8px;color:#2a3560">Créalas en el editor de personaje</span></div>';
         return;
       }
@@ -781,15 +798,15 @@
       list.innerHTML = saved.map(tr => {
         const isActive = activeTr && activeTr.id === tr.id;
         const aura = tr.auraColor || "#fdd835";
-        const mStr = tr.multipliers?.str ?? tr.multStr ?? 1;
-        const mSpd = tr.multipliers?.spd ?? tr.multSpd ?? 1;
+        const mStr = tr.multipliers?.str ?? 1;
+        const mSpd = tr.multipliers?.spd ?? 1;
         return `<div class="trans-drop-item${isActive ? ' active-tr' : ''}" onclick="applyTransformationFromDrop('${tr.id}')" style="${isActive ? `border-left:3px solid ${aura};` : ''}">
           <span class="trans-drop-icon" style="text-shadow:0 0 8px ${aura}">${tr.icon || '⚡'}</span>
           <div class="trans-drop-info">
             <div class="trans-drop-name" style="${isActive ? `color:${aura}` : ''}">${tr.name}</div>
             <div class="trans-drop-level">Lv ${tr.level || 1} · STR ×${mStr} · SPD ×${mSpd}</div>
           </div>
-          ${isActive ? '<span style="font-size:10px;color:'+aura+'">●</span>' : ''}
+          ${isActive ? `<span style="font-size:10px;color:${aura}">●</span>` : ''}
         </div>`;
       }).join("");
     }
@@ -823,7 +840,6 @@
       try { const raw = localStorage.getItem("dragonCreatorZ_transformations"); if (raw) saved = JSON.parse(raw); } catch(e) {}
       const trData = saved.find(t => t.id === trId);
       if (trData && !TS.TRANSFORMATIONS.find(t => t.id === trId)) {
-        // Normalizar formato: multStr → multipliers.str
         const normalized = Object.assign({}, trData);
         if (!normalized.multipliers) {
           normalized.multipliers = {
@@ -835,6 +851,15 @@
         }
         TS.registerTransformation(normalized);
       }
+      // CRÍTICO: sincronizar stats base del jugador con el TransformationsSystem
+      if (window.player) {
+        TS.syncBaseStats({
+          str: window.player.strength || 80,
+          spd: window.player.speed    || 2.5,
+          def: window.player.defense  || 80,
+          ki:  window.player.maxKi    || 100,
+        });
+      }
       const result = TS.transformPlayer(trId);
       if (result.success) {
         const tr = result.transformation;
@@ -843,8 +868,11 @@
           window.csAnimator.setTransformationSkin(tr.skinDataURL);
         }
         if (tr.auraColor && window.player) {
+          window.player.savedAuraColor = window.player.savedAuraColor || window.player.auraColor;
           window.player.auraColor = tr.auraColor;
         }
+        // Aplicar apariencia visual de la transformación si tiene
+        _applyTransAppearance(tr);
         publishMyAppearance && publishMyAppearance(true);
       } else {
         showHudToast("⚠️ Transformación no disponible", "info");
@@ -854,11 +882,73 @@
     }
     window.applyTransformationFromDrop = applyTransformationFromDrop;
 
+    // Aplica los overrides visuales de una transformación al CharacterSystem
+    function _applyTransAppearance(tr) {
+      const CS = window.CharacterSystem;
+      if (!CS || !tr?.appearance) return;
+      const app = CS.player.appearance;
+      const a = tr.appearance;
+      // Solo sobreescribir si el valor no es null/undefined (null = heredar base)
+      if (a.raceId)     { app.raceId = a.raceId; }
+      if (a.hairId)     app.hairId     = a.hairId;
+      if (a.hairColor)  app.hairColor  = a.hairColor;
+      if (a.skinColor)  app.skinColor  = a.skinColor;
+      if (a.eyeColor)   app.eyeColor   = a.eyeColor;
+      if (a.browColor)  app.browColor  = a.browColor;
+      if (a.pupilColor) app.pupilColor = a.pupilColor;
+      if (a.topId)      app.topId      = a.topId;
+      if (a.bottomId)   app.bottomId   = a.bottomId;
+      if (a.shoesId)    app.shoesId    = a.shoesId;
+      if (a.glovesId)   app.glovesId   = a.glovesId;
+      if (tr.auraColor) { app.auraColor = tr.auraColor; }
+      CS.invalidateHairCache && CS.invalidateHairCache();
+      // Si la raza cambió, actualizar color de aura del player
+      if (a.raceId && window.player) {
+        const BASE_RACE_COLORS = {saiyan:"#f5c400",human:"#00e5ff",namekian:"#00ff9d",android:"#00e5ff",kaioshin:"#9c88ff",frieza:"#e040fb"};
+        window.player.charColor = BASE_RACE_COLORS[a.raceId] || window.player.charColor;
+      }
+    }
+    window._applyTransAppearance = _applyTransAppearance;
+
     function revertTransformationInGame() {
       const TS = window.TransformationsSystem;
       if (!TS) return;
+      // Guardar apariencia base antes de revertir (si no la teníamos)
+      const CS = window.CharacterSystem;
       TS.revertTransformation();
-      if (window.player) window.player.auraColor = window.player.savedAuraColor || "#fdd835";
+      if (window.player) {
+        window.player.auraColor = window.player.savedAuraColor || window.player.auraColor;
+        delete window.player.savedAuraColor;
+      }
+      // Restaurar apariencia base del personaje (recargar desde el slot guardado)
+      if (CS) {
+        try {
+          const slotRaw = localStorage.getItem("dragonCreatorZ_slots");
+          const activeSlot = parseInt(localStorage.getItem("dragonCreatorZ_activeSlot") || "0", 10);
+          if (slotRaw) {
+            const slots = JSON.parse(slotRaw);
+            const slot = slots[activeSlot];
+            if (slot) {
+              const app = CS.player.appearance;
+              if (slot.hairId)     app.hairId     = slot.hairId;
+              if (slot.hairColor)  app.hairColor  = slot.hairColor;
+              if (slot.skinColor)  app.skinColor  = slot.skinColor;
+              if (slot.eyeColor)   app.eyeColor   = slot.eyeColor;
+              if (slot.browColor !== undefined)  app.browColor  = slot.browColor;
+              if (slot.pupilColor !== undefined) app.pupilColor = slot.pupilColor;
+              if (slot.topId)      app.topId      = slot.topId;
+              if (slot.bottomId)   app.bottomId   = slot.bottomId;
+              if (slot.shoesId)    app.shoesId    = slot.shoesId;
+              if (slot.glovesId)   app.glovesId   = slot.glovesId;
+              if (slot.auraColor && window.player) {
+                app.auraColor = slot.auraColor;
+                window.player.auraColor = slot.auraColor;
+              }
+              CS.invalidateHairCache && CS.invalidateHairCache();
+            }
+          }
+        } catch(e) {}
+      }
       showHudToast("↩ Forma base restaurada", "info");
       if (window.csAnimator && window.csAnimator.setTransformationSkin) {
         window.csAnimator.setTransformationSkin(null);

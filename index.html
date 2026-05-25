@@ -768,6 +768,7 @@
           <!-- ── Tabs internos del modal ── -->
           <div class="tm-tabs" style="margin:0;padding:0 14px;border-bottom:1px solid var(--border)">
             <button class="tm-tab active" data-tm="general">⚡ GENERAL</button>
+            <button class="tm-tab" data-tm="raza">👾 RAZA</button>
             <button class="tm-tab" data-tm="cara">😶 CARA</button>
             <button class="tm-tab" data-tm="pelo">💇 PELO</button>
             <button class="tm-tab" data-tm="ropa">👕 ROPA</button>
@@ -805,6 +806,16 @@
             <input type="file" accept="image/png" id="transImportInput"/>
           </label>
           <button id="transClearSkin" style="margin-top:5px;width:100%;padding:5px;background:rgba(255,23,68,.06);border:1px solid rgba(255,23,68,.25);border-radius:4px;color:rgba(255,23,68,.6);font-family:var(--fh);font-size:8px;letter-spacing:1px;cursor:pointer;transition:all .15s">✕ QUITAR SKIN CUSTOM</button>
+        </div>
+
+        <!-- ─── PANEL: RAZA ─── -->
+        <div class="tm-panel" id="tm-raza">
+          <div class="tm-inherit-note">Elegí una raza distinta para esta transformación. Dejá sin seleccionar para heredar la raza base del personaje.</div>
+          <div class="tm-sec">RAZA DE TRANSFORMACIÓN</div>
+          <div class="tm-grid" id="tmRazaGrid" style="grid-template-columns:repeat(3,1fr);gap:6px"></div>
+          <div style="margin-top:10px;padding:6px 8px;background:rgba(245,196,0,.06);border:1px solid rgba(245,196,0,.15);border-radius:4px;font-family:var(--fh);font-size:8px;color:var(--td);letter-spacing:.5px">
+            ⚠️ Cambiar la raza afecta el spritesheet base de la transformación. El cabello, ropa y cara se actualizarán al guardar.
+          </div>
         </div>
 
         <!-- ─── PANEL: CARA ─── -->
@@ -2144,7 +2155,7 @@ function renderTransList() {
       transformations.splice(i, 1);
       if (activeTransIndex === i) activateTrans(-1);
       else if (activeTransIndex > i) activeTransIndex--;
-      renderTransList(); renderTransSelectorBar();
+      renderTransList(); renderTransSelectorBar(); _saveTransformationsToLS();
     });
     actions.appendChild(editBtn); actions.appendChild(delBtn);
     slot.appendChild(actions);
@@ -2414,19 +2425,58 @@ function _tmPopulateGrids() {
   const gender = _currentGender();
   const app    = _tmAppearance;
 
-  _tmBuildGrid("tmFaceGrid", getCatalogFor("face", race, gender), "face",
+  // ── RAZA de transformación ──
+  const razaGrid = document.getElementById("tmRazaGrid");
+  if (razaGrid) {
+    razaGrid.innerHTML = "";
+    const RACE_ICONS = {human:"🧑",saiyan:"👊",namekian:"🟢",android:"🤖",kaioshin:"🔮",frieza:"👾",Custom:"⭐"};
+    // Opción "heredar base"
+    const noneCard = document.createElement("div");
+    noneCard.className = "item-card" + (!app.raceId ? " active" : "");
+    noneCard.style.cssText = "border-style:dashed;opacity:.7";
+    noneCard.innerHTML = `<div style="font-size:20px;line-height:1;margin-bottom:2px">🔄</div><div class="item-name">BASE</div>`;
+    noneCard.title = "Heredar raza del personaje base";
+    noneCard.addEventListener("click", () => {
+      app.raceId = null;
+      razaGrid.querySelectorAll(".item-card").forEach(c => c.classList.remove("active"));
+      noneCard.classList.add("active");
+      _tmPopulateGrids();
+    });
+    razaGrid.appendChild(noneCard);
+    RACE_CATALOG.forEach(r => {
+      const card = document.createElement("div");
+      card.className = "item-card" + (app.raceId === r.id ? " active" : "");
+      card.innerHTML = `<div style="font-size:20px;line-height:1;margin-bottom:2px">${RACE_ICONS[r.id]||"👾"}</div><div class="item-name">${r.name}</div>`;
+      card.title = r.name;
+      card.addEventListener("click", () => {
+        app.raceId = r.id;
+        razaGrid.querySelectorAll(".item-card").forEach(c => c.classList.remove("active"));
+        card.classList.add("active");
+        // Actualizar las grillas de cara/pelo/ropa para la nueva raza
+        _tmPopulateGrids();
+        invalidateHairCache && invalidateHairCache();
+      });
+      razaGrid.appendChild(card);
+    });
+  }
+
+  // Raza efectiva para las grillas de ropa/pelo/cara (usa override si existe)
+  const effectiveRace  = app.raceId  || race;
+  const effectiveGender = gender;
+
+  _tmBuildGrid("tmFaceGrid", getCatalogFor("face", effectiveRace, effectiveGender), "face",
     item => app.faceId === item.id,
     item => { app.faceId = item.id; invalidateHairCache(); });
-  _tmBuildGrid("tmHairGrid", getCatalogFor("hair", race, gender), "hair",
+  _tmBuildGrid("tmHairGrid", getCatalogFor("hair", effectiveRace, effectiveGender), "hair",
     item => app.hairId === item.id,
     item => { app.hairId = item.id; invalidateHairCache(); });
-  _tmBuildGrid("tmTopGrid",    getCatalogFor("shirt",  race, gender), "shirt",
+  _tmBuildGrid("tmTopGrid",    getCatalogFor("shirt",  effectiveRace, effectiveGender), "shirt",
     item => app.topId    === item.id, item => { app.topId    = item.id; invalidateHairCache(); });
-  _tmBuildGrid("tmBottomGrid", getCatalogFor("pants",  race, gender), "pants",
+  _tmBuildGrid("tmBottomGrid", getCatalogFor("pants",  effectiveRace, effectiveGender), "pants",
     item => app.bottomId === item.id, item => { app.bottomId = item.id; invalidateHairCache(); });
-  _tmBuildGrid("tmShoesGrid",  getCatalogFor("shoes",  race, gender), "shoes",
+  _tmBuildGrid("tmShoesGrid",  getCatalogFor("shoes",  effectiveRace, effectiveGender), "shoes",
     item => app.shoesId  === item.id, item => { app.shoesId  = item.id; invalidateHairCache(); });
-  _tmBuildGrid("tmGlovesGrid", getCatalogFor("gloves", race, gender), "gloves",
+  _tmBuildGrid("tmGlovesGrid", getCatalogFor("gloves", effectiveRace, effectiveGender), "gloves",
     item => app.glovesId === item.id, item => { app.glovesId = item.id; invalidateHairCache(); });
 
   _tmBuildColorChips("tmHairColorChips",  "tmHairColorPicker",  "tmHairColorHex",  HAIR_PALETTE,    "hairColor");
@@ -2555,6 +2605,28 @@ async function saveTransModal() {
   closeTransModal();
   renderTransList();
   renderTransSelectorBar();
+  _saveTransformationsToLS();
+}
+
+/* ══ GUARDAR TRANSFORMACIONES EN LOCALSTORAGE (para game.html) ══ */
+function _saveTransformationsToLS() {
+  try {
+    const toSave = (window.transformations || []).map(tr => ({
+      id: tr.id, name: tr.name, level: tr.level,
+      auraColor: tr.auraColor,
+      icon: tr.icon || "⚡",
+      races: tr.races || ["all"],
+      multipliers: {
+        str: tr.multStr || 1,
+        spd: tr.multSpd || 1,
+        def: tr.multDef || 1,
+        ki:  tr.multKi  || 1,
+      },
+      skinDataURL: tr.skinDataURL || null,
+      appearance: tr.appearance || {},
+    }));
+    localStorage.setItem("dragonCreatorZ_transformations", JSON.stringify(toSave));
+  } catch(e) { console.warn("[DC] Error guardando transformaciones en LS:", e); }
 }
 
 /* ══ HOOK EN EL RENDER LOOP para aplicar skin de transformación ══ */
