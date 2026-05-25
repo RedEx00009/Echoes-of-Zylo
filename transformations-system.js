@@ -77,6 +77,7 @@
       this.icon        = config.icon        || "⚡";
       this.description = config.description || "";
       this.skinDataURL = config.skinDataURL || null;
+      this.appearance  = { ...(config.appearance || {}) };
 
       // Runtime (no se persiste en JSON crudo)
       this.skinImage   = null;
@@ -127,6 +128,7 @@
         description: this.description,
         multipliers: { ...this.multipliers },
         skinDataURL: this.skinDataURL,
+        appearance:  { ...this.appearance },
       };
     }
 

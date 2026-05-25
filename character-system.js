@@ -373,6 +373,7 @@
       "faceId", "faceColor", "browColor", "pupilColor", "eyeColor",
       "hairId", "hairColor", "topId", "bottomId", "shoesId",
       "glovesId", "skinColor", "auraId", "auraColor", "accessoryId",
+      "clothColorA", "clothColorB",
     ].forEach((key) => { if (custom[key] !== undefined) overrides[key] = custom[key]; });
     return Object.assign({}, app, overrides, {
       variantId,

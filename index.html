@@ -303,6 +303,15 @@
     .trans-preview-btn{padding:4px 10px;font-family:var(--fh);font-size:7px;letter-spacing:1px;background:var(--bg-card);border:2px solid var(--border);border-radius:4px;color:var(--td);cursor:pointer;transition:all var(--tr);position:relative}
     .trans-preview-btn:hover{border-color:var(--accent);color:var(--tp)}
     .trans-preview-btn.active{border-color:var(--btn-color,var(--magenta));color:var(--btn-color,var(--magenta));background:rgba(224,64,251,.1)}
+    .ki-attack-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:8px;margin-bottom:7px}
+    .ki-attack-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;font-family:var(--fh);font-size:8px;letter-spacing:1px;color:var(--tp)}
+    .ki-attack-grid{display:grid;grid-template-columns:1fr 52px;gap:5px;margin-bottom:5px}
+    .ki-attack-card label{display:block;font-family:var(--fh);font-size:7px;letter-spacing:1px;color:var(--td);margin-bottom:3px}
+    .ki-attack-card input,.ki-attack-card select{width:100%;background:var(--bg-deep);border:1px solid var(--border);border-radius:4px;color:var(--tp);font-family:var(--fb);font-size:10px;padding:5px;outline:none}
+    .ki-attack-card input:focus,.ki-attack-card select:focus{border-color:var(--cyan)}
+    .ki-attack-row{display:grid;grid-template-columns:52px 1fr 1fr;gap:5px}
+    .ki-color-row{display:flex;gap:5px;align-items:center}
+    .ki-color-row input[type="color"]{width:28px;height:28px;padding:2px;flex-shrink:0}
     .toast{padding:8px 14px;border-radius:var(--r);font-family:var(--fh);font-size:9px;letter-spacing:1px;pointer-events:none;animation:toastIn .25s ease;box-shadow:0 4px 16px rgba(0,0,0,.5)}
     @keyframes toastIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
     .toast.success{background:#0d2a1e;border:1px solid #00ff9d;color:#00ff9d}
@@ -607,6 +616,17 @@
             letter-spacing:1px;background:rgba(0,229,255,.1);border:2px solid var(--cyan);
             border-radius:4px;color:var(--cyan);cursor:pointer;transition:all var(--tr)">BASE</button>
         </div>
+
+        <div class="sec-label" style="margin-top:14px;border-top:1px solid var(--border);padding-top:10px">
+          ATAQUES DE KI
+        </div>
+        <div style="font-size:9px;color:var(--td);line-height:1.5;font-family:var(--fb);margin-bottom:8px">
+          Estos valores se usan en combate para <span style="color:var(--cyan)">Especial 1</span> y <span style="color:var(--accent)">Especial 2</span>.
+        </div>
+        <div id="kiAttackEditor"></div>
+        <button id="btnResetKiAttacks" style="width:100%;padding:7px;background:rgba(0,229,255,.05);border:1px dashed rgba(0,229,255,.28);border-radius:var(--r);color:var(--cyan);font-family:var(--fh);font-size:8px;letter-spacing:1px;cursor:pointer;margin-bottom:10px">
+          RESTAURAR ATAQUES BASE
+        </button>
 
         <!-- Preview de stats -->
         <div class="sec-label">STATS CON FORMA ACTIVA</div>
@@ -1012,6 +1032,11 @@ let activeSlotIndex = 0;
 let uiFlipped = false, uiZoom = 1;
 let _auraPhase = 0;
 let activeSheet = "base", activeAnimKey = "idle", activeViewKey = null;
+const DEFAULT_KI_ATTACKS = {
+  special1: { id:"special1", name:"Ataque Especial 1", icon:"💥", color:"#00e5ff", cost:18, power:1.0, style:"blast" },
+  special2: { id:"special2", name:"Ataque Especial 2", icon:"🌟", color:"#fdd835", cost:28, power:1.4, style:"beam" },
+};
+let kiAttacks = _normalizeKiAttacks(null);
 
 const charState = {
   name:       "Guerrero Z",
@@ -1044,6 +1069,92 @@ function showToast(msg, type="success") {
 
 function _currentGender() { return player.appearance.gender || "male"; }
 function _currentRace()   { return player.appearance.raceId || "human"; }
+
+function _normalizeKiAttack(id, data) {
+  const base = DEFAULT_KI_ATTACKS[id] || DEFAULT_KI_ATTACKS.special1;
+  const src = data && typeof data === "object" ? data : {};
+  const rawCost = parseInt(src.cost ?? base.cost, 10);
+  const rawPower = parseFloat(src.power ?? base.power);
+  const cost = Math.max(0, Math.min(100, Number.isFinite(rawCost) ? rawCost : base.cost));
+  const power = Math.max(0.3, Math.min(5, Number.isFinite(rawPower) ? rawPower : base.power));
+  const style = ["blast", "beam", "burst"].includes(src.style) ? src.style : base.style;
+  return {
+    id,
+    name: String(src.name || base.name).slice(0, 24),
+    icon: String(src.icon || base.icon).slice(0, 4),
+    color: /^#[0-9a-f]{6}$/i.test(src.color || "") ? src.color : base.color,
+    cost,
+    power,
+    style,
+  };
+}
+
+function _normalizeKiAttacks(data) {
+  return {
+    special1: _normalizeKiAttack("special1", data?.special1),
+    special2: _normalizeKiAttack("special2", data?.special2),
+  };
+}
+
+function _serializeKiAttacks() {
+  return _normalizeKiAttacks(kiAttacks);
+}
+
+function _saveKiAttacksToStorage() {
+  kiAttacks = _normalizeKiAttacks(kiAttacks);
+  try { localStorage.setItem("dragonCreatorZ_kiAttacks", JSON.stringify(kiAttacks)); } catch(e) {}
+  if (savedSlots?.[activeSlotIndex]) {
+    savedSlots[activeSlotIndex].kiAttacks = _serializeKiAttacks();
+    saveSlots();
+  }
+}
+
+function _loadKiAttacksFromStorage() {
+  let data = savedSlots?.[activeSlotIndex]?.kiAttacks || null;
+  if (!data) {
+    try {
+      const raw = localStorage.getItem("dragonCreatorZ_kiAttacks");
+      data = raw ? JSON.parse(raw) : null;
+    } catch(e) {}
+  }
+  kiAttacks = _normalizeKiAttacks(data);
+}
+
+function renderKiAttackEditor() {
+  const wrap = document.getElementById("kiAttackEditor");
+  if (!wrap) return;
+  kiAttacks = _normalizeKiAttacks(kiAttacks);
+  const labels = { special1:"ESPECIAL 1", special2:"ESPECIAL 2" };
+  const styleOptions = [
+    ["blast", "Orbe"],
+    ["beam", "Rayo"],
+    ["burst", "Explosión"],
+  ];
+  wrap.innerHTML = ["special1", "special2"].map(id => {
+    const atk = kiAttacks[id];
+    return `
+      <div class="ki-attack-card" data-ki-attack="${id}">
+        <div class="ki-attack-head"><span>${atk.icon} ${labels[id]}</span><span style="color:${atk.color}">${atk.name}</span></div>
+        <div class="ki-attack-grid">
+          <div><label>NOMBRE</label><input data-ki-field="name" maxlength="24" value="${_escapeAttr(atk.name)}"></div>
+          <div><label>ICONO</label><input data-ki-field="icon" maxlength="4" value="${_escapeAttr(atk.icon)}"></div>
+        </div>
+        <div class="ki-attack-row">
+          <div><label>KI</label><input data-ki-field="cost" type="number" min="0" max="100" value="${atk.cost}"></div>
+          <div><label>PODER</label><input data-ki-field="power" type="number" min="0.3" max="5" step="0.1" value="${atk.power}"></div>
+          <div><label>TIPO</label><select data-ki-field="style">${styleOptions.map(([value, label]) => `<option value="${value}" ${atk.style === value ? "selected" : ""}>${label}</option>`).join("")}</select></div>
+        </div>
+        <div class="ki-color-row" style="margin-top:5px">
+          <input data-ki-field="color" type="color" value="${atk.color}">
+          <span style="font-family:var(--fh);font-size:8px;letter-spacing:1px;color:var(--td)">${atk.color.toUpperCase()}</span>
+        </div>
+      </div>`;
+  }).join("");
+}
+
+function _escapeAttr(value) {
+  return String(value ?? "").replace(/[&<>"']/g, ch => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", "\"":"&quot;", "'":"&#39;" }[ch]));
+}
 
 function _drawThumb(canvas, item, cat) {
   const ctx = canvas.getContext("2d");
@@ -1713,7 +1824,8 @@ function saveToSlot(i) {
       level:1, race:_currentRace(), gender:_currentGender(), variantId,
       variantCustomizations: _stripVariants(player.appearance.variantCustomizations),
       combatCustomization:   (()=>{const c=Object.assign({},player.appearance.combatCustomization||{});delete c.spriteImage;return c;})(),
-      faceId:player.appearance.faceId, hairId:player.appearance.hairId,
+      faceId:player.appearance.faceId, faceColor:player.appearance.faceColor||null,
+      hairId:player.appearance.hairId,
       topId:player.appearance.topId, bottomId:player.appearance.bottomId,
       shoesId:player.appearance.shoesId, glovesId:charState.glovesId||"gm0",
       auraId:charState.auraId||"a0", auraColor:charState.auraColor||"#fdd835",
@@ -1724,6 +1836,8 @@ function saveToSlot(i) {
       accessoryId:charState.accessoryId||"ac_none",
       spriteSheets:{sheet,base:sheet,pelea:sheet,especial:sheet},
       layerImports: Object.assign({},layerImports),
+      transformations: _serializeTransformationsForSave(),
+      kiAttacks: _serializeKiAttacks(),
       displayW: parseInt(document.getElementById("spriteWSlider")?.value||"180",10)||180,
       displayH: parseInt(document.getElementById("spriteHSlider")?.value||"220",10)||220,
     };
@@ -1743,6 +1857,7 @@ async function loadFromSlot(i) {
     player.appearance.skinColor=d.skinColor||"#e8c898";
     player.appearance.eyeColor =d.eyeColor||"#3a2a1a";
     player.appearance.hairColor=d.hairColor||"#1a1a1a";
+    player.appearance.faceColor = d.faceColor || null;
     player.appearance.browColor  = d.browColor  || null;
     player.appearance.pupilColor = d.pupilColor || null;
     player.appearance.clothColorA = d.clothColorA || null;
@@ -1756,6 +1871,8 @@ async function loadFromSlot(i) {
     charState.auraId  =d.auraId||"a0";    player.appearance.auraId  =charState.auraId;
     charState.auraColor=d.auraColor||"#fdd835"; player.appearance.auraColor=charState.auraColor;
     charState.accessoryId=d.accessoryId||"ac_none"; player.appearance.accessoryId=charState.accessoryId;
+    kiAttacks = _normalizeKiAttacks(d.kiAttacks);
+    renderKiAttackEditor();
 
     // Restaurar capas importadas
     if (d.layerImports) {
@@ -1868,6 +1985,7 @@ function renderSlots() {
           topId:d.topId||getDefaultIds(sr,sg).topId,bottomId:d.bottomId||getDefaultIds(sr,sg).bottomId,
           shoesId:d.shoesId||getDefaultIds(sr,sg).shoesId,
           skinColor:d.skinColor||"#e8c898",hairColor:d.hairColor||"#1a1a1a",
+          faceColor:d.faceColor||null,clothColorA:d.clothColorA||null,clothColorB:d.clothColorB||null,
           glovesId:slotGloves,auraId:"a0",auraColor:"#fdd835",accessoryId:"ac_none"}};
         drawPlayer(mctx,16,40,mp,imageMap,null,{glovesId:slotGloves,auraId:"a0",auraColor:"#fdd835",accessoryId:"ac_none",auraPhase:0,viewKey:null});
       }catch(e){console.warn(e);}
@@ -1906,7 +2024,9 @@ function exportCharacterToJson() {
     appearance:{
       raceId:_currentRace(), gender:_currentGender(), skinColor:player.appearance.skinColor,
       eyeColor:player.appearance.eyeColor, hairColor:player.appearance.hairColor,
+      faceColor:player.appearance.faceColor||null,
       browColor:player.appearance.browColor||null, pupilColor:player.appearance.pupilColor||null,
+      clothColorA:player.appearance.clothColorA||null, clothColorB:player.appearance.clothColorB||null,
       faceId:player.appearance.faceId, hairId:player.appearance.hairId,
       topId:player.appearance.topId, bottomId:player.appearance.bottomId,
       shoesId:player.appearance.shoesId, glovesId:charState.glovesId||"gm0",
@@ -1915,6 +2035,7 @@ function exportCharacterToJson() {
       spriteDataURL:cfg.spriteDataURL||null,
     },
     layerImports: Object.assign({},layerImports),
+    kiAttacks: _serializeKiAttacks(),
   };
   const safeName=(payload.name).replace(/[^a-zA-Z0-9-_]/g,"_");
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
@@ -1935,8 +2056,11 @@ async function importCharacterFromJson(file) {
       if(app.skinColor) player.appearance.skinColor=app.skinColor;
       if(app.eyeColor)  player.appearance.eyeColor=app.eyeColor;
       if(app.hairColor) player.appearance.hairColor=app.hairColor;
+      if(app.faceColor) player.appearance.faceColor=app.faceColor;
       if(app.browColor)  { player.appearance.browColor=app.browColor;  refreshColorPicker("browColorPicker","browColorHex","browColorChips",app.browColor,BROW_PALETTE); }
       if(app.pupilColor) { player.appearance.pupilColor=app.pupilColor; refreshColorPicker("pupilColorPicker","pupilColorHex","pupilColorChips",app.pupilColor,PUPIL_PALETTE); }
+      if(app.clothColorA) { player.appearance.clothColorA=app.clothColorA; refreshColorPicker("clothColorAPicker","clothColorAHex","clothColorAChips",app.clothColorA,CLOTH_A_PALETTE); }
+      if(app.clothColorB) { player.appearance.clothColorB=app.clothColorB; refreshColorPicker("clothColorBPicker","clothColorBHex","clothColorBChips",app.clothColorB,CLOTH_B_PALETTE); }
       if(app.faceId)    player.appearance.faceId=app.faceId;
       if(app.hairId)    player.appearance.hairId=app.hairId;
       if(app.topId)     player.appearance.topId=app.topId;
@@ -1946,6 +2070,7 @@ async function importCharacterFromJson(file) {
       if(app.auraId)    {player.appearance.auraId=app.auraId;charState.auraId=app.auraId;}
       if(app.auraColor) {player.appearance.auraColor=app.auraColor;charState.auraColor=app.auraColor;}
       if(app.accessoryId){player.appearance.accessoryId=app.accessoryId;charState.accessoryId=app.accessoryId;}
+      if(payload.kiAttacks || app.kiAttacks) { kiAttacks = _normalizeKiAttacks(payload.kiAttacks || app.kiAttacks); renderKiAttackEditor(); }
       if(payload.name)  document.getElementById("charName").value=payload.name;
       invalidateHairCache(); buildAllGrids(); updateStats();
       showToast("Personaje importado","success");
@@ -1972,25 +2097,37 @@ function initEvents() {
       saveToSlot(activeSlotIndex);
       // Guardar transformaciones en localStorage para que game.html las pueda leer
       try {
-        const transToSave = (window.transformations || []).map(tr => ({
-          id: tr.id, name: tr.name, level: tr.level,
-          auraColor: tr.auraColor,
-          icon: tr.icon || "⚡",
-          races: tr.races || ["all"],
-          multipliers: {
-            str: tr.multStr || 1,
-            spd: tr.multSpd || 1,
-            def: tr.multDef || 1,
-            ki:  tr.multKi  || 1,
-          },
-          skinDataURL: tr.skinDataURL || null,
-          appearance: tr.appearance || {},
-        }));
+        const transToSave = _serializeTransformationsForSave();
         localStorage.setItem("dragonCreatorZ_transformations", JSON.stringify(transToSave));
         localStorage.setItem("dragonCreatorZ_trans_slot", String(activeSlotIndex));
       } catch(te) { console.warn("[DC] Error guardando transformaciones:", te); }
       setTimeout(()=>{window.location.href=`game.html?slot=${activeSlotIndex}`;},200);
     }catch(e){console.error(e);showToast("Error al iniciar","error");}
+  });
+  document.getElementById("kiAttackEditor")?.addEventListener("input", e => {
+    const card = e.target.closest("[data-ki-attack]");
+    const field = e.target.dataset.kiField;
+    if (!card || !field) return;
+    const id = card.dataset.kiAttack;
+    kiAttacks[id] = Object.assign({}, kiAttacks[id], { [field]: e.target.value });
+    kiAttacks[id] = _normalizeKiAttack(id, kiAttacks[id]);
+    _saveKiAttacksToStorage();
+  });
+  document.getElementById("kiAttackEditor")?.addEventListener("change", e => {
+    const card = e.target.closest("[data-ki-attack]");
+    const field = e.target.dataset.kiField;
+    if (!card || !field) return;
+    const id = card.dataset.kiAttack;
+    kiAttacks[id] = Object.assign({}, kiAttacks[id], { [field]: e.target.value });
+    kiAttacks[id] = _normalizeKiAttack(id, kiAttacks[id]);
+    _saveKiAttacksToStorage();
+    renderKiAttackEditor();
+  });
+  document.getElementById("btnResetKiAttacks")?.addEventListener("click", () => {
+    kiAttacks = _normalizeKiAttacks(null);
+    _saveKiAttacksToStorage();
+    renderKiAttackEditor();
+    showToast("Ataques de ki restaurados", "warning");
   });
 }
 
@@ -2026,6 +2163,8 @@ async function init() {
     player.appearance.pupilColor = player.appearance.pupilColor || "#2979ff";
     player.appearance.clothColorA = player.appearance.clothColorA || null;
     player.appearance.clothColorB = player.appearance.clothColorB || null;
+    _loadKiAttacksFromStorage();
+    renderKiAttackEditor();
     buildColorPicker("browColorChips","browColorPicker","browColorHex",BROW_PALETTE,"browColor","browColor");
     buildColorPicker("pupilColorChips","pupilColorPicker","pupilColorHex",PUPIL_PALETTE,"pupilColor","pupilColor");
     buildColorPicker("clothColorAChips","clothColorAPicker","clothColorAHex",CLOTH_A_PALETTE,"clothColorA","clothColorA");
@@ -2059,6 +2198,37 @@ let activeTransIndex = -1; // -1 = forma base
 let editingTransIndex = null; // null = nueva, N = editar
 let _transEditSkinDataURL = null; // dataURL temporal del spritesheet custom
 
+Object.defineProperty(window, "transformations", {
+  configurable: true,
+  get() { return transformations; },
+  set(value) { transformations = Array.isArray(value) ? value : []; },
+});
+Object.defineProperty(window, "activeTransIndex", {
+  configurable: true,
+  get() { return activeTransIndex; },
+  set(value) {
+    const n = parseInt(value, 10);
+    activeTransIndex = Number.isFinite(n) ? n : -1;
+  },
+});
+
+function _serializeTransformationsForSave(list = transformations) {
+  return (Array.isArray(list) ? list : []).map(tr => ({
+    id: tr.id, name: tr.name, level: tr.level,
+    auraColor: tr.auraColor,
+    icon: tr.icon || "⚡",
+    races: tr.races || ["all"],
+    multipliers: {
+      str: tr.multStr || tr.multipliers?.str || 1,
+      spd: tr.multSpd || tr.multipliers?.spd || 1,
+      def: tr.multDef || tr.multipliers?.def || 1,
+      ki:  tr.multKi  || tr.multipliers?.ki  || 1,
+    },
+    skinDataURL: tr.skinDataURL || null,
+    appearance: tr.appearance || {},
+  }));
+}
+
 /* ── Modelo de una transformación ── */
 function _makeTrans(data={}) {
   return {
@@ -2067,16 +2237,18 @@ function _makeTrans(data={}) {
     level: data.level || 1,
     auraColor: data.auraColor || "#fdd835",
     multHp:  data.multHp  || 1,
-    multKi:  data.multKi  || 1,
-    multStr: data.multStr || 1,
-    multDef: data.multDef || 1,
-    multSpd: data.multSpd || 1,
+    multKi:  data.multKi  || data.multipliers?.ki  || 1,
+    multStr: data.multStr || data.multipliers?.str || 1,
+    multDef: data.multDef || data.multipliers?.def || 1,
+    multSpd: data.multSpd || data.multipliers?.spd || 1,
     skinDataURL: data.skinDataURL || null,
     skinImage:   null, // runtime only
     // ── Apariencia visual propia de la transformación ──
     // null = heredar del personaje base; valor = override
     appearance: {
+      raceId:     data.appearance?.raceId     ?? null,
       faceId:     data.appearance?.faceId     ?? null,
+      faceColor:  data.appearance?.faceColor  ?? null,
       hairId:     data.appearance?.hairId     ?? null,
       topId:      data.appearance?.topId      ?? null,
       bottomId:   data.appearance?.bottomId   ?? null,
@@ -2316,7 +2488,9 @@ function _tmStartPreview() {
     // Player temporal con el draft de apariencia
     const tp = { direction:1, appearance: Object.assign({}, player.appearance) };
     const app = _tmAppearance;
+    if (app.raceId)      tp.appearance.raceId      = app.raceId;
     if (app.faceId)      tp.appearance.faceId      = app.faceId;
+    if (app.faceColor)   tp.appearance.faceColor   = app.faceColor;
     if (app.hairId)      tp.appearance.hairId      = app.hairId;
     if (app.topId)       tp.appearance.topId       = app.topId;
     if (app.bottomId)    tp.appearance.bottomId    = app.bottomId;
@@ -2608,25 +2782,51 @@ async function saveTransModal() {
   _saveTransformationsToLS();
 }
 
+function _buildAppearanceWithTrans(baseAppearance, tr) {
+  const app = Object.assign({}, baseAppearance || {});
+  if (!tr?.appearance) {
+    return app;
+  }
+  Object.entries(tr.appearance).forEach(([key, value]) => {
+    if (value !== null && value !== undefined && value !== "") {
+      app[key] = value;
+    }
+  });
+  if (tr.auraColor) {
+    app.auraColor = tr.auraColor;
+  }
+  return app;
+}
+
 /* ══ GUARDAR TRANSFORMACIONES EN LOCALSTORAGE (para game.html) ══ */
 function _saveTransformationsToLS() {
   try {
-    const toSave = (window.transformations || []).map(tr => ({
-      id: tr.id, name: tr.name, level: tr.level,
-      auraColor: tr.auraColor,
-      icon: tr.icon || "⚡",
-      races: tr.races || ["all"],
-      multipliers: {
-        str: tr.multStr || 1,
-        spd: tr.multSpd || 1,
-        def: tr.multDef || 1,
-        ki:  tr.multKi  || 1,
-      },
-      skinDataURL: tr.skinDataURL || null,
-      appearance: tr.appearance || {},
-    }));
+    const toSave = _serializeTransformationsForSave();
     localStorage.setItem("dragonCreatorZ_transformations", JSON.stringify(toSave));
+    if (savedSlots[activeSlotIndex]) {
+      savedSlots[activeSlotIndex].transformations = toSave;
+      saveSlots();
+      renderSlots();
+    }
   } catch(e) { console.warn("[DC] Error guardando transformaciones en LS:", e); }
+}
+
+async function _loadTransformationsFromLS() {
+  let saved = [];
+  try {
+    const slotList = savedSlots?.[activeSlotIndex]?.transformations;
+    if (Array.isArray(slotList) && slotList.length) saved = slotList;
+  } catch(e) {}
+  if (!saved.length) {
+    try {
+      const raw = localStorage.getItem("dragonCreatorZ_transformations");
+      const parsed = raw ? JSON.parse(raw) : [];
+      if (Array.isArray(parsed)) saved = parsed;
+    } catch(e) {}
+  }
+  transformations = saved.map(data => _makeTrans(data));
+  activeTransIndex = -1;
+  await Promise.all(transformations.map(tr => _loadTransSkinImage(tr)));
 }
 
 /* ══ HOOK EN EL RENDER LOOP para aplicar skin de transformación ══ */
@@ -2634,7 +2834,9 @@ function _saveTransformationsToLS() {
 window._origDrawPlayerFn = drawPlayer;
 
 /* ══ INTEGRACIÓN CON TABS DEL PANEL CENTRAL ══ */
-function _initTransTab() {
+async function _initTransTab() {
+  await _loadTransformationsFromLS();
+
   // Extender el handler de sheet-tabs para incluir "trans"
   document.querySelectorAll(".sheet-tab[data-sheet='trans']").forEach(tab => {
     tab.addEventListener("click", () => {
@@ -2749,7 +2951,7 @@ const _origInit = init;
 // un hook al final via el evento "load".
 window.addEventListener("load", () => {
   setTimeout(() => {
-    try { _initTransTab(); } catch(e) { console.warn("Trans init error:", e); }
+    _initTransTab().catch(e => console.warn("Trans init error:", e));
   }, 100);
 });
 
@@ -2781,24 +2983,24 @@ window._activeLoop = function transLoop(now) {
   // Inyectar skin de transformación temporalmente
   const tr = activeTransIndex >= 0 ? transformations[activeTransIndex] : null;
   const varId = player.appearance?.variantId || "base";
-  let origImg = null, origURL = null;
+  const previewPlayer = tr ? Object.assign({}, player, {
+    appearance: _buildAppearanceWithTrans(player.appearance, tr),
+  }) : player;
   if (tr?.skinImage) {
-    if (!player.appearance.variantCustomizations) player.appearance.variantCustomizations = {};
-    if (!player.appearance.variantCustomizations[varId]) player.appearance.variantCustomizations[varId] = {};
-    origImg = player.appearance.variantCustomizations[varId].spriteImage;
-    origURL = player.appearance.variantCustomizations[varId].spriteDataURL;
-    player.appearance.variantCustomizations[varId].spriteImage   = tr.skinImage;
-    player.appearance.variantCustomizations[varId].spriteDataURL = tr.skinDataURL;
+    previewPlayer.appearance.variantCustomizations = Object.assign({}, previewPlayer.appearance.variantCustomizations || {});
+    previewPlayer.appearance.variantCustomizations[varId] = Object.assign({}, previewPlayer.appearance.variantCustomizations[varId] || {});
+    previewPlayer.appearance.variantCustomizations[varId].spriteImage   = tr.skinImage;
+    previewPlayer.appearance.variantCustomizations[varId].spriteDataURL = tr.skinDataURL;
   }
   previewCtx.clearRect(0,0,previewCanvas.width,previewCanvas.height);
-  window._origDrawPlayerFn(previewCtx, previewCanvas.width/2, previewCanvas.height-16, player, imageMap, animator, ps);
+  window._origDrawPlayerFn(previewCtx, previewCanvas.width/2, previewCanvas.height-16, previewPlayer, imageMap, animator, ps);
   finalCtx.clearRect(0,0,finalCanvas.width,finalCanvas.height);
   finalCtx.save();
   const fw=finalCanvas.width, fh=finalCanvas.height;
   finalCtx.translate(fw/2,fh/2);
   if (uiFlipped) finalCtx.scale(-uiZoom,uiZoom); else finalCtx.scale(uiZoom,uiZoom);
   finalCtx.translate(-fw/2,-fh/2);
-  const fp = Object.assign({},player,{direction:1,appearance:Object.assign({},player.appearance)});
+  const fp = Object.assign({},player,{direction:1,appearance:_buildAppearanceWithTrans(player.appearance, tr)});
   if (tr?.skinImage) {
     if (!fp.appearance.variantCustomizations) fp.appearance.variantCustomizations = {};
     fp.appearance.variantCustomizations = Object.assign({},fp.appearance.variantCustomizations);
@@ -2809,11 +3011,6 @@ window._activeLoop = function transLoop(now) {
   }
   window._origDrawPlayerFn(finalCtx, fw/2, fh-16, fp, imageMap, finalAnim, ps);
   finalCtx.restore();
-  // Restaurar
-  if (tr?.skinImage && origImg !== undefined) {
-    player.appearance.variantCustomizations[varId].spriteImage   = origImg;
-    player.appearance.variantCustomizations[varId].spriteDataURL = origURL;
-  }
 };
 
 /* ════════════════════════════════════════════════════════
