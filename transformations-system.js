@@ -78,6 +78,9 @@
       this.description = config.description || "";
       this.skinDataURL = config.skinDataURL || null;
       this.appearance  = { ...(config.appearance || {}) };
+      // Tamaño de display propio de esta transformación (0 = heredar base)
+      this.displayW    = config.displayW ? Math.max(40, Math.min(400, parseInt(config.displayW) || 0)) : 0;
+      this.displayH    = config.displayH ? Math.max(40, Math.min(500, parseInt(config.displayH) || 0)) : 0;
 
       // Runtime (no se persiste en JSON crudo)
       this.skinImage   = null;
@@ -129,6 +132,8 @@
         multipliers: { ...this.multipliers },
         skinDataURL: this.skinDataURL,
         appearance:  { ...this.appearance },
+        displayW:    this.displayW || 0,
+        displayH:    this.displayH || 0,
       };
     }
 

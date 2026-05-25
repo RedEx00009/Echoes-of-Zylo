@@ -826,6 +826,29 @@
             <input type="file" accept="image/png" id="transImportInput"/>
           </label>
           <button id="transClearSkin" style="margin-top:5px;width:100%;padding:5px;background:rgba(255,23,68,.06);border:1px solid rgba(255,23,68,.25);border-radius:4px;color:rgba(255,23,68,.6);font-family:var(--fh);font-size:8px;letter-spacing:1px;cursor:pointer;transition:all .15s">✕ QUITAR SKIN CUSTOM</button>
+
+          <!-- ── ESCALA DE TAMAÑO ── -->
+          <div class="tm-sec" style="margin-top:14px;border-top:1px solid var(--border);padding-top:10px">📐 TAMAÑO EN TRANSFORMACIÓN</div>
+          <div style="font-size:9px;color:var(--td);margin-bottom:8px;font-family:var(--fb);line-height:1.4">Ajusta el ancho y alto del sprite cuando esta transformación está activa. No afecta el tamaño base.</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div>
+              <label class="tm-sec" style="margin:0 0 4px">ANCHO (W)</label>
+              <div style="display:flex;align-items:center;gap:5px">
+                <input id="tmSpriteWSlider" type="range" min="40" max="400" step="4" value="180" style="flex:1;accent-color:var(--magenta);cursor:pointer"/>
+                <span id="tmSpriteWVal" style="font-family:var(--fh);font-size:10px;color:var(--magenta);min-width:34px;text-align:right">180</span>
+              </div>
+              <input id="tmSpriteWInput" type="number" min="40" max="400" step="4" value="180" style="width:100%;margin-top:4px;padding:4px 7px;background:var(--bg-card);border:1px solid var(--border);border-radius:4px;color:var(--tp);font-family:var(--fh);font-size:10px;outline:none;text-align:center"/>
+            </div>
+            <div>
+              <label class="tm-sec" style="margin:0 0 4px">ALTO (H)</label>
+              <div style="display:flex;align-items:center;gap:5px">
+                <input id="tmSpriteHSlider" type="range" min="40" max="500" step="4" value="220" style="flex:1;accent-color:var(--magenta);cursor:pointer"/>
+                <span id="tmSpriteHVal" style="font-family:var(--fh);font-size:10px;color:var(--magenta);min-width:34px;text-align:right">220</span>
+              </div>
+              <input id="tmSpriteHInput" type="number" min="40" max="500" step="4" value="220" style="width:100%;margin-top:4px;padding:4px 7px;background:var(--bg-card);border:1px solid var(--border);border-radius:4px;color:var(--tp);font-family:var(--fh);font-size:10px;outline:none;text-align:center"/>
+            </div>
+          </div>
+          <button id="tmBtnResetSize" style="width:100%;margin-top:7px;padding:5px;background:rgba(224,64,251,.06);border:1px solid rgba(224,64,251,.25);border-radius:4px;color:var(--magenta);font-family:var(--fh);font-size:8px;letter-spacing:1px;cursor:pointer;transition:all .15s">↺ RESETEAR AL TAMAÑO BASE</button>
         </div>
 
         <!-- ─── PANEL: RAZA ─── -->
@@ -2226,6 +2249,8 @@ function _serializeTransformationsForSave(list = transformations) {
     },
     skinDataURL: tr.skinDataURL || null,
     appearance: tr.appearance || {},
+    displayW: tr.displayW || 0,
+    displayH: tr.displayH || 0,
   }));
 }
 
@@ -2243,6 +2268,8 @@ function _makeTrans(data={}) {
     multSpd: data.multSpd || data.multipliers?.spd || 1,
     skinDataURL: data.skinDataURL || null,
     skinImage:   null, // runtime only
+    displayW: data.displayW ? Math.max(40, Math.min(400, parseInt(data.displayW) || 0)) : 0,
+    displayH: data.displayH ? Math.max(40, Math.min(500, parseInt(data.displayH) || 0)) : 0,
     // ── Apariencia visual propia de la transformación ──
     // null = heredar del personaje base; valor = override
     appearance: {
@@ -2397,6 +2424,15 @@ function activateTrans(idx) {
   const badge = document.getElementById("transPreviewBadge");
   if (idx === -1) {
     badge?.classList.add("hidden");
+    // Restaurar tamaño base al volver a forma base
+    const _baseW = parseInt(document.getElementById("spriteWSlider")?.value || "180", 10) || 180;
+    const _baseH = parseInt(document.getElementById("spriteHSlider")?.value || "220", 10) || 220;
+    const pc = document.getElementById("previewCanvas");
+    if (pc && (pc.width !== _baseW || pc.height !== _baseH)) {
+      pc.width = _baseW; pc.height = _baseH;
+      const CS = window.CharacterSystem;
+      if (CS && typeof CS.setDisplaySize === "function") CS.setDisplaySize(_baseW, _baseH);
+    }
   } else {
     const tr = transformations[idx];
     if (badge) {
@@ -2408,6 +2444,17 @@ function activateTrans(idx) {
     }
     // Actualizar aura al color de la transformación
     charState.auraColor = tr.auraColor || charState.auraColor;
+    // Aplicar tamaño propio de la transformación (si difiere del base)
+    if (tr.displayW || tr.displayH) {
+      const _trW = tr.displayW || 180;
+      const _trH = tr.displayH || 220;
+      const pc = document.getElementById("previewCanvas");
+      if (pc && (pc.width !== _trW || pc.height !== _trH)) {
+        pc.width = _trW; pc.height = _trH;
+        const CS = window.CharacterSystem;
+        if (CS && typeof CS.setDisplaySize === "function") CS.setDisplaySize(_trW, _trH);
+      }
+    }
   }
   // Update stats con multiplicadores
   updateStatsWithTrans();
@@ -2684,6 +2731,16 @@ function openTransModal(editIdx=null) {
   document.getElementById("tsMult_def").value = tr?.multDef ?? 1;
   document.getElementById("tsMult_spd").value = tr?.multSpd ?? 1;
 
+  // Cargar tamaño guardado de la transformación (o usar el tamaño base actual)
+  const _baseW = parseInt(document.getElementById("spriteWSlider")?.value || "180", 10) || 180;
+  const _baseH = parseInt(document.getElementById("spriteHSlider")?.value || "220", 10) || 220;
+  const _tmW   = tr?.displayW || _baseW;
+  const _tmH   = tr?.displayH || _baseH;
+  const _tmWSlider = document.getElementById("tmSpriteWSlider");
+  const _tmHSlider = document.getElementById("tmSpriteHSlider");
+  if (_tmWSlider) { _tmWSlider.value = _tmW; document.getElementById("tmSpriteWVal").textContent = _tmW; document.getElementById("tmSpriteWInput").value = _tmW; }
+  if (_tmHSlider) { _tmHSlider.value = _tmH; document.getElementById("tmSpriteHVal").textContent = _tmH; document.getElementById("tmSpriteHInput").value = _tmH; }
+
   const hasSkin = !!tr?.skinDataURL;
   document.getElementById("transImportLabel").className = "trans-skin-import" + (hasSkin ? " loaded" : "");
   document.getElementById("transImportFname").textContent = hasSkin ? "Skin cargada ✓" : "Sin cargar";
@@ -2751,12 +2808,14 @@ async function saveTransModal() {
   const multStr   = parseFloat(document.getElementById("tsMult_str").value) || 1;
   const multDef   = parseFloat(document.getElementById("tsMult_def").value) || 1;
   const multSpd   = parseFloat(document.getElementById("tsMult_spd").value) || 1;
+  const tmDisplayW = parseInt(document.getElementById("tmSpriteWInput")?.value || "180", 10) || 180;
+  const tmDisplayH = parseInt(document.getElementById("tmSpriteHInput")?.value || "220", 10) || 220;
 
   // Limpiar nulos del draft (solo guardar overrides reales)
   const cleanAppearance = {};
   Object.entries(_tmAppearance).forEach(([k, v]) => { if (v !== null && v !== undefined && v !== "") cleanAppearance[k] = v; });
 
-  const data = { name, level, auraColor, multHp:1, multKi, multStr, multDef, multSpd, appearance: cleanAppearance };
+  const data = { name, level, auraColor, multHp:1, multKi, multStr, multDef, multSpd, displayW: tmDisplayW, displayH: tmDisplayH, appearance: cleanAppearance };
   if (_transEditSkinDataURL) data.skinDataURL = _transEditSkinDataURL;
 
   if (editingTransIndex !== null) {
@@ -2934,6 +2993,37 @@ async function _initTransTab() {
     document.getElementById("transImportText").textContent  = "ELEGIR PNG DE TRANSFORMACIÓN";
     showToast("Skin de transformación quitada","warning");
   });
+
+  // Sliders de tamaño del modal de transformación
+  (function _initTmSizeSliders() {
+    function _syncTmW(v) {
+      const n = Math.max(40, Math.min(400, parseInt(v, 10) || 180));
+      const sl = document.getElementById("tmSpriteWSlider");
+      const inp = document.getElementById("tmSpriteWInput");
+      const val = document.getElementById("tmSpriteWVal");
+      if (sl)  sl.value = n;
+      if (inp) inp.value = n;
+      if (val) val.textContent = n;
+    }
+    function _syncTmH(v) {
+      const n = Math.max(40, Math.min(500, parseInt(v, 10) || 220));
+      const sl = document.getElementById("tmSpriteHSlider");
+      const inp = document.getElementById("tmSpriteHInput");
+      const val = document.getElementById("tmSpriteHVal");
+      if (sl)  sl.value = n;
+      if (inp) inp.value = n;
+      if (val) val.textContent = n;
+    }
+    document.getElementById("tmSpriteWSlider")?.addEventListener("input", e => _syncTmW(e.target.value));
+    document.getElementById("tmSpriteHSlider")?.addEventListener("input", e => _syncTmH(e.target.value));
+    document.getElementById("tmSpriteWInput")?.addEventListener("input",  e => _syncTmW(e.target.value));
+    document.getElementById("tmSpriteHInput")?.addEventListener("input",  e => _syncTmH(e.target.value));
+    document.getElementById("tmBtnResetSize")?.addEventListener("click",  () => {
+      const _baseW = parseInt(document.getElementById("spriteWSlider")?.value || "180", 10) || 180;
+      const _baseH = parseInt(document.getElementById("spriteHSlider")?.value || "220", 10) || 220;
+      _syncTmW(_baseW); _syncTmH(_baseH);
+    });
+  })();
 
   renderTransList();
   renderTransSelectorBar();

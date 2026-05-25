@@ -877,6 +877,11 @@
         }
         // Aplicar apariencia visual de la transformación si tiene
         _applyTransAppearance(tr);
+        // Aplicar tamaño propio de la transformación (sin mezclar con el base)
+        if (tr.displayW || tr.displayH) {
+          window._activeDisplayW = tr.displayW || (savedChar && savedChar.displayW) || 180;
+          window._activeDisplayH = tr.displayH || (savedChar && savedChar.displayH) || 220;
+        }
         publishMyAppearance && publishMyAppearance(true);
       } else {
         showHudToast("⚠️ Transformación no disponible", "info");
@@ -962,6 +967,9 @@
         } catch(e) {}
       }
       showHudToast("↩ Forma base restaurada", "info");
+      // Restaurar tamaño base del personaje
+      window._activeDisplayW = (savedChar && savedChar.displayW) || 180;
+      window._activeDisplayH = (savedChar && savedChar.displayH) || 220;
       if (window.csAnimator && window.csAnimator.setTransformationSkin) {
         window.csAnimator.setTransformationSkin(null);
       }
@@ -2140,6 +2148,9 @@
     const RACE_BASE_STATS={saiyan:{health:80,ki:90,strength:95,defense:70,speed:85},human:{health:85,ki:75,strength:80,defense:80,speed:80},namekian:{health:90,ki:85,strength:85,defense:90,speed:70},android:{health:95,ki:100,strength:90,defense:95,speed:75},kaioshin:{health:70,ki:100,strength:75,defense:80,speed:90},frieza:{health:85,ki:95,strength:88,defense:85,speed:95}};
     const BASE_RACE_COLORS={saiyan:"#f5c400",human:"#00e5ff",namekian:"#00ff9d",android:"#00e5ff",kaioshin:"#9c88ff",frieza:"#e040fb"};
     const savedChar = loadCharacterData();
+    // Tamaño activo del sprite — se sobreescribe al activar/revertir transformaciones
+    window._activeDisplayW = (savedChar && savedChar.displayW) || 180;
+    window._activeDisplayH = (savedChar && savedChar.displayH) || 220;
     const DEFAULT_KI_ATTACKS = {
       special1: { id:"special1", name:"Ataque Especial 1", icon:"💥", color:"#00e5ff", cost:18, power:1.0, style:"blast" },
       special2: { id:"special2", name:"Ataque Especial 2", icon:"🌟", color:"#fdd835", cost:28, power:1.4, style:"beam" },
@@ -3151,8 +3162,8 @@
         };
         const mobileSpriteScale = (window.matchMedia?.("(pointer:coarse)").matches && window.innerHeight < 520) ? 0.84 : 1;
         const _baseW = SPRITE_DRAW_W * mobileSpriteScale, _baseH = SPRITE_DRAW_H * mobileSpriteScale;
-        const _dispW = (savedChar && savedChar.displayW) || CS.DISPLAY_W || 180;
-        const _dispH = (savedChar && savedChar.displayH) || CS.DISPLAY_H || 220;
+        const _dispW = window._activeDisplayW || (savedChar && savedChar.displayW) || CS.DISPLAY_W || 180;
+        const _dispH = window._activeDisplayH || (savedChar && savedChar.displayH) || CS.DISPLAY_H || 220;
         const _scaleW = _dispW / 180, _scaleH = _dispH / 220;
         const _drawW = _baseW * _scaleW, _drawH = _baseH * _scaleH;
         // Sombra proporcional al tamao real del sprite en pantalla
