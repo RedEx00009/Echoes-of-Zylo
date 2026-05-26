@@ -2051,10 +2051,22 @@
               accessoryId: remoteAccId, auraPhase: (now * 0.003) % (Math.PI * 2),
               viewKey: null, spriteVariantId: remSpriteVariantId,
             };
-            const remoteMobileScale = (window.matchMedia?.("(pointer:coarse)").matches && window.innerHeight < 520) ? 0.84 : 1;
+            const isMobileCoarse = window.matchMedia?.("(pointer:coarse)").matches;
+            const remoteMobileScale = (isMobileCoarse && window.innerHeight < 520) ? 0.84 : 1;
             const _rdBaseW = SPRITE_DRAW_W * remoteMobileScale, _rdBaseH = SPRITE_DRAW_H * remoteMobileScale;
             const _rdw = remApp.displayW || 180, _rdh = remApp.displayH || 220;
-            const _rdScaleW = _rdw / 180, _rdScaleH = _rdh / 220;
+            let _rdScaleW = _rdw / 180, _rdScaleH = _rdh / 220;
+            // En mobile, limitar el scale máximo para que sprites grandes (Ozaru, Gigante)
+            // no se salgan del canvas — escalar proporcionalmente al viewport
+            if (isMobileCoarse) {
+              const maxAllowedH = (canvas.height * 0.65) / _rdBaseH;
+              const maxAllowedW = (canvas.width  * 0.40) / _rdBaseW;
+              const maxScale = Math.min(maxAllowedH, maxAllowedW, _rdScaleW, _rdScaleH);
+              if (_rdScaleW > maxScale || _rdScaleH > maxScale) {
+                const ratio = Math.min(maxScale / _rdScaleW, maxScale / _rdScaleH);
+                _rdScaleW *= ratio; _rdScaleH *= ratio;
+              }
+            }
             const _rdrawW = _rdBaseW * _rdScaleW, _rdrawH = _rdBaseH * _rdScaleH;
             ctx.fillStyle = "rgba(0,0,0,0.3)"; ctx.beginPath(); ctx.ellipse(sx, sy+3, _rdrawW*0.3, _rdrawW*0.1, 0, 0, Math.PI*2); ctx.fill();
             ctx.save();
