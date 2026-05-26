@@ -308,9 +308,10 @@
 
       /* -- RESPONSIVE -- */
       @media (pointer:coarse), (max-width:768px) {
-        :root { --btn-size:52px; --btn-icon:19px; }
+        :root { --btn-size:48px; --btn-icon:17px; }
         #menuBackdrop { display:block; }
-        .mobile-controls { display:flex; height:286px; }
+        .mobile-controls { display:flex; height:270px; }
+        .action-grid { grid-template-columns:repeat(5,var(--btn-size)); }
         .skills-bar { display:none; }
         .region-label { position:absolute; bottom:182px; left:50%; transform:translateX(-50%); }
         .dialog-box { bottom:190px; }
@@ -327,7 +328,7 @@
         .dialog-box { bottom:120px; }
         .hud-top { left:64px; }
       }
-      @media (max-width:400px) { :root { --btn-size:44px; --btn-icon:17px; } .mobile-controls { height:250px; } .joystick-wrap { width:100px; height:100px; } #joystickKnob { width:40px; height:40px; top:30px; left:30px; } }
+      @media (max-width:400px) { :root { --btn-size:40px; --btn-icon:15px; } .mobile-controls { height:230px; } .joystick-wrap { width:100px; height:100px; } #joystickKnob { width:40px; height:40px; top:30px; left:30px; } }
       @media (max-height:460px) and (orientation:landscape) {
         :root { --btn-size:44px; --btn-icon:16px; }
         .mobile-controls { height:130px; padding:0 10px 8px; }
@@ -1445,10 +1446,14 @@
         // Si es un skin de transformación por ruta local, no enviar base64 (son null de todas formas).
         // Enviar solo la ruta — el receptor la cargará igual que un skin de raza.
         if (cfg._transSkinPath) {
-          out[id]._transSkinPath     = cfg._transSkinPath;
-          out[id].spriteDataURL      = null;
+          out[id]._transSkinPath       = cfg._transSkinPath;
+          out[id].spriteDataURL        = null;
           out[id].combatSpriteDataURL  = null;
           out[id].specialSpriteDataURL = null;
+        }
+        // Preservar flag de trans skin importado para que el receptor sepa que es imagen simple
+        if (cfg._isTransSkin) {
+          out[id]._isTransSkin = true;
         }
       });
       return out;
@@ -1806,14 +1811,23 @@
       }
       if (appearance.variantCustomizations) {
         for (const cfg of Object.values(appearance.variantCustomizations)) {
+          // Si es skin de transformación importado (PNG custom), comprimir como imagen simple
+          // no como spritesheet de N frames (evita que quede ilegible)
+          const isTransSkin = cfg?._isTransSkin === true;
           if (cfg?.spriteDataURL && cfg.spriteDataURL.length > 90000) {
-            cfg.spriteDataURL = await compressVariantSheetForNetwork(cfg.spriteDataURL, cfg.animFrames || 6, 384);
+            cfg.spriteDataURL = isTransSkin
+              ? await compressDataURLForNetwork(cfg.spriteDataURL, 512)
+              : await compressVariantSheetForNetwork(cfg.spriteDataURL, cfg.animFrames || 6, 384);
           }
           if (cfg?.combatSpriteDataURL && cfg.combatSpriteDataURL.length > 90000) {
-            cfg.combatSpriteDataURL = await compressVariantSheetForNetwork(cfg.combatSpriteDataURL, cfg.combatAnimFrames || 6, 384);
+            cfg.combatSpriteDataURL = isTransSkin
+              ? await compressDataURLForNetwork(cfg.combatSpriteDataURL, 512)
+              : await compressVariantSheetForNetwork(cfg.combatSpriteDataURL, cfg.combatAnimFrames || 6, 384);
           }
           if (cfg?.specialSpriteDataURL && cfg.specialSpriteDataURL.length > 90000) {
-            cfg.specialSpriteDataURL = await compressVariantSheetForNetwork(cfg.specialSpriteDataURL, cfg.specialAnimFrames || 6, 384);
+            cfg.specialSpriteDataURL = isTransSkin
+              ? await compressDataURLForNetwork(cfg.specialSpriteDataURL, 512)
+              : await compressVariantSheetForNetwork(cfg.specialSpriteDataURL, cfg.specialAnimFrames || 6, 384);
           }
         }
       }
