@@ -747,11 +747,22 @@
       const rect = anchor.getBoundingClientRect();
       const menuW = 220;
       let left = rect.left + rect.width / 2 - menuW / 2;
-      // Evitar que se salga por los bordes
       left = Math.max(8, Math.min(left, window.innerWidth - menuW - 8));
       menu.style.left = left + "px";
-      menu.style.bottom = (window.innerHeight - rect.top + 8) + "px";
+      menu.style.maxHeight = (window.innerHeight - 24) + "px";
+      menu.style.overflowY = "auto";
       menu.style.transform = "none";
+      // Calcular si cabe arriba del botón
+      const spaceAbove = rect.top - 8;
+      const menuH = Math.min(menu.scrollHeight || 260, window.innerHeight - 24);
+      if (spaceAbove >= menuH) {
+        menu.style.top = "auto";
+        menu.style.bottom = (window.innerHeight - rect.top + 8) + "px";
+      } else {
+        // No cabe arriba — posicionar desde top visible
+        menu.style.bottom = "auto";
+        menu.style.top = Math.max(8, rect.top - menuH - 4) + "px";
+      }
     }
 
     function _loadSavedTransformations() {
@@ -868,7 +879,8 @@
         renderTransDropList();
         menu.classList.add("open");
         const anchor = getTransDropAnchor();
-        positionTransDropdown(anchor);
+        // Esperar un frame para que el menú sea visible y scrollHeight sea correcto
+        requestAnimationFrame(() => positionTransDropdown(anchor));
       } else {
         menu.classList.remove("open");
       }
@@ -1416,19 +1428,10 @@
         // Si es un skin de transformación por ruta local, no enviar base64 (son null de todas formas).
         // Enviar solo la ruta — el receptor la cargará igual que un skin de raza.
         if (cfg._transSkinPath) {
-          out[id]._transSkinPath = cfg._transSkinPath;
-          // Enviar también el dataURL cacheado si está disponible y no es muy grande
-          // Así el receptor tiene dos opciones: ruta directa o base64
-          const cachedURL = cfg.spriteDataURL;
-          if (cachedURL && cachedURL.length < 400000) {
-            out[id].spriteDataURL       = cachedURL;
-            out[id].combatSpriteDataURL  = cachedURL;
-            out[id].specialSpriteDataURL = cachedURL;
-          } else {
-            out[id].spriteDataURL        = null;
-            out[id].combatSpriteDataURL  = null;
-            out[id].specialSpriteDataURL = null;
-          }
+          out[id]._transSkinPath       = cfg._transSkinPath;
+          out[id].spriteDataURL        = null;
+          out[id].combatSpriteDataURL  = null;
+          out[id].specialSpriteDataURL = null;
         }
         if (cfg._isTransSkin) out[id]._isTransSkin = true;
       });
@@ -1457,44 +1460,17 @@
         _hydrateSheetField(cfg, "spriteDataURL", "spriteImage");
         _hydrateSheetField(cfg, "combatSpriteDataURL", "combatSpriteImage");
         _hydrateSheetField(cfg, "specialSpriteDataURL", "specialSpriteImage");
-        // Skin de transformación por ruta (URL absoluta o relativa)
+        // Skin de transformación por ruta local (PNGs internos como Skins/ozaru_saiyajin.png)
         if (cfg._transSkinPath && !cfg.spriteImage) {
-          const loadFromPath = () => {
-            const img = new Image();
-            img.crossOrigin = "anonymous";
-            img.onload = () => {
-              cfg.spriteImage = cfg.userImage = img;
-              cfg.combatSpriteImage = cfg.combatUserImage = img;
-              cfg.specialSpriteImage = cfg.specialUserImage = img;
-              window.CharacterSystem?.invalidateHairCache?.();
-              // Cachear como dataURL para futuros envíos (comprimido a webp)
-              try {
-                const c = document.createElement("canvas");
-                c.width = img.naturalWidth; c.height = img.naturalHeight;
-                c.getContext("2d").drawImage(img, 0, 0);
-                const cached = c.toDataURL("image/webp", 0.82);
-                if (!cfg.spriteDataURL) cfg.spriteDataURL = cached;
-                if (!cfg.combatSpriteDataURL) cfg.combatSpriteDataURL = cached;
-                if (!cfg.specialSpriteDataURL) cfg.specialSpriteDataURL = cached;
-              } catch(e) {}
-            };
-            img.onerror = () => {
-              console.warn("[TransSkin] Falló ruta:", cfg._transSkinPath);
-              // Si falló la ruta pero hay dataURL, intentar con eso
-              if (cfg.spriteDataURL && !cfg.spriteImage) {
-                const img2 = new Image();
-                img2.onload = () => {
-                  cfg.spriteImage = cfg.userImage = img2;
-                  cfg.combatSpriteImage = cfg.combatUserImage = img2;
-                  cfg.specialSpriteImage = cfg.specialUserImage = img2;
-                  window.CharacterSystem?.invalidateHairCache?.();
-                };
-                img2.src = cfg.spriteDataURL;
-              }
-            };
-            img.src = cfg._transSkinPath;
+          const img = new Image();
+          img.onload = () => {
+            cfg.spriteImage = cfg.userImage = img;
+            cfg.combatSpriteImage = cfg.combatUserImage = img;
+            cfg.specialSpriteImage = cfg.specialUserImage = img;
+            window.CharacterSystem?.invalidateHairCache?.();
           };
-          loadFromPath();
+          img.onerror = () => {};
+          img.src = cfg._transSkinPath;
         }
         // Skin de transformación importado (PNG custom del usuario) — aplicar desde spriteDataURL
         if (cfg._isTransSkin && !cfg._transSkinPath && cfg.spriteDataURL && !cfg.spriteImage) {
