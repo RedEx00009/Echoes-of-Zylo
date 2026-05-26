@@ -598,4 +598,307 @@
 
   console.info("[TransformationsSystem] v1.0.0 cargado. Catálogo vacío, listo para transformaciones.");
 
+  // ═══════════════════════════════════════════════════════════════
+  //  MÓDULO DE TRANSFORMACIONES ESPECIALES (UI)
+  //
+  //  Inyecta botones de preset de skin en el panel GENERAL del modal.
+  //  Al cargar un skin, asigna TANTO el dataURL COMO la imagen runtime
+  //  (_tmEditSkinImage) para que la preview del modal la muestre.
+  //
+  //  REQUISITO en index.html — agregar junto a _transEditSkinDataURL:
+  //    window.__setTransSkin = function(v) { _transEditSkinDataURL = v; };
+  //    window.__setTransSkinImg = function(v) { _tmEditSkinImage = v; };
+  // ═══════════════════════════════════════════════════════════════
+
+  (function _initSpecialSkinsUI() {
+
+    // Evitar doble inicialización
+    if (window.__specialSkinsInited) return;
+    window.__specialSkinsInited = true;
+
+    const SPECIAL_SKINS = [
+      {
+        group: "🦍 OZARU",
+        color: "var(--accent2, #ff6a00)",
+        cols: 1,
+        entries: [
+          { skin: "Skins/ozaru_saiyajin.png", label: "Ozaru (Saiyajin)", icon: "🦍" },
+        ],
+      },
+      {
+        group: "💜 LEGENDARIO SUPER SAIYAJIN",
+        color: "#b39ddb",
+        cols: 2,
+        entries: [
+          { skin: "Skins/lss_saiyajin_m.png", label: "LSS ♂ Saiyajin", icon: "♂", sub: "Hombre" },
+          { skin: "Skins/lss_saiyajin_f.png", label: "LSS ♀ Saiyajin", icon: "♀", sub: "Mujer"  },
+        ],
+      },
+      {
+        group: "🤖 MAQUINACIÓN",
+        color: "var(--cyan, #00e5ff)",
+        cols: 2,
+        entries: [
+          { skin: "Skins/maquinacion_androide_m.png", label: "Maquinación ♂", icon: "♂", sub: "Hombre" },
+          { skin: "Skins/maquinacion_androide_f.png", label: "Maquinación ♀", icon: "♀", sub: "Mujer"  },
+        ],
+      },
+      {
+        group: "💚 BERSERKER",
+        color: "var(--green, #00ff9d)",
+        cols: 1,
+        entries: [
+          { skin: "Skins/berserker_namekiano.png", label: "Berserker (Namekiano)", icon: "💚" },
+        ],
+      },
+      {
+        group: "👾 5TA FORMA",
+        color: "var(--magenta, #e040fb)",
+        cols: 1,
+        entries: [
+          { skin: "Skins/5ta_forma_frieza.png", label: "5ta Forma (Frieza)", icon: "👾" },
+        ],
+      },
+    ];
+
+    function _injectCSS() {
+      if (document.getElementById("ss-style")) return;
+      const s = document.createElement("style");
+      s.id = "ss-style";
+      s.textContent = `
+        #specialSkinsSection{margin-top:16px;border-top:1px solid var(--border,#2a3560);padding-top:12px}
+        #specialSkinsSection .ss-title{font-family:var(--fh,"Orbitron",monospace);font-size:7px;letter-spacing:2px;color:var(--td,#8892b0);margin:0 0 5px;text-transform:uppercase}
+        #specialSkinsSection .ss-note{font-size:9px;color:var(--td,#8892b0);font-family:var(--fb,"Rajdhani",sans-serif);line-height:1.4;background:rgba(0,229,255,.05);border:1px solid rgba(0,229,255,.15);border-radius:4px;padding:5px 8px;margin-bottom:10px}
+        #specialSkinsSection .ss-note code{color:var(--cyan,#00e5ff);font-size:8px}
+        #specialSkinsSection .ss-group{font-family:var(--fh,"Orbitron",monospace);font-size:7px;letter-spacing:2px;text-transform:uppercase;margin:10px 0 4px}
+        #specialSkinsSection .ss-grid-1{display:grid;grid-template-columns:1fr;gap:5px;margin-bottom:4px}
+        #specialSkinsSection .ss-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:4px}
+        .special-skin-btn{width:100%;padding:8px 10px;background:color-mix(in srgb,var(--sc,#e040fb) 8%,transparent);border:1px solid color-mix(in srgb,var(--sc,#e040fb) 40%,transparent);border-radius:var(--r,6px);color:var(--sc,#e040fb);font-family:var(--fh,"Orbitron",monospace);font-size:8px;letter-spacing:1px;cursor:pointer;transition:all var(--tr,.15s ease);text-align:center;line-height:1.5}
+        .special-skin-btn:hover{background:color-mix(in srgb,var(--sc,#e040fb) 18%,transparent);border-color:var(--sc,#e040fb);box-shadow:0 0 8px color-mix(in srgb,var(--sc,#e040fb) 30%,transparent)}
+        .special-skin-btn.ss-active{background:color-mix(in srgb,var(--sc,#e040fb) 22%,transparent);border-color:var(--sc,#e040fb);box-shadow:0 0 12px color-mix(in srgb,var(--sc,#e040fb) 40%,transparent);font-weight:700}
+        .special-skin-btn .ss-sub{display:block;font-size:7px;opacity:.7;margin-top:1px}
+        #specialSkinStatus{display:none;margin-top:6px;padding:5px 8px;border-radius:4px;font-family:var(--fh,"Orbitron",monospace);font-size:8px;letter-spacing:.5px}
+        #specialSkinStatus.ok{background:rgba(0,255,157,.07);border:1px solid rgba(0,255,157,.25);color:var(--green,#00ff9d)}
+        #specialSkinStatus.err{background:rgba(255,23,68,.07);border:1px solid rgba(255,23,68,.25);color:var(--red,#ff1744)}
+      `;
+      document.head.appendChild(s);
+    }
+
+    function _buildSection() {
+      const section = document.createElement("div");
+      section.id = "specialSkinsSection";
+      section.innerHTML = `
+        <div class="ss-title">🌟 TRANSFORMACIONES ESPECIALES</div>
+        <div class="ss-note">Carga un skin predefinido desde la carpeta <code>Skins/</code>. Reemplaza cualquier PNG custom cargado.</div>
+      `;
+      SPECIAL_SKINS.forEach(group => {
+        const title = document.createElement("div");
+        title.className = "ss-group";
+        title.style.color = group.color;
+        title.textContent = group.group;
+        section.appendChild(title);
+
+        const grid = document.createElement("div");
+        grid.className = group.cols === 2 ? "ss-grid-2" : "ss-grid-1";
+        group.entries.forEach(entry => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "special-skin-btn";
+          btn.style.setProperty("--sc", group.color);
+          btn.dataset.skin  = entry.skin;
+          btn.dataset.label = entry.label;
+          btn.innerHTML = entry.sub
+            ? `${entry.icon} ${entry.sub}<span class="ss-sub">${entry.label}</span>`
+            : `${entry.icon} ${entry.label}`;
+          grid.appendChild(btn);
+        });
+        section.appendChild(grid);
+      });
+
+      const status = document.createElement("div");
+      status.id = "specialSkinStatus";
+      section.appendChild(status);
+      return section;
+    }
+
+    function _injectHTML() {
+      // La sección ya está definida estáticamente en index.html — no duplicar.
+      if (document.getElementById("specialSkinsSection")) return;
+      if (document.querySelector("#tm-general .tm-sec")) return;
+      const panel    = document.getElementById("tm-general");
+      const clearBtn = document.getElementById("transClearSkin");
+      if (!panel) return;
+      clearBtn
+        ? clearBtn.insertAdjacentElement("afterend", _buildSection())
+        : panel.appendChild(_buildSection());
+    }
+
+    function _setStatus(msg, type) {
+      const el = document.getElementById("specialSkinStatus");
+      if (!el) return;
+      el.textContent = msg; el.className = type; el.style.display = "block";
+    }
+    function _clearStatus() {
+      const el = document.getElementById("specialSkinStatus");
+      if (el) { el.style.display = "none"; el.textContent = ""; el.className = ""; }
+    }
+    function _clearActive() {
+      document.querySelectorAll(".special-skin-btn").forEach(b => b.classList.remove("ss-active"));
+    }
+    function _reset() { _clearActive(); _clearStatus(); }
+
+    /**
+     * Aplica dataURL + Image runtime al modal.
+     * La preview del modal requiere AMBAS cosas:
+     *   - _transEditSkinDataURL  → dataURL (para guardar en JSON)
+     *   - _tmEditSkinImage       → objeto Image (para renderizar en canvas)
+     */
+    function _applyToModal(dataURL, img, label) {
+      // Asignar dataURL
+      if (typeof window.__setTransSkin === "function") {
+        window.__setTransSkin(dataURL);
+      } else if (Object.getOwnPropertyDescriptor(window, "_transEditSkinDataURL")) {
+        window._transEditSkinDataURL = dataURL;
+      }
+
+      // Asignar imagen runtime (necesaria para que la preview la muestre)
+      if (typeof window.__setTransSkinImg === "function") {
+        window.__setTransSkinImg(img);
+      } else if (Object.getOwnPropertyDescriptor(window, "_tmEditSkinImage")) {
+        window._tmEditSkinImage = img;
+      }
+
+      // ── PERSISTENCIA DIRECTA ─────────────────────────────────────────────
+      // Guardar el skin en el objeto runtime Y en localStorage con la key del ID.
+      // Esto garantiza que game.html encuentre el skin por ID aunque el usuario
+      // no presione Guardar explícitamente, y evita el problema de __ref__ sin resolver.
+      try {
+        // Acceder al array de transformaciones y al índice de edición de index.html
+        const _editIdx = typeof window.__getEditingTransIndex === "function"
+          ? window.__getEditingTransIndex()
+          : (typeof window.editingTransIndex !== "undefined" ? window.editingTransIndex : null);
+
+        const tArr = window.transformations || (typeof window._getTransformations === "function" ? window._getTransformations() : null);
+
+        if (_editIdx !== null && _editIdx !== undefined && Array.isArray(tArr) && tArr[_editIdx]) {
+          // 1. Actualizar objeto runtime
+          tArr[_editIdx].skinDataURL = dataURL;
+          tArr[_editIdx].skinImage   = img;
+          // 2. Guardar en localStorage separado por ID (para que game.html lo resuelva)
+          const trId = tArr[_editIdx].id;
+          if (trId) {
+            try { localStorage.setItem("dragonCreatorZ_skin_" + trId, dataURL); }
+            catch(e) { console.warn("[SpecialSkins] Skin demasiado grande para LS:", trId); }
+          }
+        }
+      } catch(e) {
+        console.warn("[SpecialSkins] No se pudo persistir skin en runtime:", e);
+      }
+
+      // Actualizar UI del uploader
+      const lbl   = document.getElementById("transImportLabel");
+      const fname = document.getElementById("transImportFname");
+      const text  = document.getElementById("transImportText");
+      if (lbl)   lbl.classList.add("loaded");
+      if (fname) fname.textContent = label + " ✓";
+      if (text)  text.textContent  = "CAMBIAR PNG";
+    }
+
+    async function _loadSkin(btn) {
+      const path  = btn.dataset.skin;
+      const label = btn.dataset.label || path;
+      _clearActive();
+      btn.classList.add("ss-active");
+      btn.style.opacity = "0.6";
+      _clearStatus();
+      try {
+        const res = await fetch(path);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const blob = await res.blob();
+
+        // Convertir a dataURL
+        const dataURL = await new Promise((ok, fail) => {
+          const r = new FileReader();
+          r.onload  = () => ok(r.result);
+          r.onerror = () => fail(new Error("FileReader error"));
+          r.readAsDataURL(blob);
+        });
+
+        // Cargar como objeto Image (necesario para la preview del canvas)
+        const img = await new Promise((ok, fail) => {
+          const i = new Image();
+          i.onload  = () => ok(i);
+          i.onerror = () => fail(new Error("Image load error"));
+          i.src = dataURL;
+        });
+
+        _applyToModal(dataURL, img, label);
+        _setStatus("✓ " + label + " cargado", "ok");
+        if (typeof window.showToast === "function") window.showToast("Skin cargado: " + label, "success");
+
+      } catch (err) {
+        console.error("[SpecialSkins]", err);
+        btn.classList.remove("ss-active");
+        _setStatus("✗ No se encontró: " + path, "err");
+        if (typeof window.showToast === "function") window.showToast("No se encontró: " + path, "error");
+      } finally {
+        btn.style.opacity = "1";
+      }
+    }
+
+    function _bindEvents() {
+      // Delegación única en el panel — no se registra dos veces gracias al flag de arriba
+      const panel = document.getElementById("tm-general");
+      if (panel) {
+        panel.addEventListener("click", e => {
+          const btn = e.target.closest(".special-skin-btn");
+          if (btn) _loadSkin(btn);
+        });
+      }
+
+      // Al quitar skin custom, limpiar también los botones especiales y la imagen runtime
+      const clearBtn = document.getElementById("transClearSkin");
+      if (clearBtn) {
+        clearBtn.addEventListener("click", () => {
+          _reset();
+          if (typeof window.__setTransSkinImg === "function") window.__setTransSkinImg(null);
+        });
+      }
+
+      // Resetear al cerrar el modal
+      ["transModalClose", "transModalCancel"].forEach(id => {
+        document.getElementById(id)?.addEventListener("click", _reset);
+      });
+      document.getElementById("transModalOverlay")?.addEventListener("click", e => {
+        if (e.target.id === "transModalOverlay") _reset();
+      });
+
+      // Hookear openTransModal para resetear al abrir
+      if (typeof window.openTransModal === "function" && !window.openTransModal.__ssHooked) {
+        const _orig = window.openTransModal;
+        window.openTransModal = function(...a) { _reset(); return _orig.apply(this, a); };
+        window.openTransModal.__ssHooked = true;
+      }
+      if (typeof window.closeTransModal === "function" && !window.closeTransModal.__ssHooked) {
+        const _orig = window.closeTransModal;
+        window.closeTransModal = function(...a) { _reset(); return _orig.apply(this, a); };
+        window.closeTransModal.__ssHooked = true;
+      }
+    }
+
+    function _boot() {
+      _injectCSS();
+      _injectHTML();
+      _bindEvents();
+      console.info("[SpecialSkins] Sección de transformaciones especiales lista.");
+    }
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", _boot);
+    } else {
+      setTimeout(_boot, 0);
+    }
+
+  })();
+
 })();

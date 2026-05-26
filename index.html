@@ -222,6 +222,9 @@
     .trans-aura-chip:hover{transform:scale(1.15)}
     .trans-aura-chip.active{border-color:white;box-shadow:0 0 6px rgba(255,255,255,.4)}
     .trans-aura-custom{display:flex;align-items:center;gap:6px;margin-top:5px}
+    .special-skin-btn{width:100%;padding:8px 10px;background:color-mix(in srgb,var(--sc,var(--magenta)) 8%,transparent);border:1px solid color-mix(in srgb,var(--sc,var(--magenta)) 40%,transparent);border-radius:var(--r);color:var(--sc,var(--magenta));font-family:var(--fh);font-size:8px;letter-spacing:1px;cursor:pointer;transition:all var(--tr);text-align:center;line-height:1.5}
+    .special-skin-btn:hover{background:color-mix(in srgb,var(--sc,var(--magenta)) 18%,transparent);border-color:var(--sc,var(--magenta));box-shadow:0 0 8px color-mix(in srgb,var(--sc,var(--magenta)) 30%,transparent)}
+    .special-skin-btn.active{background:color-mix(in srgb,var(--sc,var(--magenta)) 22%,transparent);border-color:var(--sc,var(--magenta));box-shadow:0 0 12px color-mix(in srgb,var(--sc,var(--magenta)) 40%,transparent);font-weight:700}
     .trans-skin-import{width:100%;display:flex;align-items:center;gap:8px;background:rgba(224,64,251,.05);border:1px dashed rgba(224,64,251,.3);border-radius:var(--r);padding:7px 10px;cursor:pointer;color:var(--magenta);font-family:var(--fh);font-size:8px;letter-spacing:1px;transition:all var(--tr)}
     .trans-skin-import:hover{background:rgba(224,64,251,.12);border-color:var(--magenta)}
     .trans-skin-import.loaded{border-color:var(--green);color:var(--green);background:rgba(0,255,157,.05)}
@@ -826,6 +829,57 @@
             <input type="file" accept="image/png" id="transImportInput"/>
           </label>
           <button id="transClearSkin" style="margin-top:5px;width:100%;padding:5px;background:rgba(255,23,68,.06);border:1px solid rgba(255,23,68,.25);border-radius:4px;color:rgba(255,23,68,.6);font-family:var(--fh);font-size:8px;letter-spacing:1px;cursor:pointer;transition:all .15s">✕ QUITAR SKIN CUSTOM</button>
+
+          <!-- ── TRANSFORMACIONES ESPECIALES ── -->
+          <div class="tm-sec" style="margin-top:16px;border-top:1px solid var(--border);padding-top:12px">🌟 TRANSFORMACIONES ESPECIALES</div>
+          <div class="tm-inherit-note" style="margin-bottom:10px">Carga directamente un skin predefinido de la carpeta <code style="color:var(--cyan);font-size:8px">skins/</code>. Reemplaza cualquier PNG custom cargado.</div>
+
+          <!-- Ozaru -->
+          <div class="tm-sec" style="color:var(--accent2);margin-top:6px;margin-bottom:4px">🦍 OZARU</div>
+          <div style="display:grid;grid-template-columns:1fr;gap:5px;margin-bottom:8px">
+            <button class="special-skin-btn" data-skin="skins/ozaru_saiyajin.png" data-label="Ozaru (Saiyajin)" style="--sc:var(--accent2)">
+              🦍 Ozaru — Saiyajin
+            </button>
+          </div>
+
+          <!-- Legendario Super Saiyajin -->
+          <div class="tm-sec" style="color:#b39ddb;margin-top:4px;margin-bottom:4px">💜 LEGENDARIO SUPER SAIYAJIN</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px">
+            <button class="special-skin-btn" data-skin="skins/lss_saiyajin_m.png" data-label="LSS Saiyajin ♂" style="--sc:#b39ddb">
+              ♂ Saiyajin<br><span style="font-size:7px;opacity:.7">Hombre</span>
+            </button>
+            <button class="special-skin-btn" data-skin="skins/lss_saiyajin_f.png" data-label="LSS Saiyajin ♀" style="--sc:#b39ddb">
+              ♀ Saiyajin<br><span style="font-size:7px;opacity:.7">Mujer</span>
+            </button>
+          </div>
+
+          <!-- Maquinación -->
+          <div class="tm-sec" style="color:var(--cyan);margin-top:4px;margin-bottom:4px">🤖 MAQUINACIÓN</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px">
+            <button class="special-skin-btn" data-skin="skins/maquinacion_androide_m.png" data-label="Maquinación ♂" style="--sc:var(--cyan)">
+              ♂ Androide<br><span style="font-size:7px;opacity:.7">Hombre</span>
+            </button>
+            <button class="special-skin-btn" data-skin="skins/maquinacion_androide_f.png" data-label="Maquinación ♀" style="--sc:var(--cyan)">
+              ♀ Androide<br><span style="font-size:7px;opacity:.7">Mujer</span>
+            </button>
+          </div>
+
+          <!-- Berserker -->
+          <div class="tm-sec" style="color:var(--green);margin-top:4px;margin-bottom:4px">💚 BERSERKER</div>
+          <div style="display:grid;grid-template-columns:1fr;gap:5px;margin-bottom:8px">
+            <button class="special-skin-btn" data-skin="skins/berserker_namekiano.png" data-label="Berserker (Namekiano)" style="--sc:var(--green)">
+              💚 Berserker — Namekiano
+            </button>
+          </div>
+
+          <!-- 5ta Forma -->
+          <div class="tm-sec" style="color:var(--magenta);margin-top:4px;margin-bottom:4px">👾 5TA FORMA</div>
+          <div style="display:grid;grid-template-columns:1fr;gap:5px;margin-bottom:4px">
+            <button class="special-skin-btn" data-skin="skins/5ta_forma_frieza.png" data-label="5ta Forma (Frieza)" style="--sc:var(--magenta)">
+              👾 5ta Forma — Frieza
+            </button>
+          </div>
+          <div id="specialSkinStatus" style="display:none;margin-top:5px;padding:5px 8px;border-radius:4px;font-family:var(--fh);font-size:8px;letter-spacing:.5px;background:rgba(0,255,157,.07);border:1px solid rgba(0,255,157,.25);color:var(--green)"></div>
 
           <!-- ── ESCALA DE TAMAÑO ── -->
           <div class="tm-sec" style="margin-top:14px;border-top:1px solid var(--border);padding-top:10px">📐 TAMAÑO EN TRANSFORMACIÓN</div>
@@ -1859,7 +1913,7 @@ function saveToSlot(i) {
       accessoryId:charState.accessoryId||"ac_none",
       spriteSheets:{sheet,base:sheet,pelea:sheet,especial:sheet},
       layerImports: Object.assign({},layerImports),
-      transformations: _serializeTransformationsForSave(),
+      transformations: (function(){ return _serializeTransformationsForSave().map(function(tr){ if(tr.skinDataURL && tr.skinDataURL !== "__ref__"){ try{ localStorage.setItem("dragonCreatorZ_skin_"+tr.id, tr.skinDataURL); }catch(e){} return Object.assign({},tr,{skinDataURL:"__ref__"}); } return tr; }); })(),
       kiAttacks: _serializeKiAttacks(),
       displayW: parseInt(document.getElementById("spriteWSlider")?.value||"180",10)||180,
       displayH: parseInt(document.getElementById("spriteHSlider")?.value||"220",10)||220,
@@ -1979,6 +2033,12 @@ async function loadFromSlot(i) {
       if (CS && typeof CS.setDisplaySize === "function") CS.setDisplaySize(rw, rh);
     }
     renderSlots(); updateStats();
+    // Recargar transformaciones del slot (con skins) y actualizar UI
+    if (typeof _loadTransformationsFromLS === "function") {
+      await _loadTransformationsFromLS();
+      if (typeof renderTransList === "function") renderTransList();
+      if (typeof renderTransSelectorBar === "function") renderTransSelectorBar();
+    }
     showToast(`"${d.name}" cargado`,"success");
   } catch(err){ console.warn("loadFromSlot falló:",err); showToast("Error al cargar slot","error"); }
 }
@@ -2118,10 +2178,12 @@ function initEvents() {
   document.getElementById("btnStart").addEventListener("click",()=>{
     try{
       saveToSlot(activeSlotIndex);
-      // Guardar transformaciones en localStorage para que game.html las pueda leer
+      // Guardar transformaciones en localStorage para que game.html las pueda leer.
+      // Usamos _saveTransformationsToLS() que guarda skins grandes POR SEPARADO
+      // (dragonCreatorZ_skin_<id>) y pone "__ref__" en el JSON principal,
+      // evitando QuotaExceededError y asegurando que game.html siempre resuelva el skin.
       try {
-        const transToSave = _serializeTransformationsForSave();
-        localStorage.setItem("dragonCreatorZ_transformations", JSON.stringify(transToSave));
+        _saveTransformationsToLS();
         localStorage.setItem("dragonCreatorZ_trans_slot", String(activeSlotIndex));
       } catch(te) { console.warn("[DC] Error guardando transformaciones:", te); }
       setTimeout(()=>{window.location.href=`game.html?slot=${activeSlotIndex}`;},200);
@@ -2220,6 +2282,9 @@ let transformations = []; // array de objetos de transformación
 let activeTransIndex = -1; // -1 = forma base
 let editingTransIndex = null; // null = nueva, N = editar
 let _transEditSkinDataURL = null; // dataURL temporal del spritesheet custom
+// Setters globales requeridos por transformations-system.js (_initSpecialSkinsUI)
+window.__setTransSkin    = function(v) { _transEditSkinDataURL = v; };
+window.__setTransSkinImg = function(v) { _tmEditSkinImage = v; };
 
 Object.defineProperty(window, "transformations", {
   configurable: true,
@@ -2234,6 +2299,13 @@ Object.defineProperty(window, "activeTransIndex", {
     activeTransIndex = Number.isFinite(n) ? n : -1;
   },
 });
+// Exponer editingTransIndex para que transformations-system.js pueda accederlo
+Object.defineProperty(window, "editingTransIndex", {
+  configurable: true,
+  get() { return editingTransIndex; },
+  set(value) { editingTransIndex = (value === null || value === undefined) ? null : parseInt(value, 10); },
+});
+window.__getEditingTransIndex = function() { return editingTransIndex; };
 
 function _serializeTransformationsForSave(list = transformations) {
   return (Array.isArray(list) ? list : []).map(tr => ({
@@ -2745,7 +2817,25 @@ function openTransModal(editIdx=null) {
   document.getElementById("transImportLabel").className = "trans-skin-import" + (hasSkin ? " loaded" : "");
   document.getElementById("transImportFname").textContent = hasSkin ? "Skin cargada ✓" : "Sin cargar";
   document.getElementById("transImportText").textContent  = hasSkin ? "CAMBIAR PNG"    : "ELEGIR PNG DE TRANSFORMACIÓN";
-  if (hasSkin) { _transEditSkinDataURL = tr.skinDataURL; _tmEditSkinImage = tr.skinImage || null; }
+  if (hasSkin) {
+    _transEditSkinDataURL = tr.skinDataURL;
+    if (tr.skinImage) {
+      // Imagen ya cargada en memoria
+      _tmEditSkinImage = tr.skinImage;
+    } else {
+      // Imagen no está en memoria (recarga desde localStorage) — cargarla async
+      _tmEditSkinImage = null;
+      const _img = new Image();
+      _img.onload = () => {
+        tr.skinImage = _img;
+        _tmEditSkinImage = _img;
+        // Re-renderizar preview del modal si está abierto
+        if (typeof _renderTransModalPreview === "function") _renderTransModalPreview();
+      };
+      _img.onerror = () => { _tmEditSkinImage = null; };
+      _img.src = tr.skinDataURL;
+    }
+  }
 
   _buildTransAuraChips(tr?.auraColor ?? "#fdd835");
 
@@ -2798,6 +2888,10 @@ function closeTransModal() {
   _transEditSkinDataURL = null;
   _tmEditSkinImage      = null;
   _tmAppearance         = {};
+  // Resetear botones especiales
+  document.querySelectorAll(".special-skin-btn").forEach(b => b.classList.remove("active"));
+  const statusEl = document.getElementById("specialSkinStatus");
+  if (statusEl) { statusEl.style.display = "none"; statusEl.textContent = ""; }
 }
 
 async function saveTransModal() {
@@ -2861,9 +2955,22 @@ function _buildAppearanceWithTrans(baseAppearance, tr) {
 function _saveTransformationsToLS() {
   try {
     const toSave = _serializeTransformationsForSave();
-    localStorage.setItem("dragonCreatorZ_transformations", JSON.stringify(toSave));
+
+    // Guardar skins grandes por separado (evita QuotaExceededError)
+    const toSaveNoSkins = toSave.map(tr => {
+      if (tr.skinDataURL) {
+        try {
+          localStorage.setItem("dragonCreatorZ_skin_" + tr.id, tr.skinDataURL);
+        } catch(e) { console.warn("[DC] Skin demasiado grande para LS:", tr.id); }
+        return Object.assign({}, tr, { skinDataURL: "__ref__" });
+      }
+      return tr;
+    });
+
+    localStorage.setItem("dragonCreatorZ_transformations", JSON.stringify(toSaveNoSkins));
+
     if (savedSlots[activeSlotIndex]) {
-      savedSlots[activeSlotIndex].transformations = toSave;
+      savedSlots[activeSlotIndex].transformations = toSaveNoSkins;
       saveSlots();
       renderSlots();
     }
@@ -2883,6 +2990,16 @@ async function _loadTransformationsFromLS() {
       if (Array.isArray(parsed)) saved = parsed;
     } catch(e) {}
   }
+  // Recomponer skinDataURL desde claves separadas (guardadas para evitar QuotaExceededError)
+  saved = saved.map(tr => {
+    if (tr.skinDataURL === "__ref__" || !tr.skinDataURL) {
+      try {
+        const skin = localStorage.getItem("dragonCreatorZ_skin_" + tr.id);
+        if (skin) return Object.assign({}, tr, { skinDataURL: skin });
+      } catch(e) {}
+    }
+    return tr;
+  });
   transformations = saved.map(data => _makeTrans(data));
   activeTransIndex = -1;
   await Promise.all(transformations.map(tr => _loadTransSkinImage(tr)));
@@ -2991,8 +3108,17 @@ async function _initTransTab() {
     document.getElementById("transImportLabel").classList.remove("loaded");
     document.getElementById("transImportFname").textContent = "Sin cargar";
     document.getElementById("transImportText").textContent  = "ELEGIR PNG DE TRANSFORMACIÓN";
+    // Deseleccionar botones especiales
+    document.querySelectorAll(".special-skin-btn").forEach(b => b.classList.remove("active"));
+    const statusEl = document.getElementById("specialSkinStatus");
+    if (statusEl) { statusEl.style.display = "none"; statusEl.textContent = ""; }
     showToast("Skin de transformación quitada","warning");
   });
+
+  // ── Botones de Transformaciones Especiales ──
+  // NOTA: los eventos de .special-skin-btn son manejados por transformations-system.js
+  // via delegación en #tm-general. Los setters window.__setTransSkin y __setTransSkinImg
+  // (declarados arriba) permiten que ese módulo escriba _transEditSkinDataURL y _tmEditSkinImage.
 
   // Sliders de tamaño del modal de transformación
   (function _initTmSizeSliders() {

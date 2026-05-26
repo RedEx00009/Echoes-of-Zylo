@@ -701,10 +701,21 @@
         CS.invalidateHairCache && CS.invalidateHairCache();
         renderVariantSelector();
       }
+      // Recargar transformaciones del nuevo slot en el TransformationsSystem
+      const TS = window.TransformationsSystem;
+      if (TS) {
+        // Limpiar transformación activa y catálogo anterior
+        TS.revertTransformation();
+        _clearTransSkinFromPlayer();
+        TS.TRANSFORMATIONS.length = 0;
+        // Cargar y registrar transformaciones del nuevo slot con sus skins
+        const newTrans = _loadSavedTransformations();
+        newTrans.forEach(tr => TS.registerTransformation(tr));
+      }
       updatePlayerHud();
       renderActionBars();
       publishMyAppearance(true);
-      showHudToast(`? ${player.name} cargado`, "xp");
+      showHudToast(`⚡ ${player.name} cargado`, "xp");
       closeMenu();
     }
 
@@ -744,25 +755,49 @@
     }
 
     function _loadSavedTransformations() {
-      // Fuente 1: clave separada dragonCreatorZ_transformations
-      let saved = [];
+      // Preferir slot activo; usar clave separada como fallback
+      let fromSlot = [];
+      let fromKey  = [];
+      try {
+        const slotRaw = localStorage.getItem("dragonCreatorZ_slots");
+        const activeSlot = parseInt(localStorage.getItem("dragonCreatorZ_activeSlot") || "0", 10);
+        if (slotRaw) {
+          const slots = JSON.parse(slotRaw);
+          const slot = slots[activeSlot];
+          if (Array.isArray(slot?.transformations)) fromSlot = slot.transformations;
+        }
+      } catch(e) {}
       try {
         const raw = localStorage.getItem("dragonCreatorZ_transformations");
-        if (raw) saved = JSON.parse(raw);
+        if (raw) { const parsed = JSON.parse(raw); if (Array.isArray(parsed)) fromKey = parsed; }
       } catch(e) {}
-      // Fuente 2 (más confiable): transformaciones dentro del slot activo
-      if (!Array.isArray(saved) || saved.length === 0) {
-        try {
-          const slotRaw = localStorage.getItem("dragonCreatorZ_slots");
-          const activeSlot = parseInt(localStorage.getItem("dragonCreatorZ_activeSlot") || "0", 10);
-          if (slotRaw) {
-            const slots = JSON.parse(slotRaw);
-            const slot = slots[activeSlot];
-            if (Array.isArray(slot?.transformations)) saved = slot.transformations;
+      // Usar slot si tiene datos; si no, usar clave global
+      // Pero también combinar: el slot puede tener transformaciones desactualizadas
+      // (sin skin) mientras que el localStorage global tiene la versión actualizada.
+      // Fusionar por ID dando prioridad al slot para metadatos, pero al global para skins.
+      let saved = [];
+      if (fromSlot.length > 0) {
+        // Construir mapa por ID de las transformaciones globales (más recientes)
+        const globalMap = {};
+        fromKey.forEach(tr => { if (tr.id) globalMap[tr.id] = tr; });
+        // Fusionar: slot como base, global para actualizar skinDataURL si falta
+        saved = fromSlot.map(tr => {
+          const global = globalMap[tr.id];
+          if (global && (global.skinDataURL && global.skinDataURL !== "__ref__") && (!tr.skinDataURL || tr.skinDataURL === "__ref__")) {
+            return Object.assign({}, tr, { skinDataURL: global.skinDataURL });
           }
-        } catch(e) {}
+          return tr;
+        });
+        // También agregar transformaciones del global que no estén en el slot (por ID)
+        const slotIds = new Set(fromSlot.map(t => t.id).filter(Boolean));
+        fromKey.forEach(tr => {
+          if (tr.id && !slotIds.has(tr.id)) saved.push(tr);
+        });
+      } else {
+        saved = fromKey;
       }
-      // Normalizar formato (multStr → multipliers.str)
+
+      // Recomponer skinDataURL desde claves separadas (guardadas por index.html para evitar QuotaExceededError)
       return (Array.isArray(saved) ? saved : []).map(tr => {
         if (!tr.multipliers) {
           tr.multipliers = {
@@ -773,6 +808,13 @@
           };
         }
         if (!tr.icon) tr.icon = "⚡";
+        // Si el skin fue guardado por separado, recuperarlo
+        if (tr.skinDataURL === "__ref__" || !tr.skinDataURL) {
+          try {
+            const skin = localStorage.getItem("dragonCreatorZ_skin_" + tr.id);
+            if (skin) tr.skinDataURL = skin;
+          } catch(e) {}
+        }
         return tr;
       });
     }
@@ -836,26 +878,106 @@
       document.getElementById("transDropdownMenu")?.classList.remove("open");
     }
 
+    // ── Helpers para aplicar/limpiar skin de transformación ──────────────────
+    // Guarda el variantCustomization original del slot "base" para poder restaurarlo.
+    // undefined = sin estado guardado (no hay trans skin activa)
+    // null = había slot "base" vacío antes de la transformación
+    // Object = había un custom guardado antes
+    let _savedBaseVariantCustom = undefined;
+
+    function _applyTransSkinToPlayer(skinDataURL) {
+      const CS = window.CharacterSystem;
+      if (!CS || !skinDataURL) return;
+      const app = CS.player.appearance;
+
+      // Guardar el custom actual del variantId activo para poder restaurarlo
+      const currentVariantId = app.variantId || "base";
+      _savedBaseVariantCustom = (app.variantCustomizations && app.variantCustomizations[currentVariantId])
+        ? Object.assign({}, app.variantCustomizations[currentVariantId])
+        : null;
+
+      // Cargar la imagen y sobreescribir el slot activo Y "base"
+      const img = new Image();
+      img.onload = () => {
+        if (!app.variantCustomizations) app.variantCustomizations = {};
+        const skinEntry = {
+          // Campos que el CharacterSystem usa para renderizar el sprite custom
+          spriteImage:          img,
+          userImage:            img,
+          spriteDataURL:        skinDataURL,
+          // Cubrir modo combate
+          combatSpriteImage:    img,
+          combatUserImage:      img,
+          combatSpriteDataURL:  skinDataURL,
+          // Cubrir modo especial/special
+          specialSpriteImage:   img,
+          specialUserImage:     img,
+          specialSpriteDataURL: skinDataURL,
+          // Marcar como custom de transformación para limpieza
+          _isTransSkin: true,
+        };
+
+        // Re-leer variantId en el momento del onload (puede haber cambiado)
+        const activeVariantId = app.variantId || "base";
+
+        // Sobreescribir TODOS los slots relevantes para cubrir cualquier modo de render
+        app.variantCustomizations[activeVariantId] = skinEntry;
+        if (activeVariantId !== "base") {
+          app.variantCustomizations["base"] = skinEntry;
+        }
+        // Forzar también la key null por si el CharacterSystem la busca como spriteVariantId=null
+        app.variantCustomizations["null"] = skinEntry;
+
+        // Invalida el cache de cabello/sprites del CharacterSystem
+        CS.invalidateHairCache && CS.invalidateHairCache();
+
+        // Forzar re-render si el juego expone alguna función de invalidación
+        if (typeof window._forceRender === "function") window._forceRender();
+        if (typeof window.requestRedraw === "function") window.requestRedraw();
+
+        console.info("[TransSkin] Sprite de transformación aplicado correctamente.");
+      };
+      img.onerror = () => console.warn("[TransSkin] No se pudo cargar imagen de transformación:", skinDataURL?.substring(0, 60));
+      img.src = skinDataURL;
+    }
+
+    function _clearTransSkinFromPlayer() {
+      const CS = window.CharacterSystem;
+      if (!CS) return;
+      const app = CS.player.appearance;
+      // Solo restaurar si teníamos un estado guardado previo
+      if (_savedBaseVariantCustom !== undefined) {
+        if (!app.variantCustomizations) app.variantCustomizations = {};
+        const currentVariantId = app.variantId || "base";
+        if (_savedBaseVariantCustom === null) {
+          delete app.variantCustomizations[currentVariantId];
+          // Si también sobreescribimos "base" y "null", limpiarlos
+          if (currentVariantId !== "base") delete app.variantCustomizations["base"];
+        } else {
+          app.variantCustomizations[currentVariantId] = _savedBaseVariantCustom;
+          if (currentVariantId !== "base") delete app.variantCustomizations["base"];
+        }
+        // Limpiar siempre el slot "null" que se agrega durante la transformación
+        delete app.variantCustomizations["null"];
+        _savedBaseVariantCustom = undefined;
+      }
+      CS.invalidateHairCache && CS.invalidateHairCache();
+    }
+
     function applyTransformationFromDrop(trId) {
       const TS = window.TransformationsSystem;
       if (!TS) return;
-      // Buscar en localStorage y registrar si no está en catálogo
-      let saved = [];
-      try { const raw = localStorage.getItem("dragonCreatorZ_transformations"); if (raw) saved = JSON.parse(raw); } catch(e) {}
+
+      // Siempre recargar desde localStorage para tener el skinDataURL fresco
+      const saved = _loadSavedTransformations();
       const trData = saved.find(t => t.id === trId);
-      if (trData && !TS.TRANSFORMATIONS.find(t => t.id === trId)) {
-        const normalized = Object.assign({}, trData);
-        if (!normalized.multipliers) {
-          normalized.multipliers = {
-            str: trData.multStr || 1,
-            spd: trData.multSpd || 1,
-            def: trData.multDef || 1,
-            ki:  trData.multKi  || 1,
-          };
-        }
-        TS.registerTransformation(normalized);
+
+      // Siempre actualizar/registrar con los datos frescos (incluye skinDataURL resuelto)
+      if (trData) {
+        TS.registerTransformation(Object.assign({}, trData));
       }
-      // CRÍTICO: sincronizar stats base del jugador con el TransformationsSystem
+
+      // Sincronizar stats base del jugador
       if (window.player) {
         TS.syncBaseStats({
           str: window.player.strength || 80,
@@ -864,20 +986,41 @@
           ki:  window.player.maxKi    || 100,
         });
       }
+
       const result = TS.transformPlayer(trId);
       if (result.success) {
         const tr = result.transformation;
         showHudToast(`⚡ ${tr.name}`, "xp");
-        if (tr.skinDataURL && window.csAnimator && window.csAnimator.setTransformationSkin) {
-          window.csAnimator.setTransformationSkin(tr.skinDataURL);
+
+        // Resolver skinDataURL: prioridad trData (más fresco, ya resuelto desde LS)
+        // luego tr del catálogo, luego intentar resolver __ref__ directamente
+        let skinURL = (trData && trData.skinDataURL) || tr.skinDataURL || null;
+
+        // Si aún es __ref__, intentar resolver manualmente desde localStorage
+        if (!skinURL || skinURL === "__ref__") {
+          try {
+            const fallbackSkin = localStorage.getItem("dragonCreatorZ_skin_" + trId);
+            if (fallbackSkin) skinURL = fallbackSkin;
+          } catch(e) {}
         }
+
+        if (skinURL && skinURL !== "__ref__" && skinURL.length > 10) {
+          _applyTransSkinToPlayer(skinURL);
+          // Actualizar también el catálogo con el dataURL resuelto para futuros usos
+          if (!tr.skinDataURL || tr.skinDataURL === "__ref__") {
+            tr.skinDataURL = skinURL;
+          }
+        } else {
+          console.info("[TransSkin] Transformación sin skin custom:", trId);
+        }
+
         if (tr.auraColor && window.player) {
           window.player.savedAuraColor = window.player.savedAuraColor || window.player.auraColor;
           window.player.auraColor = tr.auraColor;
         }
-        // Aplicar apariencia visual de la transformación si tiene
+        // Aplicar apariencia visual de la transformación
         _applyTransAppearance(tr);
-        // Aplicar tamaño propio de la transformación (sin mezclar con el base)
+        // Aplicar tamaño propio de la transformación
         if (tr.displayW || tr.displayH) {
           window._activeDisplayW = tr.displayW || (savedChar && savedChar.displayW) || 180;
           window._activeDisplayH = tr.displayH || (savedChar && savedChar.displayH) || 220;
@@ -926,14 +1069,13 @@
     function revertTransformationInGame() {
       const TS = window.TransformationsSystem;
       if (!TS) return;
-      // Guardar apariencia base antes de revertir (si no la teníamos)
       const CS = window.CharacterSystem;
       TS.revertTransformation();
       if (window.player) {
         window.player.auraColor = window.player.savedAuraColor || window.player.auraColor;
         delete window.player.savedAuraColor;
       }
-      // Restaurar apariencia base del personaje (recargar desde el slot guardado)
+      // Restaurar apariencia base completa del personaje (incluyendo raza) desde el slot guardado
       if (CS) {
         try {
           const slotRaw = localStorage.getItem("dragonCreatorZ_slots");
@@ -943,6 +1085,8 @@
             const slot = slots[activeSlot];
             if (slot) {
               const app = CS.player.appearance;
+              // Restaurar raza — crítico para transformaciones como Ozaru que cambian la raza
+              if (slot.race)       app.raceId     = slot.race;
               if (slot.faceId)     app.faceId     = slot.faceId;
               if (slot.faceColor !== undefined) app.faceColor = slot.faceColor;
               if (slot.hairId)     app.hairId     = slot.hairId;
@@ -970,9 +1114,8 @@
       // Restaurar tamaño base del personaje
       window._activeDisplayW = (savedChar && savedChar.displayW) || 180;
       window._activeDisplayH = (savedChar && savedChar.displayH) || 220;
-      if (window.csAnimator && window.csAnimator.setTransformationSkin) {
-        window.csAnimator.setTransformationSkin(null);
-      }
+      // Limpiar skin de transformación de variantCustomizations
+      _clearTransSkinFromPlayer();
       publishMyAppearance && publishMyAppearance(true);
       closeTransDropdown();
       renderActionBars();
@@ -1164,7 +1307,7 @@
     let myPlayerId = null, mpConnected = false, mpLastSend = 0, mpLastAppearance = 0;
     const MP_SEND_RATE = 80;
     const MP_APPEARANCE_RATE = 2500;
-    const chatMessages = [], CHAT_MAX = 8;
+    const chatMessages = [], CHAT_MAX = 80;
 
     function canvasToBestDataURL(canvas, sourceDataURL, quality) {
       const isPng = typeof sourceDataURL === "string" && sourceDataURL.startsWith("data:image/png");
@@ -1551,8 +1694,8 @@
         clothColor: sc.clothColor || "#ff6a00",
         clothColorA: app?.clothColorA ?? sc.clothColorA ?? null,
         clothColorB: app?.clothColorB ?? sc.clothColorB ?? null,
-        displayW: sc.displayW || 180,
-        displayH: sc.displayH || 220,
+        displayW: window._activeDisplayW || sc.displayW || 180,
+        displayH: window._activeDisplayH || sc.displayH || 220,
       };
       if (includePreview) payload.previewDataURL = renderAppearancePreview(CS);
       return payload;
@@ -1870,8 +2013,47 @@
     function _drawRemotePlayerLabel(p,sx,sy){ctx.save();ctx.font="bold 9px Orbitron,monospace";ctx.textAlign="center";const nm=(p.name||"?")+(p.level?` Lv.${p.level}`:"");const nw=ctx.measureText(nm).width+10;ctx.fillStyle="rgba(8,9,15,0.8)";ctx.fillRect(sx-nw/2,sy-SPRITE_DRAW_H-18,nw,16);ctx.fillStyle=(p.appearance?.auraColor)||(p.charColor)||"#00e5ff";ctx.fillText(nm,sx,sy-SPRITE_DRAW_H-6);ctx.restore();}
     function _drawRemotePlayerFallback(p,sx,sy){const color=(p.appearance?.auraColor)||p.charColor||"#00e5ff";const sk=p.appearance?.skinColor||"#e8c898";ctx.fillStyle="rgba(0,0,0,0.3)";ctx.beginPath();ctx.ellipse(sx,sy+3,16,5,0,0,Math.PI*2);ctx.fill();ctx.save();if((p.facing||1)===-1){ctx.translate(sx*2,0);ctx.scale(-1,1);}ctx.fillStyle=color;ctx.fillRect(sx-10,sy-36,20,22);ctx.fillStyle=sk;ctx.fillRect(sx-16,sy-36,7,16);ctx.fillRect(sx+9,sy-36,7,16);ctx.beginPath();ctx.arc(sx,sy-44,10,0,Math.PI*2);ctx.fill();ctx.restore();_drawRemotePlayerLabel(p,sx,sy);}
 
-    function addChatMsg(name,text,color){chatMessages.push({name,text,color:color||"#e8eaf6",time:performance.now()});if(chatMessages.length>CHAT_MAX)chatMessages.shift();renderChatMessages();}
-    function renderChatMessages(){const box=document.getElementById("mpChatBox");if(!box)return;box.innerHTML=chatMessages.map(m=>`<div><span style="color:${m.color};font-weight:700">${m.name}:</span> ${m.text}</div>`).join("");box.scrollTop=box.scrollHeight;}
+    const CHAT_MAX_HISTORY = 80;
+    let chatSizeMode = "sm"; // "sm" | "md" | "lg"
+    let chatSizeMenuOpen = false;
+    const CHAT_SIZES = {
+      sm: { label:"S", boxH:"52px",  panelW:"158px", fontSize:"9px",  inputFontSize:"10px" },
+      md: { label:"M", boxH:"100px", panelW:"220px", fontSize:"10px", inputFontSize:"11px" },
+      lg: { label:"L", boxH:"180px", panelW:"300px", fontSize:"11px", inputFontSize:"12px" },
+    };
+    function applyChatSize(size){
+      chatSizeMode=size;
+      const s=CHAT_SIZES[size];
+      const panel=document.getElementById("mpHudPanel");
+      const box=document.getElementById("mpChatBox");
+      const inp=document.getElementById("mpChatInput");
+      const lbl=document.getElementById("mpChatSizeLabel");
+      if(!panel)return;
+      panel.style.width=s.panelW;
+      if(box){box.style.height=s.boxH;box.style.fontSize=s.fontSize;box.scrollTop=box.scrollHeight;}
+      if(inp)inp.style.fontSize=s.inputFontSize;
+      if(lbl)lbl.textContent=s.label;
+      closeChatSizeMenu();
+      try{localStorage.setItem("dwz_chatSize",size);}catch(e){}
+    }
+    function openChatSizeMenu(e){e&&e.stopPropagation();chatSizeMenuOpen=!chatSizeMenuOpen;const menu=document.getElementById("mpSizeMenu");if(menu)menu.style.display=chatSizeMenuOpen?"block":"none";}
+    function closeChatSizeMenu(){chatSizeMenuOpen=false;const menu=document.getElementById("mpSizeMenu");if(menu)menu.style.display="none";}
+    window.openChatSizeMenu=openChatSizeMenu;
+    window.applyChatSize=applyChatSize;
+    document.addEventListener("click",()=>{if(chatSizeMenuOpen)closeChatSizeMenu();});
+
+    function addChatMsg(name,text,color){
+      chatMessages.push({name,text,color:color||"#e8eaf6",time:performance.now()});
+      if(chatMessages.length>CHAT_MAX_HISTORY)chatMessages.shift();
+      renderChatMessages();
+    }
+    function renderChatMessages(){
+      const box=document.getElementById("mpChatBox");
+      if(!box)return;
+      const wasAtBottom=box.scrollHeight-box.scrollTop-box.clientHeight<18;
+      box.innerHTML=chatMessages.map(m=>`<div style="padding:1px 0;border-bottom:1px solid rgba(42,53,96,.3)"><span style="color:${m.color};font-weight:700">${m.name}:</span> <span style="color:#c8cfe8">${m.text}</span></div>`).join("");
+      if(wasAtBottom)box.scrollTop=box.scrollHeight;
+    }
     function sendChatMsg(){const inp=document.getElementById("mpChatInput");if(!inp)return;const text=inp.value.trim();if(!text)return;inp.value="";addChatMsg("Tú",text,"#f5c400");if(!mpConnected)return;const ref=db.ref("chat").push();ref.set({id:myPlayerId,name:player.name,text,t:Date.now()});}
     window.sendChatMsg=sendChatMsg;
     function updateMpHud(){const el=document.getElementById("mpPlayerCount");if(!el)return;const count=Object.keys(otherPlayers).length+1;el.textContent=mpConnected?`${count} online`:"Offline";el.style.color=mpConnected?"#f5c400":"#ff1744";}
@@ -1880,13 +2062,81 @@
     function buildMpHud(){
       const hud=document.getElementById("hud");
       if(!hud||document.getElementById("mpHudPanel"))return;
+      let savedSize="sm";try{savedSize=localStorage.getItem("dwz_chatSize")||"sm";}catch(e){}
+      if(!CHAT_SIZES[savedSize])savedSize="sm";
+      chatSizeMode=savedSize;
+      const s=CHAT_SIZES[chatSizeMode];
       const style=document.createElement("style");
-      style.textContent=`#mpHudPanel{position:absolute;top:12px;left:260px;width:150px;background:rgba(8,9,15,.88);border:1px solid #2a3560;border-radius:8px;backdrop-filter:blur(8px);z-index:11;pointer-events:auto;overflow:hidden}#mpHudHead{height:34px;display:flex;align-items:center;gap:7px;padding:0 8px;font-family:'Orbitron',monospace;font-size:8px;letter-spacing:1.5px;color:#00e5ff;cursor:pointer}#mpPlayerCount{margin-left:auto;font-size:8px;color:#f5c400;letter-spacing:1px;white-space:nowrap}#mpChatBody{display:none;padding:0 8px 8px}#mpHudPanel.chat-open #mpChatBody{display:block}#mpChatBox{height:44px;overflow-y:auto;font-size:10px;color:#c8cfe8;line-height:1.25;margin-bottom:5px;scrollbar-width:none}#mpChatInput{flex:1;min-width:0;background:#12172e;border:1px solid #2a3560;border-radius:4px;padding:3px 6px;color:#e8eaf6;font-size:10px;outline:none;font-family:'Rajdhani',sans-serif;pointer-events:auto}#mpChatSend{background:rgba(0,229,255,.15);border:1px solid #00e5ff;border-radius:4px;color:#00e5ff;font-size:9px;padding:3px 7px;cursor:pointer;font-family:'Orbitron',monospace;pointer-events:auto}@media (pointer:coarse),(max-width:768px){#mpHudPanel{top:12px;left:clamp(252px,34vw,calc(100vw - 260px));width:132px}#mpHudPanel.chat-open{width:min(200px,calc(100vw - 360px))}#mpChatBox{height:38px;font-size:9px}#mpHudHead{height:30px;font-size:7px;padding:0 7px}}@media (max-width:560px){#mpHudPanel{left:64px;top:96px;width:126px}#mpHudPanel.chat-open{width:min(188px,calc(100vw - 184px))}}`;
+      style.textContent=`
+#mpHudPanel{position:absolute;top:12px;left:260px;width:${s.panelW};background:rgba(8,9,15,.92);border:1px solid #2a3560;border-radius:8px;backdrop-filter:blur(8px);z-index:11;pointer-events:auto;overflow:visible;transition:width .2s ease}
+#mpHudHead{height:34px;display:flex;align-items:center;gap:6px;padding:0 8px;font-family:'Orbitron',monospace;font-size:8px;letter-spacing:1.5px;color:#00e5ff;cursor:pointer;flex-shrink:0}
+#mpHudHead .chat-label{flex:0 0 auto}
+#mpPlayerCount{flex:1;font-size:8px;color:#f5c400;letter-spacing:1px;white-space:nowrap;text-align:right;padding-right:4px}
+#mpSizeTrigger{position:relative;display:flex;align-items:center;justify-content:center;width:22px;height:22px;background:rgba(245,196,0,.12);border:1px solid rgba(245,196,0,.35);border-radius:4px;cursor:pointer;flex-shrink:0;touch-action:manipulation}
+#mpSizeLabel{font-family:'Orbitron',monospace;font-size:8px;color:#f5c400;letter-spacing:1px;pointer-events:none}
+#mpSizeMenu{display:none;position:absolute;top:calc(100% + 4px);right:0;background:rgba(8,9,15,.97);border:1px solid #2a3560;border-radius:6px;overflow:hidden;z-index:200;min-width:60px;box-shadow:0 4px 16px rgba(0,0,0,.6)}
+.mpSizeOpt{display:block;padding:7px 14px;font-family:'Orbitron',monospace;font-size:8px;letter-spacing:1px;color:#8892b0;cursor:pointer;white-space:nowrap;touch-action:manipulation;transition:background .12s}
+.mpSizeOpt:hover,.mpSizeOpt.active{background:rgba(245,196,0,.12);color:#f5c400}
+#mpChatBody{display:none;padding:0 8px 8px;flex-direction:column;gap:4px}
+#mpHudPanel.chat-open #mpChatBody{display:flex}
+#mpChatBox{
+  height:${s.boxH};overflow-y:scroll;font-size:${s.fontSize};color:#c8cfe8;line-height:1.35;
+  margin-bottom:2px;
+  scrollbar-width:thin;scrollbar-color:rgba(245,196,0,.4) rgba(255,255,255,.04);
+  padding-right:2px;
+  transition:height .2s ease, font-size .2s ease;
+}
+#mpChatBox::-webkit-scrollbar{width:5px}
+#mpChatBox::-webkit-scrollbar-track{background:rgba(255,255,255,.04);border-radius:3px}
+#mpChatBox::-webkit-scrollbar-thumb{background:rgba(245,196,0,.4);border-radius:3px}
+#mpChatBox::-webkit-scrollbar-thumb:hover{background:rgba(245,196,0,.7)}
+#mpChatInputRow{display:flex;gap:4px;align-items:center}
+#mpChatInput{flex:1;min-width:0;background:#12172e;border:1px solid #2a3560;border-radius:4px;padding:4px 7px;color:#e8eaf6;font-size:${s.inputFontSize};outline:none;font-family:'Rajdhani',sans-serif;pointer-events:auto;transition:font-size .2s}
+#mpChatInput:focus{border-color:rgba(0,229,255,.5)}
+#mpChatSend{background:rgba(0,229,255,.15);border:1px solid #00e5ff;border-radius:4px;color:#00e5ff;font-size:9px;padding:4px 8px;cursor:pointer;font-family:'Orbitron',monospace;pointer-events:auto;flex-shrink:0;touch-action:manipulation}
+#mpChatSend:active{background:rgba(0,229,255,.3)}
+@media (pointer:coarse),(max-width:768px){
+  #mpHudPanel{top:12px;left:clamp(60px,30vw,calc(100vw - 200px))}
+  #mpHudHead{height:30px;font-size:7px;padding:0 7px}
+  #mpChatInput{font-size:12px!important;padding:5px 7px}
+  #mpChatSend{padding:5px 8px;font-size:8px}
+}
+@media (max-width:400px){
+  #mpHudPanel{left:8px;top:96px}
+}`;
       document.head.appendChild(style);
       const panel=document.createElement("div");
       panel.id="mpHudPanel";
-      panel.innerHTML=`<div id="mpHudHead" onclick="toggleMpChat()"><span>CHAT</span><span id="mpPlayerCount">...</span><span>?</span></div><div id="mpChatBody"><div id="mpChatBox"></div><div style="display:flex;gap:4px;"><input id="mpChatInput" type="text" maxlength="60" placeholder="Mensaje..." onkeydown="if(event.key==='Enter')sendChatMsg()"/><button id="mpChatSend" onclick="sendChatMsg()">?</button></div></div>`;
+      panel.innerHTML=`
+<div id="mpHudHead">
+  <span class="chat-label" onclick="toggleMpChat()">💬 CHAT</span>
+  <span id="mpPlayerCount" onclick="toggleMpChat()">...</span>
+  <div id="mpSizeTrigger" onclick="openChatSizeMenu(event)" title="Tamaño del chat">
+    <span id="mpSizeLabel">${s.label}</span>
+    <div id="mpSizeMenu">
+      <div class="mpSizeOpt${chatSizeMode==='sm'?' active':''}" onclick="event.stopPropagation();applyChatSize('sm')">S — Chico</div>
+      <div class="mpSizeOpt${chatSizeMode==='md'?' active':''}" onclick="event.stopPropagation();applyChatSize('md')">M — Mediano</div>
+      <div class="mpSizeOpt${chatSizeMode==='lg'?' active':''}" onclick="event.stopPropagation();applyChatSize('lg')">L — Grande</div>
+    </div>
+  </div>
+  <span onclick="toggleMpChat()" style="font-size:10px;color:#3d4a6b;cursor:pointer" id="mpChevron">▾</span>
+</div>
+<div id="mpChatBody">
+  <div id="mpChatBox"></div>
+  <div id="mpChatInputRow">
+    <input id="mpChatInput" type="text" maxlength="80" placeholder="Mensaje..." onkeydown="if(event.key==='Enter')sendChatMsg()"/>
+    <button id="mpChatSend" onclick="sendChatMsg()">➤</button>
+  </div>
+</div>`;
       hud.appendChild(panel);
+      // Chevron update on toggle
+      const origToggle=window.toggleMpChat;
+      window.toggleMpChat=function(){
+        origToggle();
+        const chevron=document.getElementById("mpChevron");
+        const p=document.getElementById("mpHudPanel");
+        if(chevron&&p)chevron.textContent=p.classList.contains("chat-open")?"▴":"▾";
+      };
     }
 
     const TILE=48, CAM_LERP=0.12, SPRITE_DRAW_W=120, SPRITE_DRAW_H=148;
@@ -2509,7 +2759,7 @@
         const closeBtn = document.createElement("button");
         closeBtn.className = "portal-btn";
         closeBtn.style.cssText = "background:rgba(245,196,0,.1);border-color:var(--accent);color:var(--accent)";
-        closeBtn.textContent = "? CERRAR";
+        closeBtn.textContent = "✕ CERRAR";
         closeBtn.onclick = () => { document.getElementById("portalPanel").classList.remove("visible"); gameState = "playing"; };
         container.appendChild(closeBtn);
       }
@@ -2940,7 +3190,7 @@
       const ptx=Math.floor(player.x/TILE), pty=Math.floor(player.y/TILE);
       const tile=worldMaps[currentMap]?.[pty]?.[ptx];
       if (tile===3 && !document.getElementById("portalPanel").classList.contains("visible") && gameState==="playing") {
-        showHudToast("? Portal  presion Z","info");
+        showHudToast("🌀 Portal — presioná Z","info");
       }
     }
 
