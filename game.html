@@ -746,12 +746,28 @@
       if (!anchor || !menu) return;
       const rect = anchor.getBoundingClientRect();
       const menuW = 220;
+      const isMobile = window.innerWidth <= 768 || ("ontouchstart" in window);
+
       let left = rect.left + rect.width / 2 - menuW / 2;
-      // Evitar que se salga por los bordes
       left = Math.max(8, Math.min(left, window.innerWidth - menuW - 8));
       menu.style.left = left + "px";
-      menu.style.bottom = (window.innerHeight - rect.top + 8) + "px";
+
+      // En mobile: siempre abrir hacia arriba desde el botón,
+      // pero asegurarse de que no quede fuera de la pantalla arriba
+      const bottomFromScreen = window.innerHeight - rect.top + 8;
+      const menuH = menu.scrollHeight || 220;
+      if (isMobile && rect.top - menuH < 8) {
+        // No cabe arriba — centrar verticalmente en pantalla
+        menu.style.bottom = "auto";
+        menu.style.top = Math.max(8, (window.innerHeight - menuH) / 2) + "px";
+      } else {
+        menu.style.top = "auto";
+        menu.style.bottom = bottomFromScreen + "px";
+      }
       menu.style.transform = "none";
+      // Asegurarse de que el menu sea scrolleable si es muy alto
+      menu.style.maxHeight = (window.innerHeight - 20) + "px";
+      menu.style.overflowY = "auto";
     }
 
     function _loadSavedTransformations() {
@@ -999,8 +1015,21 @@
         if (!skinPath && (!skinURL || skinURL === "__ref__")) {
           try {
             const fallbackSkin = localStorage.getItem("dragonCreatorZ_skin_" + trId);
-            if (fallbackSkin) skinURL = fallbackSkin;
-          } catch(e) {}
+            if (fallbackSkin) {
+              skinURL = fallbackSkin;
+              console.info("[TransSkin] Skin resuelto desde localStorage para:", trId, "— tamaño:", fallbackSkin.length);
+            } else {
+              console.warn("[TransSkin] No se encontró skin en localStorage para:", trId,
+                "— keys disponibles:", Object.keys(localStorage).filter(k => k.startsWith("dragonCreatorZ_skin_")));
+            }
+          } catch(e) {
+            console.error("[TransSkin] Error al leer localStorage:", e);
+          }
+        }
+        // Último fallback: buscar skinDataURL directamente en trData sin importar __ref__
+        if (!skinPath && !skinURL && trData?.skinDataURL && trData.skinDataURL !== "__ref__" && trData.skinDataURL.length > 100) {
+          skinURL = trData.skinDataURL;
+          console.info("[TransSkin] Skin tomado directo de trData:", trId);
         }
 
         if (skinPath) {
@@ -2094,7 +2123,7 @@
 #mpPlayerCount{flex:1;font-size:8px;color:#f5c400;letter-spacing:1px;white-space:nowrap;text-align:right;padding-right:4px}
 #mpSizeTrigger{position:relative;display:flex;align-items:center;justify-content:center;width:22px;height:22px;background:rgba(245,196,0,.12);border:1px solid rgba(245,196,0,.35);border-radius:4px;cursor:pointer;flex-shrink:0;touch-action:manipulation}
 #mpSizeLabel{font-family:'Orbitron',monospace;font-size:8px;color:#f5c400;letter-spacing:1px;pointer-events:none}
-#mpSizeMenu{display:none;position:absolute;top:calc(100% + 4px);right:0;background:rgba(8,9,15,.97);border:1px solid #2a3560;border-radius:6px;overflow:hidden;z-index:200;min-width:60px;box-shadow:0 4px 16px rgba(0,0,0,.6)}
+#mpSizeMenu{display:none;position:absolute;bottom:calc(100% + 4px);top:auto;right:0;background:rgba(8,9,15,.97);border:1px solid #2a3560;border-radius:6px;overflow:hidden;z-index:200;min-width:80px;box-shadow:0 -4px 16px rgba(0,0,0,.6)}
 .mpSizeOpt{display:block;padding:7px 14px;font-family:'Orbitron',monospace;font-size:8px;letter-spacing:1px;color:#8892b0;cursor:pointer;white-space:nowrap;touch-action:manipulation;transition:background .12s}
 .mpSizeOpt:hover,.mpSizeOpt.active{background:rgba(245,196,0,.12);color:#f5c400}
 #mpChatBody{display:none;padding:0 8px 8px;flex-direction:column;gap:4px}
