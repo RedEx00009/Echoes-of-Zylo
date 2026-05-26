@@ -832,12 +832,12 @@
 
           <!-- ── TRANSFORMACIONES ESPECIALES ── -->
           <div class="tm-sec" style="margin-top:16px;border-top:1px solid var(--border);padding-top:12px">🌟 TRANSFORMACIONES ESPECIALES</div>
-          <div class="tm-inherit-note" style="margin-bottom:10px">Carga directamente un skin predefinido de la carpeta <code style="color:var(--cyan);font-size:8px">skins/</code>. Reemplaza cualquier PNG custom cargado.</div>
+          <div class="tm-inherit-note" style="margin-bottom:10px">Carga directamente un skin predefinido de la carpeta <code style="color:var(--cyan);font-size:8px">Skins/</code>. Reemplaza cualquier PNG custom cargado.</div>
 
           <!-- Ozaru -->
           <div class="tm-sec" style="color:var(--accent2);margin-top:6px;margin-bottom:4px">🦍 OZARU</div>
           <div style="display:grid;grid-template-columns:1fr;gap:5px;margin-bottom:8px">
-            <button class="special-skin-btn" data-skin="skins/ozaru_saiyajin.png" data-label="Ozaru (Saiyajin)" style="--sc:var(--accent2)">
+            <button class="special-skin-btn" data-skin="Skins/ozaru_saiyajin.png" data-label="Ozaru (Saiyajin)" style="--sc:var(--accent2)">
               🦍 Ozaru — Saiyajin
             </button>
           </div>
@@ -845,10 +845,10 @@
           <!-- Legendario Super Saiyajin -->
           <div class="tm-sec" style="color:#b39ddb;margin-top:4px;margin-bottom:4px">💜 LEGENDARIO SUPER SAIYAJIN</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px">
-            <button class="special-skin-btn" data-skin="skins/lss_saiyajin_m.png" data-label="LSS Saiyajin ♂" style="--sc:#b39ddb">
+            <button class="special-skin-btn" data-skin="Skins/lss_saiyajin_m.png" data-label="LSS Saiyajin ♂" style="--sc:#b39ddb">
               ♂ Saiyajin<br><span style="font-size:7px;opacity:.7">Hombre</span>
             </button>
-            <button class="special-skin-btn" data-skin="skins/lss_saiyajin_f.png" data-label="LSS Saiyajin ♀" style="--sc:#b39ddb">
+            <button class="special-skin-btn" data-skin="Skins/lss_saiyajin_f.png" data-label="LSS Saiyajin ♀" style="--sc:#b39ddb">
               ♀ Saiyajin<br><span style="font-size:7px;opacity:.7">Mujer</span>
             </button>
           </div>
@@ -856,10 +856,10 @@
           <!-- Maquinación -->
           <div class="tm-sec" style="color:var(--cyan);margin-top:4px;margin-bottom:4px">🤖 MAQUINACIÓN</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px">
-            <button class="special-skin-btn" data-skin="skins/maquinacion_androide_m.png" data-label="Maquinación ♂" style="--sc:var(--cyan)">
+            <button class="special-skin-btn" data-skin="Skins/maquinacion_androide_m.png" data-label="Maquinación ♂" style="--sc:var(--cyan)">
               ♂ Androide<br><span style="font-size:7px;opacity:.7">Hombre</span>
             </button>
-            <button class="special-skin-btn" data-skin="skins/maquinacion_androide_f.png" data-label="Maquinación ♀" style="--sc:var(--cyan)">
+            <button class="special-skin-btn" data-skin="Skins/maquinacion_androide_f.png" data-label="Maquinación ♀" style="--sc:var(--cyan)">
               ♀ Androide<br><span style="font-size:7px;opacity:.7">Mujer</span>
             </button>
           </div>
@@ -867,7 +867,7 @@
           <!-- Berserker -->
           <div class="tm-sec" style="color:var(--green);margin-top:4px;margin-bottom:4px">💚 BERSERKER</div>
           <div style="display:grid;grid-template-columns:1fr;gap:5px;margin-bottom:8px">
-            <button class="special-skin-btn" data-skin="skins/berserker_namekiano.png" data-label="Berserker (Namekiano)" style="--sc:var(--green)">
+            <button class="special-skin-btn" data-skin="Skins/berserker_namekiano.png" data-label="Berserker (Namekiano)" style="--sc:var(--green)">
               💚 Berserker — Namekiano
             </button>
           </div>
@@ -875,7 +875,7 @@
           <!-- 5ta Forma -->
           <div class="tm-sec" style="color:var(--magenta);margin-top:4px;margin-bottom:4px">👾 5TA FORMA</div>
           <div style="display:grid;grid-template-columns:1fr;gap:5px;margin-bottom:4px">
-            <button class="special-skin-btn" data-skin="skins/5ta_forma_frieza.png" data-label="5ta Forma (Frieza)" style="--sc:var(--magenta)">
+            <button class="special-skin-btn" data-skin="Skins/5ta_forma_frieza.png" data-label="5ta Forma (Frieza)" style="--sc:var(--magenta)">
               👾 5ta Forma — Frieza
             </button>
           </div>
@@ -991,15 +991,14 @@
 
         <!-- ─── PANEL: STATS ─── -->
         <div class="tm-panel" id="tm-stats">
-          <!-- Inputs ocultos — el código JS los sigue leyendo normalmente -->
-          <input type="hidden" id="tsMult_ki"  value="1"/>
-          <input type="hidden" id="tsMult_str" value="1"/>
-          <input type="hidden" id="tsMult_def" value="1"/>
-          <input type="hidden" id="tsMult_spd" value="1"/>
           <div class="trans-field">
-            <label style="display:block;margin-bottom:10px">MULTIPLICADOR DE STATS — aplica igual a KI · STR · DEF · SPD</label>
-            <select id="tsMultSelect" style="width:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;color:var(--accent);font-family:var(--fh);font-size:12px;letter-spacing:1px;padding:9px 12px;outline:none;cursor:pointer"></select>
-            <div id="tsMultPreview" style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:6px"></div>
+            <label>MULTIPLICADORES (respecto a la forma base · rango x0.3–x10)</label>
+            <div class="trans-stats-grid" style="margin-top:10px">
+              <div class="trans-stat"><label>💙 KI</label><input type="number" id="tsMult_ki" min="0.3" max="10" step="0.1" value="1"/></div>
+              <div class="trans-stat"><label>💥 STR</label><input type="number" id="tsMult_str" min="0.3" max="10" step="0.1" value="1"/></div>
+              <div class="trans-stat"><label>🛡️ DEF</label><input type="number" id="tsMult_def" min="0.3" max="10" step="0.1" value="1"/></div>
+              <div class="trans-stat"><label>⚡ SPD</label><input type="number" id="tsMult_spd" min="0.3" max="10" step="0.1" value="1"/></div>
+            </div>
             <div style="margin-top:8px;font-size:9px;color:rgba(255,100,100,.8);font-family:var(--fh);letter-spacing:.5px;background:rgba(255,23,68,.06);border:1px solid rgba(255,23,68,.2);border-radius:4px;padding:6px 8px">
               🔒 HP actual y HP máximo nunca se modifican
             </div>
@@ -2601,10 +2600,10 @@ function _tmStartPreview() {
     const multSpd = parseFloat(document.getElementById("tsMult_spd")?.value) || 1;
     const multDef = parseFloat(document.getElementById("tsMult_def")?.value) || 1;
     const multKi  = parseFloat(document.getElementById("tsMult_ki")?.value)  || 1;
-    const vStr = cap(base.strength * Math.max(0.3, Math.min(500, multStr)));
-    const vSpd = cap(base.speed    * Math.max(0.3, Math.min(500, multSpd)));
-    const vDef = cap(base.defense  * Math.max(0.3, Math.min(500, multDef)));
-    const vKi  = cap(base.ki       * Math.max(0.3, Math.min(500, multKi)));
+    const vStr = cap(base.strength * Math.max(0.3, Math.min(10, multStr)));
+    const vSpd = cap(base.speed    * Math.max(0.3, Math.min(10, multSpd)));
+    const vDef = cap(base.defense  * Math.max(0.3, Math.min(10, multDef)));
+    const vKi  = cap(base.ki       * Math.max(0.3, Math.min(10, multKi)));
     [["tmBarStr","tmValStr",vStr],["tmBarSpd","tmValSpd",vSpd],["tmBarDef","tmValDef",vDef],["tmBarKi","tmValKi",vKi]].forEach(([bid,vid,v])=>{
       const b=document.getElementById(bid); if(b) b.style.width=v+"%";
       const vv=document.getElementById(vid); if(vv) vv.textContent=v;
@@ -2814,8 +2813,6 @@ function openTransModal(editIdx=null) {
   document.getElementById("tsMult_str").value = tr?.multStr ?? 1;
   document.getElementById("tsMult_def").value = tr?.multDef ?? 1;
   document.getElementById("tsMult_spd").value = tr?.multSpd ?? 1;
-  // Sincronizar el select visual con el valor guardado
-  if (typeof window.__syncMultSelect === "function") window.__syncMultSelect(tr?.multKi ?? 1);
 
   // Cargar tamaño guardado de la transformación (o usar el tamaño base actual)
   const _baseW = parseInt(document.getElementById("spriteWSlider")?.value || "180", 10) || 180;
@@ -3542,83 +3539,6 @@ window._activeLoop = function transLoop(now) {
 
 })();
 
-</script>
-
-<script>
-/* ── Select de multiplicador único para stats de transformación ── */
-(function initMultSelect() {
-  function setup() {
-    const sel = document.getElementById("tsMultSelect");
-    const preview = document.getElementById("tsMultPreview");
-    if (!sel || !preview) return;
-
-    const OPTS = [
-      0.3, 0.5, 0.7,
-      1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5,
-      6, 7, 8, 9, 10,
-      12, 15, 18, 20, 25, 30, 35, 40, 45, 50,
-      60, 70, 75, 80, 90, 100,
-      120, 150, 175, 200, 250, 300, 350, 400, 450, 500
-    ];
-
-    const STATS = [
-      { id: "tsMult_ki",  icon: "💙", label: "KI",       color: "#2979ff" },
-      { id: "tsMult_str", icon: "💥", label: "STR",      color: "#ff1744" },
-      { id: "tsMult_def", icon: "🛡️", label: "DEF",      color: "#ff6a00" },
-      { id: "tsMult_spd", icon: "⚡", label: "SPD",      color: "#e040fb" },
-    ];
-
-    // Poblar opciones
-    sel.innerHTML = "";
-    OPTS.forEach(v => {
-      const o = document.createElement("option");
-      o.value = v;
-      o.textContent = v === 1 ? "× 1  —  Sin cambio (base)" : "× " + v;
-      if (v === 1) o.selected = true;
-      sel.appendChild(o);
-    });
-
-    function applyMult(val) {
-      const n = parseFloat(val) || 1;
-      // Actualizar inputs ocultos
-      STATS.forEach(s => {
-        const inp = document.getElementById(s.id);
-        if (inp) inp.value = n;
-      });
-      // Actualizar preview visual
-      preview.innerHTML = "";
-      STATS.forEach(s => {
-        const card = document.createElement("div");
-        card.style.cssText = "background:var(--bg-card,#12172e);border:1px solid var(--border,#2a3560);border-radius:6px;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px";
-        card.innerHTML =
-          "<span style='font-family:var(--fh,monospace);font-size:10px;color:var(--td,#8892b0);letter-spacing:1px'>" + s.icon + " " + s.label + "</span>" +
-          "<span style='font-family:var(--fh,monospace);font-size:13px;font-weight:700;color:" + s.color + "'>×" + n + "</span>";
-        preview.appendChild(card);
-      });
-      // Disparar actualización de preview del modal si existe
-      if (typeof window._updateTransModalPreview === "function") window._updateTransModalPreview();
-    }
-
-    applyMult(1);
-    sel.addEventListener("change", () => applyMult(sel.value));
-
-    // Expuesto para que openTransModal lo llame al cargar una transformación existente
-    window.__syncMultSelect = function(val) {
-      const n = parseFloat(val) || 1;
-      // Buscar la opción más cercana
-      let best = OPTS[0], bestD = Infinity;
-      OPTS.forEach(o => { const d = Math.abs(o - n); if (d < bestD) { bestD = d; best = o; } });
-      sel.value = best;
-      applyMult(best);
-    };
-  }
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", setup);
-  } else {
-    setup();
-  }
-})();
 </script>
 </body>
 </html>
