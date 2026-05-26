@@ -808,13 +808,15 @@
           };
         }
         if (!tr.icon) tr.icon = "⚡";
-        // Si el skin fue guardado por separado, recuperarlo
+        // Si el skin fue guardado por separado (base64), recuperarlo
         if (tr.skinDataURL === "__ref__" || !tr.skinDataURL) {
           try {
             const skin = localStorage.getItem("dragonCreatorZ_skin_" + tr.id);
             if (skin) tr.skinDataURL = skin;
           } catch(e) {}
         }
+        // Si tiene skinPath (ruta local), es la fuente preferida — no necesita localStorage
+        // game.html lo cargará directamente con new Image() al activar la transformación
         return tr;
       });
     }
@@ -885,9 +887,16 @@
     // Object = había un custom guardado antes
     let _savedBaseVariantCustom = undefined;
 
-    function _applyTransSkinToPlayer(skinDataURL) {
+    /**
+     * Aplica el skin de una transformación al jugador.
+     * Acepta una ruta local ("Skins/ozaru_saiyajin.png") o un dataURL (base64 custom).
+     * Funciona igual que los sprites de raza: new Image() directo, sin base64 en red.
+     * @param {string} skinSrc - Ruta local o dataURL
+     * @param {string} [skinPath] - Ruta original (solo para referencia, no afecta la carga)
+     */
+    function _applyTransSkinToPlayer(skinSrc, skinPath) {
       const CS = window.CharacterSystem;
-      if (!CS || !skinDataURL) return;
+      if (!CS || !skinSrc) return;
       const app = CS.player.appearance;
 
       // Guardar el custom actual del variantId activo para poder restaurarlo
@@ -896,49 +905,39 @@
         ? Object.assign({}, app.variantCustomizations[currentVariantId])
         : null;
 
-      // Cargar la imagen y sobreescribir el slot activo Y "base"
+      // Cargar la imagen directo desde la ruta o dataURL — igual que preloadAssets de CharacterSystem
       const img = new Image();
       img.onload = () => {
         if (!app.variantCustomizations) app.variantCustomizations = {};
+        // Para skinPath: no guardar dataURL en la entrada (evita base64 en memoria/red)
+        const dataURLForEntry = skinPath ? null : skinSrc;
         const skinEntry = {
-          // Campos que el CharacterSystem usa para renderizar el sprite custom
           spriteImage:          img,
           userImage:            img,
-          spriteDataURL:        skinDataURL,
-          // Cubrir modo combate
+          spriteDataURL:        dataURLForEntry,
           combatSpriteImage:    img,
           combatUserImage:      img,
-          combatSpriteDataURL:  skinDataURL,
-          // Cubrir modo especial/special
+          combatSpriteDataURL:  dataURLForEntry,
           specialSpriteImage:   img,
           specialUserImage:     img,
-          specialSpriteDataURL: skinDataURL,
-          // Marcar como custom de transformación para limpieza
-          _isTransSkin: true,
+          specialSpriteDataURL: dataURLForEntry,
+          // Guardar la ruta para que publishMyAppearance pueda enviarla a otros jugadores
+          _transSkinPath: skinPath || null,
+          _isTransSkin:   true,
         };
 
-        // Re-leer variantId en el momento del onload (puede haber cambiado)
         const activeVariantId = app.variantId || "base";
-
-        // Sobreescribir TODOS los slots relevantes para cubrir cualquier modo de render
         app.variantCustomizations[activeVariantId] = skinEntry;
-        if (activeVariantId !== "base") {
-          app.variantCustomizations["base"] = skinEntry;
-        }
-        // Forzar también la key null por si el CharacterSystem la busca como spriteVariantId=null
+        if (activeVariantId !== "base") app.variantCustomizations["base"] = skinEntry;
         app.variantCustomizations["null"] = skinEntry;
 
-        // Invalida el cache de cabello/sprites del CharacterSystem
         CS.invalidateHairCache && CS.invalidateHairCache();
-
-        // Forzar re-render si el juego expone alguna función de invalidación
         if (typeof window._forceRender === "function") window._forceRender();
         if (typeof window.requestRedraw === "function") window.requestRedraw();
-
-        console.info("[TransSkin] Sprite de transformación aplicado correctamente.");
+        console.info("[TransSkin] Sprite de transformación aplicado:", skinPath || skinSrc.substring(0, 40));
       };
-      img.onerror = () => console.warn("[TransSkin] No se pudo cargar imagen de transformación:", skinDataURL?.substring(0, 60));
-      img.src = skinDataURL;
+      img.onerror = () => console.warn("[TransSkin] No se pudo cargar:", skinSrc.substring(0, 60));
+      img.src = skinSrc;
     }
 
     function _clearTransSkinFromPlayer() {
@@ -992,24 +991,25 @@
         const tr = result.transformation;
         showHudToast(`⚡ ${tr.name}`, "xp");
 
-        // Resolver skinDataURL: prioridad trData (más fresco, ya resuelto desde LS)
-        // luego tr del catálogo, luego intentar resolver __ref__ directamente
-        let skinURL = (trData && trData.skinDataURL) || tr.skinDataURL || null;
+        // Resolver skin: prioridad skinPath (ruta local) > skinDataURL (base64 custom)
+        const skinPath = (trData && trData.skinPath) || tr.skinPath || null;
+        let skinURL    = skinPath ? null : ((trData && trData.skinDataURL) || tr.skinDataURL || null);
 
-        // Si aún es __ref__, intentar resolver manualmente desde localStorage
-        if (!skinURL || skinURL === "__ref__") {
+        // Si es __ref__, intentar resolver desde localStorage (base64 custom guardado por separado)
+        if (!skinPath && (!skinURL || skinURL === "__ref__")) {
           try {
             const fallbackSkin = localStorage.getItem("dragonCreatorZ_skin_" + trId);
             if (fallbackSkin) skinURL = fallbackSkin;
           } catch(e) {}
         }
 
-        if (skinURL && skinURL !== "__ref__" && skinURL.length > 10) {
-          _applyTransSkinToPlayer(skinURL);
-          // Actualizar también el catálogo con el dataURL resuelto para futuros usos
-          if (!tr.skinDataURL || tr.skinDataURL === "__ref__") {
-            tr.skinDataURL = skinURL;
-          }
+        if (skinPath) {
+          // Ruta local: cargar directo como hacen las razas — sin base64, liviano en red
+          _applyTransSkinToPlayer(skinPath, skinPath);
+          if (!tr.skinPath) tr.skinPath = skinPath;
+        } else if (skinURL && skinURL !== "__ref__" && skinURL.length > 10) {
+          _applyTransSkinToPlayer(skinURL, null);
+          if (!tr.skinDataURL || tr.skinDataURL === "__ref__") tr.skinDataURL = skinURL;
         } else {
           console.info("[TransSkin] Transformación sin skin custom:", trId);
         }
@@ -1413,6 +1413,14 @@
         delete out[id].spriteImage; delete out[id].userImage;
         delete out[id].combatSpriteImage; delete out[id].combatUserImage;
         delete out[id].specialSpriteImage; delete out[id].specialUserImage;
+        // Si es un skin de transformación por ruta local, no enviar base64 (son null de todas formas).
+        // Enviar solo la ruta — el receptor la cargará igual que un skin de raza.
+        if (cfg._transSkinPath) {
+          out[id]._transSkinPath     = cfg._transSkinPath;
+          out[id].spriteDataURL      = null;
+          out[id].combatSpriteDataURL  = null;
+          out[id].specialSpriteDataURL = null;
+        }
       });
       return out;
     }
@@ -1439,6 +1447,18 @@
         _hydrateSheetField(cfg, "spriteDataURL", "spriteImage");
         _hydrateSheetField(cfg, "combatSpriteDataURL", "combatSpriteImage");
         _hydrateSheetField(cfg, "specialSpriteDataURL", "specialSpriteImage");
+        // Si el otro jugador tiene un skin de transformación por ruta local, cargarlo igual que una raza
+        if (cfg._transSkinPath && !cfg.spriteImage) {
+          const img = new Image();
+          img.onload = () => {
+            cfg.spriteImage = cfg.userImage = img;
+            cfg.combatSpriteImage = cfg.combatUserImage = img;
+            cfg.specialSpriteImage = cfg.specialUserImage = img;
+            window.CharacterSystem?.invalidateHairCache?.();
+          };
+          img.onerror = () => {};
+          img.src = cfg._transSkinPath;
+        }
       });
     }
 

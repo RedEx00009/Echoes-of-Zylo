@@ -14,7 +14,7 @@
  *    - applyTransformationStats(tr, baseStats) → calcula stats modificados
  *
  *  REGLAS DE MULTIPLICADORES:
- *    · Rango: x0.3 hasta x10
+ *    · Rango: x0.3 hasta x500
  *    · Afectan: daño (str), velocidad (spd), defensa (def), ki
  *    · NUNCA modifican HP actual ni HP máximo
  *
@@ -37,7 +37,7 @@
   const MULT_MIN = 0.3;
 
   /** Multiplicador máximo permitido para cualquier stat (excepto HP) */
-  const MULT_MAX = 10;
+  const MULT_MAX = 500;
 
   /** Stats que los multiplicadores PUEDEN modificar */
   const MODIFIABLE_STATS = ["str", "spd", "def", "ki"];
@@ -77,6 +77,7 @@
       this.icon        = config.icon        || "⚡";
       this.description = config.description || "";
       this.skinDataURL = config.skinDataURL || null;
+      this.skinPath    = config.skinPath    || null;  // ruta local (ej: "Skins/ozaru_saiyajin.png")
       this.appearance  = { ...(config.appearance || {}) };
       // Tamaño de display propio de esta transformación (0 = heredar base)
       this.displayW    = config.displayW ? Math.max(40, Math.min(400, parseInt(config.displayW) || 0)) : 0;
@@ -131,6 +132,7 @@
         description: this.description,
         multipliers: { ...this.multipliers },
         skinDataURL: this.skinDataURL,
+        skinPath:    this.skinPath    || null,
         appearance:  { ...this.appearance },
         displayW:    this.displayW || 0,
         displayH:    this.displayH || 0,
@@ -748,32 +750,27 @@
     function _reset() { _clearActive(); _clearStatus(); }
 
     /**
-     * Aplica dataURL + Image runtime al modal.
-     * La preview del modal requiere AMBAS cosas:
-     *   - _transEditSkinDataURL  → dataURL (para guardar en JSON)
-     *   - _tmEditSkinImage       → objeto Image (para renderizar en canvas)
+     * Aplica un skin de ruta local al modal.
+     * Funciona como las razas: guarda la RUTA (skinPath) en vez de base64.
+     * - skinPath  → ruta relativa (ej: "Skins/ozaru_saiyajin.png") — se serializa en JSON
+     * - skinImage → objeto Image cargado desde la ruta — solo runtime (para la preview)
+     * NO genera dataURL ni usa localStorage. El game.html carga el PNG directo desde la ruta.
      */
-    function _applyToModal(dataURL, img, label) {
-      // Asignar dataURL
-      if (typeof window.__setTransSkin === "function") {
-        window.__setTransSkin(dataURL);
-      } else if (Object.getOwnPropertyDescriptor(window, "_transEditSkinDataURL")) {
-        window._transEditSkinDataURL = dataURL;
+    function _applyToModal(skinPath, img, label) {
+      // Notificar a index.html que asigne la ruta (NO el dataURL) a la transformación
+      if (typeof window.__setTransSkinPath === "function") {
+        window.__setTransSkinPath(skinPath);
       }
 
-      // Asignar imagen runtime (necesaria para que la preview la muestre)
+      // Asignar imagen runtime para la preview del canvas en el modal
       if (typeof window.__setTransSkinImg === "function") {
         window.__setTransSkinImg(img);
       } else if (Object.getOwnPropertyDescriptor(window, "_tmEditSkinImage")) {
         window._tmEditSkinImage = img;
       }
 
-      // ── PERSISTENCIA DIRECTA ─────────────────────────────────────────────
-      // Guardar el skin en el objeto runtime Y en localStorage con la key del ID.
-      // Esto garantiza que game.html encuentre el skin por ID aunque el usuario
-      // no presione Guardar explícitamente, y evita el problema de __ref__ sin resolver.
+      // Persistencia directa en el objeto runtime de la transformación que se está editando
       try {
-        // Acceder al array de transformaciones y al índice de edición de index.html
         const _editIdx = typeof window.__getEditingTransIndex === "function"
           ? window.__getEditingTransIndex()
           : (typeof window.editingTransIndex !== "undefined" ? window.editingTransIndex : null);
@@ -781,18 +778,13 @@
         const tArr = window.transformations || (typeof window._getTransformations === "function" ? window._getTransformations() : null);
 
         if (_editIdx !== null && _editIdx !== undefined && Array.isArray(tArr) && tArr[_editIdx]) {
-          // 1. Actualizar objeto runtime
-          tArr[_editIdx].skinDataURL = dataURL;
-          tArr[_editIdx].skinImage   = img;
-          // 2. Guardar en localStorage separado por ID (para que game.html lo resuelva)
-          const trId = tArr[_editIdx].id;
-          if (trId) {
-            try { localStorage.setItem("dragonCreatorZ_skin_" + trId, dataURL); }
-            catch(e) { console.warn("[SpecialSkins] Skin demasiado grande para LS:", trId); }
-          }
+          // Guardar la RUTA — no el dataURL
+          tArr[_editIdx].skinPath    = skinPath;
+          tArr[_editIdx].skinDataURL = null;   // limpiar cualquier dataURL previo
+          tArr[_editIdx].skinImage   = img;    // runtime only
         }
       } catch(e) {
-        console.warn("[SpecialSkins] No se pudo persistir skin en runtime:", e);
+        console.warn("[SpecialSkins] No se pudo persistir skinPath en runtime:", e);
       }
 
       // Actualizar UI del uploader
@@ -812,27 +804,16 @@
       btn.style.opacity = "0.6";
       _clearStatus();
       try {
-        const res = await fetch(path);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const blob = await res.blob();
-
-        // Convertir a dataURL
-        const dataURL = await new Promise((ok, fail) => {
-          const r = new FileReader();
-          r.onload  = () => ok(r.result);
-          r.onerror = () => fail(new Error("FileReader error"));
-          r.readAsDataURL(blob);
-        });
-
-        // Cargar como objeto Image (necesario para la preview del canvas)
+        // Cargar la imagen directo desde la ruta — igual que hacen las razas.
+        // Sin fetch, sin FileReader, sin base64. Solo new Image() con src = path.
         const img = await new Promise((ok, fail) => {
           const i = new Image();
           i.onload  = () => ok(i);
-          i.onerror = () => fail(new Error("Image load error"));
-          i.src = dataURL;
+          i.onerror = () => fail(new Error("No se encontró: " + path));
+          i.src = path;
         });
 
-        _applyToModal(dataURL, img, label);
+        _applyToModal(path, img, label);
         _setStatus("✓ " + label + " cargado", "ok");
         if (typeof window.showToast === "function") window.showToast("Skin cargado: " + label, "success");
 

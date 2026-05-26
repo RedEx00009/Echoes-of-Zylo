@@ -991,14 +991,15 @@
 
         <!-- ─── PANEL: STATS ─── -->
         <div class="tm-panel" id="tm-stats">
+          <!-- Inputs ocultos — el código JS los sigue leyendo normalmente -->
+          <input type="hidden" id="tsMult_ki"  value="1"/>
+          <input type="hidden" id="tsMult_str" value="1"/>
+          <input type="hidden" id="tsMult_def" value="1"/>
+          <input type="hidden" id="tsMult_spd" value="1"/>
           <div class="trans-field">
-            <label>MULTIPLICADORES (respecto a la forma base · rango x0.3–x10)</label>
-            <div class="trans-stats-grid" style="margin-top:10px">
-              <div class="trans-stat"><label>💙 KI</label><input type="number" id="tsMult_ki" min="0.3" max="10" step="0.1" value="1"/></div>
-              <div class="trans-stat"><label>💥 STR</label><input type="number" id="tsMult_str" min="0.3" max="10" step="0.1" value="1"/></div>
-              <div class="trans-stat"><label>🛡️ DEF</label><input type="number" id="tsMult_def" min="0.3" max="10" step="0.1" value="1"/></div>
-              <div class="trans-stat"><label>⚡ SPD</label><input type="number" id="tsMult_spd" min="0.3" max="10" step="0.1" value="1"/></div>
-            </div>
+            <label style="display:block;margin-bottom:10px">MULTIPLICADOR DE STATS — aplica igual a KI · STR · DEF · SPD</label>
+            <select id="tsMultSelect" style="width:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;color:var(--accent);font-family:var(--fh);font-size:12px;letter-spacing:1px;padding:9px 12px;outline:none;cursor:pointer"></select>
+            <div id="tsMultPreview" style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:6px"></div>
             <div style="margin-top:8px;font-size:9px;color:rgba(255,100,100,.8);font-family:var(--fh);letter-spacing:.5px;background:rgba(255,23,68,.06);border:1px solid rgba(255,23,68,.2);border-radius:4px;padding:6px 8px">
               🔒 HP actual y HP máximo nunca se modifican
             </div>
@@ -1913,7 +1914,7 @@ function saveToSlot(i) {
       accessoryId:charState.accessoryId||"ac_none",
       spriteSheets:{sheet,base:sheet,pelea:sheet,especial:sheet},
       layerImports: Object.assign({},layerImports),
-      transformations: (function(){ return _serializeTransformationsForSave().map(function(tr){ if(tr.skinDataURL && tr.skinDataURL !== "__ref__"){ try{ localStorage.setItem("dragonCreatorZ_skin_"+tr.id, tr.skinDataURL); }catch(e){} return Object.assign({},tr,{skinDataURL:"__ref__"}); } return tr; }); })(),
+      transformations: _serializeTransformationsForSave(),
       kiAttacks: _serializeKiAttacks(),
       displayW: parseInt(document.getElementById("spriteWSlider")?.value||"180",10)||180,
       displayH: parseInt(document.getElementById("spriteHSlider")?.value||"220",10)||220,
@@ -2178,12 +2179,10 @@ function initEvents() {
   document.getElementById("btnStart").addEventListener("click",()=>{
     try{
       saveToSlot(activeSlotIndex);
-      // Guardar transformaciones en localStorage para que game.html las pueda leer.
-      // Usamos _saveTransformationsToLS() que guarda skins grandes POR SEPARADO
-      // (dragonCreatorZ_skin_<id>) y pone "__ref__" en el JSON principal,
-      // evitando QuotaExceededError y asegurando que game.html siempre resuelva el skin.
+      // Guardar transformaciones en localStorage para que game.html las pueda leer
       try {
-        _saveTransformationsToLS();
+        const transToSave = _serializeTransformationsForSave();
+        localStorage.setItem("dragonCreatorZ_transformations", JSON.stringify(transToSave));
         localStorage.setItem("dragonCreatorZ_trans_slot", String(activeSlotIndex));
       } catch(te) { console.warn("[DC] Error guardando transformaciones:", te); }
       setTimeout(()=>{window.location.href=`game.html?slot=${activeSlotIndex}`;},200);
@@ -2282,9 +2281,11 @@ let transformations = []; // array de objetos de transformación
 let activeTransIndex = -1; // -1 = forma base
 let editingTransIndex = null; // null = nueva, N = editar
 let _transEditSkinDataURL = null; // dataURL temporal del spritesheet custom
+let _transEditSkinPath    = null; // ruta local temporal (ej: "Skins/ozaru_saiyajin.png")
 // Setters globales requeridos por transformations-system.js (_initSpecialSkinsUI)
-window.__setTransSkin    = function(v) { _transEditSkinDataURL = v; };
-window.__setTransSkinImg = function(v) { _tmEditSkinImage = v; };
+window.__setTransSkin     = function(v) { _transEditSkinDataURL = v; };
+window.__setTransSkinPath = function(v) { _transEditSkinPath = v; _transEditSkinDataURL = null; }; // ruta local — no dataURL
+window.__setTransSkinImg  = function(v) { _tmEditSkinImage = v; };
 
 Object.defineProperty(window, "transformations", {
   configurable: true,
@@ -2320,6 +2321,7 @@ function _serializeTransformationsForSave(list = transformations) {
       ki:  tr.multKi  || tr.multipliers?.ki  || 1,
     },
     skinDataURL: tr.skinDataURL || null,
+    skinPath:    tr.skinPath    || null,  // ruta local (sin base64)
     appearance: tr.appearance || {},
     displayW: tr.displayW || 0,
     displayH: tr.displayH || 0,
@@ -2339,6 +2341,7 @@ function _makeTrans(data={}) {
     multDef: data.multDef || data.multipliers?.def || 1,
     multSpd: data.multSpd || data.multipliers?.spd || 1,
     skinDataURL: data.skinDataURL || null,
+    skinPath:    data.skinPath    || null, // ruta local (sin base64)
     skinImage:   null, // runtime only
     displayW: data.displayW ? Math.max(40, Math.min(400, parseInt(data.displayW) || 0)) : 0,
     displayH: data.displayH ? Math.max(40, Math.min(500, parseInt(data.displayH) || 0)) : 0,
@@ -2366,9 +2369,17 @@ function _makeTrans(data={}) {
 
 /* ── Carga la imagen de skin si hay dataURL ── */
 async function _loadTransSkinImage(tr) {
-  if (!tr.skinDataURL || tr.skinImage) return;
+  if (tr.skinImage && tr.skinImage.complete && tr.skinImage.naturalWidth) return;
+  // Prioridad: skinPath (ruta local) > skinDataURL (base64 custom)
+  const src = tr.skinPath || tr.skinDataURL || null;
+  if (!src) return;
   try {
-    tr.skinImage = await _loadImageFromDataURL(tr.skinDataURL);
+    tr.skinImage = await new Promise((ok, fail) => {
+      const i = new Image();
+      i.onload  = () => ok(i);
+      i.onerror = () => fail(new Error("No se pudo cargar: " + src.substring(0, 60)));
+      i.src = src;
+    });
   } catch(e) { tr.skinImage = null; }
 }
 
@@ -2590,10 +2601,10 @@ function _tmStartPreview() {
     const multSpd = parseFloat(document.getElementById("tsMult_spd")?.value) || 1;
     const multDef = parseFloat(document.getElementById("tsMult_def")?.value) || 1;
     const multKi  = parseFloat(document.getElementById("tsMult_ki")?.value)  || 1;
-    const vStr = cap(base.strength * Math.max(0.3, Math.min(10, multStr)));
-    const vSpd = cap(base.speed    * Math.max(0.3, Math.min(10, multSpd)));
-    const vDef = cap(base.defense  * Math.max(0.3, Math.min(10, multDef)));
-    const vKi  = cap(base.ki       * Math.max(0.3, Math.min(10, multKi)));
+    const vStr = cap(base.strength * Math.max(0.3, Math.min(500, multStr)));
+    const vSpd = cap(base.speed    * Math.max(0.3, Math.min(500, multSpd)));
+    const vDef = cap(base.defense  * Math.max(0.3, Math.min(500, multDef)));
+    const vKi  = cap(base.ki       * Math.max(0.3, Math.min(500, multKi)));
     [["tmBarStr","tmValStr",vStr],["tmBarSpd","tmValSpd",vSpd],["tmBarDef","tmValDef",vDef],["tmBarKi","tmValKi",vKi]].forEach(([bid,vid,v])=>{
       const b=document.getElementById(bid); if(b) b.style.width=v+"%";
       const vv=document.getElementById(vid); if(vv) vv.textContent=v;
@@ -2784,6 +2795,7 @@ function _tmPopulateGrids() {
 function openTransModal(editIdx=null) {
   editingTransIndex     = editIdx;
   _transEditSkinDataURL = null;
+  _transEditSkinPath    = null;
   _tmEditSkinImage      = null;
 
   const tr = editIdx !== null ? transformations[editIdx] : null;
@@ -2802,6 +2814,8 @@ function openTransModal(editIdx=null) {
   document.getElementById("tsMult_str").value = tr?.multStr ?? 1;
   document.getElementById("tsMult_def").value = tr?.multDef ?? 1;
   document.getElementById("tsMult_spd").value = tr?.multSpd ?? 1;
+  // Sincronizar el select visual con el valor guardado
+  if (typeof window.__syncMultSelect === "function") window.__syncMultSelect(tr?.multKi ?? 1);
 
   // Cargar tamaño guardado de la transformación (o usar el tamaño base actual)
   const _baseW = parseInt(document.getElementById("spriteWSlider")?.value || "180", 10) || 180;
@@ -2813,25 +2827,34 @@ function openTransModal(editIdx=null) {
   if (_tmWSlider) { _tmWSlider.value = _tmW; document.getElementById("tmSpriteWVal").textContent = _tmW; document.getElementById("tmSpriteWInput").value = _tmW; }
   if (_tmHSlider) { _tmHSlider.value = _tmH; document.getElementById("tmSpriteHVal").textContent = _tmH; document.getElementById("tmSpriteHInput").value = _tmH; }
 
-  const hasSkin = !!tr?.skinDataURL;
+  // Cargar skin: prioridad skinPath (local, sin base64) > skinDataURL (PNG custom)
+  const hasSkinPath = !!tr?.skinPath;
+  const hasSkinData = !!tr?.skinDataURL;
+  const hasSkin = hasSkinPath || hasSkinData;
   document.getElementById("transImportLabel").className = "trans-skin-import" + (hasSkin ? " loaded" : "");
-  document.getElementById("transImportFname").textContent = hasSkin ? "Skin cargada ✓" : "Sin cargar";
-  document.getElementById("transImportText").textContent  = hasSkin ? "CAMBIAR PNG"    : "ELEGIR PNG DE TRANSFORMACIÓN";
-  if (hasSkin) {
-    _transEditSkinDataURL = tr.skinDataURL;
-    if (tr.skinImage) {
-      // Imagen ya cargada en memoria
+  document.getElementById("transImportFname").textContent = hasSkin ? (hasSkinPath ? (tr.skinPath.split("/").pop() + " ✓") : "Skin cargada ✓") : "Sin cargar";
+  document.getElementById("transImportText").textContent  = hasSkin ? "CAMBIAR PNG" : "ELEGIR PNG DE TRANSFORMACIÓN";
+  if (hasSkinPath) {
+    // Skin de ruta local: cargar imagen directo, sin base64
+    _transEditSkinPath    = tr.skinPath;
+    _transEditSkinDataURL = null;
+    if (tr.skinImage && tr.skinImage.complete && tr.skinImage.naturalWidth) {
       _tmEditSkinImage = tr.skinImage;
     } else {
-      // Imagen no está en memoria (recarga desde localStorage) — cargarla async
       _tmEditSkinImage = null;
       const _img = new Image();
-      _img.onload = () => {
-        tr.skinImage = _img;
-        _tmEditSkinImage = _img;
-        // Re-renderizar preview del modal si está abierto
-        if (typeof _renderTransModalPreview === "function") _renderTransModalPreview();
-      };
+      _img.onload = () => { tr.skinImage = _img; _tmEditSkinImage = _img; if (typeof _renderTransModalPreview === "function") _renderTransModalPreview(); };
+      _img.onerror = () => { _tmEditSkinImage = null; };
+      _img.src = tr.skinPath;
+    }
+  } else if (hasSkinData) {
+    _transEditSkinDataURL = tr.skinDataURL;
+    if (tr.skinImage) {
+      _tmEditSkinImage = tr.skinImage;
+    } else {
+      _tmEditSkinImage = null;
+      const _img = new Image();
+      _img.onload = () => { tr.skinImage = _img; _tmEditSkinImage = _img; if (typeof _renderTransModalPreview === "function") _renderTransModalPreview(); };
       _img.onerror = () => { _tmEditSkinImage = null; };
       _img.src = tr.skinDataURL;
     }
@@ -2910,14 +2933,20 @@ async function saveTransModal() {
   Object.entries(_tmAppearance).forEach(([k, v]) => { if (v !== null && v !== undefined && v !== "") cleanAppearance[k] = v; });
 
   const data = { name, level, auraColor, multHp:1, multKi, multStr, multDef, multSpd, displayW: tmDisplayW, displayH: tmDisplayH, appearance: cleanAppearance };
+  // Prioridad: skinPath (ruta local, sin base64) > skinDataURL (PNG custom subido)
+  if (_transEditSkinPath)    data.skinPath    = _transEditSkinPath;
   if (_transEditSkinDataURL) data.skinDataURL = _transEditSkinDataURL;
 
   if (editingTransIndex !== null) {
     const existing = transformations[editingTransIndex];
     data.id = existing.id;
-    if (!data.skinDataURL && existing.skinDataURL) data.skinDataURL = existing.skinDataURL;
+    // Heredar skin del existente si no se cambió en esta sesión de edición
+    if (!data.skinPath && !data.skinDataURL) {
+      if (existing.skinPath)    data.skinPath    = existing.skinPath;
+      else if (existing.skinDataURL) data.skinDataURL = existing.skinDataURL;
+    }
     transformations[editingTransIndex] = _makeTrans(data);
-    // Si había skin custom, preservar la imagen runtime
+    // Preservar imagen runtime
     if (_tmEditSkinImage) transformations[editingTransIndex].skinImage = _tmEditSkinImage;
     else await _loadTransSkinImage(transformations[editingTransIndex]);
     showToast(`Transformación "${name}" actualizada`, "success");
@@ -2956,9 +2985,14 @@ function _saveTransformationsToLS() {
   try {
     const toSave = _serializeTransformationsForSave();
 
-    // Guardar skins grandes por separado (evita QuotaExceededError)
+    // Guardar skins grandes por separado (evita QuotaExceededError).
+    // skinPath (ruta local) no necesita este mecanismo — ya es un string corto.
     const toSaveNoSkins = toSave.map(tr => {
-      if (tr.skinDataURL) {
+      if (tr.skinPath) {
+        // Ruta local: guardar sin __ref__, solo limpiar el dataURL que no existe
+        return Object.assign({}, tr, { skinDataURL: null });
+      }
+      if (tr.skinDataURL && tr.skinDataURL !== "__ref__") {
         try {
           localStorage.setItem("dragonCreatorZ_skin_" + tr.id, tr.skinDataURL);
         } catch(e) { console.warn("[DC] Skin demasiado grande para LS:", tr.id); }
@@ -3508,6 +3542,83 @@ window._activeLoop = function transLoop(now) {
 
 })();
 
+</script>
+
+<script>
+/* ── Select de multiplicador único para stats de transformación ── */
+(function initMultSelect() {
+  function setup() {
+    const sel = document.getElementById("tsMultSelect");
+    const preview = document.getElementById("tsMultPreview");
+    if (!sel || !preview) return;
+
+    const OPTS = [
+      0.3, 0.5, 0.7,
+      1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5,
+      6, 7, 8, 9, 10,
+      12, 15, 18, 20, 25, 30, 35, 40, 45, 50,
+      60, 70, 75, 80, 90, 100,
+      120, 150, 175, 200, 250, 300, 350, 400, 450, 500
+    ];
+
+    const STATS = [
+      { id: "tsMult_ki",  icon: "💙", label: "KI",       color: "#2979ff" },
+      { id: "tsMult_str", icon: "💥", label: "STR",      color: "#ff1744" },
+      { id: "tsMult_def", icon: "🛡️", label: "DEF",      color: "#ff6a00" },
+      { id: "tsMult_spd", icon: "⚡", label: "SPD",      color: "#e040fb" },
+    ];
+
+    // Poblar opciones
+    sel.innerHTML = "";
+    OPTS.forEach(v => {
+      const o = document.createElement("option");
+      o.value = v;
+      o.textContent = v === 1 ? "× 1  —  Sin cambio (base)" : "× " + v;
+      if (v === 1) o.selected = true;
+      sel.appendChild(o);
+    });
+
+    function applyMult(val) {
+      const n = parseFloat(val) || 1;
+      // Actualizar inputs ocultos
+      STATS.forEach(s => {
+        const inp = document.getElementById(s.id);
+        if (inp) inp.value = n;
+      });
+      // Actualizar preview visual
+      preview.innerHTML = "";
+      STATS.forEach(s => {
+        const card = document.createElement("div");
+        card.style.cssText = "background:var(--bg-card,#12172e);border:1px solid var(--border,#2a3560);border-radius:6px;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px";
+        card.innerHTML =
+          "<span style='font-family:var(--fh,monospace);font-size:10px;color:var(--td,#8892b0);letter-spacing:1px'>" + s.icon + " " + s.label + "</span>" +
+          "<span style='font-family:var(--fh,monospace);font-size:13px;font-weight:700;color:" + s.color + "'>×" + n + "</span>";
+        preview.appendChild(card);
+      });
+      // Disparar actualización de preview del modal si existe
+      if (typeof window._updateTransModalPreview === "function") window._updateTransModalPreview();
+    }
+
+    applyMult(1);
+    sel.addEventListener("change", () => applyMult(sel.value));
+
+    // Expuesto para que openTransModal lo llame al cargar una transformación existente
+    window.__syncMultSelect = function(val) {
+      const n = parseFloat(val) || 1;
+      // Buscar la opción más cercana
+      let best = OPTS[0], bestD = Infinity;
+      OPTS.forEach(o => { const d = Math.abs(o - n); if (d < bestD) { bestD = d; best = o; } });
+      sel.value = best;
+      applyMult(best);
+    };
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", setup);
+  } else {
+    setup();
+  }
+})();
 </script>
 </body>
 </html>
