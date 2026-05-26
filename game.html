@@ -308,10 +308,9 @@
 
       /* -- RESPONSIVE -- */
       @media (pointer:coarse), (max-width:768px) {
-        :root { --btn-size:48px; --btn-icon:17px; }
+        :root { --btn-size:52px; --btn-icon:19px; }
         #menuBackdrop { display:block; }
-        .mobile-controls { display:flex; height:270px; }
-        .action-grid { grid-template-columns:repeat(5,var(--btn-size)); }
+        .mobile-controls { display:flex; height:286px; }
         .skills-bar { display:none; }
         .region-label { position:absolute; bottom:182px; left:50%; transform:translateX(-50%); }
         .dialog-box { bottom:190px; }
@@ -328,7 +327,7 @@
         .dialog-box { bottom:120px; }
         .hud-top { left:64px; }
       }
-      @media (max-width:400px) { :root { --btn-size:40px; --btn-icon:15px; } .mobile-controls { height:230px; } .joystick-wrap { width:100px; height:100px; } #joystickKnob { width:40px; height:40px; top:30px; left:30px; } }
+      @media (max-width:400px) { :root { --btn-size:44px; --btn-icon:17px; } .mobile-controls { height:250px; } .joystick-wrap { width:100px; height:100px; } #joystickKnob { width:40px; height:40px; top:30px; left:30px; } }
       @media (max-height:460px) and (orientation:landscape) {
         :root { --btn-size:44px; --btn-icon:16px; }
         .mobile-controls { height:130px; padding:0 10px 8px; }
@@ -747,28 +746,12 @@
       if (!anchor || !menu) return;
       const rect = anchor.getBoundingClientRect();
       const menuW = 220;
-      const isMobile = window.innerWidth <= 768 || ("ontouchstart" in window);
-
       let left = rect.left + rect.width / 2 - menuW / 2;
+      // Evitar que se salga por los bordes
       left = Math.max(8, Math.min(left, window.innerWidth - menuW - 8));
       menu.style.left = left + "px";
-
-      // En mobile: siempre abrir hacia arriba desde el botón,
-      // pero asegurarse de que no quede fuera de la pantalla arriba
-      const bottomFromScreen = window.innerHeight - rect.top + 8;
-      const menuH = menu.scrollHeight || 220;
-      if (isMobile && rect.top - menuH < 8) {
-        // No cabe arriba — centrar verticalmente en pantalla
-        menu.style.bottom = "auto";
-        menu.style.top = Math.max(8, (window.innerHeight - menuH) / 2) + "px";
-      } else {
-        menu.style.top = "auto";
-        menu.style.bottom = bottomFromScreen + "px";
-      }
+      menu.style.bottom = (window.innerHeight - rect.top + 8) + "px";
       menu.style.transform = "none";
-      // Asegurarse de que el menu sea scrolleable si es muy alto
-      menu.style.maxHeight = (window.innerHeight - 20) + "px";
-      menu.style.overflowY = "auto";
     }
 
     function _loadSavedTransformations() {
@@ -1016,21 +999,8 @@
         if (!skinPath && (!skinURL || skinURL === "__ref__")) {
           try {
             const fallbackSkin = localStorage.getItem("dragonCreatorZ_skin_" + trId);
-            if (fallbackSkin) {
-              skinURL = fallbackSkin;
-              console.info("[TransSkin] Skin resuelto desde localStorage para:", trId, "— tamaño:", fallbackSkin.length);
-            } else {
-              console.warn("[TransSkin] No se encontró skin en localStorage para:", trId,
-                "— keys disponibles:", Object.keys(localStorage).filter(k => k.startsWith("dragonCreatorZ_skin_")));
-            }
-          } catch(e) {
-            console.error("[TransSkin] Error al leer localStorage:", e);
-          }
-        }
-        // Último fallback: buscar skinDataURL directamente en trData sin importar __ref__
-        if (!skinPath && !skinURL && trData?.skinDataURL && trData.skinDataURL !== "__ref__" && trData.skinDataURL.length > 100) {
-          skinURL = trData.skinDataURL;
-          console.info("[TransSkin] Skin tomado directo de trData:", trId);
+            if (fallbackSkin) skinURL = fallbackSkin;
+          } catch(e) {}
         }
 
         if (skinPath) {
@@ -1451,10 +1421,7 @@
           out[id].combatSpriteDataURL  = null;
           out[id].specialSpriteDataURL = null;
         }
-        // Preservar flag de trans skin importado para que el receptor sepa que es imagen simple
-        if (cfg._isTransSkin) {
-          out[id]._isTransSkin = true;
-        }
+        if (cfg._isTransSkin) out[id]._isTransSkin = true;
       });
       return out;
     }
@@ -1481,7 +1448,7 @@
         _hydrateSheetField(cfg, "spriteDataURL", "spriteImage");
         _hydrateSheetField(cfg, "combatSpriteDataURL", "combatSpriteImage");
         _hydrateSheetField(cfg, "specialSpriteDataURL", "specialSpriteImage");
-        // Si el otro jugador tiene un skin de transformación por ruta local, cargarlo igual que una raza
+        // Skin de transformación por ruta local (PNGs internos como Skins/ozaru_saiyajin.png)
         if (cfg._transSkinPath && !cfg.spriteImage) {
           const img = new Image();
           img.onload = () => {
@@ -1492,6 +1459,18 @@
           };
           img.onerror = () => {};
           img.src = cfg._transSkinPath;
+        }
+        // Skin de transformación importado (PNG custom del usuario) — aplicar desde spriteDataURL
+        if (cfg._isTransSkin && !cfg._transSkinPath && cfg.spriteDataURL && !cfg.spriteImage) {
+          const img = new Image();
+          img.onload = () => {
+            cfg.spriteImage = cfg.userImage = img;
+            cfg.combatSpriteImage = cfg.combatUserImage = img;
+            cfg.specialSpriteImage = cfg.specialUserImage = img;
+            window.CharacterSystem?.invalidateHairCache?.();
+          };
+          img.onerror = () => console.warn("[TransSkin] Error cargando skin remoto importado");
+          img.src = cfg.spriteDataURL;
         }
       });
     }
@@ -1811,23 +1790,30 @@
       }
       if (appearance.variantCustomizations) {
         for (const cfg of Object.values(appearance.variantCustomizations)) {
-          // Si es skin de transformación importado (PNG custom), comprimir como imagen simple
-          // no como spritesheet de N frames (evita que quede ilegible)
-          const isTransSkin = cfg?._isTransSkin === true;
-          if (cfg?.spriteDataURL && cfg.spriteDataURL.length > 90000) {
-            cfg.spriteDataURL = isTransSkin
-              ? await compressDataURLForNetwork(cfg.spriteDataURL, 512)
-              : await compressVariantSheetForNetwork(cfg.spriteDataURL, cfg.animFrames || 6, 384);
-          }
-          if (cfg?.combatSpriteDataURL && cfg.combatSpriteDataURL.length > 90000) {
-            cfg.combatSpriteDataURL = isTransSkin
-              ? await compressDataURLForNetwork(cfg.combatSpriteDataURL, 512)
-              : await compressVariantSheetForNetwork(cfg.combatSpriteDataURL, cfg.combatAnimFrames || 6, 384);
-          }
-          if (cfg?.specialSpriteDataURL && cfg.specialSpriteDataURL.length > 90000) {
-            cfg.specialSpriteDataURL = isTransSkin
-              ? await compressDataURLForNetwork(cfg.specialSpriteDataURL, 512)
-              : await compressVariantSheetForNetwork(cfg.specialSpriteDataURL, cfg.specialAnimFrames || 6, 384);
+          if (cfg?._isTransSkin) {
+            // PNG importado: comprimir UNA sola vez como imagen completa (no como spritesheet)
+            // y reusar en las 3 claves para no triplicar el payload
+            const src = cfg.spriteDataURL || cfg.combatSpriteDataURL || cfg.specialSpriteDataURL;
+            if (src && src.length > 30000) {
+              const compressed = await compressDataURLForNetwork(src, 512);
+              cfg.spriteDataURL        = compressed;
+              cfg.combatSpriteDataURL  = compressed;
+              cfg.specialSpriteDataURL = compressed;
+            } else if (src) {
+              cfg.spriteDataURL        = src;
+              cfg.combatSpriteDataURL  = src;
+              cfg.specialSpriteDataURL = src;
+            }
+          } else {
+            if (cfg?.spriteDataURL && cfg.spriteDataURL.length > 90000) {
+              cfg.spriteDataURL = await compressVariantSheetForNetwork(cfg.spriteDataURL, cfg.animFrames || 6, 384);
+            }
+            if (cfg?.combatSpriteDataURL && cfg.combatSpriteDataURL.length > 90000) {
+              cfg.combatSpriteDataURL = await compressVariantSheetForNetwork(cfg.combatSpriteDataURL, cfg.combatAnimFrames || 6, 384);
+            }
+            if (cfg?.specialSpriteDataURL && cfg.specialSpriteDataURL.length > 90000) {
+              cfg.specialSpriteDataURL = await compressVariantSheetForNetwork(cfg.specialSpriteDataURL, cfg.specialAnimFrames || 6, 384);
+            }
           }
         }
       }
@@ -2051,22 +2037,10 @@
               accessoryId: remoteAccId, auraPhase: (now * 0.003) % (Math.PI * 2),
               viewKey: null, spriteVariantId: remSpriteVariantId,
             };
-            const isMobileCoarse = window.matchMedia?.("(pointer:coarse)").matches;
-            const remoteMobileScale = (isMobileCoarse && window.innerHeight < 520) ? 0.84 : 1;
+            const remoteMobileScale = (window.matchMedia?.("(pointer:coarse)").matches && window.innerHeight < 520) ? 0.84 : 1;
             const _rdBaseW = SPRITE_DRAW_W * remoteMobileScale, _rdBaseH = SPRITE_DRAW_H * remoteMobileScale;
             const _rdw = remApp.displayW || 180, _rdh = remApp.displayH || 220;
-            let _rdScaleW = _rdw / 180, _rdScaleH = _rdh / 220;
-            // En mobile, limitar el scale máximo para que sprites grandes (Ozaru, Gigante)
-            // no se salgan del canvas — escalar proporcionalmente al viewport
-            if (isMobileCoarse) {
-              const maxAllowedH = (canvas.height * 0.65) / _rdBaseH;
-              const maxAllowedW = (canvas.width  * 0.40) / _rdBaseW;
-              const maxScale = Math.min(maxAllowedH, maxAllowedW, _rdScaleW, _rdScaleH);
-              if (_rdScaleW > maxScale || _rdScaleH > maxScale) {
-                const ratio = Math.min(maxScale / _rdScaleW, maxScale / _rdScaleH);
-                _rdScaleW *= ratio; _rdScaleH *= ratio;
-              }
-            }
+            const _rdScaleW = _rdw / 180, _rdScaleH = _rdh / 220;
             const _rdrawW = _rdBaseW * _rdScaleW, _rdrawH = _rdBaseH * _rdScaleH;
             ctx.fillStyle = "rgba(0,0,0,0.3)"; ctx.beginPath(); ctx.ellipse(sx, sy+3, _rdrawW*0.3, _rdrawW*0.1, 0, 0, Math.PI*2); ctx.fill();
             ctx.save();
@@ -2111,7 +2085,27 @@
       closeChatSizeMenu();
       try{localStorage.setItem("dwz_chatSize",size);}catch(e){}
     }
-    function openChatSizeMenu(e){e&&e.stopPropagation();chatSizeMenuOpen=!chatSizeMenuOpen;const menu=document.getElementById("mpSizeMenu");if(menu)menu.style.display=chatSizeMenuOpen?"block":"none";}
+    function openChatSizeMenu(e){
+  if(e){e.stopPropagation();e.preventDefault();}
+  chatSizeMenuOpen=!chatSizeMenuOpen;
+  const menu=document.getElementById("mpSizeMenu");
+  const trigger=document.getElementById("mpSizeTrigger");
+  if(!menu)return;
+  if(chatSizeMenuOpen && trigger){
+    const r=trigger.getBoundingClientRect();
+    const menuH=90;
+    // Abrir hacia arriba si hay espacio, si no hacia abajo
+    if(r.top - menuH > 8){
+      menu.style.top=(r.top - menuH - 4)+"px";
+    } else {
+      menu.style.top=(r.bottom + 4)+"px";
+    }
+    menu.style.left=(r.right - 90)+"px";
+    menu.style.display="block";
+  } else {
+    menu.style.display="none";
+  }
+}
     function closeChatSizeMenu(){chatSizeMenuOpen=false;const menu=document.getElementById("mpSizeMenu");if(menu)menu.style.display="none";}
     window.openChatSizeMenu=openChatSizeMenu;
     window.applyChatSize=applyChatSize;
@@ -2149,7 +2143,7 @@
 #mpPlayerCount{flex:1;font-size:8px;color:#f5c400;letter-spacing:1px;white-space:nowrap;text-align:right;padding-right:4px}
 #mpSizeTrigger{position:relative;display:flex;align-items:center;justify-content:center;width:22px;height:22px;background:rgba(245,196,0,.12);border:1px solid rgba(245,196,0,.35);border-radius:4px;cursor:pointer;flex-shrink:0;touch-action:manipulation}
 #mpSizeLabel{font-family:'Orbitron',monospace;font-size:8px;color:#f5c400;letter-spacing:1px;pointer-events:none}
-#mpSizeMenu{display:none;position:absolute;bottom:calc(100% + 4px);top:auto;right:0;background:rgba(8,9,15,.97);border:1px solid #2a3560;border-radius:6px;overflow:hidden;z-index:200;min-width:80px;box-shadow:0 -4px 16px rgba(0,0,0,.6)}
+#mpSizeMenu{display:none;position:fixed;background:rgba(8,9,15,.97);border:1px solid #2a3560;border-radius:6px;overflow:hidden;z-index:9999;min-width:90px;box-shadow:0 -4px 16px rgba(0,0,0,.8)}
 .mpSizeOpt{display:block;padding:7px 14px;font-family:'Orbitron',monospace;font-size:8px;letter-spacing:1px;color:#8892b0;cursor:pointer;white-space:nowrap;touch-action:manipulation;transition:background .12s}
 .mpSizeOpt:hover,.mpSizeOpt.active{background:rgba(245,196,0,.12);color:#f5c400}
 #mpChatBody{display:none;padding:0 8px 8px;flex-direction:column;gap:4px}
