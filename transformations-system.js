@@ -77,7 +77,7 @@
       this.icon        = config.icon        || "⚡";
       this.description = config.description || "";
       this.skinDataURL = config.skinDataURL || null;
-      this.skinPath    = config.skinPath    || null;  // ruta local (ej: "skins/ozaru_saiyajin.png")
+      this.skinPath    = config.skinPath    || null;  // ruta local (ej: "Skins/ozaru_saiyajin.png")
       this.appearance  = { ...(config.appearance || {}) };
       // Tamaño de display propio de esta transformación (0 = heredar base)
       this.displayW    = config.displayW ? Math.max(40, Math.min(400, parseInt(config.displayW) || 0)) : 0;
@@ -624,7 +624,7 @@
         color: "var(--accent2, #ff6a00)",
         cols: 1,
         entries: [
-          { skin: "skins/ozaru_saiyajin.png", label: "Ozaru (Saiyajin)", icon: "🦍" },
+          { skin: "Skins/ozaru_saiyajin.png", label: "Ozaru (Saiyajin)", icon: "🦍" },
         ],
       },
       {
@@ -632,8 +632,8 @@
         color: "#b39ddb",
         cols: 2,
         entries: [
-          { skin: "skins/lss_saiyajin_m.png", label: "LSS ♂ Saiyajin", icon: "♂", sub: "Hombre" },
-          { skin: "skins/lss_saiyajin_f.png", label: "LSS ♀ Saiyajin", icon: "♀", sub: "Mujer"  },
+          { skin: "Skins/lss_saiyajin_m.png", label: "LSS ♂ Saiyajin", icon: "♂", sub: "Hombre" },
+          { skin: "Skins/lss_saiyajin_f.png", label: "LSS ♀ Saiyajin", icon: "♀", sub: "Mujer"  },
         ],
       },
       {
@@ -641,8 +641,8 @@
         color: "var(--cyan, #00e5ff)",
         cols: 2,
         entries: [
-          { skin: "skins/maquinacion_androide_m.png", label: "Maquinación ♂", icon: "♂", sub: "Hombre" },
-          { skin: "skins/maquinacion_androide_f.png", label: "Maquinación ♀", icon: "♀", sub: "Mujer"  },
+          { skin: "Skins/maquinacion_androide_m.png", label: "Maquinación ♂", icon: "♂", sub: "Hombre" },
+          { skin: "Skins/maquinacion_androide_f.png", label: "Maquinación ♀", icon: "♀", sub: "Mujer"  },
         ],
       },
       {
@@ -650,7 +650,7 @@
         color: "var(--green, #00ff9d)",
         cols: 1,
         entries: [
-          { skin: "skins/berserker_namekiano.png", label: "Berserker (Namekiano)", icon: "💚" },
+          { skin: "Skins/berserker_namekiano.png", label: "Berserker (Namekiano)", icon: "💚" },
         ],
       },
       {
@@ -658,7 +658,7 @@
         color: "var(--magenta, #e040fb)",
         cols: 1,
         entries: [
-          { skin: "skins/5ta_forma_frieza.png", label: "5ta Forma (Frieza)", icon: "👾" },
+          { skin: "Skins/5ta_forma_frieza.png", label: "5ta Forma (Frieza)", icon: "👾" },
         ],
       },
     ];
@@ -691,7 +691,7 @@
       section.id = "specialSkinsSection";
       section.innerHTML = `
         <div class="ss-title">🌟 TRANSFORMACIONES ESPECIALES</div>
-        <div class="ss-note">Carga un skin predefinido desde la carpeta <code>skins/</code>. Reemplaza cualquier PNG custom cargado.</div>
+        <div class="ss-note">Carga un skin predefinido desde la carpeta <code>Skins/</code>. Reemplaza cualquier PNG custom cargado.</div>
       `;
       SPECIAL_SKINS.forEach(group => {
         const title = document.createElement("div");
@@ -752,15 +752,22 @@
     /**
      * Aplica un skin de ruta local al modal.
      * Funciona como las razas: guarda la RUTA (skinPath) en vez de base64.
-     * - skinPath  → ruta relativa (ej: "skins/ozaru_saiyajin.png") — se serializa en JSON
+     * - skinPath  → ruta relativa (ej: "Skins/ozaru_saiyajin.png") — se serializa en JSON
      * - skinImage → objeto Image cargado desde la ruta — solo runtime (para la preview)
      * NO genera dataURL ni usa localStorage. El game.html carga el PNG directo desde la ruta.
      */
     function _applyToModal(skinPath, img, label) {
-      // Notificar a index.html que asigne la ruta (NO el dataURL) a la transformación
+      // Convertir a URL absoluta para que funcione en cualquier cliente remoto
+      let absolutePath = skinPath;
+      try {
+        absolutePath = new URL(skinPath, window.location.href).href;
+      } catch(e) {}
+
+      // Notificar a index.html que asigne la ruta (URL absoluta) a la transformación
       if (typeof window.__setTransSkinPath === "function") {
-        window.__setTransSkinPath(skinPath);
+        window.__setTransSkinPath(absolutePath);
       }
+      skinPath = absolutePath;
 
       // Asignar imagen runtime para la preview del canvas en el modal
       if (typeof window.__setTransSkinImg === "function") {
