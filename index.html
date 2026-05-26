@@ -991,14 +991,52 @@
 
         <!-- ─── PANEL: STATS ─── -->
         <div class="tm-panel" id="tm-stats">
+          <!-- Hidden inputs mantenidos por compatibilidad con el resto del código -->
+          <input type="hidden" id="tsMult_ki"  value="1"/>
+          <input type="hidden" id="tsMult_str" value="1"/>
+          <input type="hidden" id="tsMult_def" value="1"/>
+          <input type="hidden" id="tsMult_spd" value="1"/>
+
           <div class="trans-field">
-            <label>MULTIPLICADORES (respecto a la forma base · rango x0.3–x10)</label>
-            <div class="trans-stats-grid" style="margin-top:10px">
-              <div class="trans-stat"><label>💙 KI</label><input type="number" id="tsMult_ki" min="0.3" max="10" step="0.1" value="1"/></div>
-              <div class="trans-stat"><label>💥 STR</label><input type="number" id="tsMult_str" min="0.3" max="10" step="0.1" value="1"/></div>
-              <div class="trans-stat"><label>🛡️ DEF</label><input type="number" id="tsMult_def" min="0.3" max="10" step="0.1" value="1"/></div>
-              <div class="trans-stat"><label>⚡ SPD</label><input type="number" id="tsMult_spd" min="0.3" max="10" step="0.1" value="1"/></div>
+            <label>POWER MULTIPLIER — todas las stats base</label>
+
+            <!-- Botón Display Layer -->
+            <button type="button" id="tsDisplayLayerBtn" style="
+              width:100%;margin-top:8px;padding:12px 16px;
+              background:linear-gradient(135deg,rgba(224,64,251,.15),rgba(74,106,255,.15));
+              border:1px solid rgba(224,64,251,.5);border-radius:var(--r);
+              color:var(--magenta);font-family:var(--fh);font-size:11px;letter-spacing:2px;
+              cursor:pointer;transition:all var(--tr);display:flex;align-items:center;justify-content:space-between;
+            ">
+              <span>🔲 DISPLAY LAYER</span>
+              <span id="tsDisplayLayerCurrent" style="font-size:14px;font-weight:900;color:var(--accent)">×1</span>
+            </button>
+
+            <!-- Dropdown de presets -->
+            <div id="tsDisplayLayerPanel" style="display:none;margin-top:6px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden">
+              <!-- Presets rápidos -->
+              <div style="padding:8px 10px 4px;font-family:var(--fh);font-size:7px;letter-spacing:2px;color:var(--td)">PRESETS RÁPIDOS</div>
+              <div id="tsMultPresets" style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;padding:0 8px 8px"></div>
+              <!-- Separador -->
+              <div style="border-top:1px solid var(--border);padding:8px 10px 4px;font-family:var(--fh);font-size:7px;letter-spacing:2px;color:var(--td)">VALOR PERSONALIZADO</div>
+              <!-- Input manual -->
+              <div style="display:flex;align-items:center;gap:8px;padding:0 8px 10px">
+                <span style="font-family:var(--fh);font-size:14px;color:var(--td)">×</span>
+                <input type="number" id="tsMultCustom" min="0.3" max="500" step="0.1" value="1"
+                  style="flex:1;background:var(--bg-deep);border:1px solid var(--border);border-radius:4px;padding:7px 10px;color:var(--tp);font-family:var(--fh);font-size:13px;text-align:center;outline:none;transition:border-color var(--tr)"
+                  placeholder="0.3 – 500"
+                />
+                <button type="button" id="tsMultCustomApply" style="
+                  padding:7px 12px;background:rgba(224,64,251,.15);border:1px solid rgba(224,64,251,.5);
+                  border-radius:4px;color:var(--magenta);font-family:var(--fh);font-size:8px;
+                  letter-spacing:1px;cursor:pointer;white-space:nowrap;transition:all var(--tr)
+                ">APLICAR</button>
+              </div>
             </div>
+
+            <!-- Resumen de stats resultado -->
+            <div id="tsMultStatPreview" style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:4px;display:none"></div>
+
             <div style="margin-top:8px;font-size:9px;color:rgba(255,100,100,.8);font-family:var(--fh);letter-spacing:.5px;background:rgba(255,23,68,.06);border:1px solid rgba(255,23,68,.2);border-radius:4px;padding:6px 8px">
               🔒 HP actual y HP máximo nunca se modifican
             </div>
@@ -2600,10 +2638,10 @@ function _tmStartPreview() {
     const multSpd = parseFloat(document.getElementById("tsMult_spd")?.value) || 1;
     const multDef = parseFloat(document.getElementById("tsMult_def")?.value) || 1;
     const multKi  = parseFloat(document.getElementById("tsMult_ki")?.value)  || 1;
-    const vStr = cap(base.strength * Math.max(0.3, Math.min(10, multStr)));
-    const vSpd = cap(base.speed    * Math.max(0.3, Math.min(10, multSpd)));
-    const vDef = cap(base.defense  * Math.max(0.3, Math.min(10, multDef)));
-    const vKi  = cap(base.ki       * Math.max(0.3, Math.min(10, multKi)));
+    const vStr = cap(base.strength * Math.max(0.3, Math.min(500, multStr)));
+    const vSpd = cap(base.speed    * Math.max(0.3, Math.min(500, multSpd)));
+    const vDef = cap(base.defense  * Math.max(0.3, Math.min(500, multDef)));
+    const vKi  = cap(base.ki       * Math.max(0.3, Math.min(500, multKi)));
     [["tmBarStr","tmValStr",vStr],["tmBarSpd","tmValSpd",vSpd],["tmBarDef","tmValDef",vDef],["tmBarKi","tmValKi",vKi]].forEach(([bid,vid,v])=>{
       const b=document.getElementById(bid); if(b) b.style.width=v+"%";
       const vv=document.getElementById(vid); if(vv) vv.textContent=v;
@@ -3486,7 +3524,7 @@ window._activeLoop = function transLoop(now) {
   /* Helper: clamp de multiplicador al rango permitido */
   function _clamp(v) {
     const n = parseFloat(v);
-    return isFinite(n) ? Math.max(0.3, Math.min(10, n)) : 1;
+    return isFinite(n) ? Math.max(0.3, Math.min(500, n)) : 1;
   }
 
   /* ── Observador: cada vez que se guarda/borra una transformación del panel
@@ -3539,6 +3577,189 @@ window._activeLoop = function transLoop(now) {
 
 })();
 
+
+
+// ══════════════════════════════════════════════════════════════════
+//  DISPLAY LAYER — Selector de multiplicador global de stats
+// ══════════════════════════════════════════════════════════════════
+(function _initDisplayLayer() {
+
+  // Presets disponibles (x0.3 → x500)
+  const PRESETS = [
+    { label:"×0.3",  val:0.3,  color:"#8892b0" },
+    { label:"×0.5",  val:0.5,  color:"#8892b0" },
+    { label:"×1",    val:1,    color:"#e8eaf6" },
+    { label:"×2",    val:2,    color:"#00e5ff" },
+    { label:"×3",    val:3,    color:"#00e5ff" },
+    { label:"×5",    val:5,    color:"#00ff9d" },
+    { label:"×8",    val:8,    color:"#00ff9d" },
+    { label:"×10",   val:10,   color:"#f5c400" },
+    { label:"×15",   val:15,   color:"#f5c400" },
+    { label:"×20",   val:20,   color:"#ff6a00" },
+    { label:"×30",   val:30,   color:"#ff6a00" },
+    { label:"×50",   val:50,   color:"#ff1744" },
+    { label:"×75",   val:75,   color:"#ff1744" },
+    { label:"×100",  val:100,  color:"#e040fb" },
+    { label:"×150",  val:150,  color:"#e040fb" },
+    { label:"×200",  val:200,  color:"#e040fb" },
+    { label:"×300",  val:300,  color:"#b39ddb" },
+    { label:"×400",  val:400,  color:"#b39ddb" },
+    { label:"×500",  val:500,  color:"#b39ddb" },
+  ];
+
+  // Valor activo actual
+  let _activeMult = 1;
+
+  /** Sincroniza los 4 hidden inputs y dispara livePreview */
+  function _applyMult(val) {
+    const n = Math.max(0.3, Math.min(500, parseFloat(val) || 1));
+    _activeMult = n;
+
+    // Actualizar hidden inputs (mantiene compatibilidad con saveTransformation)
+    ["tsMult_ki","tsMult_str","tsMult_def","tsMult_spd"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = n;
+    });
+
+    // Actualizar label del botón
+    const lbl = document.getElementById("tsDisplayLayerCurrent");
+    if (lbl) lbl.textContent = "×" + (Number.isInteger(n) ? n : n.toFixed(1));
+
+    // Actualizar input custom si existe
+    const ci = document.getElementById("tsMultCustom");
+    if (ci) ci.value = n;
+
+    // Resaltar preset activo
+    document.querySelectorAll(".dl-preset-btn").forEach(b => {
+      const isActive = parseFloat(b.dataset.val) === n;
+      b.style.borderColor  = isActive ? b.dataset.color : "var(--border)";
+      b.style.color        = isActive ? b.dataset.color : "var(--td)";
+      b.style.background   = isActive ? `color-mix(in srgb,${b.dataset.color} 18%,transparent)` : "var(--bg-deep)";
+      b.style.fontWeight   = isActive ? "700" : "400";
+    });
+
+    // Disparar livePreview si existe
+    if (typeof window._tsLivePreview === "function") window._tsLivePreview();
+
+    // Actualizar mini stats preview
+    _renderStatPreview(n);
+  }
+
+  /** Muestra cuánto quedaría cada stat con el multiplicador elegido */
+  function _renderStatPreview(mult) {
+    const el = document.getElementById("tsMultStatPreview");
+    if (!el) return;
+
+    // Obtener stats base del personaje actual
+    const race = window._currentRace ? window._currentRace() : "human";
+    const rs   = (window.RACE_STATS && window.RACE_STATS[race]) || { strength:80, speed:80, defense:80, ki:80 };
+    const cap  = v => Math.min(9999, Math.round(v));
+    const clp  = v => Math.max(0.3, Math.min(500, v));
+
+    const m = clp(mult);
+    const stats = [
+      { icon:"💥", name:"STR", base: rs.strength, val: cap(rs.strength * m), color:"var(--red)"    },
+      { icon:"⚡", name:"SPD", base: rs.speed,    val: cap(rs.speed    * m), color:"var(--magenta)" },
+      { icon:"🛡️", name:"DEF", base: rs.defense,  val: cap(rs.defense  * m), color:"var(--accent2)" },
+      { icon:"💙", name:"KI",  base: rs.ki,       val: cap(rs.ki       * m), color:"var(--cyan)"   },
+    ];
+
+    el.style.display = "grid";
+    el.innerHTML = stats.map(s => `
+      <div style="background:var(--bg-deep);border:1px solid var(--border);border-radius:4px;padding:5px 8px;display:flex;align-items:center;justify-content:space-between;gap:6px">
+        <span style="font-family:var(--fh);font-size:8px;letter-spacing:1px;color:var(--td)">${s.icon} ${s.name}</span>
+        <span style="font-family:var(--fh);font-size:10px;font-weight:700;color:${s.color}">${s.val}</span>
+      </div>
+    `).join("");
+  }
+
+  function _buildPresets() {
+    const grid = document.getElementById("tsMultPresets");
+    if (!grid) return;
+    grid.innerHTML = "";
+    PRESETS.forEach(p => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "dl-preset-btn";
+      btn.dataset.val   = p.val;
+      btn.dataset.color = p.color;
+      btn.textContent   = p.label;
+      btn.style.cssText = `
+        padding:6px 2px;background:var(--bg-deep);border:1px solid var(--border);
+        border-radius:4px;color:var(--td);font-family:var(--fh);font-size:8px;
+        letter-spacing:.5px;cursor:pointer;transition:all var(--tr);text-align:center;
+      `;
+      btn.addEventListener("click", () => {
+        _applyMult(p.val);
+        // Cerrar panel
+        const panel = document.getElementById("tsDisplayLayerPanel");
+        if (panel) panel.style.display = "none";
+      });
+      grid.appendChild(btn);
+    });
+  }
+
+  function _boot() {
+    _buildPresets();
+
+    // Toggle panel al hacer click en el botón
+    const mainBtn = document.getElementById("tsDisplayLayerBtn");
+    const panel   = document.getElementById("tsDisplayLayerPanel");
+    if (mainBtn && panel) {
+      mainBtn.addEventListener("click", () => {
+        panel.style.display = panel.style.display === "none" ? "block" : "none";
+      });
+      mainBtn.addEventListener("mouseenter", () => {
+        mainBtn.style.background = "linear-gradient(135deg,rgba(224,64,251,.25),rgba(74,106,255,.25))";
+      });
+      mainBtn.addEventListener("mouseleave", () => {
+        mainBtn.style.background = "linear-gradient(135deg,rgba(224,64,251,.15),rgba(74,106,255,.15))";
+      });
+    }
+
+    // Botón aplicar custom
+    const applyBtn = document.getElementById("tsMultCustomApply");
+    const customIn = document.getElementById("tsMultCustom");
+    if (applyBtn && customIn) {
+      applyBtn.addEventListener("click", () => {
+        _applyMult(parseFloat(customIn.value) || 1);
+        if (panel) panel.style.display = "none";
+      });
+      customIn.addEventListener("keydown", e => {
+        if (e.key === "Enter") { _applyMult(parseFloat(customIn.value) || 1); if (panel) panel.style.display = "none"; }
+      });
+      applyBtn.addEventListener("mouseenter", () => { applyBtn.style.background = "rgba(224,64,251,.28)"; applyBtn.style.borderColor = "var(--magenta)"; });
+      applyBtn.addEventListener("mouseleave", () => { applyBtn.style.background = "rgba(224,64,251,.15)"; applyBtn.style.borderColor = "rgba(224,64,251,.5)"; });
+      customIn.addEventListener("focus",  () => { customIn.style.borderColor = "var(--cyan)"; });
+      customIn.addEventListener("blur",   () => { customIn.style.borderColor = "var(--border)"; });
+    }
+
+    // Hook: cuando se abre el modal de edición, resetear al multiplicador guardado
+    const _origOpen = window.openTransModal;
+    if (_origOpen && !window.openTransModal.__dlHooked) {
+      window.openTransModal = function(...a) {
+        const res = _origOpen.apply(this, a);
+        // Leer el multStr que haya cargado el modal (tras openTransModal)
+        setTimeout(() => {
+          const saved = parseFloat(document.getElementById("tsMult_str")?.value) || 1;
+          _applyMult(saved);
+        }, 50);
+        return res;
+      };
+      window.openTransModal.__dlHooked = true;
+    }
+
+    // Iniciar en ×1
+    _applyMult(1);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", _boot);
+  } else {
+    setTimeout(_boot, 250);
+  }
+
+})();
 </script>
 </body>
 </html>

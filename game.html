@@ -197,6 +197,8 @@
       .joystick-wrap { position:relative; width:120px; height:120px; flex-shrink:0; }
       #joystickBase { position:absolute; inset:0; background:rgba(255,255,255,.06); border:2px solid rgba(255,255,255,.15); border-radius:50%; backdrop-filter:blur(4px); }
       #joystickKnob { position:absolute; width:52px; height:52px; background:radial-gradient(circle,rgba(245,196,0,.85),rgba(245,196,0,.45)); border:2px solid rgba(245,196,0,.7); border-radius:50%; top:34px; left:34px; box-shadow:0 0 14px rgba(245,196,0,.5); }
+      .joystick-col { display:flex; flex-direction:column; align-items:center; gap:8px; flex-shrink:0; }
+      #mobileTransBtn { width:var(--btn-size); height:var(--btn-size); flex-shrink:0; }
       .action-grid { display:grid; grid-template-columns:repeat(2,var(--btn-size)); grid-auto-rows:var(--btn-size); gap:8px; align-items:center; justify-items:center; }
       .action-btn { width:var(--btn-size); height:var(--btn-size); border-radius:50%; border:2px solid; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; cursor:pointer; backdrop-filter:blur(8px); transition:all .12s; touch-action:manipulation; pointer-events:auto; }
       .action-btn:active { transform:scale(.88); }
@@ -332,8 +334,10 @@
         :root { --btn-size:44px; --btn-icon:16px; }
         .mobile-controls { height:130px; padding:0 10px 8px; }
         .action-grid { grid-template-columns:repeat(5,var(--btn-size)); }
+        .joystick-col { flex-direction:row; align-items:flex-end; gap:6px; }
         .joystick-wrap { width:90px; height:90px; }
         #joystickKnob { width:36px; height:36px; top:27px; left:27px; }
+        #mobileTransBtn { width:var(--btn-size); height:var(--btn-size); }
         .minimap-wrap { width:68px; height:68px; top:8px; right:8px; }
         .dialog-box { bottom:140px; }
       }
@@ -462,9 +466,12 @@
 
       <!-- Mobile controls -->
       <div class="mobile-controls">
-        <div class="joystick-wrap" id="joystickWrap">
-          <div id="joystickBase"></div>
-          <div id="joystickKnob"></div>
+        <div class="joystick-col">
+          <div class="action-btn btn-emote" id="mobileTransBtn" onclick="toggleTransDropdown(event)"><span class="btn-icon">⚡</span><span class="btn-label">★ TRANS</span></div>
+          <div class="joystick-wrap" id="joystickWrap">
+            <div id="joystickBase"></div>
+            <div id="joystickKnob"></div>
+          </div>
         </div>
         <div class="action-grid" id="actionGrid">
           <div class="action-btn btn-interact" onclick="interactNearby()"><span class="btn-icon">💬</span><span class="btn-label">HABLAR</span></div>
@@ -1232,16 +1239,22 @@
             `<div class="action-btn btn-run" onclick="setControlMode('rp')" style="border-radius:12px;width:100%;grid-column:span 2;height:calc(var(--btn-size)*0.7);"><span class="btn-icon">🔄</span><span class="btn-label">VOLVER A RP</span></div>`,
           ].join("");
         } else {
-          const transActiveMob = window.TransformationsSystem?.playerTransState?.activeTransformation;
           grid.innerHTML = RP_ACTIONS.map((a, idx) =>
             makeMobileAction({ icon:a.icon, label:a.label, action:`performRpAction('${a.id}')`, cls:idx % 2 ? "btn-trailer" : "btn-emote" })
           ).concat([
               makeMobileAction({ icon:"⚔️", label:"COMBATE", action:"setControlMode('combat')", cls:"btn-interact" }),
           ]).concat([
             makeMobileAction({ icon:"💬", label:"HABLAR", action:"interactNearby()", cls:"btn-interact" }),
-            `<div class="action-btn btn-emote ${transActiveMob ? 'trans-active' : ''}" id="mobileTransBtn" onclick="toggleTransDropdown(event)"><span class="btn-icon">⚡</span><span class="btn-label">${transActiveMob ? '★ TRANS' : 'TRANSF.'}</span></div>`,
-            `<div class="action-btn btn-run ${isRunning ? "run-active" : ""}" id="mobileRunBtn" onclick="toggleRunMobile()" style="border-radius:12px;width:100%;height:calc(var(--btn-size)*0.7);"><span class="btn-icon">💨</span><span class="btn-label" id="runBtnLabel">CORRER: ${isRunning ? "ON" : "OFF"}</span></div>`,
+            `<div class="action-btn btn-run ${isRunning ? "run-active" : ""}" id="mobileRunBtn" onclick="toggleRunMobile()" style="border-radius:12px;width:100%;grid-column:span 2;height:calc(var(--btn-size)*0.7);"><span class="btn-icon">💨</span><span class="btn-label" id="runBtnLabel">CORRER: ${isRunning ? "ON" : "OFF"}</span></div>`,
           ]).join("");
+          // Update static mobileTransBtn
+          const mobTB = document.getElementById("mobileTransBtn");
+          if (mobTB) {
+            const transActiveMob2 = window.TransformationsSystem?.playerTransState?.activeTransformation;
+            mobTB.classList.toggle("trans-active", !!transActiveMob2);
+            const lbl = mobTB.querySelector(".btn-label");
+            if (lbl) lbl.textContent = transActiveMob2 ? "★ TRANS" : "TRANSF.";
+          }
         }
       }
     }
@@ -3277,6 +3290,20 @@
 
     function updateCamera() {
       const mapDef = MAPS[currentMap];
+      // Adaptive zoom: only zoom out when a transformation with a bigger sprite is active
+      const activeTrans = window.TransformationsSystem?.playerTransState?.activeTransformation;
+      let targetZoom = 1.0;
+      if (activeTrans) {
+        const _dispW = window._activeDisplayW || (savedChar && savedChar.displayW) || 180;
+        const _dispH = window._activeDisplayH || (savedChar && savedChar.displayH) || 220;
+        const charScale = Math.max(_dispW / 180, _dispH / 220);
+        if (charScale > 1.05) {
+          targetZoom = Math.max(0.88, Math.min(0.98, 1.0 / Math.pow(charScale, 0.15)));
+        }
+      }
+      if (!cam.zoom) cam.zoom = 1.0;
+      cam.zoom += (targetZoom - cam.zoom) * 0.05; // smooth transition
+      // Standard camera tracking (zoom applied via canvas transform in game loop)
       cam.tx = player.x - canvas.width/2; cam.ty = player.y - canvas.height/2;
       cam.tx = Math.max(0, Math.min(cam.tx, mapDef.w*TILE - canvas.width));
       cam.ty = Math.max(0, Math.min(cam.ty, mapDef.h*TILE - canvas.height));
@@ -3829,12 +3856,18 @@
       ctx.fillRect(0,0,canvas.width,canvas.height);
 
       if (gameState==="playing"&&CS&&csAnimator) csAnimator.update(timestamp);
+      const z = cam.zoom || 1;
+      ctx.save();
+      ctx.translate(canvas.width/2, canvas.height/2);
+      ctx.scale(z, z);
+      ctx.translate(-canvas.width/2, -canvas.height/2);
       drawAmbient();
       drawWorld();
       sendPlayerUpdate();
       drawOtherPlayers();
       drawPlayerChar();
       drawCombatEffects(dt);
+      ctx.restore();
       drawMinimap();
 
       requestAnimationFrame(gameLoop);

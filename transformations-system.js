@@ -14,7 +14,7 @@
  *    - applyTransformationStats(tr, baseStats) → calcula stats modificados
  *
  *  REGLAS DE MULTIPLICADORES:
- *    · Rango: x0.3 hasta x10
+ *    · Rango: x0.3 hasta x500
  *    · Afectan: daño (str), velocidad (spd), defensa (def), ki
  *    · NUNCA modifican HP actual ni HP máximo
  *
@@ -37,7 +37,7 @@
   const MULT_MIN = 0.3;
 
   /** Multiplicador máximo permitido para cualquier stat (excepto HP) */
-  const MULT_MAX = 10;
+  const MULT_MAX = 500;
 
   /** Stats que los multiplicadores PUEDEN modificar */
   const MODIFIABLE_STATS = ["str", "spd", "def", "ki"];
