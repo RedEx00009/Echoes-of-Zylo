@@ -2144,6 +2144,31 @@
 
     const TILE=48, CAM_LERP=0.12, SPRITE_DRAW_W=120, SPRITE_DRAW_H=148;
 
+    // -- LOBBY BACKGROUND IMAGE --
+    let lobbyBgImage = null;
+    (function() {
+      const img = new Image();
+      img.onload = () => { lobbyBgImage = img; };
+      img.onerror = () => { console.warn("[game] No se pudo cargar Lobby.png"); };
+      img.src = "Mapas/Lobby.png";
+    })();
+
+    // -- LOBBY BUILDING IMAGES --
+    const lobbyBuildings = { taller: null, estrategia: null, directorZ: null };
+    (function() {
+      const defs = [
+        { key:"taller",     src:"Mapas/Estructuras/TallerMecanico.png" },
+        { key:"estrategia", src:"Mapas/Estructuras/SalaEstrategia.png" },
+        { key:"directorZ",  src:"Mapas/Estructuras/DirectorZ.png"      },
+      ];
+      defs.forEach(({ key, src }) => {
+        const img = new Image();
+        img.onload = () => { lobbyBuildings[key] = img; };
+        img.onerror = () => { console.warn("[game] No se pudo cargar", src); };
+        img.src = src;
+      });
+    })();
+
     // -- MAP DEFINITIONS --
     const MAPS = {
       lobby:  { w:80, h:60, name:"BASE LOBBY",     bgColor:"#0a1020" },
@@ -2226,9 +2251,6 @@
       for (let y=0;y<h;y++){map[y]=[];for(let x=0;x<w;x++)map[y][x]=0;}
       for (let y=22;y<38;y++) for (let x=28;x<52;x++) map[y][x]=2;
       for (let y=28;y<32;y++) for (let x=37;x<43;x++) map[y][x]=1;
-      for (let y=14;y<22;y++) for (let x=32;x<48;x++) map[y][x]=5;
-      for (let y=24;y<36;y++) for (let x=14;x<22;x++) map[y][x]=5;
-      for (let y=24;y<36;y++) for (let x=58;x<66;x++) map[y][x]=5;
       for (let y=38;y<42;y++) for (let x=37;x<43;x++) map[y][x]=3;
       for (let y=44;y<54;y++) for (let x=20;x<60;x++) map[y][x]=6;
       for (let y=0;y<h;y++) map[y][40]=2;
@@ -2521,9 +2543,10 @@
     // -- NPCs --
     const NPC_DEFS = {
       lobby: [
-        { id:"director",name:"DIRECTOR Z",x:40*TILE,y:20*TILE,color:"#f5c400",dialogs:[{text:"¡Bienvenido a la Base! Este es el punto de encuentro de todos los guerreros. Aquí planifican sus aventuras antes de viajar.",opts:[{label:"¡A dónde puedo viajar?",next:1},{label:"¡Gracias!",next:-1}]},{text:"Tenés dos destinos: la Tierra, con sus ciudades y zonas emblemáticas, y el Espacio, con naves y planetas. Usá el portal al sur.",opts:[{label:"Entendido.",next:-1}]}]},
-        { id:"mecanico",name:"MECÁNICO",x:18*TILE,y:30*TILE,color:"#9e9e9e",dialogs:[{text:"Eh, ¡tu casa rodante está bien? Las trailers son el espacio personal de cada guerrero. Podés decorarla e invitar gente.",opts:[{label:"¡Cómo la invoco?",next:1},{label:"Ok.",next:-1}]},{text:"Presioná Q (o el botón TRAILER) para invocarla. Va a aparecer en el mapa. ¡Nadie puede entrar sin que vos los invites!",opts:[{label:"Genial.",next:-1}]}]},
-        { id:"portero",name:"GUARDIÁN DEL PORTAL",x:40*TILE,y:40*TILE,color:"#8b1fff",dialogs:[{text:"Este portal conecta con los otros mundos. Tierra y Espacio. ¡Listo para partir?",opts:[{label:"Ir a la Tierra",next:-2},{label:"Ir al Espacio",next:-3},{label:"No, quedo acá.",next:-1}]}]},
+        { id:"director",name:"DIRECTOR Z",x:63*TILE,y:12*TILE,color:"#f5c400",dialogs:[{text:"¡Bienvenido a la Base! Este es el punto de encuentro de todos los guerreros. Aquí planifican sus aventuras antes de viajar.",opts:[{label:"¿A dónde puedo viajar?",next:1},{label:"¡Gracias!",next:-1}]},{text:"Tenés dos destinos: la Tierra, con sus ciudades y zonas emblemáticas, y el Espacio, con naves y planetas. Usá el portal al centro.",opts:[{label:"Entendido.",next:-1}]}]},
+        { id:"mecanico",name:"MECÁNICO",x:12*TILE,y:14*TILE,color:"#9e9e9e",dialogs:[{text:"Eh, ¿tu casa rodante está bien? Las trailers son el espacio personal de cada guerrero. Podés decorarla e invitar gente.",opts:[{label:"¿Cómo la invoco?",next:1},{label:"Ok.",next:-1}]},{text:"Presioná Q (o el botón TRAILER) para invocarla. Va a aparecer en el mapa. ¡Nadie puede entrar sin que vos los invites!",opts:[{label:"Genial.",next:-1}]}]},
+        { id:"portero",name:"GUARDIÁN DEL PORTAL",x:40*TILE,y:28*TILE,color:"#8b1fff",dialogs:[{text:"Este portal conecta con los otros mundos. Tierra y Espacio. ¡Listo para partir?",opts:[{label:"Ir a la Tierra",next:-2},{label:"Ir al Espacio",next:-3},{label:"No, quedo acá.",next:-1}]}]},
+        { id:"estratega",name:"ESTRATEGA",x:40*TILE,y:46*TILE,color:"#00e5ff",dialogs:[{text:"La Sala de Estrategia es donde planificamos cada misión. Coordiná con tu equipo antes de partir.",opts:[{label:"¿Qué tipo de misiones?",next:1},{label:"Entendido.",next:-1}]},{text:"Desde acá se coordinan las batallas, se reparten roles y se diseñan las tácticas de combate.",opts:[{label:"¡A planificar!",next:-1}]}]},
       ],
       earth: [
         { id:"bulma",name:"BULMA",x:45*TILE,y:38*TILE,color:"#2979ff",dialogs:[{text:"¡Estás en Ciudad Oeste! Capsule Corp está aquí cerca.",opts:[{label:"Qué hay en el bosque?",next:1},{label:"Gracias.",next:-1}]},{text:"En el bosque encontrarás la Kame-House si cruzás el ocano.",opts:[{label:"Entendido.",next:-1}]}]},
@@ -3222,13 +3245,30 @@
     function drawWorld() {
       const map = worldMaps[currentMap]; if (!map) return;
       const mapDef = MAPS[currentMap];
+
+      // -- LOBBY: dibujar imagen de fondo --
+      if (currentMap === "lobby" && lobbyBgImage) {
+        const totalW = mapDef.w * TILE;
+        const totalH = mapDef.h * TILE;
+        ctx.drawImage(lobbyBgImage, -cam.x, -cam.y, totalW, totalH);
+      }
+
       const startX=Math.floor(cam.x/TILE), startY=Math.floor(cam.y/TILE);
       const endX=Math.min(mapDef.w, startX+Math.ceil(canvas.width/TILE)+2);
       const endY=Math.min(mapDef.h, startY+Math.ceil(canvas.height/TILE)+2);
+      // En el lobby con imagen de fondo, todos los tiles se omiten
+      const lobbyHasBg = currentMap === "lobby" && lobbyBgImage;
+
       for (let ty=startY;ty<endY;ty++) for (let tx=startX;tx<endX;tx++) {
         const tile = map[ty]?.[tx]??0;
         const color = TILE_COLORS[tile]||"#2d5a27";
         const sx=tx*TILE-cam.x, sy=ty*TILE-cam.y;
+
+        // En lobby con bg: solo portales (tile===3) visibles
+        if (lobbyHasBg) {
+          if (tile !== 3) continue;
+        }
+
         ctx.fillStyle = color; ctx.fillRect(sx,sy,TILE+1,TILE+1);
         if (tile===0||tile===7) {
           ctx.fillStyle = tile===7?"rgba(0,100,0,0.2)":"rgba(255,255,255,0.03)";
@@ -3270,6 +3310,49 @@
     function drawWorldObjects() {
       ctx.textAlign = "center";
       if (currentMap==="lobby") {
+        if (lobbyBgImage) {
+          // Taller Mecánico: arriba izquierda
+          {
+            const bw=18*TILE, bh=32*TILE;
+            const bx=4*TILE-cam.x, by=-4*TILE-cam.y;
+            if (lobbyBuildings.taller) {
+              ctx.drawImage(lobbyBuildings.taller, bx, by, bw, bh);
+            } else {
+              ctx.fillStyle="#0d1020"; ctx.fillRect(bx,by+10*TILE,bw,14*TILE);
+              ctx.fillStyle="#ff6a00"; ctx.fillRect(bx,by+10*TILE,bw,4);
+              ctx.fillStyle="rgba(255,255,255,.7)"; ctx.font="bold 9px Orbitron,monospace";
+              ctx.fillText("TALLER MECÁNICO",bx+bw/2,by+10*TILE-6);
+            }
+          }
+          // Director Z: arriba derecha
+          {
+            const bw=22*TILE, bh=20*TILE;
+            const bx=52*TILE-cam.x, by=0*TILE-cam.y;
+            if (lobbyBuildings.directorZ) {
+              ctx.drawImage(lobbyBuildings.directorZ, bx, by, bw, bh);
+            } else {
+              ctx.fillStyle="#0d1525"; ctx.fillRect(bx,by+8*TILE,bw,8*TILE);
+              ctx.fillStyle="#00e5ff"; ctx.fillRect(bx,by+8*TILE,bw,4);
+              ctx.fillStyle="rgba(255,255,255,.7)"; ctx.font="bold 10px Orbitron,monospace";
+              ctx.fillText("DIRECTOR Z",bx+bw/2,by+8*TILE-6);
+            }
+          }
+          // Sala de Estrategia: abajo centro
+          {
+            const bw=18*TILE, bh=32*TILE;
+            const bx=31*TILE-cam.x, by=30*TILE-cam.y;
+            if (lobbyBuildings.estrategia) {
+              ctx.drawImage(lobbyBuildings.estrategia, bx, by, bw, bh);
+            } else {
+              ctx.fillStyle="#0d1020"; ctx.fillRect(bx,by+10*TILE,bw,14*TILE);
+              ctx.fillStyle="#aa00ff"; ctx.fillRect(bx,by+10*TILE,bw,4);
+              ctx.fillStyle="rgba(255,255,255,.7)"; ctx.font="bold 9px Orbitron,monospace";
+              ctx.fillText("ESTRATEGIA",bx+bw/2,by+10*TILE-6);
+            }
+          }
+          return;
+        }
+        // Sin imagen de fondo: dibujo original
         const bx=32*TILE-cam.x, by=14*TILE-cam.y;
         ctx.fillStyle="#0d1525"; ctx.fillRect(bx,by,16*TILE,8*TILE);
         ctx.fillStyle="#00e5ff"; ctx.fillRect(bx,by,16*TILE,4);
