@@ -753,20 +753,13 @@
         // Construir mapa por ID de las transformaciones globales (más recientes)
         const globalMap = {};
         fromKey.forEach(tr => { if (tr.id) globalMap[tr.id] = tr; });
-        // Fusionar: slot como base, global para actualizar skin si falta
+        // Fusionar: slot como base, global para actualizar skinDataURL si falta
         saved = fromSlot.map(tr => {
           const global = globalMap[tr.id];
-          if (!global) return tr;
-          const patch = {};
-          // Propagar skinKey si el slot no lo tiene pero el global sí
-          if (!tr.skinKey && global.skinKey) patch.skinKey = global.skinKey;
-          // Propagar skinPath si el slot no lo tiene pero el global sí
-          if (!tr.skinPath && global.skinPath) patch.skinPath = global.skinPath;
-          // Propagar skinDataURL si el global tiene versión completa y el slot no
-          if ((global.skinDataURL && global.skinDataURL !== "__ref__") && (!tr.skinDataURL || tr.skinDataURL === "__ref__")) {
-            patch.skinDataURL = global.skinDataURL;
+          if (global && (global.skinDataURL && global.skinDataURL !== "__ref__") && (!tr.skinDataURL || tr.skinDataURL === "__ref__")) {
+            return Object.assign({}, tr, { skinDataURL: global.skinDataURL });
           }
-          return Object.keys(patch).length > 0 ? Object.assign({}, tr, patch) : tr;
+          return tr;
         });
         // También agregar transformaciones del global que no estén en el slot (por ID)
         const slotIds = new Set(fromSlot.map(t => t.id).filter(Boolean));
@@ -1893,7 +1886,37 @@
             }
             const remoteVariantId = app.variantId || "base";
             const remoteVariantCfg = app.variantCustomizations?.[remoteVariantId];
-            // Cargar sheets de variante (exploraciónn, combate, especial y unificado)
+            // Cargar skin de transformación por ruta local (ej: "Skins/Ozaru.png")
+            // Este caso ocurre cuando el jugador remoto usa una skin del catálogo predefinido.
+            // _transSkinPath llega porque serializeVariantCustomizations lo incluye,
+            // pero spriteDataURL es null → la lógica de sheets de abajo no carga nada.
+            if (remoteVariantCfg?._transSkinPath) {
+              const cacheKey = `${id}:${remoteVariantId}:transSkin`;
+              if (!otherPlayerVariantImages[cacheKey]) {
+                const tsimg = new Image();
+                tsimg.onload = () => {
+                  otherPlayerVariantImages[cacheKey] = tsimg;
+                  // Inyectar en todas las claves de imagen para que drawPlayer lo use
+                  remoteVariantCfg.spriteImage        = tsimg;
+                  remoteVariantCfg.userImage          = tsimg;
+                  remoteVariantCfg.combatSpriteImage  = tsimg;
+                  remoteVariantCfg.combatUserImage    = tsimg;
+                  remoteVariantCfg.specialSpriteImage = tsimg;
+                  remoteVariantCfg.specialUserImage   = tsimg;
+                };
+                tsimg.onerror = () => {};
+                tsimg.src = remoteVariantCfg._transSkinPath;
+              } else if (!remoteVariantCfg.spriteImage) {
+                const cached = otherPlayerVariantImages[cacheKey];
+                remoteVariantCfg.spriteImage        = cached;
+                remoteVariantCfg.userImage          = cached;
+                remoteVariantCfg.combatSpriteImage  = cached;
+                remoteVariantCfg.combatUserImage    = cached;
+                remoteVariantCfg.specialSpriteImage = cached;
+                remoteVariantCfg.specialUserImage   = cached;
+              }
+            }
+            // Cargar sheets de variante (exploración, combate, especial y unificado)
             ["spriteDataURL:spriteImage", "sheet:spriteImage", "combatSpriteDataURL:combatSpriteImage", "specialSpriteDataURL:specialSpriteImage"].forEach(pair => {
               const [urlKey, imgKey] = pair.split(":");
               if (remoteVariantCfg?.[urlKey]) {
