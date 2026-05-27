@@ -877,7 +877,7 @@
      * @param {HTMLImageElement} img - Imagen ya cargada
      * @param {string} [skinPath] - Ruta local para que la red pueda replicarla
      */
-    function _applyTransSkinImageToPlayer(img, skinPath) {
+    function _applyTransSkinImageToPlayer(img, skinPath, skinKey) {
       const CS = window.CharacterSystem;
       if (!CS || !img) return;
       const app = CS.player.appearance;
@@ -899,6 +899,7 @@
         specialUserImage:     img,
         specialSpriteDataURL: null,
         _transSkinPath: skinPath || null,
+        _transSkinKey:  skinKey  || null,  // para que el receptor remoto resuelva desde su csImageMap
         _isTransSkin:   true,
       };
 
@@ -918,7 +919,7 @@
      * @param {string} skinSrc - Ruta local o dataURL
      * @param {string} [skinPath] - Ruta original (solo para referencia, no afecta la carga)
      */
-    function _applyTransSkinToPlayer(skinSrc, skinPath) {
+    function _applyTransSkinToPlayer(skinSrc, skinPath, onLoadCallback) {
       const CS = window.CharacterSystem;
       if (!CS || !skinSrc) return;
       const app = CS.player.appearance;
@@ -959,6 +960,8 @@
         if (typeof window._forceRender === "function") window._forceRender();
         if (typeof window.requestRedraw === "function") window.requestRedraw();
         console.info("[TransSkin] Sprite de transformación aplicado:", skinPath || skinSrc.substring(0, 40));
+        // Callback post-carga (ej: publishMyAppearance para que la red reciba la skin actualizada)
+        if (typeof onLoadCallback === "function") onLoadCallback();
       };
       img.onerror = () => console.warn("[TransSkin] No se pudo cargar:", skinSrc.substring(0, 60));
       img.src = skinSrc;
@@ -1034,7 +1037,7 @@
           : (tr.skinImage && tr.skinImage.complete && tr.skinImage.naturalWidth ? tr.skinImage : null);
 
         if (preloadedImg) {
-          _applyTransSkinImageToPlayer(preloadedImg, skinPath || null);
+          _applyTransSkinImageToPlayer(preloadedImg, skinPath || null, skinKey || null);
           if (!tr.skinPath) tr.skinPath = skinPath;
         } else {
           // Fallback __ref__: recuperar base64 custom desde localStorage
@@ -1046,10 +1049,11 @@
           }
           if (skinPath) {
             // Ruta local: cargar directo como hacen las razas — sin base64, liviano en red
-            _applyTransSkinToPlayer(skinPath, skinPath);
+            // publishMyAppearance se llama desde el callback de _applyTransSkinToPlayer (asíncrono)
+            _applyTransSkinToPlayer(skinPath, skinPath, () => { publishMyAppearance && publishMyAppearance(true); });
             if (!tr.skinPath) tr.skinPath = skinPath;
           } else if (skinURL && skinURL !== "__ref__" && skinURL.length > 10) {
-            _applyTransSkinToPlayer(skinURL, null);
+            _applyTransSkinToPlayer(skinURL, null, () => { publishMyAppearance && publishMyAppearance(true); });
             if (!tr.skinDataURL || tr.skinDataURL === "__ref__") tr.skinDataURL = skinURL;
           } else {
             console.info("[TransSkin] Transformación sin skin custom:", trId);
@@ -1469,6 +1473,8 @@
           out[id].combatSpriteDataURL  = null;
           out[id].specialSpriteDataURL = null;
         }
+        // Incluir skinKey para que el receptor resuelva la imagen desde su csImageMap local
+        if (cfg._transSkinKey) out[id]._transSkinKey = cfg._transSkinKey;
         if (cfg._isTransSkin) out[id]._isTransSkin = true;
       });
       return out;
@@ -1886,27 +1892,41 @@
             }
             const remoteVariantId = app.variantId || "base";
             const remoteVariantCfg = app.variantCustomizations?.[remoteVariantId];
-            // Cargar skin de transformación por ruta local (ej: "Skins/Ozaru.png")
-            // Este caso ocurre cuando el jugador remoto usa una skin del catálogo predefinido.
-            // _transSkinPath llega porque serializeVariantCustomizations lo incluye,
-            // pero spriteDataURL es null → la lógica de sheets de abajo no carga nada.
-            if (remoteVariantCfg?._transSkinPath) {
+            // Cargar skin de transformación del catálogo predefinido o ruta local.
+            // Prioridad: _transSkinKey (resolución desde csImageMap local, sin carga de red)
+            //            > _transSkinPath (ruta relativa al servidor, requiere HTTP)
+            if (remoteVariantCfg && (remoteVariantCfg._transSkinKey || remoteVariantCfg._transSkinPath)) {
               const cacheKey = `${id}:${remoteVariantId}:transSkin`;
-              if (!otherPlayerVariantImages[cacheKey]) {
-                const tsimg = new Image();
-                tsimg.onload = () => {
-                  otherPlayerVariantImages[cacheKey] = tsimg;
-                  // Inyectar en todas las claves de imagen para que drawPlayer lo use
-                  remoteVariantCfg.spriteImage        = tsimg;
-                  remoteVariantCfg.userImage          = tsimg;
-                  remoteVariantCfg.combatSpriteImage  = tsimg;
-                  remoteVariantCfg.combatUserImage    = tsimg;
-                  remoteVariantCfg.specialSpriteImage = tsimg;
-                  remoteVariantCfg.specialUserImage   = tsimg;
-                };
-                tsimg.onerror = () => {};
-                tsimg.src = remoteVariantCfg._transSkinPath;
+              // Caso 1: skinKey del catálogo — resolver desde csImageMap precargado (instantáneo, sin red)
+              if (remoteVariantCfg._transSkinKey && csImageMap && csImageMap[remoteVariantCfg._transSkinKey] &&
+                  csImageMap[remoteVariantCfg._transSkinKey].complete && csImageMap[remoteVariantCfg._transSkinKey].naturalWidth) {
+                const resolved = csImageMap[remoteVariantCfg._transSkinKey];
+                otherPlayerVariantImages[cacheKey] = resolved;
+                remoteVariantCfg.spriteImage        = resolved;
+                remoteVariantCfg.userImage          = resolved;
+                remoteVariantCfg.combatSpriteImage  = resolved;
+                remoteVariantCfg.combatUserImage    = resolved;
+                remoteVariantCfg.specialSpriteImage = resolved;
+                remoteVariantCfg.specialUserImage   = resolved;
+              } else if (!otherPlayerVariantImages[cacheKey]) {
+                // Caso 2: fallback a _transSkinPath (ruta local HTTP) si no tenemos skinKey resuelto
+                const transSrc = remoteVariantCfg._transSkinPath || null;
+                if (transSrc) {
+                  const tsimg = new Image();
+                  tsimg.onload = () => {
+                    otherPlayerVariantImages[cacheKey] = tsimg;
+                    remoteVariantCfg.spriteImage        = tsimg;
+                    remoteVariantCfg.userImage          = tsimg;
+                    remoteVariantCfg.combatSpriteImage  = tsimg;
+                    remoteVariantCfg.combatUserImage    = tsimg;
+                    remoteVariantCfg.specialSpriteImage = tsimg;
+                    remoteVariantCfg.specialUserImage   = tsimg;
+                  };
+                  tsimg.onerror = () => {};
+                  tsimg.src = transSrc;
+                }
               } else if (!remoteVariantCfg.spriteImage) {
+                // Caso 3: imagen ya en caché, solo inyectar referencias
                 const cached = otherPlayerVariantImages[cacheKey];
                 remoteVariantCfg.spriteImage        = cached;
                 remoteVariantCfg.userImage          = cached;

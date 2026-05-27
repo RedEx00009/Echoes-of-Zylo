@@ -2070,8 +2070,25 @@ function _makeTrans(data={}) {
 /* ── Carga la imagen de skin si hay dataURL ── */
 async function _loadTransSkinImage(tr) {
   if (tr.skinImage && tr.skinImage.complete && tr.skinImage.naturalWidth) return;
-  // Prioridad: skinPath (ruta local) > skinDataURL (base64 custom)
-  const src = tr.skinPath || tr.skinDataURL || null;
+  // Prioridad: skinKey (catálogo) > skinPath (ruta local) > skinDataURL (base64 custom)
+  let src = tr.skinPath || tr.skinDataURL || null;
+  // Si solo hay skinKey, resolver la ruta desde SPRITE_IMAGES
+  if (!src && tr.skinKey) {
+    const CS = window.CharacterSystem;
+    // Intentar desde imageMap precargado primero (evita new Image() extra)
+    const preloaded = (window.imageMap || window._imageMap || window.characterImages);
+    if (preloaded && preloaded[tr.skinKey] && preloaded[tr.skinKey].complete && preloaded[tr.skinKey].naturalWidth) {
+      tr.skinImage = preloaded[tr.skinKey];
+      if (!tr.skinPath && CS && CS.SPRITE_IMAGES && CS.SPRITE_IMAGES[tr.skinKey]) {
+        tr.skinPath = CS.SPRITE_IMAGES[tr.skinKey];
+      }
+      return;
+    }
+    if (CS && CS.SPRITE_IMAGES && CS.SPRITE_IMAGES[tr.skinKey]) {
+      src = CS.SPRITE_IMAGES[tr.skinKey];
+      tr.skinPath = src; // cachear para no re-resolver la próxima vez
+    }
+  }
   if (!src) return;
   try {
     tr.skinImage = await new Promise((ok, fail) => {
