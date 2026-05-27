@@ -1,6 +1,6 @@
 // @ts-nocheck
 /**
- * DRAGON CREATOR Z — Transformations System v1.0.0
+ * DRAGON CREATOR Z — Transformations System v2.0.0
  *
  * ══════════════════════════════════════════════════════════════════
  *  MÓDULO MODULAR DE TRANSFORMACIONES
@@ -8,10 +8,12 @@
  *  Expone window.TransformationsSystem con:
  *    - TRANSFORMATIONS          → catálogo global de transformaciones
  *    - Transformation           → clase constructora de transformaciones
+ *    - SPECIAL_SKIN_CATALOG     → catálogo de skins predefinidas por raza
  *    - playerTransState         → estado del jugador (baseStats, currentStats, activeTransformation)
  *    - transformPlayer(id)      → activa una transformación por ID
  *    - revertTransformation()   → vuelve a la forma base
  *    - applyTransformationStats(tr, baseStats) → calcula stats modificados
+ *    - renderSpecialSkinsPanel(containerId, options) → renderiza el panel de skins especiales
  *
  *  REGLAS DE MULTIPLICADORES:
  *    · Rango: x0.3 hasta x500
@@ -46,214 +48,184 @@
   const PROTECTED_STATS = ["hp", "hpMax", "currentHp"];
 
   // ═══════════════════════════════════════════════════════════════
-  //  CLASE Transformation
+  //  CATÁLOGO DE SKINS ESPECIALES
+  //  Organizado por raza y grupo. skinKey → SPRITE_IMAGES[skinKey].
+  //  NUNCA se transportan imágenes — cada cliente las resuelve localmente.
   // ═══════════════════════════════════════════════════════════════
 
   /**
-   * Representa una transformación de personaje.
-   *
-   * @param {Object} config - Configuración de la transformación
-   * @param {string}   config.id         - Identificador único
-   * @param {string}   config.name       - Nombre visible (ej: "Super Saiyan")
-   * @param {number}   config.level      - Nivel de la transformación (1–99)
-   * @param {string[]} config.races      - Razas compatibles: ["all"] o ["saiyan", "human", ...]
-   * @param {string}   config.auraColor  - Color HEX del aura
-   * @param {string}   [config.icon]     - Emoji o carácter visual
-   * @param {string}   [config.description] - Descripción breve
-   * @param {Object}   config.multipliers - Multiplicadores de stats
-   * @param {number}   config.multipliers.str - Multiplicador de daño/fuerza (0.3–10)
-   * @param {number}   config.multipliers.spd - Multiplicador de velocidad   (0.3–10)
-   * @param {number}   config.multipliers.def - Multiplicador de defensa      (0.3–10)
-   * @param {number}   config.multipliers.ki  - Multiplicador de ki           (0.3–10)
-   * @param {string}   [config.skinDataURL]   - DataURL del spritesheet custom (opcional)
+   * Cada entrada del catálogo:
+   *   skinKey   → clave en CharacterSystem.SPRITE_IMAGES
+   *   label     → nombre visible
+   *   icon      → emoji decorativo
+   *   races     → array de raceId compatibles, o ["all"]
+   *   group     → nombre del grupo visual (con emoji)
+   *   groupKey  → identificador limpio del grupo (sin emoji)
+   *   color     → color del grupo para la UI
+   *   desc      → descripción corta (opcional)
    */
-  class Transformation {
-    constructor(config = {}) {
-      this.id          = config.id          || `tr_${Date.now()}_${Math.random().toString(36).slice(2, 5)}`;
-      this.name        = config.name        || "Transformación";
-      this.level       = Math.max(1, Math.min(99, parseInt(config.level) || 1));
-      this.races       = Array.isArray(config.races) ? config.races : ["all"];
-      this.auraColor   = config.auraColor   || "#fdd835";
-      this.icon        = config.icon        || "⚡";
-      this.description = config.description || "";
-      this.skinDataURL = config.skinDataURL || null;
-      this.skinPath    = config.skinPath    || null;  // ruta local (ej: "Skins/ozaru_saiyajin.png")
-      this.appearance  = { ...(config.appearance || {}) };
-      // Tamaño de display propio de esta transformación (0 = heredar base)
-      this.displayW    = config.displayW ? Math.max(40, Math.min(400, parseInt(config.displayW) || 0)) : 0;
-      this.displayH    = config.displayH ? Math.max(40, Math.min(500, parseInt(config.displayH) || 0)) : 0;
+  const SPECIAL_SKIN_CATALOG = [
 
-      // Runtime (no se persiste en JSON crudo)
-      this.skinImage   = null;
-
-      // Validar y clampar multiplicadores
-      const rawMult    = config.multipliers || {};
-      this.multipliers = {
-        str: _clampMult(rawMult.str !== undefined ? rawMult.str : 1),
-        spd: _clampMult(rawMult.spd !== undefined ? rawMult.spd : 1),
-        def: _clampMult(rawMult.def !== undefined ? rawMult.def : 1),
-        ki:  _clampMult(rawMult.ki  !== undefined ? rawMult.ki  : 1),
-        // HP está aquí SOLO como no-op para claridad — NUNCA se aplica
-        hp:  1,
-      };
-    }
-
-    /** Devuelve true si esta transformación es compatible con la raza dada */
-    isAvailableFor(raceId) {
-      return this.races.includes("all") || this.races.includes(raceId);
-    }
-
-    /**
-     * Devuelve un resumen de multiplicadores legible.
-     * @returns {string}
-     */
-    getMultSummary() {
-      const m = this.multipliers;
-      return [
-        `STR ×${m.str}`,
-        `SPD ×${m.spd}`,
-        `DEF ×${m.def}`,
-        `KI ×${m.ki}`,
-      ].join("  ·  ");
-    }
-
-    /**
-     * Serializa la transformación a un objeto JSON seguro (sin imágenes runtime).
-     * @returns {Object}
-     */
-    toJSON() {
-      return {
-        id:          this.id,
-        name:        this.name,
-        level:       this.level,
-        races:       this.races,
-        auraColor:   this.auraColor,
-        icon:        this.icon,
-        description: this.description,
-        multipliers: { ...this.multipliers },
-        skinDataURL: this.skinDataURL,
-        skinPath:    this.skinPath    || null,
-        appearance:  { ...this.appearance },
-        displayW:    this.displayW || 0,
-        displayH:    this.displayH || 0,
-      };
-    }
-
-    /**
-     * Reconstruye una instancia de Transformation desde un JSON guardado.
-     * @param {Object} json
-     * @returns {Transformation}
-     */
-    static fromJSON(json) {
-      return new Transformation(json);
-    }
-  }
-
-  // ═══════════════════════════════════════════════════════════════
-  //  CATÁLOGO GLOBAL — TRANSFORMATIONS
-  //  (Array vacío, listo para ser poblado por el juego o el creator)
-  // ═══════════════════════════════════════════════════════════════
-
-  /**
-   * Catálogo principal de transformaciones.
-   * Cada entrada es una instancia de Transformation.
-   *
-   * Para añadir transformaciones desde el exterior:
-   *   window.TransformationsSystem.TRANSFORMATIONS.push(
-   *     new window.TransformationsSystem.Transformation({ ... })
-   *   );
-   *
-   * Transformaciones universales (races: ["all"]) funcionan con cualquier raza.
-   * Transformaciones específicas (races: ["saiyan"]) solo aplican a esa raza.
-   */
-  const TRANSFORMATIONS = [];
-
-  // ─── Ejemplos comentados — descomentar para precargar transformaciones ───
-  /*
-  TRANSFORMATIONS.push(new Transformation({
-    id:          "kaioken",
-    name:        "Kaioken",
-    level:       1,
-    races:       ["all"],          // Universal
-    auraColor:   "#ff1744",
-    icon:        "🔴",
-    description: "Multiplica el ki y la fuerza a costa de la defensa.",
-    multipliers: { str: 2, spd: 1.5, def: 0.7, ki: 2 },
-  }));
-
-  TRANSFORMATIONS.push(new Transformation({
-    id:          "super_saiyan",
-    name:        "Super Saiyan",
-    level:       1,
-    races:       ["saiyan"],       // Solo Saiyans
-    auraColor:   "#fdd835",
-    icon:        "💛",
-    description: "La primera transformación legendaria de los Saiyans.",
-    multipliers: { str: 5, spd: 3, def: 2.5, ki: 5 },
-  }));
-
-  TRANSFORMATIONS.push(new Transformation({
-    id:          "super_saiyan_2",
-    name:        "Super Saiyan 2",
-    level:       2,
-    races:       ["saiyan"],
-    auraColor:   "#fdd835",
-    icon:        "⚡",
-    description: "El poder que superó a Cell.",
-    multipliers: { str: 7.5, spd: 5, def: 3.5, ki: 7.5 },
-  }));
-
-  TRANSFORMATIONS.push(new Transformation({
-    id:          "namekian_giant",
-    name:        "Forma Gigante",
-    level:       1,
-    races:       ["namekian"],
-    auraColor:   "#00e676",
-    icon:        "🟢",
-    description: "Expansión corporal característica de los Namekianos.",
-    multipliers: { str: 4, spd: 0.5, def: 6, ki: 2 },
-  }));
-  */
-
-  // ═══════════════════════════════════════════════════════════════
-  //  ESTADO DEL JUGADOR — playerTransState
-  // ═══════════════════════════════════════════════════════════════
-
-  /**
-   * Estado de transformación del jugador.
-   *
-   * IMPORTANTE: baseStats y currentStats NO incluyen hp/hpMax.
-   *   - El HP actual y el HP máximo son manejados por el sistema de combate,
-   *     no por este módulo. Los multiplicadores de transformación NUNCA los tocan.
-   *
-   * baseStats:   stats base sin ningún modificador
-   * currentStats: stats actuales (con multiplicadores aplicados si hay transformación activa)
-   * activeTransformation: instancia de Transformation activa, o null si está en forma base
-   */
-  const playerTransState = {
-    /** Stats base del personaje (sin transformación). Solo str/spd/def/ki. */
-    baseStats: {
-      str: 80,
-      spd: 80,
-      def: 80,
-      ki:  80,
-      // hp y hpMax NO están aquí — los maneja el sistema de combate
+    // ── SAIYAJIN ─────────────────────────────────────────────────
+    {
+      skinKey: "tf_ssj",    label: "Super Saiyan",      icon: "💛",
+      races: ["saiyan"],    group: "💛 SUPER SAIYAJIN",  groupKey: "ssj",
+      color: "#fdd835",     desc: "La primera transformación legendaria"
+    },
+    {
+      skinKey: "tf_ssj2",   label: "Super Saiyan 2",    icon: "⚡",
+      races: ["saiyan"],    group: "💛 SUPER SAIYAJIN",  groupKey: "ssj",
+      color: "#fdd835",     desc: "El poder que superó a Cell"
+    },
+    {
+      skinKey: "tf_ssj3",   label: "Super Saiyan 3",    icon: "🌀",
+      races: ["saiyan"],    group: "💛 SUPER SAIYAJIN",  groupKey: "ssj",
+      color: "#fdd835",     desc: "Cabello hasta la cintura, poder inmenso"
+    },
+    {
+      skinKey: "tf_ssjblue",label: "SSJ Blue",           icon: "🔵",
+      races: ["saiyan"],    group: "🔵 DIOS SAIYAJIN",   groupKey: "ssjgod",
+      color: "#00b0ff",     desc: "Ki divino del Saiyajin"
+    },
+    {
+      skinKey: "tf_ssjgod", label: "SSJ God",            icon: "🔴",
+      races: ["saiyan"],    group: "🔵 DIOS SAIYAJIN",   groupKey: "ssjgod",
+      color: "#00b0ff",     desc: "El ki rojo del Dios Saiyajin"
+    },
+    {
+      skinKey: "tf_ssj4",   label: "Super Saiyan 4 ♂",  icon: "🦁",
+      races: ["saiyan"],    group: "🔴 SUPER SAIYAN 4",  groupKey: "ssj4",
+      color: "#e53935",     desc: "Ozaru dorado + Super Saiyan"
+    },
+    {
+      skinKey: "tf_ssj4f",  label: "Super Saiyan 4 ♀",  icon: "🦁",
+      races: ["saiyan"],    group: "🔴 SUPER SAIYAN 4",  groupKey: "ssj4",
+      color: "#e53935",     desc: "Versión femenina de SSJ4"
+    },
+    {
+      skinKey: "tf_lssj",   label: "LSS ♂",              icon: "💜",
+      races: ["saiyan"],    group: "💜 LEGENDARIO",       groupKey: "lssj",
+      color: "#b39ddb",     desc: "El Saiyajin Legendario"
+    },
+    {
+      skinKey: "tf_lssjf",  label: "LSS ♀",              icon: "💜",
+      races: ["saiyan"],    group: "💜 LEGENDARIO",       groupKey: "lssj",
+      color: "#b39ddb",     desc: "El Saiyajin Legendario femenino"
+    },
+    {
+      skinKey: "tf_ozaru",  label: "Ozaru",               icon: "🦍",
+      races: ["saiyan"],    group: "🦍 OZARU",            groupKey: "ozaru",
+      color: "#ff6a00",     desc: "La Gran Bestia del Mono"
     },
 
-    /** Stats actuales (post-multiplicadores). Se recalculan al transformar/revertir. */
-    currentStats: {
-      str: 80,
-      spd: 80,
-      def: 80,
-      ki:  80,
+    // ── HUMANO ───────────────────────────────────────────────────
+    {
+      skinKey: "tf_kk",     label: "Kaioken ♂",          icon: "🔴",
+      races: ["human","saiyan"], group: "🔴 KAIOKEN",     groupKey: "kaioken",
+      color: "#ff1744",     desc: "Técnica del Rey Kai — multiplica el ki"
+    },
+    {
+      skinKey: "tf_kkf",    label: "Kaioken ♀",          icon: "🔴",
+      races: ["human","saiyan"], group: "🔴 KAIOKEN",     groupKey: "kaioken",
+      color: "#ff1744",     desc: "Kaioken versión femenina"
+    },
+    {
+      skinKey: "tf_ult_m",  label: "Definitivo ♂",       icon: "⚪",
+      races: ["human"],     group: "⚪ DEFINITIVO",       groupKey: "ultimate",
+      color: "#e8eaf6",     desc: "El poder máximo de un humano"
+    },
+    {
+      skinKey: "tf_ult_f",  label: "Definitivo ♀",       icon: "⚪",
+      races: ["human"],     group: "⚪ DEFINITIVO",       groupKey: "ultimate",
+      color: "#e8eaf6",     desc: "Potencial despertado al máximo"
     },
 
-    /** Referencia a la Transformation activa, o null si está en forma base */
-    activeTransformation: null,
+    // ── NAMEKIANO ────────────────────────────────────────────────
+    {
+      skinKey: "tf_gigante",label: "Forma Gigante",       icon: "🟢",
+      races: ["namekian"],  group: "🟢 FORMAS NAMEKIANAS",groupKey: "namek_forms",
+      color: "#69f0ae",     desc: "Expansión corporal característica"
+    },
+    {
+      skinKey: "tf_bersk",  label: "Berserker",           icon: "💚",
+      races: ["namekian"],  group: "🟢 FORMAS NAMEKIANAS",groupKey: "namek_forms",
+      color: "#69f0ae",     desc: "Namekiano en estado de furia"
+    },
+    {
+      skinKey: "tf_supernamek", label: "Super Namek",     icon: "✨",
+      races: ["namekian"],  group: "🟢 FORMAS NAMEKIANAS",groupKey: "namek_forms",
+      color: "#69f0ae",     desc: "Fusión y poder supremo Namekiano"
+    },
 
-    /** Historial de activaciones (para debugging / UI) */
-    _history: [],
-  };
+    // ── ANDROIDE ─────────────────────────────────────────────────
+    {
+      skinKey: "tf_maq_m",  label: "Maquinación ♂",      icon: "🤖",
+      races: ["android"],   group: "🤖 MAQUINACIÓN",      groupKey: "maq",
+      color: "#00e5ff",     desc: "Transformación cibernética total"
+    },
+    {
+      skinKey: "tf_maq_f",  label: "Maquinación ♀",      icon: "🤖",
+      races: ["android"],   group: "🤖 MAQUINACIÓN",      groupKey: "maq",
+      color: "#00e5ff",     desc: "Maquinación versión femenina"
+    },
+    {
+      skinKey: "tf_core_m", label: "Núcleo ♂",            icon: "💠",
+      races: ["android"],   group: "💠 NÚCLEO ANDROID",   groupKey: "core",
+      color: "#80deea",     desc: "Liberación del núcleo de energía"
+    },
+    {
+      skinKey: "tf_core_f", label: "Núcleo ♀",            icon: "💠",
+      races: ["android"],   group: "💠 NÚCLEO ANDROID",   groupKey: "core",
+      color: "#80deea",     desc: "Núcleo liberado versión femenina"
+    },
+
+    // ── RAZA DE FRIEZA ───────────────────────────────────────────
+    {
+      skinKey: "tf_5forma", label: "5ta Forma",           icon: "👾",
+      races: ["frieza"],    group: "👾 FORMAS ARCOSAS",   groupKey: "arcosa_forms",
+      color: "#e040fb",     desc: "La forma oculta de la Raza Arcosa"
+    },
+    {
+      skinKey: "tf_goldform",label: "Forma Dorada",       icon: "🟡",
+      races: ["frieza"],    group: "👾 FORMAS ARCOSAS",   groupKey: "arcosa_forms",
+      color: "#e040fb",     desc: "El pináculo del entrenamiento Arcosa"
+    },
+    {
+      skinKey: "tf_blackform",label: "Forma Negra",       icon: "🖤",
+      races: ["frieza"],    group: "👾 FORMAS ARCOSAS",   groupKey: "arcosa_forms",
+      color: "#e040fb",     desc: "Poder más allá de la forma dorada"
+    },
+
+    // ── KAIOSHIN ─────────────────────────────────────────────────
+    {
+      skinKey: "tf_kai_ult",label: "Poder Kaioshin",      icon: "⚗️",
+      races: ["kaioshin"],  group: "⚗️ KAIOSHIN",         groupKey: "kaioshin",
+      color: "#ce93d8",     desc: "Poder divino del Dios Supremo"
+    },
+    {
+      skinKey: "tf_kai_fus",label: "Potara Fusión",       icon: "💍",
+      races: ["kaioshin"],  group: "⚗️ KAIOSHIN",         groupKey: "kaioshin",
+      color: "#ce93d8",     desc: "Fusión mediante los aretes Potara"
+    },
+
+    // ── UNIVERSAL ────────────────────────────────────────────────
+    {
+      skinKey: "tf_ultra",  label: "Ultra Instinto",      icon: "🌸",
+      races: ["all"],       group: "🌸 ULTRA INSTINTO",   groupKey: "ultra",
+      color: "#90caf9",     desc: "El movimiento sin pensar"
+    },
+    {
+      skinKey: "tf_ultra_mastered", label: "UI Dominado", icon: "⚪",
+      races: ["all"],       group: "🌸 ULTRA INSTINTO",   groupKey: "ultra",
+      color: "#90caf9",     desc: "Ultra Instinto perfectamente dominado"
+    },
+    {
+      skinKey: "tf_ego",    label: "Ultra Ego",           icon: "🟣",
+      races: ["all"],       group: "🟣 ULTRA EGO",        groupKey: "ego",
+      color: "#ce93d8",     desc: "El camino del Destructor"
+    },
+  ];
+
 
   // ═══════════════════════════════════════════════════════════════
   //  HELPERS INTERNOS
@@ -289,46 +261,107 @@
   }
 
   // ═══════════════════════════════════════════════════════════════
+  //  CLASE Transformation
+  // ═══════════════════════════════════════════════════════════════
+
+  class Transformation {
+    constructor(config = {}) {
+      this.id          = config.id          || `tr_${Date.now()}_${Math.random().toString(36).slice(2, 5)}`;
+      this.name        = config.name        || "Transformación";
+      this.level       = Math.max(1, Math.min(99, parseInt(config.level) || 1));
+      this.races       = Array.isArray(config.races) ? config.races : ["all"];
+      this.auraColor   = config.auraColor   || "#fdd835";
+      this.icon        = config.icon        || "⚡";
+      this.description = config.description || "";
+
+      // skinKey: clave de SPRITE_IMAGES (ej: "tf_lssj", "tf_ozaru").
+      // Se serializa en Firebase. Cada cliente resuelve el PNG localmente.
+      this.skinKey     = config.skinKey     || null;
+
+      this.appearance  = { ...(config.appearance || {}) };
+      this.displayW    = config.displayW ? Math.max(40, Math.min(400, parseInt(config.displayW) || 0)) : 0;
+      this.displayH    = config.displayH ? Math.max(40, Math.min(500, parseInt(config.displayH) || 0)) : 0;
+
+      // Runtime (no se persiste — imageMap del juego lo resuelve en cada frame)
+      this.skinImage   = null;
+
+      const rawMult    = config.multipliers || {};
+      this.multipliers = {
+        str: _clampMult(rawMult.str !== undefined ? rawMult.str : 1),
+        spd: _clampMult(rawMult.spd !== undefined ? rawMult.spd : 1),
+        def: _clampMult(rawMult.def !== undefined ? rawMult.def : 1),
+        ki:  _clampMult(rawMult.ki  !== undefined ? rawMult.ki  : 1),
+        hp:  1, // HP aquí solo como no-op — NUNCA se aplica
+      };
+    }
+
+    isAvailableFor(raceId) {
+      return this.races.includes("all") || this.races.includes(raceId);
+    }
+
+    getMultSummary() {
+      const m = this.multipliers;
+      return [`STR ×${m.str}`, `SPD ×${m.spd}`, `DEF ×${m.def}`, `KI ×${m.ki}`].join("  ·  ");
+    }
+
+    toJSON() {
+      return {
+        id:          this.id,
+        name:        this.name,
+        level:       this.level,
+        races:       this.races,
+        auraColor:   this.auraColor,
+        icon:        this.icon,
+        description: this.description,
+        multipliers: { ...this.multipliers },
+        skinKey:     this.skinKey    || null,
+        appearance:  { ...this.appearance },
+        displayW:    this.displayW || 0,
+        displayH:    this.displayH || 0,
+      };
+    }
+
+    static fromJSON(json) {
+      return new Transformation(json);
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  //  CATÁLOGO GLOBAL — TRANSFORMATIONS
+  // ═══════════════════════════════════════════════════════════════
+
+  const TRANSFORMATIONS = [];
+
+  // ═══════════════════════════════════════════════════════════════
+  //  ESTADO DEL JUGADOR — playerTransState
+  // ═══════════════════════════════════════════════════════════════
+
+  const playerTransState = {
+    baseStats: { str: 80, spd: 80, def: 80, ki: 80 },
+    currentStats: { str: 80, spd: 80, def: 80, ki: 80 },
+    activeTransformation: null,
+    _history: [],
+  };
+
+  // ═══════════════════════════════════════════════════════════════
   //  FUNCIÓN PRINCIPAL — applyTransformationStats
   // ═══════════════════════════════════════════════════════════════
 
-  /**
-   * Calcula los stats modificados por una transformación.
-   * NUNCA modifica hp actual ni hp máximo.
-   *
-   * @param {Transformation} tr      - Transformación a aplicar
-   * @param {Object}         baseStats - Stats base del personaje
-   * @returns {Object} - Nuevo objeto con stats calculados
-   *
-   * @example
-   *   const newStats = applyTransformationStats(superSaiyan, player.baseStats);
-   *   // newStats.str === Math.round(player.baseStats.str * 5)
-   *   // newStats.hp  === NO EXISTE (nunca se toca)
-   */
   function applyTransformationStats(tr, baseStats) {
     if (!tr || !baseStats) {
       console.warn("[TransSys] applyTransformationStats: argumentos inválidos.");
       return { ...baseStats };
     }
-
     const result = {};
-
-    // Solo aplicar multiplicadores a los stats permitidos
     MODIFIABLE_STATS.forEach(stat => {
       if (baseStats[stat] !== undefined) {
         const mult = _clampMult(tr.multipliers[stat] || 1);
         result[stat] = _capStat(baseStats[stat] * mult);
       }
     });
-
-    // PROTECCIÓN EXPLÍCITA: copiar HP sin modificar si existe en baseStats
-    // (normalmente no debería existir aquí, pero por seguridad lo pasamos intacto)
     PROTECTED_STATS.forEach(stat => {
-      if (baseStats[stat] !== undefined) {
-        result[stat] = baseStats[stat]; // copia directa, sin multiplicador
-      }
+      if (baseStats[stat] !== undefined) result[stat] = baseStats[stat];
     });
-
     return result;
   }
 
@@ -336,226 +369,286 @@
   //  transformPlayer(id)
   // ═══════════════════════════════════════════════════════════════
 
-  /**
-   * Activa una transformación en el jugador por su ID.
-   * Modifica playerTransState.currentStats y playerTransState.activeTransformation.
-   * NUNCA toca hp actual ni hp máximo.
-   *
-   * @param {string} id - ID de la transformación a activar
-   * @param {Object} [options]
-   * @param {string} [options.raceId] - Raza del jugador (para validar compatibilidad)
-   * @returns {{ success: boolean, transformation: Transformation|null, currentStats: Object }}
-   */
   function transformPlayer(id, options = {}) {
     const tr = _findById(id);
-
     if (!tr) {
       console.warn(`[TransSys] transformPlayer: transformación "${id}" no encontrada.`);
       return { success: false, transformation: null, currentStats: { ...playerTransState.currentStats } };
     }
-
-    // Validar compatibilidad de raza (opcional)
     if (options.raceId && !tr.isAvailableFor(options.raceId)) {
       console.warn(`[TransSys] transformPlayer: "${id}" no disponible para raza "${options.raceId}".`);
       return { success: false, transformation: null, currentStats: { ...playerTransState.currentStats } };
     }
-
-    // Calcular nuevos stats
     const newStats = applyTransformationStats(tr, playerTransState.baseStats);
-
-    // Aplicar al estado del jugador
     playerTransState.activeTransformation = tr;
     playerTransState.currentStats = newStats;
-
-    // Registrar en historial
-    playerTransState._history.push({
-      action:    "transform",
-      id:        tr.id,
-      name:      tr.name,
-      timestamp: Date.now(),
-    });
-
+    playerTransState._history.push({ action: "transform", id: tr.id, name: tr.name, timestamp: Date.now() });
     console.info(`[TransSys] Transformación activada: ${tr.name} (${tr.getMultSummary()})`);
-
-    return {
-      success:        true,
-      transformation: tr,
-      currentStats:   { ...newStats },
-    };
+    return { success: true, transformation: tr, currentStats: { ...newStats } };
   }
 
   // ═══════════════════════════════════════════════════════════════
   //  revertTransformation()
   // ═══════════════════════════════════════════════════════════════
 
-  /**
-   * Revierte al jugador a su forma base.
-   * Restaura currentStats desde baseStats.
-   * NUNCA modifica hp actual ni hp máximo.
-   *
-   * @returns {{ success: boolean, currentStats: Object }}
-   */
   function revertTransformation() {
     const was = playerTransState.activeTransformation;
-
-    // Restaurar currentStats desde baseStats (sin tocar HP)
     const restored = {};
     MODIFIABLE_STATS.forEach(stat => {
-      if (playerTransState.baseStats[stat] !== undefined) {
+      if (playerTransState.baseStats[stat] !== undefined)
         restored[stat] = playerTransState.baseStats[stat];
-      }
     });
-    // HP protegido — copiar sin modificar si existe
     PROTECTED_STATS.forEach(stat => {
-      if (playerTransState.baseStats[stat] !== undefined) {
+      if (playerTransState.baseStats[stat] !== undefined)
         restored[stat] = playerTransState.baseStats[stat];
-      }
     });
-
     playerTransState.currentStats         = restored;
     playerTransState.activeTransformation = null;
-
-    // Registrar en historial
-    playerTransState._history.push({
-      action:    "revert",
-      from:      was ? was.id : null,
-      timestamp: Date.now(),
-    });
-
-    if (was) {
-      console.info(`[TransSys] Transformación revertida: ${was.name} → Forma Base`);
-    }
-
-    return {
-      success:      true,
-      currentStats: { ...restored },
-    };
+    playerTransState._history.push({ action: "revert", from: was ? was.id : null, timestamp: Date.now() });
+    if (was) console.info(`[TransSys] Transformación revertida: ${was.name} → Forma Base`);
+    return { success: true, currentStats: { ...restored } };
   }
 
   // ═══════════════════════════════════════════════════════════════
   //  HELPERS PÚBLICOS
   // ═══════════════════════════════════════════════════════════════
 
-  /**
-   * Verifica si una transformación está disponible para una raza dada.
-   * @param {string} trId
-   * @param {string} raceId
-   * @returns {boolean}
-   */
   function isTransformationAvailable(trId, raceId) {
     const tr = _findById(trId);
     return tr ? tr.isAvailableFor(raceId) : false;
   }
 
-  /**
-   * Devuelve todas las transformaciones disponibles para una raza.
-   * @param {string} raceId
-   * @returns {Transformation[]}
-   */
   function getTransformationsForRace(raceId) {
     return TRANSFORMATIONS.filter(tr => tr.isAvailableFor(raceId));
   }
 
-  /**
-   * Sincroniza los baseStats del estado de transformación con los stats de raza
-   * del creator. Llamar cada vez que cambia la raza.
-   * NUNCA sincroniza HP.
-   * @param {Object} raceStats - { str, spd, def, ki, ... }
-   */
   function syncBaseStats(raceStats) {
     MODIFIABLE_STATS.forEach(stat => {
-      if (raceStats[stat] !== undefined) {
-        playerTransState.baseStats[stat] = raceStats[stat];
-      }
+      if (raceStats[stat] !== undefined) playerTransState.baseStats[stat] = raceStats[stat];
     });
-    // Si hay transformación activa, recalcular
     if (playerTransState.activeTransformation) {
       playerTransState.currentStats = applyTransformationStats(
-        playerTransState.activeTransformation,
-        playerTransState.baseStats
+        playerTransState.activeTransformation, playerTransState.baseStats
       );
     } else {
       MODIFIABLE_STATS.forEach(stat => {
-        if (playerTransState.baseStats[stat] !== undefined) {
+        if (playerTransState.baseStats[stat] !== undefined)
           playerTransState.currentStats[stat] = playerTransState.baseStats[stat];
-        }
       });
     }
   }
 
-  /**
-   * Registra una nueva transformación en el catálogo global.
-   * Si ya existe una con el mismo ID, la reemplaza.
-   * @param {Transformation|Object} data - Instancia de Transformation o config raw
-   * @returns {Transformation}
-   */
   function registerTransformation(data) {
     const tr = data instanceof Transformation ? data : new Transformation(data);
     const existingIdx = TRANSFORMATIONS.findIndex(t => t.id === tr.id);
-    if (existingIdx >= 0) {
-      TRANSFORMATIONS[existingIdx] = tr;
-    } else {
-      TRANSFORMATIONS.push(tr);
-    }
+    if (existingIdx >= 0) TRANSFORMATIONS[existingIdx] = tr;
+    else TRANSFORMATIONS.push(tr);
     return tr;
   }
 
-  /**
-   * Elimina una transformación del catálogo global por ID.
-   * Si estaba activa, revierte al jugador.
-   * @param {string} id
-   * @returns {boolean} - true si se eliminó
-   */
   function unregisterTransformation(id) {
     const idx = TRANSFORMATIONS.findIndex(t => t.id === id);
     if (idx < 0) return false;
-    if (playerTransState.activeTransformation?.id === id) {
-      revertTransformation();
-    }
+    if (playerTransState.activeTransformation?.id === id) revertTransformation();
     TRANSFORMATIONS.splice(idx, 1);
     return true;
   }
 
-  /**
-   * Serializa todas las transformaciones del catálogo a JSON.
-   * @returns {string}
-   */
-  function exportTransformations() {
-    return JSON.stringify(TRANSFORMATIONS.map(tr => tr.toJSON()), null, 2);
-  }
-
-  /**
-   * Carga transformaciones desde un JSON exportado.
-   * Reemplaza el catálogo actual.
-   * @param {string|Object[]} json - String JSON o array de objetos
-   */
-  function importTransformations(json) {
-    const data = typeof json === "string" ? JSON.parse(json) : json;
-    TRANSFORMATIONS.length = 0;
-    data.forEach(item => TRANSFORMATIONS.push(new Transformation(item)));
-    console.info(`[TransSys] ${TRANSFORMATIONS.length} transformaciones importadas.`);
-  }
-
-  // ═══════════════════════════════════════════════════════════════
-  //  VALIDACIÓN — Asegurar que ningún multiplicador de HP se cuele
-  // ═══════════════════════════════════════════════════════════════
-
-  /**
-   * Valida una config de multiplicadores y devuelve una versión segura.
-   * Elimina cualquier intento de modificar hp/hpMax/currentHp.
-   * @param {Object} multipliers
-   * @returns {Object}
-   */
   function sanitizeMultipliers(multipliers) {
     const safe = {};
     MODIFIABLE_STATS.forEach(stat => {
       safe[stat] = _clampMult(multipliers[stat] !== undefined ? multipliers[stat] : 1);
     });
-    // Sobrescribir explícitamente cualquier intento de tocar HP
-    PROTECTED_STATS.forEach(stat => {
-      delete safe[stat]; // Eliminamos, jamás los incluimos
-    });
+    PROTECTED_STATS.forEach(stat => { delete safe[stat]; });
     return safe;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  //  PANEL DE TRANSFORMACIONES ESPECIALES — renderSpecialSkinsPanel
+  //
+  //  Se llama desde index.html al abrir el tab "especial" del modal.
+  //  NO inyecta HTML globalmente ni busca elementos en el body.
+  //  Solo rellena el contenedor que se le pasa por ID.
+  //
+  //  Uso desde index.html:
+  //    TransformationsSystem.renderSpecialSkinsPanel("tm-especial-container", {
+  //      raceId:         "saiyan",     // filtra por raza (opcional, default: "all")
+  //      activeSkinKey:  "tf_ssj",     // marca el botón activo (opcional)
+  //      onSelect:       (skinKey, label, entry) => { ... },
+  //      onClear:        () => { ... },
+  //    });
+  // ═══════════════════════════════════════════════════════════════
+
+  /**
+   * Agrupa el catálogo por `groupKey`, filtrando opcionalmente por raza.
+   * @param {string|null} raceId
+   * @returns {Map<string, { label: string, color: string, entries: Object[] }>}
+   */
+  function _groupCatalog(raceId) {
+    const map = new Map();
+    SPECIAL_SKIN_CATALOG.forEach(entry => {
+      // Filtrar por raza si se especifica
+      if (raceId && raceId !== "all") {
+        if (!entry.races.includes("all") && !entry.races.includes(raceId)) return;
+      }
+      if (!map.has(entry.groupKey)) {
+        map.set(entry.groupKey, { label: entry.group, color: entry.color, entries: [] });
+      }
+      map.get(entry.groupKey).entries.push(entry);
+    });
+    return map;
+  }
+
+  /**
+   * Renderiza el panel completo de skins especiales dentro del contenedor dado.
+   *
+   * @param {string}  containerId       - ID del elemento HTML contenedor (tm-especial-container)
+   * @param {Object}  [opts]
+   * @param {string}  [opts.raceId]     - Filtra skins por raza. Ej: "saiyan". null = todas.
+   * @param {string}  [opts.activeSkinKey] - skinKey del botón a marcar como activo
+   * @param {Function}[opts.onSelect]   - callback(skinKey, label, entry) al seleccionar
+   * @param {Function}[opts.onClear]    - callback() al limpiar selección
+   */
+  function renderSpecialSkinsPanel(containerId, opts = {}) {
+    const container = typeof containerId === "string"
+      ? document.getElementById(containerId)
+      : containerId;
+    if (!container) {
+      console.warn("[TransSys] renderSpecialSkinsPanel: contenedor no encontrado:", containerId);
+      return;
+    }
+
+    const { raceId = null, activeSkinKey = null, onSelect = null, onClear = null } = opts;
+    const groups = _groupCatalog(raceId);
+
+    // Limpiar contenido previo
+    container.innerHTML = "";
+
+    if (groups.size === 0) {
+      container.innerHTML = `
+        <div style="font-size:9px;color:var(--td);font-family:var(--fb);
+          background:rgba(0,229,255,.04);border:1px solid rgba(0,229,255,.12);
+          border-radius:4px;padding:10px 12px;text-align:center;line-height:1.5">
+          No hay skins predefinidas disponibles para esta raza.
+        </div>`;
+      return;
+    }
+
+    // Nota informativa
+    const note = document.createElement("div");
+    note.className = "tm-inherit-note";
+    note.innerHTML = `Skins predefinidas para la raza seleccionada. Se guardan como clave interna — visibles para todos los jugadores online sin importar su dispositivo.`;
+    container.appendChild(note);
+
+    // Botón limpiar selección
+    const clearBtn = document.createElement("button");
+    clearBtn.type = "button";
+    clearBtn.id   = "especial-clear-skin-btn";
+    clearBtn.style.cssText = `
+      width:100%;margin-bottom:10px;padding:5px;
+      background:rgba(255,23,68,.06);border:1px solid rgba(255,23,68,.25);
+      border-radius:4px;color:rgba(255,23,68,.6);font-family:var(--fh);
+      font-size:8px;letter-spacing:1px;cursor:pointer;transition:all .15s`;
+    clearBtn.textContent = "✕ QUITAR SKIN ESPECIAL";
+    clearBtn.addEventListener("click", () => {
+      container.querySelectorAll(".special-skin-btn").forEach(b => b.classList.remove("active"));
+      _updateStatus(container, null, null);
+      if (typeof onClear === "function") onClear();
+    });
+    container.appendChild(clearBtn);
+
+    // Renderizar grupos
+    groups.forEach((groupData, _groupKey) => {
+      const groupTitle = document.createElement("div");
+      groupTitle.className = "tm-sec";
+      groupTitle.style.cssText = `color:${groupData.color};margin-top:8px;margin-bottom:4px`;
+      groupTitle.textContent = groupData.label;
+      container.appendChild(groupTitle);
+
+      const cols = groupData.entries.length > 1 ? 2 : 1;
+      const grid = document.createElement("div");
+      grid.style.cssText = `display:grid;grid-template-columns:repeat(${cols},1fr);gap:5px;margin-bottom:4px`;
+
+      groupData.entries.forEach(entry => {
+        const CS = window.CharacterSystem;
+        const available = CS && CS.SPRITE_IMAGES && !!CS.SPRITE_IMAGES[entry.skinKey];
+
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "special-skin-btn";
+        btn.style.setProperty("--sc", groupData.color);
+        btn.dataset.skinKey = entry.skinKey;
+        btn.dataset.label   = entry.label;
+
+        // Marcar activo si corresponde
+        if (activeSkinKey && entry.skinKey === activeSkinKey) btn.classList.add("active");
+
+        // Opacidad reducida si la skin no está disponible en SPRITE_IMAGES
+        if (!available) btn.style.opacity = "0.45";
+
+        btn.innerHTML = `${entry.icon} ${entry.label}${entry.desc ? `<span class="ss-sub" style="display:block;font-size:7px;opacity:.6;margin-top:2px">${entry.desc}</span>` : ""}`;
+
+        btn.addEventListener("click", () => {
+          if (!available) {
+            _updateStatus(container, null, `✗ Skin no disponible: ${entry.skinKey}`, "err");
+            if (typeof window.showToast === "function") window.showToast("Skin no disponible: " + entry.skinKey, "error");
+            return;
+          }
+          container.querySelectorAll(".special-skin-btn").forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+          _updateStatus(container, groupData.color, `✓ ${entry.label} seleccionado`, "ok");
+          if (typeof window.showToast === "function") window.showToast("Skin seleccionado: " + entry.label, "success");
+          if (typeof onSelect === "function") onSelect(entry.skinKey, entry.label, entry);
+        });
+
+        grid.appendChild(btn);
+      });
+
+      container.appendChild(grid);
+    });
+
+    // Elemento de status (al final)
+    const statusEl = document.createElement("div");
+    statusEl.id = "especial-skin-status";
+    statusEl.style.display = "none";
+    container.appendChild(statusEl);
+  }
+
+  /** Actualiza o oculta el elemento de status del panel */
+  function _updateStatus(container, color, msg, type) {
+    const el = container.querySelector("#especial-skin-status");
+    if (!el) return;
+    if (!msg) { el.style.display = "none"; el.textContent = ""; return; }
+    el.style.cssText = `
+      display:block;margin-top:6px;padding:5px 8px;border-radius:4px;
+      font-family:var(--fh);font-size:8px;letter-spacing:.5px;
+      ${type === "ok"
+        ? "background:rgba(0,255,157,.07);border:1px solid rgba(0,255,157,.25);color:var(--green)"
+        : "background:rgba(255,23,68,.07);border:1px solid rgba(255,23,68,.25);color:var(--red)"}`;
+    el.textContent = msg;
+  }
+
+  /**
+   * Devuelve las entradas del catálogo filtradas por raza.
+   * @param {string} raceId
+   * @returns {Object[]}
+   */
+  function getSkinsForRace(raceId) {
+    if (!raceId || raceId === "all") return [...SPECIAL_SKIN_CATALOG];
+    return SPECIAL_SKIN_CATALOG.filter(e =>
+      e.races.includes("all") || e.races.includes(raceId)
+    );
+  }
+
+  /**
+   * Resuelve la imagen de un skinKey desde el imageMap del juego.
+   * @param {string} skinKey
+   * @param {Object} imageMap
+   * @returns {HTMLImageElement|null}
+   */
+  function getSkinImage(skinKey, imageMap) {
+    if (!skinKey || !imageMap) return null;
+    return imageMap[skinKey] || null;
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -568,6 +661,9 @@
 
     // Catálogo (mutable via push/splice, pero la referencia es de solo lectura)
     TRANSFORMATIONS,
+
+    // Catálogo de skins predefinidas
+    SPECIAL_SKIN_CATALOG,
 
     // Constantes
     MULT_MIN,
@@ -583,6 +679,11 @@
     revertTransformation,
     applyTransformationStats,
 
+    // Panel de skins especiales (se llama desde el tab del modal)
+    renderSpecialSkinsPanel,
+    getSkinsForRace,
+    getSkinImage,
+
     // Helpers
     isTransformationAvailable,
     getTransformationsForRace,
@@ -592,301 +693,8 @@
     // CRUD del catálogo
     registerTransformation,
     unregisterTransformation,
-
-    // Import / Export
-    exportTransformations,
-    importTransformations,
   });
 
-  console.info("[TransformationsSystem] v1.0.0 cargado. Catálogo vacío, listo para transformaciones.");
-
-  // ═══════════════════════════════════════════════════════════════
-  //  MÓDULO DE TRANSFORMACIONES ESPECIALES (UI)
-  //
-  //  Inyecta botones de preset de skin en el panel GENERAL del modal.
-  //  Al cargar un skin, asigna TANTO el dataURL COMO la imagen runtime
-  //  (_tmEditSkinImage) para que la preview del modal la muestre.
-  //
-  //  REQUISITO en index.html — agregar junto a _transEditSkinDataURL:
-  //    window.__setTransSkin = function(v) { _transEditSkinDataURL = v; };
-  //    window.__setTransSkinImg = function(v) { _tmEditSkinImage = v; };
-  // ═══════════════════════════════════════════════════════════════
-
-  (function _initSpecialSkinsUI() {
-
-    // Evitar doble inicialización
-    if (window.__specialSkinsInited) return;
-    window.__specialSkinsInited = true;
-
-    const SPECIAL_SKINS = [
-      {
-        group: "🦍 OZARU",
-        color: "var(--accent2, #ff6a00)",
-        cols: 1,
-        entries: [
-          { skin: "Skins/ozaru_saiyajin.png", label: "Ozaru (Saiyajin)", icon: "🦍" },
-        ],
-      },
-      {
-        group: "💜 LEGENDARIO SUPER SAIYAJIN",
-        color: "#b39ddb",
-        cols: 2,
-        entries: [
-          { skin: "Skins/lss_saiyajin_m.png", label: "LSS ♂ Saiyajin", icon: "♂", sub: "Hombre" },
-          { skin: "Skins/lss_saiyajin_f.png", label: "LSS ♀ Saiyajin", icon: "♀", sub: "Mujer"  },
-        ],
-      },
-      {
-        group: "🤖 MAQUINACIÓN",
-        color: "var(--cyan, #00e5ff)",
-        cols: 2,
-        entries: [
-          { skin: "Skins/maquinacion_androide_m.png", label: "Maquinación ♂", icon: "♂", sub: "Hombre" },
-          { skin: "Skins/maquinacion_androide_f.png", label: "Maquinación ♀", icon: "♀", sub: "Mujer"  },
-        ],
-      },
-      {
-        group: "💚 BERSERKER",
-        color: "var(--green, #00ff9d)",
-        cols: 1,
-        entries: [
-          { skin: "Skins/berserker_namekiano.png", label: "Berserker (Namekiano)", icon: "💚" },
-        ],
-      },
-      {
-        group: "👾 5TA FORMA",
-        color: "var(--magenta, #e040fb)",
-        cols: 1,
-        entries: [
-          { skin: "Skins/5ta_forma_frieza.png", label: "5ta Forma (Frieza)", icon: "👾" },
-        ],
-      },
-    ];
-
-    function _injectCSS() {
-      if (document.getElementById("ss-style")) return;
-      const s = document.createElement("style");
-      s.id = "ss-style";
-      s.textContent = `
-        #specialSkinsSection{margin-top:16px;border-top:1px solid var(--border,#2a3560);padding-top:12px}
-        #specialSkinsSection .ss-title{font-family:var(--fh,"Orbitron",monospace);font-size:7px;letter-spacing:2px;color:var(--td,#8892b0);margin:0 0 5px;text-transform:uppercase}
-        #specialSkinsSection .ss-note{font-size:9px;color:var(--td,#8892b0);font-family:var(--fb,"Rajdhani",sans-serif);line-height:1.4;background:rgba(0,229,255,.05);border:1px solid rgba(0,229,255,.15);border-radius:4px;padding:5px 8px;margin-bottom:10px}
-        #specialSkinsSection .ss-note code{color:var(--cyan,#00e5ff);font-size:8px}
-        #specialSkinsSection .ss-group{font-family:var(--fh,"Orbitron",monospace);font-size:7px;letter-spacing:2px;text-transform:uppercase;margin:10px 0 4px}
-        #specialSkinsSection .ss-grid-1{display:grid;grid-template-columns:1fr;gap:5px;margin-bottom:4px}
-        #specialSkinsSection .ss-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:4px}
-        .special-skin-btn{width:100%;padding:8px 10px;background:color-mix(in srgb,var(--sc,#e040fb) 8%,transparent);border:1px solid color-mix(in srgb,var(--sc,#e040fb) 40%,transparent);border-radius:var(--r,6px);color:var(--sc,#e040fb);font-family:var(--fh,"Orbitron",monospace);font-size:8px;letter-spacing:1px;cursor:pointer;transition:all var(--tr,.15s ease);text-align:center;line-height:1.5}
-        .special-skin-btn:hover{background:color-mix(in srgb,var(--sc,#e040fb) 18%,transparent);border-color:var(--sc,#e040fb);box-shadow:0 0 8px color-mix(in srgb,var(--sc,#e040fb) 30%,transparent)}
-        .special-skin-btn.ss-active{background:color-mix(in srgb,var(--sc,#e040fb) 22%,transparent);border-color:var(--sc,#e040fb);box-shadow:0 0 12px color-mix(in srgb,var(--sc,#e040fb) 40%,transparent);font-weight:700}
-        .special-skin-btn .ss-sub{display:block;font-size:7px;opacity:.7;margin-top:1px}
-        #specialSkinStatus{display:none;margin-top:6px;padding:5px 8px;border-radius:4px;font-family:var(--fh,"Orbitron",monospace);font-size:8px;letter-spacing:.5px}
-        #specialSkinStatus.ok{background:rgba(0,255,157,.07);border:1px solid rgba(0,255,157,.25);color:var(--green,#00ff9d)}
-        #specialSkinStatus.err{background:rgba(255,23,68,.07);border:1px solid rgba(255,23,68,.25);color:var(--red,#ff1744)}
-      `;
-      document.head.appendChild(s);
-    }
-
-    function _buildSection() {
-      const section = document.createElement("div");
-      section.id = "specialSkinsSection";
-      section.innerHTML = `
-        <div class="ss-title">🌟 TRANSFORMACIONES ESPECIALES</div>
-        <div class="ss-note">Carga un skin predefinido desde la carpeta <code>Skins/</code>. Reemplaza cualquier PNG custom cargado.</div>
-      `;
-      SPECIAL_SKINS.forEach(group => {
-        const title = document.createElement("div");
-        title.className = "ss-group";
-        title.style.color = group.color;
-        title.textContent = group.group;
-        section.appendChild(title);
-
-        const grid = document.createElement("div");
-        grid.className = group.cols === 2 ? "ss-grid-2" : "ss-grid-1";
-        group.entries.forEach(entry => {
-          const btn = document.createElement("button");
-          btn.type = "button";
-          btn.className = "special-skin-btn";
-          btn.style.setProperty("--sc", group.color);
-          btn.dataset.skin  = entry.skin;
-          btn.dataset.label = entry.label;
-          btn.innerHTML = entry.sub
-            ? `${entry.icon} ${entry.sub}<span class="ss-sub">${entry.label}</span>`
-            : `${entry.icon} ${entry.label}`;
-          grid.appendChild(btn);
-        });
-        section.appendChild(grid);
-      });
-
-      const status = document.createElement("div");
-      status.id = "specialSkinStatus";
-      section.appendChild(status);
-      return section;
-    }
-
-    function _injectHTML() {
-      // La sección ya está definida estáticamente en index.html — no duplicar.
-      if (document.getElementById("specialSkinsSection")) return;
-      if (document.querySelector("#tm-general .tm-sec")) return;
-      const panel    = document.getElementById("tm-general");
-      const clearBtn = document.getElementById("transClearSkin");
-      if (!panel) return;
-      clearBtn
-        ? clearBtn.insertAdjacentElement("afterend", _buildSection())
-        : panel.appendChild(_buildSection());
-    }
-
-    function _setStatus(msg, type) {
-      const el = document.getElementById("specialSkinStatus");
-      if (!el) return;
-      el.textContent = msg; el.className = type; el.style.display = "block";
-    }
-    function _clearStatus() {
-      const el = document.getElementById("specialSkinStatus");
-      if (el) { el.style.display = "none"; el.textContent = ""; el.className = ""; }
-    }
-    function _clearActive() {
-      document.querySelectorAll(".special-skin-btn").forEach(b => b.classList.remove("ss-active"));
-    }
-    function _reset() { _clearActive(); _clearStatus(); }
-
-    /**
-     * Aplica un skin de ruta local al modal.
-     * Funciona como las razas: guarda la RUTA (skinPath) en vez de base64.
-     * - skinPath  → ruta relativa (ej: "Skins/ozaru_saiyajin.png") — se serializa en JSON
-     * - skinImage → objeto Image cargado desde la ruta — solo runtime (para la preview)
-     * NO genera dataURL ni usa localStorage. El game.html carga el PNG directo desde la ruta.
-     */
-    function _applyToModal(skinPath, img, label) {
-      // Convertir a URL absoluta para que funcione en cualquier cliente remoto
-      let absolutePath = skinPath;
-      try {
-        absolutePath = new URL(skinPath, window.location.href).href;
-      } catch(e) {}
-
-      // Notificar a index.html que asigne la ruta (URL absoluta) a la transformación
-      if (typeof window.__setTransSkinPath === "function") {
-        window.__setTransSkinPath(absolutePath);
-      }
-      skinPath = absolutePath;
-
-      // Asignar imagen runtime para la preview del canvas en el modal
-      if (typeof window.__setTransSkinImg === "function") {
-        window.__setTransSkinImg(img);
-      } else if (Object.getOwnPropertyDescriptor(window, "_tmEditSkinImage")) {
-        window._tmEditSkinImage = img;
-      }
-
-      // Persistencia directa en el objeto runtime de la transformación que se está editando
-      try {
-        const _editIdx = typeof window.__getEditingTransIndex === "function"
-          ? window.__getEditingTransIndex()
-          : (typeof window.editingTransIndex !== "undefined" ? window.editingTransIndex : null);
-
-        const tArr = window.transformations || (typeof window._getTransformations === "function" ? window._getTransformations() : null);
-
-        if (_editIdx !== null && _editIdx !== undefined && Array.isArray(tArr) && tArr[_editIdx]) {
-          // Guardar la RUTA — no el dataURL
-          tArr[_editIdx].skinPath    = skinPath;
-          tArr[_editIdx].skinDataURL = null;   // limpiar cualquier dataURL previo
-          tArr[_editIdx].skinImage   = img;    // runtime only
-        }
-      } catch(e) {
-        console.warn("[SpecialSkins] No se pudo persistir skinPath en runtime:", e);
-      }
-
-      // Actualizar UI del uploader
-      const lbl   = document.getElementById("transImportLabel");
-      const fname = document.getElementById("transImportFname");
-      const text  = document.getElementById("transImportText");
-      if (lbl)   lbl.classList.add("loaded");
-      if (fname) fname.textContent = label + " ✓";
-      if (text)  text.textContent  = "CAMBIAR PNG";
-    }
-
-    async function _loadSkin(btn) {
-      const path  = btn.dataset.skin;
-      const label = btn.dataset.label || path;
-      _clearActive();
-      btn.classList.add("ss-active");
-      btn.style.opacity = "0.6";
-      _clearStatus();
-      try {
-        // Cargar la imagen directo desde la ruta — igual que hacen las razas.
-        // Sin fetch, sin FileReader, sin base64. Solo new Image() con src = path.
-        const img = await new Promise((ok, fail) => {
-          const i = new Image();
-          i.onload  = () => ok(i);
-          i.onerror = () => fail(new Error("No se encontró: " + path));
-          i.src = path;
-        });
-
-        _applyToModal(path, img, label);
-        _setStatus("✓ " + label + " cargado", "ok");
-        if (typeof window.showToast === "function") window.showToast("Skin cargado: " + label, "success");
-
-      } catch (err) {
-        console.error("[SpecialSkins]", err);
-        btn.classList.remove("ss-active");
-        _setStatus("✗ No se encontró: " + path, "err");
-        if (typeof window.showToast === "function") window.showToast("No se encontró: " + path, "error");
-      } finally {
-        btn.style.opacity = "1";
-      }
-    }
-
-    function _bindEvents() {
-      // Delegación única en el panel — no se registra dos veces gracias al flag de arriba
-      const panel = document.getElementById("tm-general");
-      if (panel) {
-        panel.addEventListener("click", e => {
-          const btn = e.target.closest(".special-skin-btn");
-          if (btn) _loadSkin(btn);
-        });
-      }
-
-      // Al quitar skin custom, limpiar también los botones especiales y la imagen runtime
-      const clearBtn = document.getElementById("transClearSkin");
-      if (clearBtn) {
-        clearBtn.addEventListener("click", () => {
-          _reset();
-          if (typeof window.__setTransSkinImg === "function") window.__setTransSkinImg(null);
-        });
-      }
-
-      // Resetear al cerrar el modal
-      ["transModalClose", "transModalCancel"].forEach(id => {
-        document.getElementById(id)?.addEventListener("click", _reset);
-      });
-      document.getElementById("transModalOverlay")?.addEventListener("click", e => {
-        if (e.target.id === "transModalOverlay") _reset();
-      });
-
-      // Hookear openTransModal para resetear al abrir
-      if (typeof window.openTransModal === "function" && !window.openTransModal.__ssHooked) {
-        const _orig = window.openTransModal;
-        window.openTransModal = function(...a) { _reset(); return _orig.apply(this, a); };
-        window.openTransModal.__ssHooked = true;
-      }
-      if (typeof window.closeTransModal === "function" && !window.closeTransModal.__ssHooked) {
-        const _orig = window.closeTransModal;
-        window.closeTransModal = function(...a) { _reset(); return _orig.apply(this, a); };
-        window.closeTransModal.__ssHooked = true;
-      }
-    }
-
-    function _boot() {
-      _injectCSS();
-      _injectHTML();
-      _bindEvents();
-      console.info("[SpecialSkins] Sección de transformaciones especiales lista.");
-    }
-
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", _boot);
-    } else {
-      setTimeout(_boot, 0);
-    }
-
-  })();
+  console.info("[TransformationsSystem] v2.0.0 cargado — panel de skins especiales como categoría separada.");
 
 })();

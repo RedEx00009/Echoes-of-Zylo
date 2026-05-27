@@ -70,17 +70,7 @@
     .item-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;border:2px solid rgba(255,255,255,.15)}
     .item-name{font-size:8px;letter-spacing:.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;padding:0 2px}
 
-    /* ── Importar PNG (botón de capa) ── */
-    .import-layer{
-      width:100%;display:flex;align-items:center;gap:8px;
-      background:rgba(0,229,255,.05);border:1px dashed rgba(0,229,255,.3);border-radius:var(--r);
-      padding:7px 10px;cursor:pointer;transition:all var(--tr);
-      color:var(--cyan);font-family:var(--fh);font-size:8px;letter-spacing:1px;margin-top:6px;
-    }
-    .import-layer:hover{background:rgba(0,229,255,.12);border-color:var(--cyan)}
-    .import-layer.loaded{border-color:var(--green);color:var(--green);background:rgba(0,255,157,.05)}
-    .import-layer input[type="file"]{display:none}
-    .import-layer-fname{font-size:8px;color:var(--td);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.2px}
+
 
     /* ── Color de piel ── */
     .color-chips{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px}
@@ -225,10 +215,6 @@
     .special-skin-btn{width:100%;padding:8px 10px;background:color-mix(in srgb,var(--sc,var(--magenta)) 8%,transparent);border:1px solid color-mix(in srgb,var(--sc,var(--magenta)) 40%,transparent);border-radius:var(--r);color:var(--sc,var(--magenta));font-family:var(--fh);font-size:8px;letter-spacing:1px;cursor:pointer;transition:all var(--tr);text-align:center;line-height:1.5}
     .special-skin-btn:hover{background:color-mix(in srgb,var(--sc,var(--magenta)) 18%,transparent);border-color:var(--sc,var(--magenta));box-shadow:0 0 8px color-mix(in srgb,var(--sc,var(--magenta)) 30%,transparent)}
     .special-skin-btn.active{background:color-mix(in srgb,var(--sc,var(--magenta)) 22%,transparent);border-color:var(--sc,var(--magenta));box-shadow:0 0 12px color-mix(in srgb,var(--sc,var(--magenta)) 40%,transparent);font-weight:700}
-    .trans-skin-import{width:100%;display:flex;align-items:center;gap:8px;background:rgba(224,64,251,.05);border:1px dashed rgba(224,64,251,.3);border-radius:var(--r);padding:7px 10px;cursor:pointer;color:var(--magenta);font-family:var(--fh);font-size:8px;letter-spacing:1px;transition:all var(--tr)}
-    .trans-skin-import:hover{background:rgba(224,64,251,.12);border-color:var(--magenta)}
-    .trans-skin-import.loaded{border-color:var(--green);color:var(--green);background:rgba(0,255,157,.05)}
-    .trans-skin-import input[type="file"]{display:none}
     .trans-stats-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:6px}
     .trans-stat{display:flex;flex-direction:column;align-items:center;gap:3px}
     .trans-stat label{font-family:var(--fh);font-size:7px;letter-spacing:1px;color:var(--td);text-align:center}
@@ -384,7 +370,6 @@
       <button class="cat-tab" data-cat="acc"><span class="cat-icon">✨</span>ACCES.</button>
       <button class="cat-tab" data-cat="aura"><span class="cat-icon">🌟</span>AURA</button>
       <button class="cat-tab" data-cat="color"><span class="cat-icon">🎨</span>COLOR</button>
-      <button class="cat-tab" data-cat="import"><span class="cat-icon">📂</span>IMPORT</button>
       <button class="cat-tab" data-cat="trans-creator"><span class="cat-icon">⚡</span>TRANS.</button>
 
     </div>
@@ -428,11 +413,6 @@
       <div class="cat-panel" id="panel-cara">
         <div class="sec-label">CARA / OJOS</div>
         <div class="item-grid" id="faceGrid"></div>
-        <label class="import-layer" id="lblImportCara">
-          <span>📁</span><span>IMPORTAR PNG PROPIO</span>
-          <span class="import-layer-fname" id="fnCara">Sin cargar</span>
-          <input type="file" accept="image/png" data-layer="cara"/>
-        </label>
       </div>
 
       <!-- ── PELO ── -->
@@ -451,48 +431,18 @@
       <div class="cat-panel" id="panel-ropa">
         <div class="sec-label">👕 ROPA SUPERIOR</div>
         <div class="item-grid" id="topGrid"></div>
-        <label class="import-layer" id="lblImportTop">
-          <span>📁</span><span>IMPORTAR PNG</span>
-          <span class="import-layer-fname" id="fnTop">Sin cargar</span>
-          <input type="file" accept="image/png" data-layer="top"/>
-        </label>
         <div class="sec-label">👖 ROPA INFERIOR</div>
         <div class="item-grid" id="bottomGrid"></div>
-        <label class="import-layer" id="lblImportBottom">
-          <span>📁</span><span>IMPORTAR PNG</span>
-          <span class="import-layer-fname" id="fnBottom">Sin cargar</span>
-          <input type="file" accept="image/png" data-layer="bottom"/>
-        </label>
         <div class="sec-label">👟 CALZADO</div>
         <div class="item-grid" id="shoesGrid"></div>
-        <label class="import-layer" id="lblImportShoes">
-          <span>📁</span><span>IMPORTAR PNG</span>
-          <span class="import-layer-fname" id="fnShoes">Sin cargar</span>
-          <input type="file" accept="image/png" data-layer="shoes"/>
-        </label>
         <div class="sec-label">🥊 GUANTES</div>
         <div class="item-grid" id="glovesGrid"></div>
-        <label class="import-layer" id="lblImportGloves">
-          <span>📁</span><span>IMPORTAR PNG</span>
-          <span class="import-layer-fname" id="fnGloves">Sin cargar</span>
-          <input type="file" accept="image/png" data-layer="gloves"/>
-        </label>
       </div>
 
       <!-- ── ACCESORIOS ── -->
       <div class="cat-panel" id="panel-acc">
         <div class="sec-label">ACCESORIOS</div>
         <div class="item-grid cols3" id="accGrid"></div>
-        <div class="sec-label" style="margin-top:8px">IMPORTAR ACCESORIO</div>
-        <div style="display:flex;gap:5px;margin-bottom:5px">
-          <input id="accNameInput" type="text" maxlength="20" placeholder="Nombre..." style="flex:1;background:var(--bg-card);border:1px solid var(--border);border-radius:4px;padding:5px 8px;color:var(--tp);font-family:var(--fb);font-size:11px;outline:none"/>
-          <select id="accTypeSelect" style="background:var(--bg-card);border:1px solid var(--border);border-radius:4px;padding:5px 4px;color:var(--tp);font-family:var(--fb);font-size:11px;outline:none;cursor:pointer"></select>
-        </div>
-        <label class="import-layer" id="lblImportAcc">
-          <span>📁</span><span>ELEGIR PNG + AÑADIR</span>
-          <span class="import-layer-fname" id="fnAcc">Sin cargar</span>
-          <input type="file" accept="image/png" data-layer="acc"/>
-        </label>
       </div>
 
       <!-- ── AURA ── -->
@@ -553,18 +503,6 @@
         </div>
       </div>
 
-      <!-- ── IMPORTAR SKIN PRINCIPAL ── -->
-      <div class="cat-panel" id="panel-import">
-        <div class="sec-label">SKIN PRINCIPAL (RAZA CUSTOM)</div>
-        <p style="font-size:10px;color:var(--td);line-height:1.5;margin-bottom:8px">Carga tu PNG de spritesheet (6 cols × 37 filas). Se usará como skin base del personaje y reemplazará la raza actual.</p>
-        <label class="import-layer" id="lblImportSkin">
-          <span>📁</span><span>ELEGIR PNG PRINCIPAL</span>
-          <span class="import-layer-fname" id="fnSkin">Sin cargar</span>
-          <input type="file" accept="image/png" data-layer="skin"/>
-        </label>
-        <div style="margin-top:12px;font-family:var(--fh);font-size:8px;letter-spacing:1px;color:var(--td)" id="skinStatus">Sin skin personalizada</div>
-        <button id="btnClearSkin" style="margin-top:8px;width:100%;padding:7px;background:rgba(255,23,68,.08);border:1px solid rgba(255,23,68,.3);border-radius:4px;color:rgba(255,23,68,.7);font-family:var(--fh);font-size:8px;letter-spacing:1px;cursor:pointer;transition:all .15s">✕ LIMPIAR SKIN</button>
-      </div>
 
       <!-- ── TRANSFORMACIONES (Creator Panel) ── -->
       <div class="cat-panel" id="panel-trans-creator">
@@ -721,8 +659,6 @@
       <div class="slots-list" id="slotsList"></div>
       <div class="slot-actions">
         <button class="slot-action-btn" id="btnExportCharacter">📤 EXPORTAR</button>
-        <button class="slot-action-btn" id="btnImportCharacter">📥 IMPORTAR</button>
-        <input type="file" id="characterImportInput" accept=".json,application/json" style="display:none"/>
       </div>
     </div>
     <!-- Transformaciones -->
@@ -791,6 +727,7 @@
           <!-- ── Tabs internos del modal ── -->
           <div class="tm-tabs" style="margin:0;padding:0 14px;border-bottom:1px solid var(--border)">
             <button class="tm-tab active" data-tm="general">⚡ GENERAL</button>
+            <button class="tm-tab" data-tm="especial">🌟 ESPECIAL</button>
             <button class="tm-tab" data-tm="raza">👾 RAZA</button>
             <button class="tm-tab" data-tm="cara">😶 CARA</button>
             <button class="tm-tab" data-tm="pelo">💇 PELO</button>
@@ -821,66 +758,6 @@
               <span style="font-size:10px;color:var(--td);margin-left:4px;font-family:var(--fb)">Custom</span>
             </div>
           </div>
-          <div class="tm-sec" style="margin-top:12px">SPRITESHEET CUSTOM (PNG opcional)</div>
-          <div class="tm-inherit-note">Si no cargás PNG, el personaje usa sus sprites base con los colores de transformación que configurés en las otras pestañas.</div>
-          <label class="trans-skin-import" id="transImportLabel">
-            <span>📁</span><span id="transImportText">ELEGIR PNG DE TRANSFORMACIÓN</span>
-            <span style="font-size:8px;color:var(--td);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="transImportFname">Sin cargar</span>
-            <input type="file" accept="image/png" id="transImportInput"/>
-          </label>
-          <button id="transClearSkin" style="margin-top:5px;width:100%;padding:5px;background:rgba(255,23,68,.06);border:1px solid rgba(255,23,68,.25);border-radius:4px;color:rgba(255,23,68,.6);font-family:var(--fh);font-size:8px;letter-spacing:1px;cursor:pointer;transition:all .15s">✕ QUITAR SKIN CUSTOM</button>
-
-          <!-- ── TRANSFORMACIONES ESPECIALES ── -->
-          <div class="tm-sec" style="margin-top:16px;border-top:1px solid var(--border);padding-top:12px">🌟 TRANSFORMACIONES ESPECIALES</div>
-          <div class="tm-inherit-note" style="margin-bottom:10px">Carga directamente un skin predefinido de la carpeta <code style="color:var(--cyan);font-size:8px">Skins/</code>. Reemplaza cualquier PNG custom cargado.</div>
-
-          <!-- Ozaru -->
-          <div class="tm-sec" style="color:var(--accent2);margin-top:6px;margin-bottom:4px">🦍 OZARU</div>
-          <div style="display:grid;grid-template-columns:1fr;gap:5px;margin-bottom:8px">
-            <button class="special-skin-btn" data-skin="Skins/ozaru_saiyajin.png" data-label="Ozaru (Saiyajin)" style="--sc:var(--accent2)">
-              🦍 Ozaru — Saiyajin
-            </button>
-          </div>
-
-          <!-- Legendario Super Saiyajin -->
-          <div class="tm-sec" style="color:#b39ddb;margin-top:4px;margin-bottom:4px">💜 LEGENDARIO SUPER SAIYAJIN</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px">
-            <button class="special-skin-btn" data-skin="Skins/lss_saiyajin_m.png" data-label="LSS Saiyajin ♂" style="--sc:#b39ddb">
-              ♂ Saiyajin<br><span style="font-size:7px;opacity:.7">Hombre</span>
-            </button>
-            <button class="special-skin-btn" data-skin="Skins/lss_saiyajin_f.png" data-label="LSS Saiyajin ♀" style="--sc:#b39ddb">
-              ♀ Saiyajin<br><span style="font-size:7px;opacity:.7">Mujer</span>
-            </button>
-          </div>
-
-          <!-- Maquinación -->
-          <div class="tm-sec" style="color:var(--cyan);margin-top:4px;margin-bottom:4px">🤖 MAQUINACIÓN</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px">
-            <button class="special-skin-btn" data-skin="Skins/maquinacion_androide_m.png" data-label="Maquinación ♂" style="--sc:var(--cyan)">
-              ♂ Androide<br><span style="font-size:7px;opacity:.7">Hombre</span>
-            </button>
-            <button class="special-skin-btn" data-skin="Skins/maquinacion_androide_f.png" data-label="Maquinación ♀" style="--sc:var(--cyan)">
-              ♀ Androide<br><span style="font-size:7px;opacity:.7">Mujer</span>
-            </button>
-          </div>
-
-          <!-- Berserker -->
-          <div class="tm-sec" style="color:var(--green);margin-top:4px;margin-bottom:4px">💚 BERSERKER</div>
-          <div style="display:grid;grid-template-columns:1fr;gap:5px;margin-bottom:8px">
-            <button class="special-skin-btn" data-skin="Skins/berserker_namekiano.png" data-label="Berserker (Namekiano)" style="--sc:var(--green)">
-              💚 Berserker — Namekiano
-            </button>
-          </div>
-
-          <!-- 5ta Forma -->
-          <div class="tm-sec" style="color:var(--magenta);margin-top:4px;margin-bottom:4px">👾 5TA FORMA</div>
-          <div style="display:grid;grid-template-columns:1fr;gap:5px;margin-bottom:4px">
-            <button class="special-skin-btn" data-skin="Skins/5ta_forma_frieza.png" data-label="5ta Forma (Frieza)" style="--sc:var(--magenta)">
-              👾 5ta Forma — Frieza
-            </button>
-          </div>
-          <div id="specialSkinStatus" style="display:none;margin-top:5px;padding:5px 8px;border-radius:4px;font-family:var(--fh);font-size:8px;letter-spacing:.5px;background:rgba(0,255,157,.07);border:1px solid rgba(0,255,157,.25);color:var(--green)"></div>
-
           <!-- ── ESCALA DE TAMAÑO ── -->
           <div class="tm-sec" style="margin-top:14px;border-top:1px solid var(--border);padding-top:10px">📐 TAMAÑO EN TRANSFORMACIÓN</div>
           <div style="font-size:9px;color:var(--td);margin-bottom:8px;font-family:var(--fb);line-height:1.4">Ajusta el ancho y alto del sprite cuando esta transformación está activa. No afecta el tamaño base.</div>
@@ -903,6 +780,28 @@
             </div>
           </div>
           <button id="tmBtnResetSize" style="width:100%;margin-top:7px;padding:5px;background:rgba(224,64,251,.06);border:1px solid rgba(224,64,251,.25);border-radius:4px;color:var(--magenta);font-family:var(--fh);font-size:8px;letter-spacing:1px;cursor:pointer;transition:all .15s">↺ RESETEAR AL TAMAÑO BASE</button>
+        </div>
+
+        <!-- ─── PANEL: ESPECIAL ─── -->
+        <div class="tm-panel" id="tm-especial">
+          <div class="tm-inherit-note">
+            Skins predefinidas que cambian el spritesheet completo del personaje en esta transformación.
+            Se muestran las compatibles con la raza seleccionada. Funciona igual que las razas — se guarda solo la clave, no la imagen.
+          </div>
+          <!-- Filtro por raza activa -->
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">
+            <span style="font-family:var(--fh);font-size:7px;letter-spacing:1.5px;color:var(--td)">MOSTRAR:</span>
+            <button type="button" id="tmEspecialFilterAll"
+              style="padding:3px 8px;background:rgba(245,196,0,.12);border:1px solid rgba(245,196,0,.5);
+              border-radius:4px;color:var(--accent);font-family:var(--fh);font-size:7px;letter-spacing:1px;
+              cursor:pointer;transition:all .15s" data-filter="all">TODAS</button>
+            <button type="button" id="tmEspecialFilterRaza"
+              style="padding:3px 8px;background:rgba(0,229,255,.06);border:1px solid rgba(0,229,255,.3);
+              border-radius:4px;color:var(--cyan);font-family:var(--fh);font-size:7px;letter-spacing:1px;
+              cursor:pointer;transition:all .15s" data-filter="race">MI RAZA</button>
+          </div>
+          <!-- Contenedor que rellena renderSpecialSkinsPanel() -->
+          <div id="tm-especial-container"></div>
         </div>
 
         <!-- ─── PANEL: RAZA ─── -->
@@ -1055,6 +954,11 @@
 </main>
 <div id="toastContainer"></div>
 
+<script>
+  // Marcar como iniciado ANTES de cargar transformations-system.js
+  // para que _initSpecialSkinsUI no inyecte su propia UI (index.html la maneja).
+  window.__specialSkinsInited = true;
+</script>
 <script src="transformations-system.js"></script>
 <script src="character-system.js"></script>
 <script>
@@ -1068,7 +972,6 @@ if (!window.CharacterSystem) {
 const {
   player, RACE_CATALOG, AURAS_CATALOG,
   ACCESSORIES_CATALOG, ACCESSORY_TYPES,
-  addUserAccessory, removeUserAccessory, restoreUserAccessories,
   VIEW_META, ACTIONS_META, COMBAT_VIEW_META, COMBAT_ACTIONS_META, SPECIAL_ACTIONS_META,
   SpriteAnimator, initPlayer, preloadAssets, drawPlayer,
   tintHair, tintLayer, invalidateHairCache, getById, cycleId,
@@ -1557,166 +1460,9 @@ function _loadImageFromDataURL(dataURL) {
   });
 }
 
-function _readFileAsDataURL(file) {
-  return new Promise((res, rej) => {
-    const r = new FileReader();
-    r.onload  = e => res(e.target.result);
-    r.onerror = () => rej(new Error("Error leyendo archivo"));
-    r.readAsDataURL(file);
-  });
-}
-
-function _setImportStatus(lblId, fnId, filename, loaded) {
-  const lbl = document.getElementById(lblId);
-  const fn  = document.getElementById(fnId);
-  if (fn) fn.textContent = filename;
-  if (lbl) lbl.classList.toggle("loaded", loaded);
-}
-
-// Accesorios de capas activos (para guardar en slot)
-const layerImports = {};
-
-async function _handleLayerImport(file, layer) {
-  const dataURL = await _readFileAsDataURL(file);
-  const img     = await _loadImageFromDataURL(dataURL);
-  imageMap[`imported_${layer}`] = img;
-  layerImports[layer] = dataURL;
-
-  if (layer === "skin") {
-    // Skin principal → sprite base del personaje
-    const variantId = player.appearance.variantId || "base";
-    player.appearance.variantCustomizations ||= {};
-    const cfg = player.appearance.variantCustomizations[variantId] || {};
-    cfg.spriteDataURL        = dataURL; cfg.spriteImage          = img;
-    cfg.specialSpriteDataURL = dataURL; cfg.specialSpriteImage   = img;
-    player.appearance.variantCustomizations[variantId] = cfg;
-    player.appearance.combatCustomization ||= {};
-    player.appearance.combatCustomization.spriteDataURL = dataURL;
-    player.appearance.combatCustomization.spriteImage   = img;
-    player.spriteSheets = { base: dataURL, pelea: dataURL, especial: dataURL };
-    player.appearance.raceId = "Custom";
-    invalidateHairCache(); buildAllGrids();
-    _setImportStatus("lblImportSkin","fnSkin", file.name, true);
-    document.getElementById("skinStatus").textContent = `Skin activa: ${file.name}`;
-    showToast("Skin principal cargada","success");
-    return;
-  }
-
-  // Crear/actualizar entrada en ACCESSORIES_CATALOG
-  const layerToSlot = { cara:"over_shirt", top:"over_shirt", bottom:"over_shirt", shoes:"over_shirt", gloves:"over_shirt" };
-  const accId = `layer_import_${layer}`;
-  const existing = ACCESSORIES_CATALOG.findIndex(a => a.id === accId);
-  const entry = {
-    id: accId, name: `Import:${layer}`, type:"other",
-    slot: layerToSlot[layer]||"over_shirt",
-    color:null, userImage:img, spriteImage:img,
-    dataURL, combatDataURL:dataURL, combatUserImage:img, combatSpriteImage:img,
-    specialDataURL:dataURL, specialUserImage:img, specialSpriteImage:img,
-    scale:1,animFrames:6,rowCount:0,combatScale:1,combatAnimFrames:6,combatRowCount:0,
-    specialScale:1,specialAnimFrames:6,specialRowCount:0,isFreeCustomization:false
-  };
-  if (existing >= 0) ACCESSORIES_CATALOG[existing] = entry;
-  else ACCESSORIES_CATALOG.push(entry);
-  imageMap[accId] = img;
-
-  // Asignar al prop correcto
-  const layerPropMap = {
-    cara:   () => { player.appearance.faceId = accId; },
-    top:    () => { player.appearance.topId = accId; },
-    bottom: () => { player.appearance.bottomId = accId; },
-    shoes:  () => { player.appearance.shoesId = accId; },
-    gloves: () => { charState.glovesId = accId; player.appearance.glovesId = accId; },
-  };
-  layerPropMap[layer]?.();
-  invalidateHairCache();
-
-  const labelMap = { cara:"lblImportCara", top:"lblImportTop", bottom:"lblImportBottom", shoes:"lblImportShoes", gloves:"lblImportGloves" };
-  const fnMap    = { cara:"fnCara", top:"fnTop", bottom:"fnBottom", shoes:"fnShoes", gloves:"fnGloves" };
-  _setImportStatus(labelMap[layer], fnMap[layer], file.name, true);
-  buildAllGrids();
-  showToast(`${layer.toUpperCase()} importado: ${file.name}`,"success");
-}
-
-// Importar accesorio
-async function _handleAccImport(file) {
-  const dataURL  = await _readFileAsDataURL(file);
-  const img      = await _loadImageFromDataURL(dataURL);
-  const nameInput= document.getElementById("accNameInput");
-  const typeSelect=document.getElementById("accTypeSelect");
-  const name  = nameInput.value.trim() || "Accesorio";
-  const type  = typeSelect.value || "other";
-  const typeDef = ACCESSORY_TYPES.find(t=>t.id===type)||ACCESSORY_TYPES[ACCESSORY_TYPES.length-1];
-  const accId = `user_acc_${Date.now()}_${Math.random().toString(36).slice(2,5)}`;
-  const entry = {
-    id:accId, name, type, slot:typeDef.slot, color:null,
-    userImage:img, spriteImage:img, dataURL,
-    combatDataURL:dataURL, combatUserImage:img, combatSpriteImage:img,
-    specialDataURL:dataURL, specialUserImage:img, specialSpriteImage:img,
-    scale:1,animFrames:6,rowCount:0,combatScale:1,combatAnimFrames:6,combatRowCount:0,
-    specialScale:1,specialAnimFrames:6,specialRowCount:0,isFreeCustomization:false
-  };
-  ACCESSORIES_CATALOG.push(entry);
-  imageMap[accId] = img;
-  charState.accessoryId = accId;
-  player.appearance.accessoryId = accId;
-  nameInput.value = "";
-  _setImportStatus("lblImportAcc","fnAcc", file.name, true);
-  buildAllGrids();
-  showToast(`Accesorio "${name}" añadido`,"success");
-}
 
 function initImportButtons() {
-  // Llenar tipo de accesorio
-  const typeSelect = document.getElementById("accTypeSelect");
-  ACCESSORY_TYPES.forEach(tp => {
-    const opt = document.createElement("option");
-    opt.value = tp.id; opt.textContent = `${tp.icon} ${tp.label}`;
-    typeSelect.appendChild(opt);
-  });
-
-  // Todos los file inputs de capa
-  const layerInputs = [
-    { input: document.querySelector("#lblImportCara input"),   layer: "cara"   },
-    { input: document.querySelector("#lblImportTop input"),    layer: "top"    },
-    { input: document.querySelector("#lblImportBottom input"), layer: "bottom" },
-    { input: document.querySelector("#lblImportShoes input"),  layer: "shoes"  },
-    { input: document.querySelector("#lblImportGloves input"), layer: "gloves" },
-    { input: document.querySelector("#lblImportSkin input"),   layer: "skin"   },
-    { input: document.querySelector("#lblImportAcc input"),    layer: "acc"    },
-  ];
-
-  layerInputs.forEach(({ input, layer }) => {
-    if (!input) return;
-    input.addEventListener("change", async e => {
-      const file = e.target.files[0]; e.target.value = "";
-      if (!file) return;
-      try {
-        if (layer === "acc") await _handleAccImport(file);
-        else                 await _handleLayerImport(file, layer);
-      } catch(err) { console.error(err); showToast("Error al importar imagen","error"); }
-    });
-  });
-
-  // Limpiar skin
-  document.getElementById("btnClearSkin")?.addEventListener("click", () => {
-    const variantId = player.appearance.variantId||"base";
-    if (player.appearance.variantCustomizations?.[variantId]) {
-      player.appearance.variantCustomizations[variantId].spriteDataURL  = null;
-      player.appearance.variantCustomizations[variantId].spriteImage    = null;
-      player.appearance.variantCustomizations[variantId].specialSpriteDataURL = null;
-      player.appearance.variantCustomizations[variantId].specialSpriteImage   = null;
-    }
-    if (player.appearance.combatCustomization) {
-      player.appearance.combatCustomization.spriteDataURL = null;
-      player.appearance.combatCustomization.spriteImage   = null;
-    }
-    player.spriteSheets = { base:null, pelea:null, especial:null };
-    delete layerImports.skin;
-    _setImportStatus("lblImportSkin","fnSkin","Sin cargar",false);
-    document.getElementById("skinStatus").textContent = "Sin skin personalizada";
-    invalidateHairCache();
-    showToast("Skin limpiada","warning");
-  });
+  // Import buttons removed
 }
 
 /* ════ Animaciones ════ */
@@ -1950,7 +1696,6 @@ function saveToSlot(i) {
       clothColorA:player.appearance.clothColorA||null, clothColorB:player.appearance.clothColorB||null,
       accessoryId:charState.accessoryId||"ac_none",
       spriteSheets:{sheet,base:sheet,pelea:sheet,especial:sheet},
-      layerImports: Object.assign({},layerImports),
       transformations: _serializeTransformationsForSave(),
       kiAttacks: _serializeKiAttacks(),
       displayW: parseInt(document.getElementById("spriteWSlider")?.value||"180",10)||180,
@@ -1988,52 +1733,6 @@ async function loadFromSlot(i) {
     charState.accessoryId=d.accessoryId||"ac_none"; player.appearance.accessoryId=charState.accessoryId;
     kiAttacks = _normalizeKiAttacks(d.kiAttacks);
     renderKiAttackEditor();
-
-    // Restaurar capas importadas
-    if (d.layerImports) {
-      for (const [layer, dataURL] of Object.entries(d.layerImports)) {
-        if (!dataURL) continue;
-        try {
-          const img = await _loadImageFromDataURL(dataURL);
-          if (layer==="skin") await _handleLayerImport(Object.assign(new File([],`slot_${layer}`),{type:"image/png"}), layer).catch(()=>{
-            // manual para skin
-            const variantId=player.appearance.variantId||"base";
-            player.appearance.variantCustomizations||={};
-            const cfg=player.appearance.variantCustomizations[variantId]||{};
-            cfg.spriteDataURL=dataURL; cfg.spriteImage=img;
-            cfg.specialSpriteDataURL=dataURL; cfg.specialSpriteImage=img;
-            player.appearance.variantCustomizations[variantId]=cfg;
-            player.appearance.combatCustomization||={};
-            player.appearance.combatCustomization.spriteDataURL=dataURL;
-            player.appearance.combatCustomization.spriteImage=img;
-            player.spriteSheets={base:dataURL,pelea:dataURL,especial:dataURL};
-            layerImports.skin=dataURL;
-            _setImportStatus("lblImportSkin","fnSkin","Cargado",true);
-          });
-          else {
-            layerImports[layer]=dataURL;
-            imageMap[`imported_${layer}`]=img;
-            imageMap[`layer_import_${layer}`]=img;
-            const accId=`layer_import_${layer}`;
-            const ex=ACCESSORIES_CATALOG.findIndex(a=>a.id===accId);
-            const entry={id:accId,name:`Import:${layer}`,type:"other",slot:"over_shirt",color:null,
-              userImage:img,spriteImage:img,dataURL,
-              combatDataURL:dataURL,combatUserImage:img,combatSpriteImage:img,
-              specialDataURL:dataURL,specialUserImage:img,specialSpriteImage:img,
-              scale:1,animFrames:6,rowCount:0,combatScale:1,combatAnimFrames:6,combatRowCount:0,
-              specialScale:1,specialAnimFrames:6,specialRowCount:0,isFreeCustomization:false};
-            if(ex>=0) ACCESSORIES_CATALOG[ex]=entry; else ACCESSORIES_CATALOG.push(entry);
-            const propMap={cara:()=>{player.appearance.faceId=accId;},top:()=>{player.appearance.topId=accId;},
-              bottom:()=>{player.appearance.bottomId=accId;},shoes:()=>{player.appearance.shoesId=accId;},
-              gloves:()=>{charState.glovesId=accId;player.appearance.glovesId=accId;}};
-            propMap[layer]?.();
-            const lblMap={cara:"lblImportCara",top:"lblImportTop",bottom:"lblImportBottom",shoes:"lblImportShoes",gloves:"lblImportGloves"};
-            const fnMap ={cara:"fnCara",top:"fnTop",bottom:"fnBottom",shoes:"fnShoes",gloves:"fnGloves"};
-            _setImportStatus(lblMap[layer],fnMap[layer],"Cargado",true);
-          }
-        } catch(e){ console.warn(`No se pudo restaurar capa ${layer}:`,e); }
-      }
-    }
 
     // Restaurar sheet
     const variantId=d.variantId||"base";
@@ -2155,7 +1854,6 @@ function exportCharacterToJson() {
       accessoryId:charState.accessoryId||"ac_none",
       spriteDataURL:cfg.spriteDataURL||null,
     },
-    layerImports: Object.assign({},layerImports),
     kiAttacks: _serializeKiAttacks(),
   };
   const safeName=(payload.name).replace(/[^a-zA-Z0-9-_]/g,"_");
@@ -2166,39 +1864,6 @@ function exportCharacterToJson() {
   showToast("Personaje exportado","success");
 }
 
-async function importCharacterFromJson(file) {
-  const reader=new FileReader();
-  reader.onload=async ev=>{
-    try{
-      const payload=JSON.parse(ev.target.result);
-      const app=payload.appearance||payload;
-      if(app.raceId)    player.appearance.raceId=app.raceId;
-      if(app.gender)    player.appearance.gender=app.gender;
-      if(app.skinColor) player.appearance.skinColor=app.skinColor;
-      if(app.eyeColor)  player.appearance.eyeColor=app.eyeColor;
-      if(app.hairColor) player.appearance.hairColor=app.hairColor;
-      if(app.faceColor) player.appearance.faceColor=app.faceColor;
-      if(app.browColor)  { player.appearance.browColor=app.browColor;  refreshColorPicker("browColorPicker","browColorHex","browColorChips",app.browColor,BROW_PALETTE); }
-      if(app.pupilColor) { player.appearance.pupilColor=app.pupilColor; refreshColorPicker("pupilColorPicker","pupilColorHex","pupilColorChips",app.pupilColor,PUPIL_PALETTE); }
-      if(app.clothColorA) { player.appearance.clothColorA=app.clothColorA; refreshColorPicker("clothColorAPicker","clothColorAHex","clothColorAChips",app.clothColorA,CLOTH_A_PALETTE); }
-      if(app.clothColorB) { player.appearance.clothColorB=app.clothColorB; refreshColorPicker("clothColorBPicker","clothColorBHex","clothColorBChips",app.clothColorB,CLOTH_B_PALETTE); }
-      if(app.faceId)    player.appearance.faceId=app.faceId;
-      if(app.hairId)    player.appearance.hairId=app.hairId;
-      if(app.topId)     player.appearance.topId=app.topId;
-      if(app.bottomId)  player.appearance.bottomId=app.bottomId;
-      if(app.shoesId)   player.appearance.shoesId=app.shoesId;
-      if(app.glovesId)  {player.appearance.glovesId=app.glovesId;charState.glovesId=app.glovesId;}
-      if(app.auraId)    {player.appearance.auraId=app.auraId;charState.auraId=app.auraId;}
-      if(app.auraColor) {player.appearance.auraColor=app.auraColor;charState.auraColor=app.auraColor;}
-      if(app.accessoryId){player.appearance.accessoryId=app.accessoryId;charState.accessoryId=app.accessoryId;}
-      if(payload.kiAttacks || app.kiAttacks) { kiAttacks = _normalizeKiAttacks(payload.kiAttacks || app.kiAttacks); renderKiAttackEditor(); }
-      if(payload.name)  document.getElementById("charName").value=payload.name;
-      invalidateHairCache(); buildAllGrids(); updateStats();
-      showToast("Personaje importado","success");
-    }catch(err){console.error(err);showToast("Archivo JSON no válido","error");}
-  };
-  reader.readAsText(file);
-}
 
 /* ════ Eventos generales ════ */
 function initEvents() {
@@ -2207,12 +1872,6 @@ function initEvents() {
   document.getElementById("btnRotate").addEventListener("click",()=>showToast("Rotación no disponible","warning"));
   document.getElementById("charName").addEventListener("input",e=>{charState.name=e.target.value||"Guerrero Z";});
   document.getElementById("btnExportCharacter").addEventListener("click",exportCharacterToJson);
-  document.getElementById("btnImportCharacter").addEventListener("click",()=>document.getElementById("characterImportInput").click());
-  document.getElementById("characterImportInput").addEventListener("change",e=>{
-    const file=e.target.files&&e.target.files[0];
-    if(file) importCharacterFromJson(file);
-    e.target.value="";
-  });
   document.getElementById("btnStart").addEventListener("click",()=>{
     try{
       saveToSlot(activeSlotIndex);
@@ -2319,9 +1978,11 @@ let activeTransIndex = -1; // -1 = forma base
 let editingTransIndex = null; // null = nueva, N = editar
 let _transEditSkinDataURL = null; // dataURL temporal del spritesheet custom
 let _transEditSkinPath    = null; // ruta local temporal (ej: "Skins/ozaru_saiyajin.png")
+let _transEditSkinKey     = null; // skinKey del catálogo predefinido (ej: "tf_ozaru") — nuevo sistema
 // Setters globales requeridos por transformations-system.js (_initSpecialSkinsUI)
 window.__setTransSkin     = function(v) { _transEditSkinDataURL = v; };
 window.__setTransSkinPath = function(v) { _transEditSkinPath = v; _transEditSkinDataURL = null; }; // ruta local — no dataURL
+window.__setTransSkinKey  = function(v) { _transEditSkinKey = v; _transEditSkinPath = null; _transEditSkinDataURL = null; }; // skinKey — limpia paths legacy
 window.__setTransSkinImg  = function(v) { _tmEditSkinImage = v; };
 
 Object.defineProperty(window, "transformations", {
@@ -2357,6 +2018,7 @@ function _serializeTransformationsForSave(list = transformations) {
       def: tr.multDef || tr.multipliers?.def || 1,
       ki:  tr.multKi  || tr.multipliers?.ki  || 1,
     },
+    skinKey:     tr.skinKey     || null,  // clave del catálogo predefinido (ej: "tf_ozaru")
     skinDataURL: tr.skinDataURL || null,
     skinPath:    tr.skinPath    || null,  // ruta local (sin base64)
     appearance: tr.appearance || {},
@@ -2377,6 +2039,7 @@ function _makeTrans(data={}) {
     multStr: data.multStr || data.multipliers?.str || 1,
     multDef: data.multDef || data.multipliers?.def || 1,
     multSpd: data.multSpd || data.multipliers?.spd || 1,
+    skinKey:     data.skinKey     || null, // clave del catálogo predefinido (ej: "tf_ozaru")
     skinDataURL: data.skinDataURL || null,
     skinPath:    data.skinPath    || null, // ruta local (sin base64)
     skinImage:   null, // runtime only
@@ -2862,21 +2525,33 @@ function openTransModal(editIdx=null) {
   if (_tmWSlider) { _tmWSlider.value = _tmW; document.getElementById("tmSpriteWVal").textContent = _tmW; document.getElementById("tmSpriteWInput").value = _tmW; }
   if (_tmHSlider) { _tmHSlider.value = _tmH; document.getElementById("tmSpriteHVal").textContent = _tmH; document.getElementById("tmSpriteHInput").value = _tmH; }
 
-  // Cargar skin: prioridad skinPath (local, sin base64) > skinDataURL (PNG custom)
-  const hasSkinPath = !!tr?.skinPath;
-  const hasSkinData = !!tr?.skinDataURL;
-  const hasSkin = hasSkinPath || hasSkinData;
-  document.getElementById("transImportLabel").className = "trans-skin-import" + (hasSkin ? " loaded" : "");
-  document.getElementById("transImportFname").textContent = hasSkin ? (hasSkinPath ? (tr.skinPath.split("/").pop() + " ✓") : "Skin cargada ✓") : "Sin cargar";
-  document.getElementById("transImportText").textContent  = hasSkin ? "CAMBIAR PNG" : "ELEGIR PNG DE TRANSFORMACIÓN";
-  if (hasSkinPath) {
+  // Cargar skin: prioridad skinKey (catálogo predefinido) > skinPath (local) > skinDataURL (base64)
+  _transEditSkinKey     = null;
+  _transEditSkinPath    = null;
+  _transEditSkinDataURL = null;
+  _tmEditSkinImage      = null;
+  const hasSkinKey  = !!tr?.skinKey;
+  const hasSkinPath = !hasSkinKey && !!tr?.skinPath;
+  const hasSkinData = !hasSkinKey && !hasSkinPath && !!tr?.skinDataURL;
+  const hasSkin = hasSkinKey || hasSkinPath || hasSkinData;
+  if (hasSkinKey) {
+    // Skin predefinida (nuevo sistema): resolver desde SPRITE_IMAGES igual que una raza
+    _transEditSkinKey = tr.skinKey;
+    const CS = window.CharacterSystem;
+    const globalImgMap = window.characterImages || window._imageMap || null;
+    if (globalImgMap && globalImgMap[tr.skinKey] && globalImgMap[tr.skinKey].complete) {
+      _tmEditSkinImage = globalImgMap[tr.skinKey];
+    } else if (CS && CS.SPRITE_IMAGES && CS.SPRITE_IMAGES[tr.skinKey]) {
+      const _img = new Image();
+      _img.onload = () => { _tmEditSkinImage = _img; if (typeof _renderTransModalPreview === "function") _renderTransModalPreview(); };
+      _img.src = CS.SPRITE_IMAGES[tr.skinKey];
+    }
+  } else if (hasSkinPath) {
     // Skin de ruta local: cargar imagen directo, sin base64
-    _transEditSkinPath    = tr.skinPath;
-    _transEditSkinDataURL = null;
+    _transEditSkinPath = tr.skinPath;
     if (tr.skinImage && tr.skinImage.complete && tr.skinImage.naturalWidth) {
       _tmEditSkinImage = tr.skinImage;
     } else {
-      _tmEditSkinImage = null;
       const _img = new Image();
       _img.onload = () => { tr.skinImage = _img; _tmEditSkinImage = _img; if (typeof _renderTransModalPreview === "function") _renderTransModalPreview(); };
       _img.onerror = () => { _tmEditSkinImage = null; };
@@ -2887,7 +2562,6 @@ function openTransModal(editIdx=null) {
     if (tr.skinImage) {
       _tmEditSkinImage = tr.skinImage;
     } else {
-      _tmEditSkinImage = null;
       const _img = new Image();
       _img.onload = () => { tr.skinImage = _img; _tmEditSkinImage = _img; if (typeof _renderTransModalPreview === "function") _renderTransModalPreview(); };
       _img.onerror = () => { _tmEditSkinImage = null; };
@@ -2902,6 +2576,16 @@ function openTransModal(editIdx=null) {
   document.querySelectorAll(".tm-panel").forEach(p => p.classList.remove("visible"));
   document.querySelector(".tm-tab[data-tm='general']")?.classList.add("active");
   document.getElementById("tm-general")?.classList.add("visible");
+
+  // Exponer appearance actual para que _renderEspecialPanel lo use
+  window._transEditAppearance = _tmAppearance;
+
+  // Resetear filtro del panel especial a "mi raza"
+  document.getElementById("tmEspecialFilterRaza")?.classList.add("especial-filter-active");
+  document.getElementById("tmEspecialFilterAll")?.classList.remove("especial-filter-active");
+  // Limpiar el contenedor para que se re-renderice al entrar al tab
+  const _especContainer = document.getElementById("tm-especial-container");
+  if (_especContainer) _especContainer.innerHTML = "";
 
   _tmPopulateGrids();
   // Reset animation selector buttons in modal
@@ -2943,13 +2627,15 @@ function closeTransModal() {
   _tmStopPreview();
   document.getElementById("transModalOverlay").classList.add("hidden");
   editingTransIndex     = null;
+  _transEditSkinKey     = null;
+  _transEditSkinPath    = null;
   _transEditSkinDataURL = null;
   _tmEditSkinImage      = null;
   _tmAppearance         = {};
-  // Resetear botones especiales
-  document.querySelectorAll(".special-skin-btn").forEach(b => b.classList.remove("active"));
+  // Resetear botones especiales y status
+  document.querySelectorAll(".special-skin-btn").forEach(b => { b.classList.remove("active"); b.classList.remove("ss-active"); });
   const statusEl = document.getElementById("specialSkinStatus");
-  if (statusEl) { statusEl.style.display = "none"; statusEl.textContent = ""; }
+  if (statusEl) { statusEl.style.display = "none"; statusEl.textContent = ""; statusEl.className = ""; }
 }
 
 async function saveTransModal() {
@@ -2968,7 +2654,8 @@ async function saveTransModal() {
   Object.entries(_tmAppearance).forEach(([k, v]) => { if (v !== null && v !== undefined && v !== "") cleanAppearance[k] = v; });
 
   const data = { name, level, auraColor, multHp:1, multKi, multStr, multDef, multSpd, displayW: tmDisplayW, displayH: tmDisplayH, appearance: cleanAppearance };
-  // Prioridad: skinPath (ruta local, sin base64) > skinDataURL (PNG custom subido)
+  // Prioridad: skinKey (catálogo predefinido, nuevo) > skinPath (ruta local) > skinDataURL (PNG base64)
+  if (_transEditSkinKey)     data.skinKey     = _transEditSkinKey;
   if (_transEditSkinPath)    data.skinPath    = _transEditSkinPath;
   if (_transEditSkinDataURL) data.skinDataURL = _transEditSkinDataURL;
 
@@ -2976,8 +2663,9 @@ async function saveTransModal() {
     const existing = transformations[editingTransIndex];
     data.id = existing.id;
     // Heredar skin del existente si no se cambió en esta sesión de edición
-    if (!data.skinPath && !data.skinDataURL) {
-      if (existing.skinPath)    data.skinPath    = existing.skinPath;
+    if (!data.skinKey && !data.skinPath && !data.skinDataURL) {
+      if (existing.skinKey)          data.skinKey     = existing.skinKey;
+      else if (existing.skinPath)    data.skinPath    = existing.skinPath;
       else if (existing.skinDataURL) data.skinDataURL = existing.skinDataURL;
     }
     transformations[editingTransIndex] = _makeTrans(data);
@@ -3079,6 +2767,67 @@ async function _loadTransformationsFromLS() {
 window._origDrawPlayerFn = drawPlayer;
 
 /* ══ INTEGRACIÓN CON TABS DEL PANEL CENTRAL ══ */
+/**
+ * Renderiza los botones de Transformaciones Especiales desde SPECIAL_SKIN_CATALOG.
+ * Funciona igual que el sistema de razas: guarda skinKey (string), nunca paths locales.
+ * Se llama una sola vez al init del tab de transformaciones.
+ */
+/* ══ PANEL DE TRANSFORMACIONES ESPECIALES — Tab propio dentro del modal ══ */
+/**
+ * Renderiza (o re-renderiza) el panel de skins especiales en el tab "especial".
+ * Se llama al abrir ese tab y al cambiar el filtro raza/todas.
+ * @param {string|null} filterRaceId - null = todas, string = solo esa raza
+ */
+function _renderEspecialPanel(filterRaceId) {
+  const TS = window.TransformationsSystem;
+  if (!TS || !TS.renderSpecialSkinsPanel) return;
+
+  // Obtener la raza actual del modal (puede haberse cambiado en el tab RAZA)
+  const raceId = filterRaceId !== undefined ? filterRaceId
+    : (_transEditAppearance?.raceId || window.CharacterSystem?.player?.appearance?.raceId || null);
+
+  TS.renderSpecialSkinsPanel("tm-especial-container", {
+    raceId:        raceId,
+    activeSkinKey: _transEditSkinKey || null,
+
+    onSelect(skinKey, label, entry) {
+      // Actualizar estado del modal
+      _transEditSkinKey     = skinKey;
+      _transEditSkinPath    = null;
+      _transEditSkinDataURL = null;
+
+      // Cargar imagen para preview del canvas
+      const CS = window.CharacterSystem;
+      const globalImgMap = window.characterImages || window._imageMap || null;
+      if (globalImgMap && globalImgMap[skinKey] && globalImgMap[skinKey].complete) {
+        _tmEditSkinImage = globalImgMap[skinKey];
+        if (typeof _renderTransModalPreview === "function") _renderTransModalPreview();
+      } else if (CS && CS.SPRITE_IMAGES && CS.SPRITE_IMAGES[skinKey]) {
+        const img = new Image();
+        img.onload = () => {
+          _tmEditSkinImage = img;
+          if (typeof _renderTransModalPreview === "function") _renderTransModalPreview();
+        };
+        img.src = CS.SPRITE_IMAGES[skinKey];
+      }
+
+      // Reflejar skin seleccionada
+    },
+
+    onClear() {
+      _transEditSkinKey     = null;
+      _transEditSkinPath    = null;
+      _transEditSkinDataURL = null;
+      _tmEditSkinImage      = null;
+      if (typeof _renderTransModalPreview === "function") _renderTransModalPreview();
+    },
+  });
+}
+
+/** @deprecated — solo se mantiene para compat. con código viejo. No hace nada. */
+function _renderSpecialSkinsGrid() {}
+
+
 async function _initTransTab() {
   await _loadTransformationsFromLS();
 
@@ -3109,8 +2858,36 @@ async function _initTransTab() {
       document.querySelectorAll(".tm-panel").forEach(p => p.classList.remove("visible"));
       tab.classList.add("active");
       document.getElementById(`tm-${target}`)?.classList.add("visible");
+
+      // Al entrar al tab especial, re-renderizar con la raza actual
+      if (target === "especial") {
+        const raceId = _transEditAppearance?.raceId
+          || window.CharacterSystem?.player?.appearance?.raceId
+          || null;
+        // Leer filtro activo
+        const filterBtn = document.querySelector("#tm-especial .especial-filter-active");
+        const filter = filterBtn ? filterBtn.dataset.filter : "race";
+        _renderEspecialPanel(filter === "all" ? null : raceId);
+      }
     });
   });
+
+  // ── Filtros del panel especial (todas / mi raza) ──
+  document.getElementById("tmEspecialFilterAll")?.addEventListener("click", function() {
+    document.getElementById("tmEspecialFilterAll")?.classList.add("especial-filter-active");
+    document.getElementById("tmEspecialFilterRaza")?.classList.remove("especial-filter-active");
+    _renderEspecialPanel(null); // null = todas las razas
+  });
+  document.getElementById("tmEspecialFilterRaza")?.addEventListener("click", function() {
+    document.getElementById("tmEspecialFilterRaza")?.classList.add("especial-filter-active");
+    document.getElementById("tmEspecialFilterAll")?.classList.remove("especial-filter-active");
+    const raceId = _transEditAppearance?.raceId
+      || window.CharacterSystem?.player?.appearance?.raceId
+      || null;
+    _renderEspecialPanel(raceId);
+  });
+  // Marcar "MI RAZA" como activo por defecto
+  document.getElementById("tmEspecialFilterRaza")?.classList.add("especial-filter-active");
 
   // Botón + del panel derecho
   document.getElementById("btnAddTrans").addEventListener("click", () => openTransModal(null));
@@ -3157,37 +2934,9 @@ async function _initTransTab() {
     });
   });
 
-  // Import skin para transformación
-  document.getElementById("transImportInput").addEventListener("change", async e => {
-    const file = e.target.files[0]; e.target.value = "";
-    if (!file) return;
-    try {
-      const dataURL = await _readFileAsDataURL(file);
-      _transEditSkinDataURL = dataURL;
-      document.getElementById("transImportLabel").classList.add("loaded");
-      document.getElementById("transImportFname").textContent = file.name;
-      document.getElementById("transImportText").textContent  = "CAMBIAR PNG";
-      showToast("Skin de transformación lista","success");
-    } catch(err) { showToast("Error al cargar imagen","error"); }
-  });
 
-  // Quitar skin custom del modal
-  document.getElementById("transClearSkin").addEventListener("click", () => {
-    _transEditSkinDataURL = null;
-    document.getElementById("transImportLabel").classList.remove("loaded");
-    document.getElementById("transImportFname").textContent = "Sin cargar";
-    document.getElementById("transImportText").textContent  = "ELEGIR PNG DE TRANSFORMACIÓN";
-    // Deseleccionar botones especiales
-    document.querySelectorAll(".special-skin-btn").forEach(b => b.classList.remove("active"));
-    const statusEl = document.getElementById("specialSkinStatus");
-    if (statusEl) { statusEl.style.display = "none"; statusEl.textContent = ""; }
-    showToast("Skin de transformación quitada","warning");
-  });
-
-  // ── Botones de Transformaciones Especiales ──
-  // NOTA: los eventos de .special-skin-btn son manejados por transformations-system.js
-  // via delegación en #tm-general. Los setters window.__setTransSkin y __setTransSkinImg
-  // (declarados arriba) permiten que ese módulo escriba _transEditSkinDataURL y _tmEditSkinImage.
+  // ── Renderizar botones de Transformaciones Especiales desde SPECIAL_SKIN_CATALOG ──
+  _renderSpecialSkinsGrid();
 
   // Sliders de tamaño del modal de transformación
   (function _initTmSizeSliders() {

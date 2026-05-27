@@ -615,43 +615,6 @@
       });
     }
 
-    function restoreAccImageForSlot(slotData, CS) {
-      if (!slotData || !CS) return;
-      const accId = slotData.accessory || slotData.accessoryId || "ac_none";
-      if (accId === "ac_none") return;
-      const existing = CS.ACCESSORIES_CATALOG.find(a => a.id === accId);
-      if (existing && existing.userImage && existing.userImage.complete && existing.userImage.naturalWidth > 0) return;
-      const dataURL = slotData.accessoryDataURL || existing?.dataURL || null;
-      const combatDataURL = slotData.accessoryCombatDataURL || existing?.combatDataURL || null;
-      if (!dataURL) return;
-      const isFree = !!(slotData.accessoryIsFreeCustomization || String(accId).startsWith("fc_"));
-      const img = new Image();
-      img.onload = () => {
-        if (existing) {
-          existing.userImage = img;
-          existing.spriteImage = img;
-          if (!existing.dataURL) existing.dataURL = dataURL;
-          if (!existing.combatDataURL && combatDataURL) existing.combatDataURL = combatDataURL;
-          if (!existing.specialDataURL && slotData.accessorySpecialDataURL) existing.specialDataURL = slotData.accessorySpecialDataURL;
-          existing.isFreeCustomization = existing.isFreeCustomization || isFree;
-          existing.slot = existing.slot || slotData.accessorySlot || "over_shirt";
-          existing.type = existing.type || slotData.accessoryType || "other";
-        } else {
-          CS.ACCESSORIES_CATALOG.push({
-            id: accId, name: slotData.accessoryName || "Personalización",
-            type: slotData.accessoryType || "other",
-            slot: slotData.accessorySlot || "over_shirt",
-            color: null,
-            userImage: img, spriteImage: img, dataURL: dataURL, combatDataURL: combatDataURL,
-            specialDataURL: slotData.accessorySpecialDataURL || null,
-            isFreeCustomization: isFree,
-          });
-        }
-        CS.invalidateHairCache && CS.invalidateHairCache();
-      };
-      img.onerror = () => console.warn("[game] No se pudo cargar imagen de accesorio:", accId);
-      img.src = dataURL;
-    }
 
     function loadSlotInGame(slotIndex, slotData) {
       if (!slotData) return;
@@ -696,15 +659,7 @@
         CS.player.appearance.auraId = slotData.auraId || slotData.aura || "a0";
         CS.player.appearance.auraColor = slotData.auraColor || "#fdd835";
         CS.player.appearance.accessoryId = slotData.accessory || slotData.accessoryId || "ac_none";
-        CS.player.appearance.accessoryDataURL = slotData.accessoryDataURL || CS.player.appearance.accessoryDataURL || null;
-        CS.player.appearance.accessoryCombatDataURL = slotData.accessoryCombatDataURL || CS.player.appearance.accessoryCombatDataURL || null;
-        CS.player.appearance.accessoryIsFreeCustomization = !!(
-          slotData.accessoryIsFreeCustomization ||
-          String(CS.player.appearance.accessoryId).startsWith("fc_") ||
-          slotData.race === "Custom"
-        );
         CS.player.appearance.accessorySlot = slotData.accessorySlot || CS.player.appearance.accessorySlot || "over_shirt";
-        restoreAccImageForSlot(slotData, CS);
         CS.invalidateHairCache && CS.invalidateHairCache();
         renderVariantSelector();
       }
@@ -798,13 +753,20 @@
         // Construir mapa por ID de las transformaciones globales (más recientes)
         const globalMap = {};
         fromKey.forEach(tr => { if (tr.id) globalMap[tr.id] = tr; });
-        // Fusionar: slot como base, global para actualizar skinDataURL si falta
+        // Fusionar: slot como base, global para actualizar skin si falta
         saved = fromSlot.map(tr => {
           const global = globalMap[tr.id];
-          if (global && (global.skinDataURL && global.skinDataURL !== "__ref__") && (!tr.skinDataURL || tr.skinDataURL === "__ref__")) {
-            return Object.assign({}, tr, { skinDataURL: global.skinDataURL });
+          if (!global) return tr;
+          const patch = {};
+          // Propagar skinKey si el slot no lo tiene pero el global sí
+          if (!tr.skinKey && global.skinKey) patch.skinKey = global.skinKey;
+          // Propagar skinPath si el slot no lo tiene pero el global sí
+          if (!tr.skinPath && global.skinPath) patch.skinPath = global.skinPath;
+          // Propagar skinDataURL si el global tiene versión completa y el slot no
+          if ((global.skinDataURL && global.skinDataURL !== "__ref__") && (!tr.skinDataURL || tr.skinDataURL === "__ref__")) {
+            patch.skinDataURL = global.skinDataURL;
           }
-          return tr;
+          return Object.keys(patch).length > 0 ? Object.assign({}, tr, patch) : tr;
         });
         // También agregar transformaciones del global que no estén en el slot (por ID)
         const slotIds = new Set(fromSlot.map(t => t.id).filter(Boolean));
@@ -833,8 +795,18 @@
             if (skin) tr.skinDataURL = skin;
           } catch(e) {}
         }
-        // Si tiene skinPath (ruta local), es la fuente preferida — no necesita localStorage
-        // game.html lo cargará directamente con new Image() al activar la transformación
+        // Si tiene skinKey (ej: "tf_ozaru"), resolver ruta e imagen desde csImageMap/SPRITE_IMAGES.
+        if (tr.skinKey) {
+          const CS = window.CharacterSystem;
+          if (!tr.skinPath && CS && CS.SPRITE_IMAGES && CS.SPRITE_IMAGES[tr.skinKey]) {
+            tr.skinPath = CS.SPRITE_IMAGES[tr.skinKey];
+          }
+          // Inyectar imagen desde csImageMap si ya está precargada (evita new Image() asíncrono)
+          if (!tr.skinImage && csImageMap && csImageMap[tr.skinKey] &&
+              csImageMap[tr.skinKey].complete && csImageMap[tr.skinKey].naturalWidth) {
+            tr.skinImage = csImageMap[tr.skinKey];
+          }
+        }
         return tr;
       });
     }
@@ -905,6 +877,46 @@
     // null = había slot "base" vacío antes de la transformación
     // Object = había un custom guardado antes
     let _savedBaseVariantCustom = undefined;
+
+    /**
+     * Aplica una imagen ya cargada como skin de transformación al jugador.
+     * Usado cuando la imagen ya existe en csImageMap (skinKey del catálogo).
+     * @param {HTMLImageElement} img - Imagen ya cargada
+     * @param {string} [skinPath] - Ruta local para que la red pueda replicarla
+     */
+    function _applyTransSkinImageToPlayer(img, skinPath) {
+      const CS = window.CharacterSystem;
+      if (!CS || !img) return;
+      const app = CS.player.appearance;
+
+      const currentVariantId = app.variantId || "base";
+      _savedBaseVariantCustom = (app.variantCustomizations && app.variantCustomizations[currentVariantId])
+        ? Object.assign({}, app.variantCustomizations[currentVariantId])
+        : null;
+
+      if (!app.variantCustomizations) app.variantCustomizations = {};
+      const skinEntry = {
+        spriteImage:          img,
+        userImage:            img,
+        spriteDataURL:        null,
+        combatSpriteImage:    img,
+        combatUserImage:      img,
+        combatSpriteDataURL:  null,
+        specialSpriteImage:   img,
+        specialUserImage:     img,
+        specialSpriteDataURL: null,
+        _transSkinPath: skinPath || null,
+        _isTransSkin:   true,
+      };
+
+      const activeVariantId = app.variantId || "base";
+      app.variantCustomizations[activeVariantId] = skinEntry;
+      if (activeVariantId !== "base") app.variantCustomizations["base"] = skinEntry;
+      app.variantCustomizations["null"] = skinEntry;
+
+      CS.invalidateHairCache && CS.invalidateHairCache();
+      console.info("[TransSkin] Sprite del catálogo aplicado:", skinPath || "(sin ruta)");
+    }
 
     /**
      * Aplica el skin de una transformación al jugador.
@@ -1010,27 +1022,45 @@
         const tr = result.transformation;
         showHudToast(`⚡ ${tr.name}`, "xp");
 
-        // Resolver skin: prioridad skinPath (ruta local) > skinDataURL (base64 custom)
-        const skinPath = (trData && trData.skinPath) || tr.skinPath || null;
-        let skinURL    = skinPath ? null : ((trData && trData.skinDataURL) || tr.skinDataURL || null);
+        // Resolver skin: prioridad skinKey (csImageMap precargado) > skinPath (ruta local) > skinDataURL (base64 custom)
+        const CS = window.CharacterSystem;
+        let skinPath = (trData && trData.skinPath) || tr.skinPath || null;
 
-        // Si es __ref__, intentar resolver desde localStorage (base64 custom guardado por separado)
-        if (!skinPath && (!skinURL || skinURL === "__ref__")) {
-          try {
-            const fallbackSkin = localStorage.getItem("dragonCreatorZ_skin_" + trId);
-            if (fallbackSkin) skinURL = fallbackSkin;
-          } catch(e) {}
+        // Resolver skinKey → skinPath si aún no tenemos ruta
+        const skinKey = (trData && trData.skinKey) || tr.skinKey || null;
+        if (!skinPath && skinKey && CS && CS.SPRITE_IMAGES && CS.SPRITE_IMAGES[skinKey]) {
+          skinPath = CS.SPRITE_IMAGES[skinKey];
         }
 
-        if (skinPath) {
-          // Ruta local: cargar directo como hacen las razas — sin base64, liviano en red
-          _applyTransSkinToPlayer(skinPath, skinPath);
+        let skinURL = skinPath ? null : ((trData && trData.skinDataURL) || tr.skinDataURL || null);
+
+        // Si hay skinKey y la imagen ya está en csImageMap o en tr.skinImage, usarla directamente
+        const preloadedImg = (skinKey && csImageMap && csImageMap[skinKey] &&
+            csImageMap[skinKey].complete && csImageMap[skinKey].naturalWidth)
+          ? csImageMap[skinKey]
+          : (tr.skinImage && tr.skinImage.complete && tr.skinImage.naturalWidth ? tr.skinImage : null);
+
+        if (preloadedImg) {
+          _applyTransSkinImageToPlayer(preloadedImg, skinPath || null);
           if (!tr.skinPath) tr.skinPath = skinPath;
-        } else if (skinURL && skinURL !== "__ref__" && skinURL.length > 10) {
-          _applyTransSkinToPlayer(skinURL, null);
-          if (!tr.skinDataURL || tr.skinDataURL === "__ref__") tr.skinDataURL = skinURL;
         } else {
-          console.info("[TransSkin] Transformación sin skin custom:", trId);
+          // Fallback __ref__: recuperar base64 custom desde localStorage
+          if (!skinPath && (!skinURL || skinURL === "__ref__")) {
+            try {
+              const fallbackSkin = localStorage.getItem("dragonCreatorZ_skin_" + trId);
+              if (fallbackSkin) skinURL = fallbackSkin;
+            } catch(e) {}
+          }
+          if (skinPath) {
+            // Ruta local: cargar directo como hacen las razas — sin base64, liviano en red
+            _applyTransSkinToPlayer(skinPath, skinPath);
+            if (!tr.skinPath) tr.skinPath = skinPath;
+          } else if (skinURL && skinURL !== "__ref__" && skinURL.length > 10) {
+            _applyTransSkinToPlayer(skinURL, null);
+            if (!tr.skinDataURL || tr.skinDataURL === "__ref__") tr.skinDataURL = skinURL;
+          } else {
+            console.info("[TransSkin] Transformación sin skin custom:", trId);
+          }
         }
 
         if (tr.auraColor && window.player) {
@@ -1507,173 +1537,9 @@
     }
 
     async function restoreAllAccessoriesForGame(CS) {
+      // Solo restaura accesorios desde rutas locales (carpeta Skins/).
+      // La importación de PNG por el usuario fue eliminada.
       if (!CS) return;
-
-      // 1. Free Customizations
-      try {
-        const rawFree = localStorage.getItem("dragonCreatorZ_freeCustomization");
-        if (rawFree) {
-          const list = JSON.parse(rawFree);
-          if (Array.isArray(list)) {
-            await Promise.all(list.map((item) => new Promise((resolve) => {
-              if (!item?.dataURL) { resolve(); return; }
-              const existing = CS.ACCESSORIES_CATALOG.find(a => a.id === item.id);
-              if (existing) {
-                if (!existing.dataURL) existing.dataURL = item.dataURL;
-                existing.combatDataURL = item.combatDataURL || existing.combatDataURL;
-                existing.scale = item.scale ?? existing.scale ?? 1;
-                existing.animFrames = item.animFrames ?? existing.animFrames ?? 6;
-                existing.combatScale = item.combatScale ?? existing.combatScale ?? 1;
-                existing.combatAnimFrames = item.combatAnimFrames ?? existing.combatAnimFrames ?? 6;
-                if (existing.combatUserImage && !existing.combatSpriteImage) existing.combatSpriteImage = existing.combatUserImage;
-                if (existing.specialUserImage && !existing.specialSpriteImage) existing.specialSpriteImage = existing.specialUserImage;
-                if (item.combatDataURL && !existing.combatUserImage) {
-                  const cimg = new Image();
-                  cimg.onload = () => { existing.combatUserImage = cimg; existing.combatSpriteImage = cimg; CS.invalidateHairCache?.(); };
-                  cimg.onerror = () => {};
-                  cimg.src = item.combatDataURL;
-                }
-                if (item.specialDataURL && !existing.specialUserImage) {
-                  const simg = new Image();
-                  simg.onload = () => { existing.specialUserImage = simg; existing.specialSpriteImage = simg; CS.invalidateHairCache?.(); };
-                  simg.onerror = () => {};
-                  simg.src = item.specialDataURL;
-                }
-                if (!existing.userImage || !existing.userImage.complete || !existing.userImage.naturalWidth) {
-                  const img = new Image();
-                  img.onload = () => { existing.userImage = img; existing.spriteImage = img; existing.isFreeCustomization = true; CS.invalidateHairCache?.(); resolve(); };
-                  img.onerror = resolve;
-                  img.src = item.dataURL;
-                } else { resolve(); }
-                return;
-              }
-              const img = new Image();
-              img.onload = () => {
-                const entry = {
-                  id: item.id, name: item.name || "Personalización",
-                  type: item.type || "other", slot: item.slot || "over_shirt",
-                  color: item.color || null, userImage: img, spriteImage: img, dataURL: item.dataURL,
-                  combatDataURL: item.combatDataURL || null, specialDataURL: item.specialDataURL || null,
-                  scale: item.scale ?? 1, animFrames: item.animFrames ?? 6,
-                  combatScale: item.combatScale ?? 1, combatAnimFrames: item.combatAnimFrames ?? 6,
-                  specialScale: item.specialScale ?? 1, specialAnimFrames: item.specialAnimFrames ?? 6,
-                  raceName: item.raceName || null, isFreeCustomization: true,
-                };
-                if (item.combatDataURL) {
-                  const cimg = new Image();
-                  cimg.onload = () => { entry.combatUserImage = cimg; entry.combatSpriteImage = cimg; CS.invalidateHairCache?.(); };
-                  cimg.onerror = () => {};
-                  cimg.src = item.combatDataURL;
-                }
-                if (item.specialDataURL) {
-                  const simg = new Image();
-                  simg.onload = () => { entry.specialUserImage = simg; entry.specialSpriteImage = simg; CS.invalidateHairCache?.(); };
-                  simg.onerror = () => {};
-                  simg.src = item.specialDataURL;
-                }
-                CS.ACCESSORIES_CATALOG.push(entry);
-                resolve();
-              };
-              img.onerror = resolve;
-              img.src = item.dataURL;
-            })));
-          }
-        }
-      } catch (e) { console.warn("[game] Error restaurando freeCustomization:", e); }
-
-      // 2. Accesorios normales
-      try {
-        const rawAcc = localStorage.getItem("dragonCreatorZ_accessories");
-        if (rawAcc) {
-          const accList = JSON.parse(rawAcc);
-          if (Array.isArray(accList)) {
-            await Promise.all(accList.map((entry) => new Promise((resolve) => {
-              if (!entry?.dataURL) { resolve(); return; }
-              const existing = CS.ACCESSORIES_CATALOG.find(a => a.id === entry.id);
-              if (existing) {
-                Object.assign(existing, {
-                  combatDataURL: entry.combatDataURL || existing.combatDataURL,
-                  scale: entry.scale ?? existing.scale ?? 1,
-                  animFrames: entry.animFrames ?? existing.animFrames ?? 6,
-                  combatScale: entry.combatScale ?? existing.combatScale ?? 1,
-                  combatAnimFrames: entry.combatAnimFrames ?? existing.combatAnimFrames ?? 6,
-                });
-                if (existing.combatUserImage && !existing.combatSpriteImage) existing.combatSpriteImage = existing.combatUserImage;
-                if (!existing.userImage || !existing.userImage.complete || !existing.userImage.naturalWidth) {
-                  const img = new Image();
-                  img.onload = () => { existing.userImage = img; existing.spriteImage = img; resolve(); };
-                  img.onerror = resolve;
-                  img.src = entry.dataURL;
-                } else { resolve(); }
-                if (entry.combatDataURL && !existing.combatUserImage) {
-                  const cimg = new Image();
-                  cimg.onload = () => { existing.combatUserImage = cimg; existing.combatSpriteImage = cimg; CS.invalidateHairCache?.(); };
-                  cimg.onerror = () => {};
-                  cimg.src = entry.combatDataURL;
-                }
-                return;
-              }
-              const img = new Image();
-              img.onload = () => {
-                const accEntry = {
-                  id: entry.id, name: entry.name || "Accesorio", type: entry.type || "other",
-                  slot: (CS.ACCESSORY_TYPES?.find(t => t.id === entry.type) || { slot: "over_shirt" }).slot,
-                  color: entry.color || null, userImage: img, spriteImage: img, dataURL: entry.dataURL,
-                  combatDataURL: entry.combatDataURL || null,
-                  scale: entry.scale ?? 1, animFrames: entry.animFrames ?? 6,
-                  combatScale: entry.combatScale ?? 1, combatAnimFrames: entry.combatAnimFrames ?? 6,
-                  isFreeCustomization: false,
-                };
-                if (entry.combatDataURL) {
-                  const cimg = new Image();
-                  cimg.onload = () => { accEntry.combatUserImage = cimg; accEntry.combatSpriteImage = cimg; CS.invalidateHairCache?.(); };
-                  cimg.onerror = () => {};
-                  cimg.src = entry.combatDataURL;
-                }
-                CS.ACCESSORIES_CATALOG.push(accEntry);
-                resolve();
-              };
-              img.onerror = resolve;
-              img.src = entry.dataURL;
-            })));
-          }
-        }
-      } catch (e) { console.warn("[game] Error restaurando accessories:", e); }
-
-      // 3. Slot activo
-      try {
-        const sc = savedChar || {};
-        const accId = sc.accessory || sc.accessoryId;
-        if (accId && accId !== "ac_none" && sc.accessoryDataURL) {
-          const existing = CS.ACCESSORIES_CATALOG.find(a => a.id === accId);
-          if (!existing || !existing.userImage || !existing.userImage.complete || !existing.userImage.naturalWidth) {
-            await new Promise((resolve) => {
-              const img = new Image();
-              img.onload = () => {
-                const isFree = !!(sc.accessoryIsFreeCustomization || sc.race === "Custom" || String(accId).startsWith("fc_"));
-                if (existing) {
-                  existing.userImage = img;
-                  existing.spriteImage = img;
-                  if (!existing.dataURL) existing.dataURL = sc.accessoryDataURL;
-                  if (!existing.combatDataURL && sc.accessoryCombatDataURL) existing.combatDataURL = sc.accessoryCombatDataURL;
-                  existing.isFreeCustomization = existing.isFreeCustomization || isFree;
-                  CS.invalidateHairCache?.();
-                } else {
-                  CS.ACCESSORIES_CATALOG.push({
-                    id: accId, name: sc.accessoryName || "Personalización",
-                    type: "other", slot: "over_shirt", color: null,
-                    userImage: img, spriteImage: img, dataURL: sc.accessoryDataURL, combatDataURL: sc.accessoryCombatDataURL || null,
-                    isFreeCustomization: isFree,
-                  });
-                }
-                resolve();
-              };
-              img.onerror = resolve;
-              img.src = sc.accessoryDataURL;
-            });
-          }
-        }
-      } catch (e) { console.warn("[game] Error restaurando acc desde slot:", e); }
     }
 
     function renderAppearancePreview(CS) {
@@ -3706,6 +3572,25 @@
               csImageMap=await CS.preloadAssets("", { cacheBust: "20260522" });
               CS.initPlayer();
 
+              // Inyectar imágenes de skinKey en transformaciones ya registradas.
+              // Las transformaciones se registran antes de que csImageMap esté listo,
+              // por eso sus skinKey nunca tuvieron imagen. Las resolvemos ahora.
+              if (csImageMap) {
+                const TS = window.TransformationsSystem;
+                if (TS) {
+                  TS.TRANSFORMATIONS.forEach(tr => {
+                    if (tr.skinKey && csImageMap[tr.skinKey] &&
+                        csImageMap[tr.skinKey].complete && csImageMap[tr.skinKey].naturalWidth) {
+                      tr.skinImage = csImageMap[tr.skinKey];
+                      // También asegurar skinPath para que la red pueda replicarlo
+                      if (!tr.skinPath && CS.SPRITE_IMAGES && CS.SPRITE_IMAGES[tr.skinKey]) {
+                        tr.skinPath = CS.SPRITE_IMAGES[tr.skinKey];
+                      }
+                    }
+                  });
+                }
+              }
+
               if(savedChar){
                 const rid=savedChar.race||"human",gen=savedChar.gender||"male";
                 const defs=CS.getDefaultIds(rid,gen);
@@ -3733,60 +3618,7 @@
 
                 const savedAccId = savedChar.accessory || savedChar.accessoryId || "ac_none";
                 CS.player.appearance.accessoryId = savedAccId;
-                CS.player.appearance.accessoryDataURL = savedChar.accessoryDataURL || CS.player.appearance.accessoryDataURL || null;
-                CS.player.appearance.accessoryCombatDataURL = savedChar.accessoryCombatDataURL || CS.player.appearance.accessoryCombatDataURL || null;
-                CS.player.appearance.accessoryIsFreeCustomization = !!(
-                  CS.player.appearance.accessoryIsFreeCustomization ||
-                  savedChar.accessoryIsFreeCustomization ||
-                  savedChar.race === "Custom" ||
-                  String(savedAccId).startsWith("fc_")
-                );
                 CS.player.appearance.accessorySlot = savedChar.accessorySlot || CS.player.appearance.accessorySlot || "over_shirt";
-
-                if (savedAccId !== "ac_none") {
-                  const accInCatalog = CS.ACCESSORIES_CATALOG.find(a => a.id === savedAccId);
-                  if (!accInCatalog || !accInCatalog.userImage || !accInCatalog.userImage.complete || !accInCatalog.userImage.naturalWidth) {
-                    let dataURL = savedChar.accessoryDataURL || null;
-                    if (!dataURL) {
-                      try {
-                        const rawFree = localStorage.getItem("dragonCreatorZ_freeCustomization");
-                        if (rawFree) { const freeList = JSON.parse(rawFree); const found = freeList.find(x => x.id === savedAccId); if (found) dataURL = found.dataURL; }
-                      } catch(e) {}
-                    }
-                    if (!dataURL) {
-                      try {
-                        const rawAcc = localStorage.getItem("dragonCreatorZ_accessories");
-                        if (rawAcc) { const accList = JSON.parse(rawAcc); const found = accList.find(x => x.id === savedAccId); if (found) dataURL = found.dataURL; }
-                      } catch(e) {}
-                    }
-                    if (dataURL) {
-                      await new Promise(resolve => {
-                        const img = new Image();
-                        img.onload = () => {
-                          const isFree = !!(savedChar.accessoryIsFreeCustomization || String(savedAccId).startsWith("fc_"));
-                          if (accInCatalog) {
-                            accInCatalog.userImage = img;
-                            accInCatalog.spriteImage = img;
-                            if (!accInCatalog.dataURL) accInCatalog.dataURL = dataURL;
-                            if (!accInCatalog.combatDataURL && savedChar.accessoryCombatDataURL) accInCatalog.combatDataURL = savedChar.accessoryCombatDataURL;
-                            accInCatalog.isFreeCustomization = accInCatalog.isFreeCustomization || isFree;
-                          } else {
-                            CS.ACCESSORIES_CATALOG.push({
-                              id: savedAccId, name: savedChar.accessoryName || "Personalización",
-                              type: "other", slot: "over_shirt", color: null,
-                              userImage: img, spriteImage: img, dataURL: dataURL, combatDataURL: savedChar.accessoryCombatDataURL || null,
-                              isFreeCustomization: isFree,
-                            });
-                          }
-                          CS.invalidateHairCache?.();
-                          resolve();
-                        };
-                        img.onerror = resolve;
-                        img.src = dataURL;
-                      });
-                    }
-                  }
-                }
               }
 
               await new Promise(r => setTimeout(r, 500));
@@ -3799,6 +3631,28 @@
           }
           document.getElementById("hudPlayerName").textContent=player.name;
           updatePlayerHud();
+        }],
+        ["CARGANDO TRANSFORMACIONES...", ()=>{
+          const TS = window.TransformationsSystem;
+          const CS = window.CharacterSystem;
+          if (!TS || !CS || !csImageMap) return;
+
+          // Cargar transformaciones del slot activo y resolver skinKey → imagen
+          TS.TRANSFORMATIONS.length = 0;
+          const trans = _loadSavedTransformations();
+          trans.forEach(tr => {
+            // Resolver skinKey → skinPath y skinImage desde csImageMap precargado
+            if (tr.skinKey) {
+              if (!tr.skinPath && CS.SPRITE_IMAGES && CS.SPRITE_IMAGES[tr.skinKey]) {
+                tr.skinPath = CS.SPRITE_IMAGES[tr.skinKey];
+              }
+              if (csImageMap[tr.skinKey] && csImageMap[tr.skinKey].complete && csImageMap[tr.skinKey].naturalWidth) {
+                tr.skinImage = csImageMap[tr.skinKey];
+              }
+            }
+            TS.registerTransformation(tr);
+          });
+          renderActionBars();
         }],
         ["CONECTANDO AL SERVIDOR...", async()=>{
           buildMpHud();

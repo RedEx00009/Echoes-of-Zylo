@@ -715,137 +715,6 @@
     { id: "other",   label: "Otro",     slot: "over_shirt",  icon: "✨" },
   ];
 
-  function addUserAccessory({ name, type, color, userImage, dataURL, combatDataURL, combatUserImage,
-    specialDataURL, specialUserImage, scale, animFrames, rowCount,
-    combatScale, combatAnimFrames, combatRowCount,
-    specialScale, specialAnimFrames, specialRowCount }) {
-    const typeDef = ACCESSORY_TYPES.find(t => t.id === type) || ACCESSORY_TYPES[ACCESSORY_TYPES.length - 1];
-    const entry = {
-      id:              "user_acc_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
-      name:            name || "Accesorio",
-      type:            typeDef.id,
-      slot:            typeDef.slot,
-      color:           color || "#888888",
-      userImage:       userImage || null,
-      dataURL:         dataURL || null,
-      combatDataURL:   combatDataURL || null,
-      combatUserImage: combatUserImage || null,
-      specialDataURL:  specialDataURL || null,
-      specialUserImage:specialUserImage || null,
-      scale:           scale ?? 1,
-      animFrames:      animFrames ?? MAX_COLS,
-      rowCount:        rowCount ?? 0,
-      combatScale:     combatScale ?? 1,
-      combatAnimFrames:combatAnimFrames ?? COMBAT_MAX_COLS,
-      combatRowCount:  combatRowCount ?? 0,
-      specialScale:    specialScale ?? 1,
-      specialAnimFrames:specialAnimFrames ?? SPECIAL_MAX_COLS,
-      specialRowCount: specialRowCount ?? 0,
-      isFreeCustomization: false,
-    };
-    ACCESSORIES_CATALOG.push(entry);
-    return entry;
-  }
-
-  function addFreeCustomizationSheet({ name, raceName, userImage, dataURL,
-    combatUserImage, combatDataURL, specialUserImage, specialDataURL,
-    scale, animFrames, rowCount,
-    combatScale, combatAnimFrames, combatRowCount,
-    specialScale, specialAnimFrames, specialRowCount, yOffset }) {
-    const newId = "fc_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6);
-    const entry = {
-      id:              newId,
-      name:            name || "Personalización",
-      type:            "other",
-      slot:            "over_sheet",
-      color:           null,
-      userImage:       userImage || null,
-      dataURL:         dataURL || null,
-      combatUserImage: combatUserImage || null,
-      combatDataURL:   combatDataURL || null,
-      specialUserImage:specialUserImage || null,
-      specialDataURL:  specialDataURL || null,
-      scale:           scale ?? 1,
-      animFrames:      animFrames ?? MAX_COLS,
-      rowCount:        rowCount ?? TOTAL_ROWS,
-      combatScale:     combatScale ?? 1,
-      combatAnimFrames:combatAnimFrames ?? COMBAT_MAX_COLS,
-      combatRowCount:  combatRowCount ?? COMBAT_TOTAL_ROWS,
-      specialScale:    specialScale ?? 1,
-      specialAnimFrames:specialAnimFrames ?? SPECIAL_MAX_COLS,
-      specialRowCount: specialRowCount ?? SPECIAL_TOTAL_ROWS,
-      yOffset:         yOffset ?? 0,
-      raceName:        raceName || null,
-      isFreeCustomization: true,
-    };
-    ACCESSORIES_CATALOG.push(entry);
-    return entry;
-  }
-
-  function removeUserAccessory(id) {
-    if (id === "ac_none") return false;
-    let removed = false;
-    const idx = ACCESSORIES_CATALOG.findIndex(a => a.id === id);
-    if (idx !== -1) {
-      ACCESSORIES_CATALOG.splice(idx, 1);
-      removed = true;
-    }
-    if (typeof FREE_CUSTOMIZATION_CATALOG !== "undefined" && Array.isArray(FREE_CUSTOMIZATION_CATALOG)) {
-      const freeIdx = FREE_CUSTOMIZATION_CATALOG.findIndex(a => a.id === id);
-      if (freeIdx !== -1) {
-        FREE_CUSTOMIZATION_CATALOG.splice(freeIdx, 1);
-        removed = true;
-      }
-    }
-    return removed;
-  }
-
-  async function restoreUserAccessories(storedList) {
-    if (!Array.isArray(storedList)) return;
-    const loads = storedList.map(entry => new Promise(resolve => {
-      if (!entry.dataURL) { resolve(); return; }
-      const img = new Image();
-      img.onload = () => {
-        const accEntry = {
-          id:        entry.id,
-          name:      entry.name,
-          type:      entry.type,
-          slot:      (ACCESSORY_TYPES.find(t => t.id === entry.type) || { slot: "over_shirt" }).slot,
-          color:     entry.color,
-          userImage: img,
-          dataURL:   entry.dataURL,
-          combatDataURL:    entry.combatDataURL || null,
-          specialDataURL:   entry.specialDataURL || null,
-          scale:            entry.scale ?? 1,
-          animFrames:       entry.animFrames ?? MAX_COLS,
-          rowCount:         entry.rowCount ?? 0,
-          combatScale:      entry.combatScale ?? 1,
-          combatAnimFrames: entry.combatAnimFrames ?? COMBAT_MAX_COLS,
-          combatRowCount:   entry.combatRowCount ?? 0,
-          specialScale:     entry.specialScale ?? 1,
-          specialAnimFrames:entry.specialAnimFrames ?? SPECIAL_MAX_COLS,
-          specialRowCount:  entry.specialRowCount ?? 0,
-          yOffset:          entry.yOffset ?? 0,
-          isFreeCustomization: entry.isFreeCustomization ?? false,
-        };
-        if (entry.combatDataURL) {
-          const ci = new Image();
-          ci.onload = () => { accEntry.combatUserImage = ci; };
-          ci.src = entry.combatDataURL;
-        }
-        if (entry.specialDataURL) {
-          const si = new Image();
-          si.onload = () => { accEntry.specialUserImage = si; };
-          si.src = entry.specialDataURL;
-        }
-        ACCESSORIES_CATALOG.push(accEntry);
-        resolve();
-      };
-      img.onerror = () => resolve();
-      img.src = entry.dataURL;
-    }));
-    await Promise.all(loads);
-  }
 
   // ═══════════════════════════════════════════════════════════════
   //  Alias de catálogos por defecto (masculino)
@@ -2037,10 +1906,6 @@
     AURAS_CATALOG,
     ACCESSORIES_CATALOG,
     ACCESSORY_TYPES,
-    addUserAccessory,
-    addFreeCustomizationSheet,
-    removeUserAccessory,
-    restoreUserAccessories,
 
     FACE_CATALOG_MALE, FACE_CATALOG_FEMALE, FACE_CATALOG_NAMEKIAN, FACE_CATALOG_FRIEZA,
     FACE_CATALOG,
@@ -2068,7 +1933,7 @@
     // ── Constantes de grilla ────────────────────────────────────
     // RP/Base
     FRAME_W, FRAME_H,           // fallback de display
-    DISPLAY_W, DISPLAY_H, IMPORTED_LAYER_SCALE,
+    DISPLAY_W, DISPLAY_H,
     MAX_COLS,   TOTAL_ROWS,   IDLE_ROW,
     // Combate
     COMBAT_MAX_COLS,  COMBAT_TOTAL_ROWS,  COMBAT_IDLE_ROW,
