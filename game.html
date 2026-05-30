@@ -98,6 +98,9 @@
       #barKi { background:linear-gradient(90deg,#1565c0,var(--ki)); box-shadow:0 0 6px rgba(41,121,255,.5); }
       .bar-val { font-family:var(--font-head); font-size:9px; color:#8892b0; min-width:32px; text-align:right; }
       .level-badge { display:flex; align-items:center; gap:6px; margin-top:5px; }
+      .coord-display { display:flex; align-items:center; gap:5px; margin-top:4px; }
+      .coord-icon { font-size:9px; }
+      .coord-val { font-family:var(--font-head); font-size:8px; letter-spacing:1px; color:#5a7aaa; background:rgba(255,255,255,.04); border:1px solid #1e2d50; border-radius:3px; padding:1px 5px; min-width:38px; text-align:center; }
       .level-num { font-family:var(--font-head); font-size:9px; letter-spacing:1px; color:var(--accent); background:rgba(245,196,0,.1); border:1px solid rgba(245,196,0,.3); border-radius:3px; padding:1px 5px; }
       .xp-track { flex:1; height:4px; background:rgba(255,255,255,.07); border-radius:2px; overflow:hidden; }
       .xp-fill { height:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); border-radius:2px; transition:width .4s ease; }
@@ -423,6 +426,11 @@
           <div class="bar-row"><span class="bar-icon">❤️</span><div class="bar-track"><div class="bar-fill" id="barHp" style="width:100%"></div></div><span class="bar-val" id="valHp">100/100</span></div>
           <div class="bar-row"><span class="bar-icon">💙</span><div class="bar-track"><div class="bar-fill" id="barKi" style="width:100%"></div></div><span class="bar-val" id="valKi">100/100</span></div>
           <div class="level-badge"><span class="level-num" id="hudLevel">LV 1</span><div class="xp-track"><div class="xp-fill" id="xpFill" style="width:0%"></div></div></div>
+          <div class="coord-display">
+            <span class="coord-icon">📍</span>
+            <span class="coord-val" id="coordX">X:0</span>
+            <span class="coord-val" id="coordY">Y:0</span>
+          </div>
         </div>
         <div class="variant-panel" id="variantPanel">
           <span class="variant-label">FORMA</span>
@@ -459,7 +467,7 @@
         <div class="skill-btn" onclick="interactNearby()" title="Interactuar [Z]"><span class="skill-icon">💬</span><span class="skill-key">Z</span></div>
         <div class="skill-btn" onclick="openMyTrailer()" title="Mi Trailer [Q]"><span class="skill-icon">🚌</span><span class="skill-key">Q</span></div>
         <div class="skill-btn" onclick="openInventoryPanel()" title="Inventario [I]"><span class="skill-icon">🎒</span><span class="skill-key">I</span></div>
-        <div class="skill-btn" onclick="sendEmote('wave')" title="Saludar [E]"><span class="skill-icon">👋</span><span class="skill-key">E</span></div>
+        <div class="skill-btn" onclick="toggleFly()" title="Volar [F]"><span class="skill-icon">🦅</span><span class="skill-key">F</span></div>
         <div class="skill-btn" onclick="sendEmote('bow')" title="Reverencia [R]"><span class="skill-icon">🙇</span><span class="skill-key">R</span></div>
         <div class="skill-btn" id="skillRun" onclick="toggleRunPC()"><span class="skill-icon">💨</span><span class="skill-key">SHIFT</span></div>
       </div>
@@ -476,7 +484,7 @@
         <div class="action-grid" id="actionGrid">
           <div class="action-btn btn-interact" onclick="interactNearby()"><span class="btn-icon">💬</span><span class="btn-label">HABLAR</span></div>
           <div class="action-btn btn-trailer" onclick="openMyTrailer()"><span class="btn-icon">🚌</span><span class="btn-label">TRAILER</span></div>
-          <div class="action-btn btn-emote" onclick="sendEmote('wave')"><span class="btn-icon">👋</span><span class="btn-label">SALUDAR</span></div>
+          <div class="action-btn btn-run" onclick="toggleFly()"><span class="btn-icon">🦅</span><span class="btn-label">VOLAR</span></div>
           <div class="action-btn btn-emote" onclick="sendEmote('bow')"><span class="btn-icon">🙇</span><span class="btn-label">REVERENC.</span></div>
           <div class="action-btn btn-run" id="mobileRunBtn" onclick="toggleRunMobile()" style="border-radius:12px;width:100%;grid-column:span 2;height:calc(var(--btn-size)*0.7);">
             <span class="btn-icon">💨</span><span class="btn-label" id="runBtnLabel">CORRER: OFF</span>
@@ -694,6 +702,18 @@
     function toggleRunPC()     { setRunState(!isRunning); }
     function toggleRunMobile() { setRunState(!isRunning); }
     window.toggleRunPC = toggleRunPC; window.toggleRunMobile = toggleRunMobile;
+
+    function toggleFly() {
+      isFlying = !isFlying;
+      if (csAnimator) {
+        csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
+        csAnimator.play(isFlying ? "fly" : "idle");
+      }
+      showHudToast(isFlying ? "🦅 Vuelo activado" : "🦅 Vuelo desactivado", "info");
+      renderActionBars();
+      publishMyAppearance && publishMyAppearance(true);
+    }
+    window.toggleFly = toggleFly;
 
     // -- TRANSFORMACIONES DROPDOWN --
     let transDropOpen = false;
@@ -1013,72 +1033,104 @@
         });
       }
 
-      const result = TS.transformPlayer(trId);
-      if (result.success) {
-        const tr = result.transformation;
-        showHudToast(`⚡ ${tr.name}`, "xp");
-
-        // Resolver skin: prioridad skinKey (csImageMap precargado) > skinPath (ruta local) > skinDataURL (base64 custom)
-        const CS = window.CharacterSystem;
-        let skinPath = (trData && trData.skinPath) || tr.skinPath || null;
-
-        // Resolver skinKey → skinPath si aún no tenemos ruta
-        const skinKey = (trData && trData.skinKey) || tr.skinKey || null;
-        if (!skinPath && skinKey && CS && CS.SPRITE_IMAGES && CS.SPRITE_IMAGES[skinKey]) {
-          skinPath = CS.SPRITE_IMAGES[skinKey];
-        }
-
-        let skinURL = skinPath ? null : ((trData && trData.skinDataURL) || tr.skinDataURL || null);
-
-        // Si hay skinKey y la imagen ya está en csImageMap o en tr.skinImage, usarla directamente
-        const preloadedImg = (skinKey && csImageMap && csImageMap[skinKey] &&
-            csImageMap[skinKey].complete && csImageMap[skinKey].naturalWidth)
-          ? csImageMap[skinKey]
-          : (tr.skinImage && tr.skinImage.complete && tr.skinImage.naturalWidth ? tr.skinImage : null);
-
-        if (preloadedImg) {
-          _applyTransSkinImageToPlayer(preloadedImg, skinPath || null, skinKey || null);
-          if (!tr.skinPath) tr.skinPath = skinPath;
-        } else {
-          // Fallback __ref__: recuperar base64 custom desde localStorage
-          if (!skinPath && (!skinURL || skinURL === "__ref__")) {
-            try {
-              const fallbackSkin = localStorage.getItem("dragonCreatorZ_skin_" + trId);
-              if (fallbackSkin) skinURL = fallbackSkin;
-            } catch(e) {}
-          }
-          if (skinPath) {
-            // Ruta local: cargar directo como hacen las razas — sin base64, liviano en red
-            // publishMyAppearance se llama desde el callback de _applyTransSkinToPlayer (asíncrono)
-            _applyTransSkinToPlayer(skinPath, skinPath, () => { publishMyAppearance && publishMyAppearance(true); });
-            if (!tr.skinPath) tr.skinPath = skinPath;
-          } else if (skinURL && skinURL !== "__ref__" && skinURL.length > 10) {
-            _applyTransSkinToPlayer(skinURL, null, () => { publishMyAppearance && publishMyAppearance(true); });
-            if (!tr.skinDataURL || tr.skinDataURL === "__ref__") tr.skinDataURL = skinURL;
-          } else {
-            console.info("[TransSkin] Transformación sin skin custom:", trId);
-          }
-        }
-
-        if (tr.auraColor && window.player) {
-          window.player.savedAuraColor = window.player.savedAuraColor || window.player.auraColor;
-          window.player.auraColor = tr.auraColor;
-        }
-        // Aplicar apariencia visual de la transformación
-        _applyTransAppearance(tr);
-        // Aplicar tamaño propio de la transformación
-        if (tr.displayW || tr.displayH) {
-          window._activeDisplayW = tr.displayW || (savedChar && savedChar.displayW) || 180;
-          window._activeDisplayH = tr.displayH || (savedChar && savedChar.displayH) || 220;
-        }
-        publishMyAppearance && publishMyAppearance(true);
-      } else {
-        showHudToast("⚠️ Transformación no disponible", "info");
-      }
       closeTransDropdown();
-      renderActionBars();
+
+      // ── Animación de transformación antes de aplicar el cambio ──
+      _playTransformSequence(trId, trData, TS);
     }
-    window.applyTransformationFromDrop = applyTransformationFromDrop;
+
+    /**
+     * Inyecta "transform" y "detransform" en SPECIAL_ACTIONS_META del CharacterSystem
+     * si aún no están registradas. Se llama la primera vez que se necesiten.
+     */
+    function _ensureTransformAnims() {
+      const CS = window.CharacterSystem;
+      if (!CS || !CS.SPECIAL_ACTIONS_META) return false;
+      if (!CS.SPECIAL_ACTIONS_META.transform) {
+        CS.SPECIAL_ACTIONS_META.transform   = { row: 12, frames: 4, fps: 6,  loop: false, label: "Transform"   };
+        CS.SPECIAL_ACTIONS_META.detransform = { row: 13, frames: 2, fps: 4,  loop: false, label: "Detransform" };
+      }
+      return true;
+    }
+
+    /**
+     * Reproduce la animación "transform", luego aplica la transformación real.
+     */
+    function _playTransformSequence(trId, trData, TS) {
+      const canAnim = _ensureTransformAnims() && csAnimator;
+
+      // Función que ejecuta la transformación efectiva (skin, stats, apariencia)
+      function _doApply() {
+        const result = TS.transformPlayer(trId);
+        if (result.success) {
+          const tr = result.transformation;
+          showHudToast(`⚡ ${tr.name}`, "xp");
+
+          const CS = window.CharacterSystem;
+          let skinPath = (trData && trData.skinPath) || tr.skinPath || null;
+          const skinKey = (trData && trData.skinKey) || tr.skinKey || null;
+          if (!skinPath && skinKey && CS && CS.SPRITE_IMAGES && CS.SPRITE_IMAGES[skinKey]) {
+            skinPath = CS.SPRITE_IMAGES[skinKey];
+          }
+          let skinURL = skinPath ? null : ((trData && trData.skinDataURL) || tr.skinDataURL || null);
+          const preloadedImg = (skinKey && csImageMap && csImageMap[skinKey] &&
+              csImageMap[skinKey].complete && csImageMap[skinKey].naturalWidth)
+            ? csImageMap[skinKey]
+            : (tr.skinImage && tr.skinImage.complete && tr.skinImage.naturalWidth ? tr.skinImage : null);
+
+          if (preloadedImg) {
+            _applyTransSkinImageToPlayer(preloadedImg, skinPath || null, skinKey || null);
+            if (!tr.skinPath) tr.skinPath = skinPath;
+          } else {
+            if (!skinPath && (!skinURL || skinURL === "__ref__")) {
+              try { const fb = localStorage.getItem("dragonCreatorZ_skin_" + trId); if (fb) skinURL = fb; } catch(e) {}
+            }
+            if (skinPath) {
+              _applyTransSkinToPlayer(skinPath, skinPath, () => { publishMyAppearance && publishMyAppearance(true); });
+              if (!tr.skinPath) tr.skinPath = skinPath;
+            } else if (skinURL && skinURL !== "__ref__" && skinURL.length > 10) {
+              _applyTransSkinToPlayer(skinURL, null, () => { publishMyAppearance && publishMyAppearance(true); });
+              if (!tr.skinDataURL || tr.skinDataURL === "__ref__") tr.skinDataURL = skinURL;
+            }
+          }
+
+          if (tr.auraColor && window.player) {
+            window.player.savedAuraColor = window.player.savedAuraColor || window.player.auraColor;
+            window.player.auraColor = tr.auraColor;
+          }
+          _applyTransAppearance(tr);
+          if (tr.displayW || tr.displayH) {
+            window._activeDisplayW = tr.displayW || (savedChar && savedChar.displayW) || 180;
+            window._activeDisplayH = tr.displayH || (savedChar && savedChar.displayH) || 220;
+          }
+          publishMyAppearance && publishMyAppearance(true);
+        } else {
+          showHudToast("⚠️ Transformación no disponible", "info");
+        }
+        renderActionBars();
+        // Volver a idle/fly tras aplicar
+        if (csAnimator) {
+          csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
+          csAnimator.play(isFlying ? "fly" : "idle");
+        }
+      }
+
+      if (!canAnim) {
+        // Sin animador: aplicar directo
+        _doApply();
+        return;
+      }
+
+      // Bloquear movimiento durante la animación
+      const animDuration = (4 / 6) * 1000; // 4 frames a 6fps ≈ 667ms
+      rpActionUntil = performance.now() + animDuration + 80;
+
+      csAnimator.setSpecialMode && csAnimator.setSpecialMode(true);
+      csAnimator.play("transform", () => {
+        // Al terminar la animación de transform → aplicar cambio visual
+        _doApply();
+      });
+    }
 
     // Aplica los overrides visuales de una transformación al CharacterSystem
     function _applyTransAppearance(tr) {
@@ -1115,58 +1167,78 @@
     function revertTransformationInGame() {
       const TS = window.TransformationsSystem;
       if (!TS) return;
-      const CS = window.CharacterSystem;
-      TS.revertTransformation();
-      if (window.player) {
-        window.player.auraColor = window.player.savedAuraColor || window.player.auraColor;
-        delete window.player.savedAuraColor;
-      }
-      // Restaurar apariencia base completa del personaje (incluyendo raza) desde el slot guardado
-      if (CS) {
-        try {
-          const slotRaw = localStorage.getItem("dragonCreatorZ_slots");
-          const activeSlot = parseInt(localStorage.getItem("dragonCreatorZ_activeSlot") || "0", 10);
-          if (slotRaw) {
-            const slots = JSON.parse(slotRaw);
-            const slot = slots[activeSlot];
-            if (slot) {
-              const app = CS.player.appearance;
-              // Restaurar raza — crítico para transformaciones como Ozaru que cambian la raza
-              if (slot.race)       app.raceId     = slot.race;
-              if (slot.faceId)     app.faceId     = slot.faceId;
-              if (slot.faceColor !== undefined) app.faceColor = slot.faceColor;
-              if (slot.hairId)     app.hairId     = slot.hairId;
-              if (slot.hairColor)  app.hairColor  = slot.hairColor;
-              if (slot.skinColor)  app.skinColor  = slot.skinColor;
-              if (slot.eyeColor)   app.eyeColor   = slot.eyeColor;
-              if (slot.browColor !== undefined)  app.browColor  = slot.browColor;
-              if (slot.pupilColor !== undefined) app.pupilColor = slot.pupilColor;
-              if (slot.clothColorA !== undefined) app.clothColorA = slot.clothColorA;
-              if (slot.clothColorB !== undefined) app.clothColorB = slot.clothColorB;
-              if (slot.topId)      app.topId      = slot.topId;
-              if (slot.bottomId)   app.bottomId   = slot.bottomId;
-              if (slot.shoesId)    app.shoesId    = slot.shoesId;
-              if (slot.glovesId)   app.glovesId   = slot.glovesId;
-              if (slot.auraColor && window.player) {
-                app.auraColor = slot.auraColor;
-                window.player.auraColor = slot.auraColor;
-              }
-              CS.invalidateHairCache && CS.invalidateHairCache();
-            }
-          }
-        } catch(e) {}
-      }
-      showHudToast("↩ Forma base restaurada", "info");
-      // Restaurar tamaño base del personaje
-      window._activeDisplayW = (savedChar && savedChar.displayW) || 180;
-      window._activeDisplayH = (savedChar && savedChar.displayH) || 220;
-      // Limpiar skin de transformación de variantCustomizations
-      _clearTransSkinFromPlayer();
-      publishMyAppearance && publishMyAppearance(true);
+
       closeTransDropdown();
-      renderActionBars();
+
+      // ── Animación de detransformación antes de restaurar ──
+      const canAnim = _ensureTransformAnims() && csAnimator;
+      const animDuration = (2 / 4) * 1000; // 2 frames a 4fps = 500ms
+
+      function _doRevert() {
+        const CS = window.CharacterSystem;
+        TS.revertTransformation();
+        if (window.player) {
+          window.player.auraColor = window.player.savedAuraColor || window.player.auraColor;
+          delete window.player.savedAuraColor;
+        }
+        if (CS) {
+          try {
+            const slotRaw = localStorage.getItem("dragonCreatorZ_slots");
+            const activeSlot = parseInt(localStorage.getItem("dragonCreatorZ_activeSlot") || "0", 10);
+            if (slotRaw) {
+              const slots = JSON.parse(slotRaw);
+              const slot = slots[activeSlot];
+              if (slot) {
+                const app = CS.player.appearance;
+                if (slot.race)       app.raceId     = slot.race;
+                if (slot.faceId)     app.faceId     = slot.faceId;
+                if (slot.faceColor !== undefined) app.faceColor = slot.faceColor;
+                if (slot.hairId)     app.hairId     = slot.hairId;
+                if (slot.hairColor)  app.hairColor  = slot.hairColor;
+                if (slot.skinColor)  app.skinColor  = slot.skinColor;
+                if (slot.eyeColor)   app.eyeColor   = slot.eyeColor;
+                if (slot.browColor !== undefined)  app.browColor  = slot.browColor;
+                if (slot.pupilColor !== undefined) app.pupilColor = slot.pupilColor;
+                if (slot.clothColorA !== undefined) app.clothColorA = slot.clothColorA;
+                if (slot.clothColorB !== undefined) app.clothColorB = slot.clothColorB;
+                if (slot.topId)      app.topId      = slot.topId;
+                if (slot.bottomId)   app.bottomId   = slot.bottomId;
+                if (slot.shoesId)    app.shoesId    = slot.shoesId;
+                if (slot.glovesId)   app.glovesId   = slot.glovesId;
+                if (slot.auraColor && window.player) {
+                  app.auraColor = slot.auraColor;
+                  window.player.auraColor = slot.auraColor;
+                }
+                CS.invalidateHairCache && CS.invalidateHairCache();
+              }
+            }
+          } catch(e) {}
+        }
+        showHudToast("↩ Forma base restaurada", "info");
+        window._activeDisplayW = (savedChar && savedChar.displayW) || 180;
+        window._activeDisplayH = (savedChar && savedChar.displayH) || 220;
+        _clearTransSkinFromPlayer();
+        publishMyAppearance && publishMyAppearance(true);
+        renderActionBars();
+        if (csAnimator) {
+          csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
+          csAnimator.play(isFlying ? "fly" : "idle");
+        }
+      }
+
+      if (!canAnim) {
+        _doRevert();
+        return;
+      }
+
+      rpActionUntil = performance.now() + animDuration + 80;
+      csAnimator.setSpecialMode && csAnimator.setSpecialMode(true);
+      csAnimator.play("detransform", () => {
+        _doRevert();
+      });
     }
-    window.revertTransformationInGame = revertTransformationInGame;
+    window.applyTransformationFromDrop = applyTransformationFromDrop;
+    window.revertTransformationInGame  = revertTransformationInGame;
 
     // Cerrar dropdown al hacer click fuera
     document.addEventListener("click", (e) => {
@@ -1197,11 +1269,9 @@
 
     // -- RP ACTIONS — ahora incluye acciones del sheet "special" --
     const RP_ACTIONS = [
-      { id:"wave",      icon:"👋", key:"Z", label:"SALUDAR",  title:"Saludar",    anim:"idle",         text:"SALUDO",   color:"#f5c400", sheet:"base" },
       { id:"train",     icon:"💪", key:"Q", label:"ENTRENAR", title:"Entrenar",   anim:"training",     text:"ENTRENA",  color:"#ff7043", sheet:"special", hold:2200 },
       { id:"meditate",  icon:"🧘", key:"E", label:"MEDITAR",  title:"Meditar",    anim:"meditate",     text:"MEDITA",   color:"#00e5ff", sheet:"base",    hold:2200 },
       { id:"sit",       icon:"🪑", key:"R", label:"SENTARSE", title:"Sentarse",   anim:"sit",          text:"SENTADO",  color:"#c8cfe8", sheet:"special", hold:1800 },
-      { id:"warmup",    icon:"🔥", key:"F", label:"CALENTAR", title:"Calentar",   anim:"run",          text:"CALIENTA", color:"#ffca28", sheet:"base",    hold:1600 },
       { id:"emote",     icon:"🎭", key:"C", label:"EMOTE",    title:"Emote",      anim:"emote",        text:"EMOTE",    color:"#aa00ff", sheet:"special" },
       { id:"eat",       icon:"🍖", key:"V", label:"COMER",    title:"Comer",      anim:"eat_drink",    text:"COME",     color:"#66bb6a", sheet:"special", objectIcon:"🍖", hold:1300 },
       { id:"object",    icon:"📦", key:"B", label:"OBJETO",   title:"Objeto",     anim:"hold_item",    text:"OBJETO",   color:"#90caf9", sheet:"special", objectIcon:"📦", hold:1300 },
@@ -1241,13 +1311,14 @@
           ].join("");
         } else {
           const transActive = window.TransformationsSystem?.playerTransState?.activeTransformation;
-          skills.innerHTML = RP_ACTIONS.map(a =>
+          skills.innerHTML = RP_ACTIONS.map((a, idx) =>
             makePcSkill({ icon:a.icon, key:a.key, title:`${a.title} [${a.key}]`, action:`performRpAction('${a.id}')` })
           ).concat([
+            makePcSkill({ icon:"💬", key:"Z", title:"Interactuar [Z]", action:"interactNearby()", id:"skillInteract" }),
+            makePcSkill({ icon:"🦅", key:"F", title:"Volar [F]", action:"toggleFly()", id:"skillFly", cls:isFlying?"run-active":"" }),
             makePcSkill({ icon:"⚔️", key:"X", title:"Modo combate [X]", action:"setControlMode('combat')" }),
             makePcSkill({ icon:"💨", key:"SHIFT", title:"Correr", action:"toggleRunPC()", id:"skillRun", cls:isRunning?"run-active":"" }),
           ]).concat([
-            makePcSkill({ icon:"💬", key:"G", title:"Interactuar [G]", action:"interactNearby()", id:"skillInteract" }),
             `<div class="skill-btn trans-dropdown-wrap ${transActive ? 'trans-active' : ''}" id="skillTransBtn" onclick="toggleTransDropdown(event)" title="Transformaciones [T]"><span class="skill-icon">⚡</span><span class="skill-key">${transActive ? '★' : 'T'}</span></div>`,
           ]).join("");
         }
@@ -1272,6 +1343,7 @@
               makeMobileAction({ icon:"⚔️", label:"COMBATE", action:"setControlMode('combat')", cls:"btn-interact" }),
           ]).concat([
             makeMobileAction({ icon:"💬", label:"HABLAR", action:"interactNearby()", cls:"btn-interact" }),
+            makeMobileAction({ icon:"🦅", label:isFlying?"VUELO ON":"VOLAR", action:"toggleFly()", cls:"btn-run" + (isFlying ? " run-active" : ""), id:"mobileFlyBtn" }),
             `<div class="action-btn btn-run ${isRunning ? "run-active" : ""}" id="mobileRunBtn" onclick="toggleRunMobile()" style="border-radius:12px;width:100%;grid-column:span 2;height:calc(var(--btn-size)*0.7);"><span class="btn-icon">💨</span><span class="btn-label" id="runBtnLabel">CORRER: ${isRunning ? "ON" : "OFF"}</span></div>`,
           ]).join("");
           // Update static mobileTransBtn
@@ -1295,6 +1367,9 @@
         controlMode = mode === "combat" ? "combat" : "rp";
         isCombatMode = controlMode === "combat";
       }
+      // Liberar freeze de combo si estaba activo
+      if (csAnimator && csAnimator._freezeFrame) { csAnimator._freezeFrame = false; }
+      if (window._comboTimeout) { clearTimeout(window._comboTimeout); window._comboTimeout = null; }
       const CS = window.CharacterSystem;
       if (csAnimator && csAnimator.setBattleMode) {
         if (isCombatMode) {
@@ -1315,8 +1390,8 @@
 
     function combatEndAnim() {
       if (!csAnimator) return;
-      if (csAnimator.battleMode) csAnimator.play(isFlying ? "fly_combat" : "combat_idle");
-      else csAnimator.play(isFlying ? "fly" : "idle");
+      if (csAnimator._freezeFrame) csAnimator._freezeFrame = false;
+      csAnimator.play(isFlying ? "fly" : (csAnimator.battleMode ? "combat_idle" : "idle"));
     }
     window.setControlMode = setControlMode;
 
@@ -2169,12 +2244,64 @@
       });
     })();
 
+    // -- MECANICO INTERIOR BACKGROUND IMAGE --
+    let mecanicoInteriorBgImage = null;
+    let directorZInteriorBgImage = null;
+    let estrategiaInteriorBgImage = null;
+    (function() {
+      const img = new Image();
+      img.onload = () => { estrategiaInteriorBgImage = img; };
+      img.onerror = () => { console.warn("[game] No se pudo cargar Mapas/Interiores/Estrategia.png"); };
+      img.src = "Mapas/Interiores/Estrategia.png";
+    })();
+    (function() {
+      const img = new Image();
+      img.onload = () => { directorZInteriorBgImage = img; };
+      img.onerror = () => { console.warn("[game] No se pudo cargar Mapas/Interiores/DirectorZ.png"); };
+      img.src = "Mapas/Interiores/DirectorZ.png";
+    })();
+    (function() {
+      const img = new Image();
+      img.onload = () => { mecanicoInteriorBgImage = img; };
+      img.onerror = () => { console.warn("[game] No se pudo cargar Mapas/Interiores/Mecanico.png"); };
+      img.src = "Mapas/Interiores/Mecanico.png";
+    })();
+
+    // -- DECORACIONES --
+    // Para agregar una imagen nueva: añadir su nombre al objeto DECOR_IMGS.
+    // Para colocarla en el mapa: añadir una entrada en TALLER_DECOR con { key, x, y }.
+    const DECOR_IMGS = {};
+    (function() {
+      const archivos = ["MesaTaller", "NaveConstruccion", "NoPasar", "Cajas"];
+      archivos.forEach(nombre => {
+        const img = new Image();
+        img.onload = () => { DECOR_IMGS[nombre] = img; };
+        img.onerror = () => { console.warn("[game] No se pudo cargar Mapas/decoraciones/" + nombre + ".png"); };
+        img.src = "Mapas/decoraciones/" + nombre + ".png";
+      });
+    })();
+
+    // Lista de decoraciones del Taller Mecánico.
+    // Para agregar una nueva: { key: "NombreArchivo", x: col, y: fila }
+    const TALLER_DECOR = [
+      { key: "MesaTaller",      x: 12.6, y: 21 },
+      { key: "NaveConstruccion", x: 43,   y: 17.3 },
+      { key: "NoPasar",          x: 14,   y: 16   },
+      { key: "NoPasar",          x: 46.9,   y: 19   },
+      { key: "NoPasar",          x: 14,   y: 16   },
+      { key: "Cajas",          x: 46,   y: 29   },
+    ];
+
     // -- MAP DEFINITIONS --
     const MAPS = {
       lobby:  { w:80, h:60, name:"BASE LOBBY",     bgColor:"#0a1020" },
       earth:  { w:120, h:80, name:"PLANETA TIERRA", bgColor:"#0a1510" },
       sky:    { w:120, h:80, name:"ATALAYA DE KAMISAMA", bgColor:"#87CEEB", alwaysFly:true },
       space:  { w:120, h:80, name:"ESPACIO",        bgColor:"#08090f" },
+      director_z_interior:  { w:60, h:44, name:"DIRECTOR Z",        bgColor:"#060c1a", indoor:true },
+      taller_interior:      { w:56, h:38, name:"TALLER MECÁNICO",   bgColor:"#0d1016", indoor:true },
+      estrategia_interior:  { w:56, h:38, name:"SALA DE ESTRATEGIA",bgColor:"#0a0d18", indoor:true },
+      simulador_combate:    { w:48, h:36, name:"SIMULADOR DE COMBATE", bgColor:"#0a0510", indoor:true },
       capsule_corp: { w:96, h:72, name:"CORPORACION CAPSULA", bgColor:"#0b1424", indoor:true },
       karin_tower: { w:84, h:86, name:"TORRE DE KARIN", bgColor:"#13110d", indoor:true },
       galactic_patrol: { w:104, h:78, name:"PATRULLA GALACTICA", bgColor:"#07131f", indoor:true },
@@ -2185,10 +2312,14 @@
     };
 
     const MAP_STARTS = {
-      lobby: { x:40, y:30 },
+      lobby: { x:40, y:35 },
       earth: { x:60, y:40 },
       sky:   { x:60, y:40 },
       space: { x:60, y:40 },
+      director_z_interior:  { x:30, y:28 },
+      taller_interior:      { x:28, y:32 },
+      estrategia_interior:  { x:28, y:20 },
+      simulador_combate:    { x:24, y:28 },
       capsule_corp: { x:48, y:62 },
       karin_tower: { x:42, y:74 },
       galactic_patrol: { x:52, y:66 },
@@ -2200,9 +2331,16 @@
 
     const PORTAL_DESTINATIONS = {
       lobby: [
-        { map:"earth", label:"TIERRA", cls:"portal-btn-earth" },
-        { map:"space", label:"ESPACIO", cls:"portal-btn-space" },
+        { map:"director_z_interior",  label:"DIRECTOR Z",        cls:"portal-btn-sky"   },
+        { map:"taller_interior",       label:"TALLER MECÁNICO",   cls:"portal-btn-earth" },
+        { map:"estrategia_interior",   label:"SALA DE ESTRATEGIA",cls:"portal-btn-space" },
+        { map:"earth",                 label:"TIERRA",             cls:"portal-btn-earth" },
+        { map:"space",                 label:"ESPACIO",            cls:"portal-btn-space" },
       ],
+      director_z_interior:  [{ map:"lobby", label:"VOLVER AL LOBBY", cls:"portal-btn-earth" }],
+      taller_interior:      [{ map:"lobby", label:"VOLVER AL LOBBY", cls:"portal-btn-earth" }],
+      estrategia_interior:  [{ map:"lobby", label:"VOLVER AL LOBBY", cls:"portal-btn-earth" }, { map:"simulador_combate", label:"SIMULADOR DE COMBATE", cls:"portal-btn-sky" }],
+      simulador_combate:    [{ map:"estrategia_interior", label:"VOLVER A ESTRATEGIA", cls:"portal-btn-earth" }],
       earth: [
         { map:"capsule_corp", label:"CORPORACION CAPSULA", cls:"portal-btn-earth" },
         { map:"karin_tower", label:"TORRE DE KARIN", cls:"portal-btn-earth" },
@@ -2246,16 +2384,104 @@
     const worldMaps = {};
 
     function generateLobbyMap() {
+      // Mapa basado en la arena octogonal de Lobby.png
+      // Tile 5 = solido/agua/espacio (no caminable)
+      // Tile 2 = piso de piedra (caminable)
+      // Tile 1 = agua decorativa (borde, no caminable — se usa tile 5 en isWalkable)
+      // Tile 3 = portal
+      // El mapa es 80x60. La arena empieza aprox en tile 10,8 y termina en 70,55.
       const { w, h } = MAPS.lobby;
       const map = [];
-      for (let y=0;y<h;y++){map[y]=[];for(let x=0;x<w;x++)map[y][x]=0;}
-      for (let y=22;y<38;y++) for (let x=28;x<52;x++) map[y][x]=2;
-      for (let y=28;y<32;y++) for (let x=37;x<43;x++) map[y][x]=1;
-      for (let y=38;y<42;y++) for (let x=37;x<43;x++) map[y][x]=3;
-      for (let y=44;y<54;y++) for (let x=20;x<60;x++) map[y][x]=6;
-      for (let y=0;y<h;y++) map[y][40]=2;
-      for (let x=0;x<w;x++) map[30][x]=2;
-      for (let i=0;i<20;i++){const tx=Math.floor(Math.random()*w),ty=Math.floor(Math.random()*h);if(map[ty][tx]===0)map[ty][tx]=7;}
+
+      // Todo el fondo es espacio/agua = no caminable (tile 5)
+      for (let y=0;y<h;y++){map[y]=[];for(let x=0;x<w;x++)map[y][x]=5;}
+
+      // ── ARENA CENTRAL OCTOGONAL ──────────────────────────────────────────
+      // La arena tiene forma octogonal. Se construye como un rect con esquinas cortadas.
+      // Rect base: columnas 14–66, filas 12–52
+      // Esquinas cortadas diagonalmente (8 tiles por esquina)
+      for (let y=12;y<52;y++) {
+        for (let x=14;x<66;x++) {
+          // Corte esquina superior izquierda
+          const dTL = (12-y) + (14-x); // negativo dentro del area
+          // Corte esquina superior derecha
+          const dTR = (12-y) + (x-65);
+          // Corte esquina inferior izquierda
+          const dBL = (y-51) + (14-x);
+          // Corte esquina inferior derecha
+          const dBR = (y-51) + (x-65);
+          if (dTL > -8 && dTL > 0) continue;
+          if (dTR > -8 && dTR > 0) continue;
+          if (dBL > -8 && dBL > 0) continue;
+          if (dBR > -8 && dBR > 0) continue;
+          map[y][x] = 2; // piso de arena
+        }
+      }
+
+      // ── PASILLO ARRIBA CENTRO (acceso al espacio negro / Director Z) ──────
+      // La imagen muestra un pasillo central que sube hacia el espacio arriba
+      for (let y=4;y<12;y++) for (let x=34;x<46;x++) map[y][x]=2;
+
+      // ── PASILLO ABAJO CENTRO (escaleras de entrada) ───────────────────────
+      for (let y=52;y<57;y++) for (let x=34;x<46;x++) map[y][x]=2;
+
+      // ── PASILLO IZQUIERDA (acceso plataforma Taller) ──────────────────────
+      for (let y=20;y<32;y++) for (let x=4;x<14;x++) map[y][x]=2;
+
+      // ── PASILLO DERECHA (acceso plataforma Estrategia) ───────────────────
+      for (let y=11;y<32;y++) for (let x=66;x<76;x++) map[y][x]=2;
+
+      // ── PLATAFORMA ARRIBA IZQUIERDA — Taller Mecánico ────────────────────
+      // Plataforma independiente conectada por pasillo izquierdo
+      for (let y=4;y<22;y++) for (let x=2;x<16;x++) map[y][x]=2;
+
+      // ── PLATAFORMA ARRIBA DERECHA — Sala de Estrategia ───────────────────
+      // Plataforma independiente conectada por pasillo derecho
+      for (let y=4;y<22;y++) for (let x=64;x<78;x++) map[y][x]=2;
+
+      // ── BLOQUES SÓLIDOS — edificios (colisión) ────────────────────────────
+      // Director Z: arriba centro sobre el espacio negro
+      // Fondo espacio arriba (no caminable)
+      for (let y=0;y<4;y++) for (let x=30;x<50;x++) map[y][x]=5;
+      // Colisión lateral del edificio Director Z — bloquea los lados y=4..9
+      // El pasillo central x=37..43 queda libre para entrar
+      for (let y=4;y<10;y++) {
+        for (let x=30;x<50;x++) {
+          if (x >= 37 && x <= 43) continue; // pasillo libre
+          map[y][x] = 5;
+        }
+      }
+      // Pared sur del edificio: bloquea todo el ancho en y=10 (justo encima de la puerta)
+      for (let x=30;x<50;x++) map[10][x] = 5;
+
+      // Taller Mecánico — colisión en la plataforma izq (deja entrada abajo)
+      for (let y=4;y<16;y++) for (let x=2;x<16;x++) map[y][x]=5;
+      // Entrada taller: abajo de la plataforma izq
+      for (let x=6;x<12;x++) map[16][x]=2; map[17][9]=2; map[17][8]=2;
+
+      // Sala de Estrategia — colisión lateral y=4..9, puerta central libre
+      for (let y=4;y<10;y++) {
+        for (let x=64;x<78;x++) {
+          if (x >= 69 && x <= 73) continue; // puerta libre al centro
+          map[y][x] = 5;
+        }
+      }
+      // Pared sur Estrategia: bloquea todo el ancho en y=10
+      for (let x=64;x<78;x++) map[10][x] = 5;
+
+      // ── PORTALES (tile 3) ─────────────────────────────────────────────────
+      // Portal Director Z: justo frente a la puerta (y=11, antes de la pared en y=10)
+      map[11][37]=3; map[11][38]=3; map[11][39]=3; map[11][40]=3; map[11][41]=3; map[11][42]=3;
+
+      // Portal Taller Mecánico: entrada inferior de la plataforma izq
+      map[11][18]=3; map[11][19]=3;
+
+      // Portal Sala de Estrategia: justo frente a la puerta (y=11)
+      map[11][69]=3; map[11][70]=3; map[11][71]=3; map[11][72]=3; map[11][73]=3;
+
+      // Portal salida lobby (abajo centro) — porta a tierra/espacio
+      map[56][37]=3; map[56][38]=3; map[56][39]=3; map[56][40]=3; map[56][41]=3; map[56][42]=3;
+
       return map;
     }
 
@@ -2400,6 +2626,161 @@
       return map;
     }
 
+    function generateDirectorZMap() {
+      const { w, h } = MAPS.director_z_interior; // 60 x 44
+      const map = createMap(w, h, 17); // todo paredes
+
+      // Sala principal completamente vacia
+      fillRectMap(map, 2, 2, w-4, h-4, 16);
+
+      // Habitacion del Director — esquina superior derecha
+      const rX = w-18, rY = 2, rW = 16, rH = 11;
+      addRoom(map, rX, rY, rW, rH, 16, 17);
+      // Entrada: 3 tiles abiertos en la pared inferior de la habitacion
+      map[rY+rH-1][rX+4] = 16;
+      map[rY+rH-1][rX+5] = 16;
+      map[rY+rH-1][rX+6] = 16;
+
+      // Portal de salida al lobby (abajo centro)
+      const px = Math.floor(w/2);
+      map[h-3][px-1]=3; map[h-3][px]=3; map[h-3][px+1]=3;
+      return map;
+    }
+
+    function generateTallerMap() {
+      const { w, h } = MAPS.taller_interior;
+      const map = createMap(w, h, 17);
+      // Nave principal abierta
+      fillRectMap(map, 4, 4, w-8, h-10, 16);
+      // Zona de trabajo principal (fondo diferente)
+      fillRectMap(map, 6, 6, w-12, Math.floor(h/2)-4, 18);
+      // Fosa mecánica central
+      fillRectMap(map, Math.floor(w/2)-5, 8, 10, 8, 5); // bloqueada — fosa
+      // Cuartos laterales
+      addRoom(map, 5, 5, 14, 12, 16, 17);   // oficina mecánico
+      addRoom(map, w-20, 5, 14, 12, 16, 17); // depósito de piezas
+      addRoom(map, 5, 20, 14, 12, 16, 17);   // vestuario
+      addRoom(map, w-20, 20, 14, 12, 16, 17); // sala de pruebas
+      // Corredor inferior de taller abierto
+      fillRectMap(map, 4, Math.floor(h/2)+2, w-8, 12, 16);
+      // Decoración — piezas y cajas
+      for (let i=0;i<14;i++) {
+        const x=10+(i*19)%(w-20), y=10+(i*11)%(h-16);
+        if (map[y]?.[x]===16||map[y]?.[x]===18) map[y][x]=22+(i%4);
+      }
+      // Portal salida
+      map[h-5][Math.floor(w/2)-1]=3; map[h-5][Math.floor(w/2)]=3; map[h-5][Math.floor(w/2)+1]=3;
+      return map;
+    }
+
+    function generateEstrategiaMap() {
+      // Layout: izq=Gimnasio, centro=Arena libre, der=Bases de datos
+      // Puerta norte (arriba centro) → simulador. Puerta sur (abajo centro) → lobby.
+      const { w, h } = MAPS.estrategia_interior; // 56 x 38
+      const map = createMap(w, h, 17);
+
+      // Piso transitable completo
+      fillRectMap(map, 2, 2, w-4, h-4, 16);
+
+      // ── Pared norte sobre la puerta ──────────────────────────────────────
+      const cx = Math.floor(w/2); // 28
+      // Fila 3: pared completa (bloquea caminar sobre la puerta)
+      for (let x=2; x<w-2; x++) map[3][x] = 17;
+      // Fila 4: portal (3 tiles abiertos al centro)
+      map[4][cx-1]=3; map[4][cx]=3; map[4][cx+1]=3;
+      // Aseguramos que los tiles laterales de fila 4 sean también pared
+      for (let x=2; x<cx-1; x++) map[4][x] = 17;
+      for (let x=cx+2; x<w-2; x++) map[4][x] = 17;
+
+      // ── ZONA IZQUIERDA: Gimnasio (x: 2..17) ─────────────────────────────
+      // Sacos de boxeo: objetos bloqueantes col x=4, filas distribuidas
+      // Saco 1
+      map[5][4]=22; map[5][5]=22;
+      map[6][4]=22; map[6][5]=22;
+      // Saco 2
+      map[9][4]=22; map[9][5]=22;
+      map[10][4]=22; map[10][5]=22;
+      // Saco 3
+      map[13][4]=22; map[13][5]=22;
+      map[14][4]=22; map[14][5]=22;
+      // Pesas: objetos en x=8..10
+      map[5][8]=25; map[5][9]=25; map[5][10]=25;
+      map[6][8]=25; map[6][9]=25; map[6][10]=25;
+      map[9][8]=25; map[9][9]=25; map[9][10]=25;
+      map[10][8]=25; map[10][9]=25; map[10][10]=25;
+      // Área de combate (piso diferente) x:3..16, y:17..33
+      fillRectMap(map, 3, 18, 14, 14, 18);
+      // Estiramiento: colchonetas x:3..8, y:20..22
+      map[20][3]=24; map[20][4]=24; map[20][5]=24;
+      map[21][3]=24; map[21][4]=24; map[21][5]=24;
+
+      // ── ZONA DERECHA: Bases de datos (x: 38..53) ─────────────────────────
+      // Servidores principales (objetos bloqueantes)
+      fillRectMap(map, 39, 5, 5, 4, 23);   // servidor 1
+      fillRectMap(map, 46, 5, 5, 4, 23);   // servidor 2
+      // Almacenamiento de datos
+      fillRectMap(map, 39, 14, 5, 4, 27);  // almacenamiento 1
+      fillRectMap(map, 46, 14, 5, 4, 27);  // almacenamiento 2
+      // PCs / computadoras
+      map[23][39]=22; map[23][40]=22; map[23][41]=22;
+      map[24][39]=22; map[24][40]=22; map[24][41]=22;
+      map[23][44]=22; map[23][45]=22; map[23][46]=22;
+      map[24][44]=22; map[24][45]=22; map[24][46]=22;
+      map[27][39]=22; map[27][40]=22; map[27][41]=22;
+      map[28][39]=22; map[28][40]=22; map[28][41]=22;
+
+      // portal al simulador ya definido arriba en fila 4
+
+      // ── Portal al lobby — abajo centro ───────────────────────────────────
+      map[h-3][cx-1]=3; map[h-3][cx]=3; map[h-3][cx+1]=3;
+
+      return map;
+    }
+
+    function generateSimuladorMap() {
+      const { w, h } = MAPS.simulador_combate; // 48 x 36
+      const map = createMap(w, h, 17);
+
+      // Piso transitable completo
+      fillRectMap(map, 2, 2, w-4, h-4, 16);
+
+      // ── Separadores de ronda (paredes con 3 tiles de puerta al centro) ───
+      // Separador ronda 1→2 (y=12)
+      for (let x=2; x<w-2; x++) {
+        if (x < 22 || x > 24) map[12][x] = 17;
+      }
+      // Separador ronda 2→3 (y=22)
+      for (let x=2; x<w-2; x++) {
+        if (x < 22 || x > 24) map[22][x] = 17;
+      }
+
+      // ── Zona ronda 1 (y 2..11): decoración básica ───────────────────────
+      map[4][5]=22; map[4][6]=22;
+      map[4][w-6]=22; map[4][w-7]=22;
+
+      // ── Zona ronda 2 (y 13..21): más obstáculos ──────────────────────────
+      map[15][5]=23; map[15][6]=23; map[15][7]=23;
+      map[15][w-6]=23; map[15][w-7]=23; map[15][w-8]=23;
+      map[19][10]=23; map[19][11]=23;
+      map[19][w-11]=23; map[19][w-12]=23;
+
+      // ── Zona ronda 3 + jefe (y 23..33): arena del jefe ──────────────────
+      // Columnas decorativas
+      map[25][4]=27; map[25][5]=27;
+      map[25][w-5]=27; map[25][w-6]=27;
+      map[30][4]=27; map[30][5]=27;
+      map[30][w-5]=27; map[30][w-6]=27;
+
+      // ── Pared norte — bloquea salir por arriba ───────────────────────────
+      for (let x=2; x<w-2; x++) map[2][x] = 17;
+
+      // ── Portal de salida — abajo centro ──────────────────────────────────
+      const cx = Math.floor(w/2);
+      map[h-3][cx-1]=3; map[h-3][cx]=3; map[h-3][cx+1]=3;
+
+      return map;
+    }
+
     const TILE_COLORS = {
       0:"#2d5a27",1:"#1565c0",2:"#5a5a6e",3:"#8b1fff",4:"#c9a84c",5:"#08090f",
       6:"#3a3040",7:"#1a3a18",8:"#c9a84c",9:"#616161",10:"#04080f",11:"#2a2a3a",12:"#3a1a0a",13:"#1a1a3a",
@@ -2508,15 +2889,14 @@
       const active = document.activeElement;
       if (active && (active.tagName==="INPUT"||active.tagName==="TEXTAREA")) return;
       keys[e.code] = true;
-      if (e.code==="KeyZ") { e.preventDefault(); runActionSlot(0); }
-      if (e.code==="KeyQ") { e.preventDefault(); runActionSlot(1); }
-      if (e.code==="KeyE") { e.preventDefault(); runActionSlot(2); }
-      if (e.code==="KeyR") { e.preventDefault(); runActionSlot(3); }
-      if (e.code==="KeyF") { e.preventDefault(); runActionSlot(4); }
-      if (e.code==="KeyC") { e.preventDefault(); runActionSlot(5); }
-      if (e.code==="KeyV") { e.preventDefault(); runActionSlot(6); }
-      if (e.code==="KeyB") { e.preventDefault(); runActionSlot(7); }
-      if (e.code==="KeyG") { e.preventDefault(); interactNearby(); }
+      if (e.code==="KeyZ") { e.preventDefault(); if (controlMode === "combat") runActionSlot(0); else interactNearby(); }
+      if (e.code==="KeyQ") { e.preventDefault(); runActionSlot(controlMode === "combat" ? 1 : 0); }
+      if (e.code==="KeyE") { e.preventDefault(); runActionSlot(controlMode === "combat" ? 2 : 1); }
+      if (e.code==="KeyR") { e.preventDefault(); runActionSlot(controlMode === "combat" ? 3 : 2); }
+      if (e.code==="KeyF") { e.preventDefault(); if (controlMode === "combat") runActionSlot(4); else toggleFly(); }
+      if (e.code==="KeyC") { e.preventDefault(); runActionSlot(controlMode === "combat" ? 5 : 3); }
+      if (e.code==="KeyV") { e.preventDefault(); runActionSlot(controlMode === "combat" ? 6 : 4); }
+      if (e.code==="KeyB") { e.preventDefault(); runActionSlot(controlMode === "combat" ? 7 : 5); }
       if (e.code==="KeyX") {
         e.preventDefault();
         if (window.PvpSystem?.isFighter()) return;
@@ -2524,6 +2904,7 @@
       }
       if (e.code==="KeyP") { e.preventDefault(); window.PvpSystem?.togglePartyPanel(); }
       if (e.code==="KeyI") { e.preventDefault(); openInventoryPanel(); }
+      if (e.code==="KeyH") { e.preventDefault(); toggleFly(); }
       if (e.code==="Escape") { closeInventoryPanel(); if (window.PvpSystem?.isFighter()) window.requestMutualEnd?.(); }
       if (e.code==="ShiftLeft"||e.code==="ShiftRight") setRunState(true);
     });
@@ -2541,48 +2922,109 @@
     window.addEventListener("touchend", () => { if(!joystick.active)return; joystick.active=false; joystick.dx=0; joystick.dy=0; jk.style.transform="translate(0,0)"; });
 
     // -- NPCs --
+    // skinPath: PNG propio en Skins/ → se usa tal cual, sin capas de ropa ni personalización.
+    // Sin skinPath: se renderiza con el sheet genérico de su raceId (igual que antes).
     const NPC_DEFS = {
       lobby: [
-        { id:"director",name:"DIRECTOR Z",x:63*TILE,y:12*TILE,color:"#f5c400",dialogs:[{text:"¡Bienvenido a la Base! Este es el punto de encuentro de todos los guerreros. Aquí planifican sus aventuras antes de viajar.",opts:[{label:"¿A dónde puedo viajar?",next:1},{label:"¡Gracias!",next:-1}]},{text:"Tenés dos destinos: la Tierra, con sus ciudades y zonas emblemáticas, y el Espacio, con naves y planetas. Usá el portal al centro.",opts:[{label:"Entendido.",next:-1}]}]},
-        { id:"mecanico",name:"MECÁNICO",x:12*TILE,y:14*TILE,color:"#9e9e9e",dialogs:[{text:"Eh, ¿tu casa rodante está bien? Las trailers son el espacio personal de cada guerrero. Podés decorarla e invitar gente.",opts:[{label:"¿Cómo la invoco?",next:1},{label:"Ok.",next:-1}]},{text:"Presioná Q (o el botón TRAILER) para invocarla. Va a aparecer en el mapa. ¡Nadie puede entrar sin que vos los invites!",opts:[{label:"Genial.",next:-1}]}]},
-        { id:"portero",name:"GUARDIÁN DEL PORTAL",x:40*TILE,y:28*TILE,color:"#8b1fff",dialogs:[{text:"Este portal conecta con los otros mundos. Tierra y Espacio. ¡Listo para partir?",opts:[{label:"Ir a la Tierra",next:-2},{label:"Ir al Espacio",next:-3},{label:"No, quedo acá.",next:-1}]}]},
-        { id:"estratega",name:"ESTRATEGA",x:40*TILE,y:46*TILE,color:"#00e5ff",dialogs:[{text:"La Sala de Estrategia es donde planificamos cada misión. Coordiná con tu equipo antes de partir.",opts:[{label:"¿Qué tipo de misiones?",next:1},{label:"Entendido.",next:-1}]},{text:"Desde acá se coordinan las batallas, se reparten roles y se diseñan las tácticas de combate.",opts:[{label:"¡A planificar!",next:-1}]}]},
+        { id:"director",name:"DIRECTOR Z",x:36*TILE,y:11*TILE,color:"#f5c400",
+          skinPath:"Skins/DirectorZ.png",
+          dialogs:[{text:"¡Bienvenido a la Base! Este es el punto de encuentro de todos los guerreros. Usá los portales en las puertas para entrar a los edificios.",opts:[{label:"¿A dónde puedo viajar?",next:1},{label:"¡Gracias!",next:-1}]},{text:"Tenés tres edificios: el Director Z al centro-arriba, el Taller Mecánico a la izquierda y la Sala de Estrategia a la derecha. Abajo está el portal a Tierra y Espacio.",opts:[{label:"Entendido.",next:-1}]}]},
+        { id:"portero",name:"GUARDIÁN DEL PORTAL",x:40*TILE,y:48*TILE,color:"#8b1fff",
+          skinPath:"Skins/Portal.png",
+          dialogs:[{text:"El portal de abajo conecta con los otros mundos. ¿Listo para partir?",opts:[{label:"Ir a la Tierra",next:-2},{label:"Ir al Espacio",next:-3},{label:"No, quedo acá.",next:-1}]}]},
+      ],
+      director_z_interior: [],
+      taller_interior: [
+        { id:"tal_mecanico",name:"MECÁNICO JEFE",x:28*TILE,y:18*TILE,color:"#9e9e9e",
+          skinPath:"Skins/Mecanica.png",
+          dialogs:[{text:"Bienvenido al Taller Mecánico. Aquí reparamos armaduras, naves y equipos de combate. ¿Tu equipamiento está en buen estado?",opts:[{label:"¿Qué podés reparar?",next:1},{label:"Todo bien, gracias.",next:-1}]},{text:"Armaduras saiyan, trajes de androide, escudos de energía... Si tiene tecnología, yo lo reparo. Dejá tu equipo en el mostrador.",opts:[{label:"Perfecto.",next:-1}]}]},
+        { id:"tal_ayudante",name:"APRENDIZ",x:10*TILE,y:21.7*TILE,color:"#ff6a00",
+          skinPath:"Skins/RobotNPC.png", defaultAnim:"base_view",
+          customMeta:{ row:0, frames:3, fps:4, loop:true },
+          dialogs:[{text:"Estoy aprendiendo a calibrar los escáneres de poder. ¡Algún día voy a fabricar un detector de ki tan preciso como el de la Patrulla Galactica!",opts:[{label:"¡Ánimo!",next:-1}]}]},
+        { id:"tal_inventario",name:"ENCARGADA DE STOCK",x:44*TILE,y:28*TILE,color:"#00e676",
+          skinPath:"Skins/RobotNPC.png",
+          dialogs:[{text:"El inventario del taller está completo. Tenemos repuestos para naves de Cápsula Corp, piezas saiyan y componentes androide.",opts:[{label:"Qué variedad.",next:-1}]}]},
+      ],
+      simulador_combate: [], // poblado dinámicamente por las oleadas
+      estrategia_interior: [
+        { id:"est_estratega",name:"ESTRATEGA JEFE",x:28*TILE,y:16*TILE,color:"#00e5ff",
+          skinPath:"Skins/EstrategaJefe.png",
+          dialogs:[{text:"La Sala de Estrategia es donde planificamos cada misión. Coordiná con tu equipo antes de partir a cualquier zona de conflicto.",opts:[{label:"¿Qué tipo de misiones?",next:1},{label:"Entendido.",next:-1}]},{text:"Defensa de planetas, intercepción de naves enemigas, rescate de civiles... Cada misión tiene su propia táctica. Nada se improvisa.",opts:[{label:"¡A planificar!",next:-1}]}]},
+        { id:"est_cartografo",name:"CARTÓGRAFO",x:10*TILE,y:10*TILE,color:"#f5c400",
+          skinPath:"Skins/Cartografo.png",
+          dialogs:[{text:"Estoy actualizando los mapas de todos los sectores conocidos. El espacio cambia constantemente con los movimientos de las flotas.",opts:[{label:"Fascinante trabajo.",next:-1}]}]},
+        { id:"est_comunicadora",name:"OFICIAL DE COMUNICACIONES",x:44*TILE,y:10*TILE,color:"#aa00ff",
+          skinPath:"Skins/Comunicadora.png",
+          dialogs:[{text:"Las líneas de comunicación segura están activas. Cualquier información clasificada que necesites, pasá por mi módulo.",opts:[{label:"Lo tendré en cuenta.",next:-1}]}]},
       ],
       earth: [
-        { id:"bulma",name:"BULMA",x:45*TILE,y:38*TILE,color:"#2979ff",dialogs:[{text:"¡Estás en Ciudad Oeste! Capsule Corp está aquí cerca.",opts:[{label:"Qué hay en el bosque?",next:1},{label:"Gracias.",next:-1}]},{text:"En el bosque encontrarás la Kame-House si cruzás el ocano.",opts:[{label:"Entendido.",next:-1}]}]},
-        { id:"krillin",name:"KRILLIN",x:38*TILE,y:42*TILE,color:"#ff9800",dialogs:[{text:"¡Oe! Este es el planeta Tierra. Zona de roleplay libre.",opts:[{label:"¡Perfecto!",next:-1}]}]},
+        { id:"bulma",name:"BULMA",x:45*TILE,y:38*TILE,color:"#2979ff",
+          skinPath:"Skins/Bulma.png",
+          dialogs:[{text:"¡Estás en Ciudad Oeste! Capsule Corp está aquí cerca.",opts:[{label:"Qué hay en el bosque?",next:1},{label:"Gracias.",next:-1}]},{text:"En el bosque encontrarás la Kame-House si cruzás el ocano.",opts:[{label:"Entendido.",next:-1}]}]},
+        { id:"krillin",name:"KRILLIN",x:38*TILE,y:42*TILE,color:"#ff9800",
+          skinPath:"Skins/Krillin.png",
+          dialogs:[{text:"¡Oe! Este es el planeta Tierra. Zona de roleplay libre.",opts:[{label:"¡Perfecto!",next:-1}]}]},
       ],
       space: [
-        { id:"ginyu",name:"CAP. GINYU",x:32*TILE,y:22*TILE,color:"#e040fb",dialogs:[{text:"Bienvenido a la nave de Freezer... El Planeta Central est al sureste.",opts:[{label:"¡Qué es el Planeta Central?",next:1},{label:"Gracias.",next:-1}]},{text:"Es la sede de la Patrulla Intergaláctica.",opts:[{label:"Interesante.",next:-1}]}]},
-        { id:"jaco",name:"JACO",x:82*TILE,y:17*TILE,color:"#00e5ff",dialogs:[{text:"¡Alto! Esta es la base de la Patrulla Intergaláctica.",opts:[{label:"¡Cómo los reclamo?",next:1},{label:"Ok.",next:-1}]},{text:"En el roleplay, simplemente declarás tu planeta.",opts:[{label:"Perfecto.",next:-1}]}]},
+        { id:"ginyu",name:"CAP. GINYU",x:32*TILE,y:22*TILE,color:"#e040fb",
+          skinPath:"Skins/Ginyu.png",
+          dialogs:[{text:"Bienvenido a la nave de Freezer... El Planeta Central est al sureste.",opts:[{label:"¡Qué es el Planeta Central?",next:1},{label:"Gracias.",next:-1}]},{text:"Es la sede de la Patrulla Intergaláctica.",opts:[{label:"Interesante.",next:-1}]}]},
+        { id:"jaco",name:"JACO",x:82*TILE,y:17*TILE,color:"#00e5ff",
+          skinPath:"Skins/Jaco.png",
+          dialogs:[{text:"¡Alto! Esta es la base de la Patrulla Intergaláctica.",opts:[{label:"¡Cómo los reclamo?",next:1},{label:"Ok.",next:-1}]},{text:"En el roleplay, simplemente declarás tu planeta.",opts:[{label:"Perfecto.",next:-1}]}]},
       ],
       sky: [
-        { id:"popo",name:"MR. POPO",x:60*TILE,y:48*TILE,color:"#ffffff",dialogs:[{text:"Bienvenido a la Atalaya de Kamisama. Desde aqui se observa la Tierra completa.",opts:[{label:"Entendido.",next:-1}]}]},
-        { id:"kami",name:"KAMISAMA",x:60*TILE,y:30*TILE,color:"#7cffb2",dialogs:[{text:"La Atalaya flota sobre el mundo. Entrena, medita y vuelve cuando estes listo.",opts:[{label:"Gracias.",next:-1}]}]},
+        { id:"popo",name:"MR. POPO",x:60*TILE,y:48*TILE,color:"#ffffff",
+          skinPath:"Skins/MrPopo.png",
+          dialogs:[{text:"Bienvenido a la Atalaya de Kamisama. Desde aqui se observa la Tierra completa.",opts:[{label:"Entendido.",next:-1}]}]},
+        { id:"kami",name:"KAMISAMA",x:60*TILE,y:30*TILE,color:"#7cffb2",
+          skinPath:"Skins/Kamisama.png",
+          dialogs:[{text:"La Atalaya flota sobre el mundo. Entrena, medita y vuelve cuando estes listo.",opts:[{label:"Gracias.",next:-1}]}]},
       ],
       capsule_corp: [
-        { id:"brief",name:"DR. BRIEF",x:32*TILE,y:18*TILE,color:"#00e5ff",dialogs:[{text:"Capsule Corp tiene laboratorios, hangares, dormitorios y salas de prueba. Recorre lo que quieras.",opts:[{label:"Genial.",next:-1}]}]},
-        { id:"engineer",name:"INGENIERA CAPSULA",x:70*TILE,y:48*TILE,color:"#f5c400",dialogs:[{text:"Los paneles y maquinas estan listos para roleplay tecnico.",opts:[{label:"Perfecto.",next:-1}]}]},
+        { id:"brief",name:"DR. BRIEF",x:32*TILE,y:18*TILE,color:"#00e5ff",
+          skinPath:"Skins/DrBrief.png",
+          dialogs:[{text:"Capsule Corp tiene laboratorios, hangares, dormitorios y salas de prueba. Recorre lo que quieras.",opts:[{label:"Genial.",next:-1}]}]},
+        { id:"engineer",name:"INGENIERA CAPSULA",x:70*TILE,y:48*TILE,color:"#f5c400",
+          skinPath:"Skins/IngCapsule.png",
+          dialogs:[{text:"Los paneles y maquinas estan listos para roleplay tecnico.",opts:[{label:"Perfecto.",next:-1}]}]},
       ],
       karin_tower: [
-        { id:"karin",name:"KARIN",x:42*TILE,y:28*TILE,color:"#ffffff",dialogs:[{text:"Esta torre tiene salas de entrenamiento, descanso y miradores. La salida inferior vuelve a Tierra.",opts:[{label:"Entendido.",next:-1}]}]},
+        { id:"karin",name:"KARIN",x:42*TILE,y:28*TILE,color:"#ffffff",
+          skinPath:"Skins/Karin.png",
+          dialogs:[{text:"Esta torre tiene salas de entrenamiento, descanso y miradores. La salida inferior vuelve a Tierra.",opts:[{label:"Entendido.",next:-1}]}]},
       ],
       galactic_patrol: [
-        { id:"merus",name:"MERUS",x:52*TILE,y:28*TILE,color:"#00e5ff",dialogs:[{text:"Base de la Patrulla Galactica: celdas, oficinas, hangar y sala tactica.",opts:[{label:"A patrullar.",next:-1}]}]},
-        { id:"jaco2",name:"JACO",x:76*TILE,y:50*TILE,color:"#f5c400",dialogs:[{text:"No toques los controles rojos. Bueno... salvo que sea dramatico.",opts:[{label:"Claro.",next:-1}]}]},
+        { id:"merus",name:"MERUS",x:52*TILE,y:28*TILE,color:"#00e5ff",
+          skinPath:"Skins/Merus.png",
+          dialogs:[{text:"Base de la Patrulla Galactica: celdas, oficinas, hangar y sala tactica.",opts:[{label:"A patrullar.",next:-1}]}]},
+        { id:"jaco2",name:"JACO",x:76*TILE,y:50*TILE,color:"#f5c400",
+          skinPath:"Skins/Jaco.png",
+          dialogs:[{text:"No toques los controles rojos. Bueno... salvo que sea dramatico.",opts:[{label:"Claro.",next:-1}]}]},
       ],
       frieza_ship: [
-        { id:"zarbon",name:"ZARBON",x:56*TILE,y:18*TILE,color:"#00ff9d",dialogs:[{text:"La nave de Freezer es un anillo: recorre la rosca y llegaras a las camaras principales.",opts:[{label:"Entendido.",next:-1}]}]},
-        { id:"dodoria",name:"DODORIA",x:80*TILE,y:56*TILE,color:"#ff6a8a",dialogs:[{text:"Aqui hay salas de mando, medbay, arsenal y camaras de soldados.",opts:[{label:"Bien.",next:-1}]}]},
+        { id:"zarbon",name:"ZARBON",x:56*TILE,y:18*TILE,color:"#00ff9d",
+          skinPath:"Skins/Zarbon.png",
+          dialogs:[{text:"La nave de Freezer es un anillo: recorre la rosca y llegaras a las camaras principales.",opts:[{label:"Entendido.",next:-1}]}]},
+        { id:"dodoria",name:"DODORIA",x:80*TILE,y:56*TILE,color:"#ff6a8a",
+          skinPath:"Skins/Dodoria.png",
+          dialogs:[{text:"Aqui hay salas de mando, medbay, arsenal y camaras de soldados.",opts:[{label:"Bien.",next:-1}]}]},
       ],
       planet_central: [
-        { id:"central_guard",name:"GUARDIA CENTRAL",x:50*TILE,y:26*TILE,color:"#e040fb",dialogs:[{text:"El Planeta Central tiene oficinas, plaza interior, muelles y salas de reunion.",opts:[{label:"Gracias.",next:-1}]}]},
+        { id:"central_guard",name:"GUARDIA CENTRAL",x:50*TILE,y:26*TILE,color:"#e040fb",
+          skinPath:"Skins/GuardiaCentral.png",
+          dialogs:[{text:"El Planeta Central tiene oficinas, plaza interior, muelles y salas de reunion.",opts:[{label:"Gracias.",next:-1}]}]},
       ],
       planet_namek: [
-        { id:"namek_elder",name:"ANCIANO NAMEK",x:50*TILE,y:26*TILE,color:"#00ff9d",dialogs:[{text:"Namek tiene casas organicas, corredores de piedra y camaras de meditacion.",opts:[{label:"Paz.",next:-1}]}]},
+        { id:"namek_elder",name:"ANCIANO NAMEK",x:50*TILE,y:26*TILE,color:"#00ff9d",
+          skinPath:"Skins/AncianoNamek.png",
+          dialogs:[{text:"Namek tiene casas organicas, corredores de piedra y camaras de meditacion.",opts:[{label:"Paz.",next:-1}]}]},
       ],
       planet_vegeta: [
-        { id:"saiyan_guard",name:"GUARDIA SAIYAN",x:50*TILE,y:26*TILE,color:"#ff6a00",dialogs:[{text:"Planeta Vegeta: sala de guerra, dormitorios de escuadron y arena de entrenamiento.",opts:[{label:"A entrenar.",next:-1}]}]},
+        { id:"saiyan_guard",name:"GUARDIA SAIYAN",x:50*TILE,y:26*TILE,color:"#ff6a00",
+          skinPath:"Skins/GuardiaSaiyan.png",
+          dialogs:[{text:"Planeta Vegeta: sala de guerra, dormitorios de escuadron y arena de entrenamiento.",opts:[{label:"A entrenar.",next:-1}]}]},
       ],
     };
 
@@ -2770,6 +3212,554 @@
     }
     window.interactNearby = interactNearby;
 
+    // ══════════════════════════════════════════════════════════════════════
+    // SISTEMA DE COMBATE NPC — OLEADAS
+    // ══════════════════════════════════════════════════════════════════════
+
+    // Plantillas de oleadas: cada oleada es un array de enemigos
+    const WAVE_TEMPLATES = [
+      // Oleada 1: 3 Guardianes I desde las esquinas
+      [
+        { id:"w1_a", name:"GUARDIAN I",  color:"#ff1744", skinPath:"Skins/Krillin.png", npcMaxHp:300,  npcAtk:18, npcDef:8,  npcXp:50,  spawnCorner:0 },
+        { id:"w1_b", name:"GUARDIAN I",  color:"#ff1744", skinPath:"Skins/Krillin.png", npcMaxHp:300,  npcAtk:18, npcDef:8,  npcXp:50,  spawnCorner:1 },
+        { id:"w1_c", name:"GUARDIAN I",  color:"#ff1744", skinPath:"Skins/Krillin.png", npcMaxHp:300,  npcAtk:18, npcDef:8,  npcXp:50,  spawnCorner:2 },
+      ],
+      // Oleada 2: los 3 anteriores + 2 Guardianes II
+      [
+        { id:"w2_a", name:"GUARDIAN I",  color:"#ff1744", skinPath:"Skins/Krillin.png", npcMaxHp:300,  npcAtk:18, npcDef:8,  npcXp:50,  spawnCorner:0 },
+        { id:"w2_b", name:"GUARDIAN I",  color:"#ff1744", skinPath:"Skins/Krillin.png", npcMaxHp:300,  npcAtk:18, npcDef:8,  npcXp:50,  spawnCorner:1 },
+        { id:"w2_c", name:"GUARDIAN I",  color:"#ff1744", skinPath:"Skins/Krillin.png", npcMaxHp:300,  npcAtk:18, npcDef:8,  npcXp:50,  spawnCorner:2 },
+        { id:"w2_d", name:"GUARDIAN II", color:"#ff6d00", skinPath:"Skins/Krillin.png", npcMaxHp:500,  npcAtk:28, npcDef:14, npcXp:100, spawnCorner:3 },
+        { id:"w2_e", name:"GUARDIAN II", color:"#ff6d00", skinPath:"Skins/Krillin.png", npcMaxHp:500,  npcAtk:28, npcDef:14, npcXp:100, spawnCorner:0 },
+      ],
+      // Oleada 3: 2 Guardianes III + los anteriores
+      [
+        { id:"w3_a", name:"GUARDIAN I",  color:"#ff1744", skinPath:"Skins/Krillin.png", npcMaxHp:300,  npcAtk:18, npcDef:8,  npcXp:50,  spawnCorner:0 },
+        { id:"w3_b", name:"GUARDIAN II", color:"#ff6d00", skinPath:"Skins/Krillin.png", npcMaxHp:500,  npcAtk:28, npcDef:14, npcXp:100, spawnCorner:1 },
+        { id:"w3_c", name:"GUARDIAN III",color:"#ffd600", skinPath:"Skins/Krillin.png", npcMaxHp:750,  npcAtk:40, npcDef:20, npcXp:180, spawnCorner:2 },
+        { id:"w3_d", name:"GUARDIAN III",color:"#ffd600", skinPath:"Skins/Krillin.png", npcMaxHp:750,  npcAtk:40, npcDef:20, npcXp:180, spawnCorner:3 },
+      ],
+      // Oleada 4: solo el Jefe
+      [
+        { id:"w4_jefe", name:"JEFE DEL SIMULADOR", color:"#d500f9", skinPath:"Skins/Ginyu.png", npcMaxHp:1500, npcAtk:65, npcDef:35, npcXp:500, spawnCorner:1, isBoss:true },
+      ],
+    ];
+
+    // Esquinas de spawn dentro del simulador (tiles → px)
+    function getSpawnCorners() {
+      const w = MAPS.simulador_combate.w, h = MAPS.simulador_combate.h;
+      return [
+        { x: 4*TILE,     y: 4*TILE     },  // 0: arriba-izq
+        { x: (w-5)*TILE, y: 4*TILE     },  // 1: arriba-der
+        { x: 4*TILE,     y: (h-5)*TILE },  // 2: abajo-izq
+        { x: (w-5)*TILE, y: (h-5)*TILE },  // 3: abajo-der
+      ];
+    }
+
+    let currentWave = -1;       // -1 = no iniciado
+    let waveEnemies = [];       // NPCs activos en esta oleada
+    let npcCombatActive = false;
+    let npcCombatTimer = 0;
+    const NPC_COMBAT_INTERVAL = 1600;
+    const NPC_SPECIAL_INTERVAL = 20000;
+    const NPC_LIGHT_COMBO_FPS = 3;
+    const NPC_SPEED = 2.1 * TILE; // px/s — ligeramente más rápido que antes
+    const NPC_SEPARATION_RADIUS = 58;
+    const NPC_SEPARATION_FORCE = 1.9 * TILE;
+    let _lastNpcTick = performance.now();
+
+    // ── Duraciones de animaciones de combate (ms) ────────────────────────
+    // Row 18: light_combo  4f@10fps = 400ms
+    // Row 19: heavy_combo  3f@9fps  = 333ms
+    // Row 20: special      3f@8fps  = 375ms
+    // Row 22: hit          3f@8fps  = 375ms  (pero solo mostramos 2 frames = 250ms)
+    // Row 22: knockback/KO 3f@8fps  = 375ms  (misma fila, todos los frames)
+    const NPC_ANIM_DUR = {
+      light_combo: Math.ceil((4 / NPC_LIGHT_COMBO_FPS) * 1000),
+      heavy_combo: 360,
+      special:     400,
+      hit_2f:      260,   // 2 frames de hit (recibir golpe)
+      hit_ko:      400,   // 3 frames de hit (morir)
+    };
+
+    // ── Animación de golpe recibido: reinicia SIEMPRE limpio cada vez ────
+    function _clearNpcAnimTimers(anim) {
+      if (!anim || !anim._npcAnimTimers) return;
+      anim._npcAnimTimers.forEach(t => clearTimeout(t));
+      anim._npcAnimTimers = [];
+    }
+
+    function _playNpcCombatIdle(npc, anim) {
+      if (npc) npc._anim = "combat_idle";
+      if (!anim) return;
+      _clearNpcAnimTimers(anim);
+      anim._freezeFrame = false;
+      if (anim.setBattleMode) anim.setBattleMode(true);
+      anim.play("combat_idle");
+    }
+
+    function _playNpcDashHeld(npc, anim) {
+      if (npc) npc._anim = "dash";
+      if (!anim) return;
+      if (anim.setBattleMode) anim.setBattleMode(true);
+      if (anim.action !== "dash") anim.play("dash");
+      anim.frame = 2;
+      anim.elapsed = 0;
+      anim._freezeFrame = false;
+      anim._frameOverride = true;
+    }
+
+    function _playNpcAttackAnim(anim, action, onDone) {
+      if (!anim) { if (onDone) onDone(); return; }
+      _clearNpcAnimTimers(anim);
+      anim._freezeFrame = false;
+      if (anim.setBattleMode) anim.setBattleMode(true);
+
+      if (action !== "light_combo") {
+        anim.play(action, onDone);
+        return;
+      }
+
+      const frameMs = 1000 / NPC_LIGHT_COMBO_FPS;
+      anim.action = "light_combo";
+      anim.frame = 0;
+      anim.elapsed = 0;
+      anim._onComplete = null;
+      anim._freezeFrame = true;
+      anim._npcAnimTimers = [];
+      for (let i = 1; i < 4; i++) {
+        anim._npcAnimTimers.push(setTimeout(() => {
+          if (anim.action === "light_combo") anim.frame = i;
+        }, Math.round(frameMs * i)));
+      }
+      anim._npcAnimTimers.push(setTimeout(() => {
+        anim._freezeFrame = false;
+        if (onDone) onDone();
+      }, Math.round(frameMs * 4)));
+    }
+
+    function _playHitAnim2f(anim, onDone) {
+      if (!anim) { if (onDone) onDone(); return; }
+      _clearNpcAnimTimers(anim);
+      // Cancelar timers previos para reiniciar limpio (golpes repetidos)
+      if (anim._hitTimer1) { clearTimeout(anim._hitTimer1); anim._hitTimer1 = null; }
+      if (anim._hitTimer2) { clearTimeout(anim._hitTimer2); anim._hitTimer2 = null; }
+      anim._freezeFrame = false;
+      if (anim.setBattleMode) anim.setBattleMode(true);
+      // Forzar inicio desde frame 0
+      anim.action = "hit"; anim.frame = 0; anim.elapsed = 0; anim._onComplete = null;
+      // Congelar en frame 1 (2do frame) tras 130ms
+      anim._hitTimer1 = setTimeout(() => {
+        if (anim && anim.action === "hit") {
+          anim.frame = 1;
+          anim.elapsed = 0;
+          anim._freezeFrame = true;
+        }
+      }, 130);
+      // Liberar y llamar callback tras la duracion completa
+      anim._hitTimer2 = setTimeout(() => {
+        if (anim) anim._freezeFrame = false;
+        if (onDone) onDone();
+      }, NPC_ANIM_DUR.hit_2f);
+    }
+
+    // ── Animacion KO: 3 frames completos + NPC desaparece a los 3s ──────
+    function _playHitKoAnim(anim, npc, onDone) {
+      if (!anim) { if (onDone) onDone(); return; }
+      _clearNpcAnimTimers(anim);
+      if (anim._hitTimer1) { clearTimeout(anim._hitTimer1); anim._hitTimer1 = null; }
+      if (anim._hitTimer2) { clearTimeout(anim._hitTimer2); anim._hitTimer2 = null; }
+      anim._freezeFrame = false;
+      if (anim.setBattleMode) anim.setBattleMode(true);
+      // Reproducir los 3 frames completos y congelar en el ultimo
+      anim.action = "hit"; anim.frame = 0; anim.elapsed = 0; anim._onComplete = null;
+      setTimeout(() => {
+        if (anim && anim.action === "hit") {
+          anim.frame = 2;
+          anim.elapsed = 0;
+          anim._freezeFrame = true;
+        }
+      }, NPC_ANIM_DUR.hit_ko);
+      if (onDone) onDone();
+      // Desaparecer el NPC a los 3 segundos
+      if (npc) {
+        setTimeout(() => {
+          npc._dead = true;
+          if (anim) anim._freezeFrame = false;
+        }, 3000);
+      }
+    }
+
+    // ── Igual para el jugador ─────────────────────────────────────────────
+    let _playerHitLockUntil = 0;
+    let _playerKoActive = false;
+
+    function _playPlayerHit2f() {
+      if (!csAnimator) return;
+      _playerHitLockUntil = performance.now() + NPC_ANIM_DUR.hit_2f + 60;
+      if (csAnimator.setBattleMode) csAnimator.setBattleMode(true);
+      csAnimator.action = "hit"; csAnimator.frame = 0; csAnimator.elapsed = 0;
+      csAnimator._onComplete = null; csAnimator._freezeFrame = false;
+      setTimeout(() => {
+        if (csAnimator && csAnimator.action === "hit") {
+          csAnimator.frame = 1;
+          csAnimator.elapsed = 0;
+          csAnimator._freezeFrame = true;
+        }
+      }, 130);
+      setTimeout(() => {
+        if (csAnimator) {
+          csAnimator._freezeFrame = false;
+          if (performance.now() >= _playerHitLockUntil - 60) {
+            csAnimator.play("combat_idle");
+          }
+        }
+      }, NPC_ANIM_DUR.hit_2f);
+    }
+
+    function _playPlayerHitKo(recoverAfterMs = 3000, onRecover = null) {
+      if (!csAnimator) return;
+      if (_playerKoActive) return;
+      _playerKoActive = true;
+      _playerHitLockUntil = performance.now() + NPC_ANIM_DUR.hit_ko + recoverAfterMs + 200;
+      if (csAnimator.setBattleMode) csAnimator.setBattleMode(true);
+      csAnimator.action = "hit"; csAnimator.frame = 0; csAnimator.elapsed = 0;
+      csAnimator._onComplete = null; csAnimator._freezeFrame = false;
+      setTimeout(() => {
+        if (csAnimator && csAnimator.action === "hit") {
+          csAnimator.frame = 2;
+          csAnimator.elapsed = 0;
+          csAnimator._freezeFrame = true;
+        }
+      }, NPC_ANIM_DUR.hit_ko);
+      setTimeout(() => {
+        if (csAnimator) {
+          csAnimator._freezeFrame = false;
+          csAnimator.play("combat_idle");
+        }
+        _playerKoActive = false;
+        if (onRecover) onRecover();
+      }, NPC_ANIM_DUR.hit_ko + recoverAfterMs);
+    }
+
+    function spawnWave(waveIndex) {
+      if (waveIndex >= WAVE_TEMPLATES.length) {
+        showHudToast("🏆 ¡Completaste el Simulador de Combate!", "xp");
+        currentWave = -1;
+        waveEnemies = [];
+        npcs = NPC_DEFS[currentMap] || [];
+        return;
+      }
+      currentWave = waveIndex;
+      _lastNpcTick = performance.now();
+      const corners = getSpawnCorners();
+      const template = WAVE_TEMPLATES[waveIndex];
+      waveEnemies = template.map(t => {
+        const corner = corners[t.spawnCorner % corners.length];
+        const instanceId = `wave${waveIndex}_${t.id}`;
+        return Object.assign({}, t, {
+          id: instanceId,
+          templateId: t.id,
+          skinPath: t.skinPath || null,
+          skinKey: t.skinKey || null,
+          _skinCacheKey: `${instanceId}:${t.skinKey || t.skinPath || "default"}`,
+          combatNpc: true,
+          npcHp: t.npcMaxHp,
+          x: corner.x,
+          y: corner.y,
+          facing: 1,
+          _anim: "combat_idle",   // arranca en combat_idle, no walk
+          _animLocked: false,     // true mientras ejecuta hit/ataque
+          _attackTimer: Date.now() + NPC_COMBAT_INTERVAL + Math.random()*600,
+          _specialTimer: Date.now() + NPC_SPECIAL_INTERVAL + Math.random()*1200,
+        });
+      });
+      npcs = [...(NPC_DEFS[currentMap] || []), ...waveEnemies];
+      waveEnemies.forEach(e => { delete npcAnimators[e.id]; });
+      showHudToast("⚔️ ¡Oleada " + (waveIndex+1) + " de " + WAVE_TEMPLATES.length + "!", "warning");
+    }
+
+    function checkSimulatorEntry() {
+      if (currentMap !== "simulador_combate") { currentWave = -1; waveEnemies = []; return; }
+      if (currentWave === -1) { _lastNpcTick = performance.now(); spawnWave(0); }
+    }
+
+    // Ataques que puede usar el NPC (igual que el jugador)
+    const _NPC_ATK_POOL_NORMAL = ["light_combo", "light_combo", "heavy_combo"];
+    const _NPC_ATK_POOL_BOSS   = ["light_combo", "heavy_combo", "heavy_combo"];
+
+    function getCombatNpcTarget() {
+      if (currentMap !== "simulador_combate" || !waveEnemies.length) return null;
+      const alive = waveEnemies.filter(e => e.npcHp > 0 && !e._dead);
+      if (!alive.length) return null;
+
+      const ATTACK_REACH = 112;
+      const HALF_ARC = 46;
+      const deadBlocker = waveEnemies.find(npc => {
+        if (npc.npcHp > 0 || npc._dead) return false;
+        const dx = npc.x - player.x;
+        const dy = Math.abs(npc.y - player.y);
+        const forward = dx * player.facing;
+        return forward > -18 && forward < ATTACK_REACH && dy < HALF_ARC;
+      });
+      if (deadBlocker) return null;
+
+      let best = null;
+      let bestScore = Infinity;
+
+      alive.forEach(npc => {
+        const dx = npc.x - player.x;
+        const dy = Math.abs(npc.y - player.y);
+        const forward = dx * player.facing;
+        if (forward < -18 || forward > ATTACK_REACH || dy > HALF_ARC) return;
+        const score = forward + dy * 0.7;
+        if (score < bestScore) {
+          best = npc;
+          bestScore = score;
+        }
+      });
+
+      return best;
+    }
+
+    function applyPlayerAttackToCombatNpc(action) {
+      const target = getCombatNpcTarget();
+      if (!target) return null;
+
+      const str  = player.strength || 20;
+      const mult = action === "combo1" || action === "light_combo" ? 1.0
+                 : action === "combo2" || action === "heavy_combo" ? 1.6
+                 : (action === "special" || action === "special1" || action === "special2") ? 2.2
+                 : 0.8;
+      const dmg = Math.max(1, Math.floor(str * mult - target.npcDef * 0.3 + (Math.random() * 10 - 5)));
+      target.npcHp = Math.max(0, target.npcHp - dmg);
+      showFloatingDmg(dmg, target.x - cam.x, target.y - cam.y, "#00e5ff");
+
+      const anim = npcAnimators[target.id];
+      target._animLocked = true;
+      if (target.npcHp <= 0) {
+        _playHitKoAnim(anim, target, () => {
+          target._animLocked = false;
+        });
+      } else {
+        _playHitAnim2f(anim, () => {
+          target._animLocked = false;
+          if (target.npcHp > 0) _playNpcCombatIdle(target, anim);
+        });
+      }
+
+      updateNpcCombatHud(target);
+      showNpcCombatHud(target);
+      return target;
+    }
+
+    function separateCombatNpcs(npc, dt) {
+      if (!npc || npc._animLocked || npc.npcHp <= 0 || npc._dead) return;
+      let pushX = 0, pushY = 0;
+      waveEnemies.forEach(other => {
+        if (other === npc || other.npcHp <= 0 || other._dead) return;
+        const dx = npc.x - other.x;
+        const dy = npc.y - other.y;
+        const dist = Math.hypot(dx, dy) || 0.001;
+        if (dist >= NPC_SEPARATION_RADIUS) return;
+        const push = (NPC_SEPARATION_RADIUS - dist) / NPC_SEPARATION_RADIUS;
+        pushX += (dx / dist) * push;
+        pushY += (dy / dist) * push;
+      });
+      if (pushX || pushY) {
+        const len = Math.hypot(pushX, pushY) || 1;
+        npc.x += (pushX / len) * NPC_SEPARATION_FORCE * dt;
+        npc.y += (pushY / len) * NPC_SEPARATION_FORCE * dt;
+      }
+    }
+
+    function tickNpcCombat() {
+      if (currentMap !== "simulador_combate") return;
+      if (waveEnemies.length === 0) return;
+      if (_playerKoActive || player.hp <= 0) return;
+
+      // Delta-time real con cap (evita saltos por tab inactivo)
+      const nowPerf = performance.now();
+      const dt = Math.min((nowPerf - _lastNpcTick) / 1000, 0.08);
+      _lastNpcTick = nowPerf;
+
+      const now = Date.now();
+      const ATTACK_RANGE = 80;
+
+      let allDead = true;
+      waveEnemies.forEach(npc => {
+        if (npc.npcHp <= 0) return;
+        if (npc._dead) return;
+        allDead = false;
+        if (player.hp <= 0) return;
+
+        const anim = npcAnimators[npc.id];
+        separateCombatNpcs(npc, dt);
+
+        const dx = player.x - npc.x;
+        const dy = player.y - npc.y;
+        const d  = Math.hypot(dx, dy);
+
+        // Siempre mira al jugador
+        npc.facing = dx > 0 ? 1 : -1;
+
+        if (d > ATTACK_RANGE) {
+          // ── Mover hacia el jugador ───────────────────────────────────
+          npc.x += (dx / d) * NPC_SPEED * dt;
+          npc.y += (dy / d) * NPC_SPEED * dt;
+
+          // Animación: combat_idle mientras se acerca (mismas frames que el jugador)
+          if (!npc._animLocked) _playNpcDashHeld(npc, anim);
+        } else {
+          // ── En rango ─────────────────────────────────────────────────
+          // combat_idle cuando no está bloqueado por otra animación
+          if (!npc._animLocked && npc._anim !== "combat_idle") {
+            _playNpcCombatIdle(npc, anim);
+          }
+
+          // ── Ataque ───────────────────────────────────────────────────
+          if ((now >= npc._attackTimer || now >= npc._specialTimer) && !npc._animLocked) {
+            npc._attackTimer = now + NPC_COMBAT_INTERVAL + Math.random() * 400;
+
+            // Elegir ataque del mismo pool que el jugador
+            const forceSpecial = now >= npc._specialTimer;
+            if (forceSpecial) npc._specialTimer = now + NPC_SPECIAL_INTERVAL;
+            const pool = npc.isBoss ? _NPC_ATK_POOL_BOSS : _NPC_ATK_POOL_NORMAL;
+            const atkAnim = forceSpecial ? "special" : pool[Math.floor(Math.random() * pool.length)];
+            const atkDur  = NPC_ANIM_DUR[atkAnim] || 420;
+
+            // Calcular daño
+            const def = player.defense || 10;
+            const dmg = Math.max(1, Math.floor(npc.npcAtk - def * 0.4 + (Math.random() * 8 - 4)));
+            player.hp = Math.max(0, player.hp - dmg);
+            updatePlayerHud();
+            showFloatingDmg(dmg, player.x - cam.x, player.y - cam.y, "#ff4444");
+
+            // Animación del NPC atacando
+            npc._animLocked = true;
+            npc._anim = atkAnim;
+            _playNpcAttackAnim(anim, atkAnim, () => {
+              npc._animLocked = false;
+              if (npc.npcHp > 0) _playNpcCombatIdle(npc, anim);
+            });
+            // Fallback por si onComplete no dispara
+            setTimeout(() => {
+              if (npc._animLocked && npc._anim === atkAnim) {
+                npc._animLocked = false;
+                if (npc.npcHp > 0) _playNpcCombatIdle(npc, anim);
+              }
+            }, atkDur + 150);
+
+            // Animación del jugador recibiendo el golpe
+            if (player.hp <= 0) {
+              // KO: 3 frames completos
+              _playPlayerHitKo(3000, () => {
+                currentWave = -1; waveEnemies = [];
+                npcs = NPC_DEFS[currentMap] || [];
+                player.hp = Math.floor(player.maxHp * 0.5);
+                player.x = 24 * TILE; player.y = 28 * TILE;
+                updatePlayerHud();
+                if (typeof setControlMode === "function") setControlMode("rp");
+                hideNpcCombatHud();
+              });
+              showHudToast("💀 Fuiste derrotado. Reiniciando...", "error");
+              updatePlayerHud();
+              return;
+            } else {
+              // Golpe normal: 2 frames de hit
+              _playPlayerHit2f();
+            }
+          }
+        }
+
+        // ── HUD del enemigo más cercano ──────────────────────────────────
+        const closestAlive = waveEnemies
+          .filter(e => e.npcHp > 0)
+          .sort((a, b) => Math.hypot(a.x - player.x, a.y - player.y) - Math.hypot(b.x - player.x, b.y - player.y))[0];
+        if (closestAlive) updateNpcCombatHud(closestAlive);
+      });
+
+      // ── Todos muertos → siguiente oleada ─────────────────────────────────
+      if (allDead && waveEnemies.length > 0) {
+        const totalXp = waveEnemies.reduce((s, e) => s + e.npcXp, 0);
+        showHudToast("✅ ¡Oleada " + (currentWave + 1) + " superada! +" + totalXp + " XP", "xp");
+        hideNpcCombatHud();
+        if (typeof setControlMode === "function") setControlMode("rp");
+        setTimeout(() => spawnWave(currentWave + 1), 2000);
+        waveEnemies = [];
+        npcs = NPC_DEFS[currentMap] || [];
+      }
+    }
+
+    window.performCombatAction = (function(_orig) {
+      return function(action) {
+        if (_orig) _orig(action);
+      };
+    })(window.performCombatAction);
+
+    function showFloatingDmg(dmg, sx, sy, color) {
+      const cvs = document.getElementById("gameCanvas");
+      if (!cvs) return;
+      const rect = cvs.getBoundingClientRect();
+      const el = document.createElement("div");
+      el.textContent = "-" + dmg;
+      el.style.cssText = `position:fixed;left:${rect.left+sx}px;top:${rect.top+sy-40}px;color:${color};font-weight:bold;font-size:22px;pointer-events:none;z-index:9999;text-shadow:0 0 6px #000;transition:transform 0.8s,opacity 0.8s`;
+      document.body.appendChild(el);
+      requestAnimationFrame(() => { el.style.transform="translateY(-44px)"; el.style.opacity="0"; });
+      setTimeout(() => el.remove(), 900);
+    }
+
+    function showNpcCombatHud(npc) {
+      let hud = document.getElementById("npcCombatHud");
+      if (!hud) {
+        hud = document.createElement("div");
+        hud.id = "npcCombatHud";
+        hud.style.cssText = "position:fixed;top:16px;right:16px;background:rgba(0,0,0,0.88);border:2px solid #d500f9;border-radius:10px;padding:10px 16px;min-width:220px;z-index:8000;color:#fff;font-family:monospace;pointer-events:none";
+        document.body.appendChild(hud);
+      }
+      hud.style.display = "block";
+      updateNpcCombatHud(npc);
+    }
+
+    function updateNpcCombatHud(npc) {
+      const hud = document.getElementById("npcCombatHud");
+      if (!hud || !npc) return;
+      const pct = Math.max(0, Math.round(npc.npcHp / npc.npcMaxHp * 100));
+      const barColor = npc.isBoss ? "#d500f9" : npc.color || "#ff1744";
+      const alive = waveEnemies.filter(e=>e.npcHp>0).length;
+      hud.innerHTML = `
+        <div style="font-size:12px;color:#aaa;margin-bottom:4px">Oleada ${currentWave+1}/${WAVE_TEMPLATES.length} — ${alive} enemigos vivos</div>
+        <div style="font-size:13px;font-weight:bold;color:${npc.color}">${npc.isBoss?"👑 ":"⚔️ "}${npc.name}</div>
+        <div style="font-size:11px;color:#aaa;margin-bottom:4px">HP: ${npc.npcHp} / ${npc.npcMaxHp}</div>
+        <div style="background:#333;border-radius:4px;height:10px;overflow:hidden">
+          <div style="background:${barColor};height:100%;width:${pct}%;transition:width 0.2s;border-radius:4px"></div>
+        </div>`;
+    }
+
+    function hideNpcCombatHud() {
+      const hud = document.getElementById("npcCombatHud");
+      if (hud) hud.style.display = "none";
+    }
+
+    function checkNpcCombatProximity() {
+      if (currentMap !== "simulador_combate") return;
+      checkSimulatorEntry();
+      // Mostrar HUD del más cercano si hay enemigos vivos cerca
+      const alive = waveEnemies.filter(e=>e.npcHp>0);
+      if (!alive.length) return;
+      const closest = alive.sort((a,b)=>Math.hypot(a.x-player.x,a.y-player.y)-Math.hypot(b.x-player.x,b.y-player.y))[0];
+      if (Math.hypot(closest.x-player.x, closest.y-player.y) < 300) {
+        showNpcCombatHud(closest);
+        if (controlMode !== "combat" && controlMode !== "pvp") {
+          if (typeof setControlMode === "function") setControlMode("combat");
+        }
+      }
+    }
+
+    window.tickNpcCombat = tickNpcCombat;
+    window.checkNpcCombatProximity = checkNpcCombatProximity;
+
+
     function openPortalPanel() {
       const container = document.getElementById("portalBtns");
       if (container) {
@@ -2831,10 +3821,15 @@
         // Configurar el modo del animador según el sheet de la accin
         if (sheet === "special") {
           csAnimator.setSpecialMode && csAnimator.setSpecialMode(true);
-          csAnimator.play(action.anim || "sit", () => {
-            csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
-            csAnimator.play(isFlying ? "fly" : "idle");
-          });
+          if ((action.anim || "sit") === "sit") {
+            // sit: reproducir una vez y quedarse en el último frame hasta que el usuario se mueva
+            csAnimator.play("sit");
+          } else {
+            csAnimator.play(action.anim || "sit", () => {
+              csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
+              csAnimator.play(isFlying ? "fly" : "idle");
+            });
+          }
         } else if (sheet === "combat") {
           // Acciones RP en sheet de combate (si las hubiera)
           csAnimator.setBattleMode && csAnimator.setBattleMode(true);
@@ -2881,7 +3876,7 @@
     window.performRpAction = performRpAction;
 
     function sendEmote(type) {
-      const map = { wave:"wave", bow:"sit", laugh:"emote", power:"warmup" };
+      const map = { wave:"emote", bow:"sit", laugh:"emote", power:"train" };
       performRpAction(map[type] || type || "emote");
     }
     window.sendEmote = sendEmote;
@@ -2927,18 +3922,8 @@
       if (controlMode !== "combat" && controlMode !== "pvp" && action !== "fly") setControlMode("combat");
       const labels = { combo1:"COMBO 1", combo2:"COMBO 2", special1:"ESPECIAL 1", special2:"ESPECIAL 2", fly:"VOLAR", vanish:"Z-VANISH" };
       if (action === "fly") {
-        if (MAPS[currentMap]?.alwaysFly) {
-          isFlying = true;
-          if (csAnimator) { csAnimator.setSpecialMode && csAnimator.setSpecialMode(false); csAnimator.play("fly"); }
-          showHudToast("En el cielo siempre vols", "info"); return;
-        }
-        isFlying = !isFlying;
-        if (csAnimator) {
-          csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
-          csAnimator.play(isFlying ? (csAnimator.battleMode ? "knockback_fly" : "fly") : (csAnimator.battleMode ? "combat_idle" : "idle"));
-        }
-        showHudToast(isFlying ? "Vuelo activado" : "Vuelo desactivado", "info");
-        renderActionBars(); publishMyAppearance(true); return;
+        // Mismo comportamiento que toggleFly() en modo RP
+        toggleFly(); return;
       }
       if (action === "vanish") {
         const dist = 84;
@@ -2966,7 +3951,45 @@
       } else {
         combatEffects.push({ x: player.x + player.facing * 24, y: player.y - 44, text: effectLabel, timer: 0.9, color });
       }
-      if (csAnimator) { csAnimator.setSpecialMode && csAnimator.setSpecialMode(false); csAnimator.play(anim, combatEndAnim); }
+      if (csAnimator) {
+        csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
+        if (action === "combo1" || action === "combo2") {
+          // Combo manual: cada click = un frame estático. Sin auto-avance entre clicks.
+          const comboFrames = action === "combo1" ? 4 : 3; // light_combo=4f, heavy_combo=3f
+          csAnimator.setBattleMode && csAnimator.setBattleMode(true);
+
+          // Cancelar timeout previo
+          if (window._comboTimeout) { clearTimeout(window._comboTimeout); window._comboTimeout = null; }
+
+          if (csAnimator.action !== anim) {
+            // Primer click (o tras reset) — ir al frame 0
+            csAnimator.action = anim;
+            csAnimator.frame = 0;
+          } else {
+            // Click siguiente — avanzar un frame, volviendo a 0 al llegar al final
+            csAnimator.frame = (csAnimator.frame + 1) % comboFrames;
+          }
+          csAnimator.elapsed = 0;
+          csAnimator._freezeFrame = true; // bloqueo permanente hasta timeout o cambio de acción
+
+          // Timeout de 6s sin click → liberar freeze y volver a combat_idle
+          window._comboTimeout = setTimeout(() => {
+            window._comboTimeout = null;
+            if (csAnimator && (csAnimator.action === "light_combo" || csAnimator.action === "heavy_combo")) {
+              csAnimator._freezeFrame = false;
+              csAnimator.play(isFlying ? "fly" : "combat_idle");
+            }
+          }, 3000);
+        } else {
+          // Liberar freeze si venía de un combo
+          if (csAnimator._freezeFrame) csAnimator._freezeFrame = false;
+          if (window._comboTimeout) { clearTimeout(window._comboTimeout); window._comboTimeout = null; }
+          csAnimator.play(anim, combatEndAnim);
+        }
+      }
+      if (currentMap === "simulador_combate" && waveEnemies.length > 0) {
+        applyPlayerAttackToCombatNpc(action);
+      }
       showHudToast(effectLabel, action.startsWith("special") ? "info" : "xp");
     }
     window.performCombatAction = performCombatAction;
@@ -3016,6 +4039,15 @@
           const toastIcon = mapKey === "sky" ? "☁️" : mapKey === "space" ? "🌌" : (MAPS[mapKey]?.indoor ? "🚪" : "🌍");
           showHudToast(`${toastIcon} ${MAPS[mapKey].name}`, "info");
           if (MAPS[mapKey]?.alwaysFly) showHudToast("Modo vuelo activado", "info");
+          // Reiniciar oleadas al entrar al simulador
+          if (mapKey === "simulador_combate") {
+            currentWave = -1; waveEnemies = []; hideNpcCombatHud();
+            setTimeout(() => spawnWave(0), 1000);
+          } else {
+            // Al salir del simulador, limpiar enemigos
+            currentWave = -1; waveEnemies = []; hideNpcCombatHud();
+            if (typeof setControlMode === "function") setControlMode("rp");
+          }
         }, 400);
       }, 800);
     }
@@ -3029,6 +4061,12 @@
       document.getElementById("hudLevel").textContent = `LV ${player.level}`;
       document.getElementById("xpFill").style.width = `${(player.xp/player.xpToNext)*100}%`;
       document.getElementById("hudPlayerName").textContent = player.name;
+      const _cx = document.getElementById("coordX");
+      const _cy = document.getElementById("coordY");
+      if (_cx && _cy) {
+        _cx.textContent = "X:" + Math.floor(player.x / TILE);
+        _cy.textContent = "Y:" + Math.floor(player.y / TILE);
+      }
     }
 
     function showHudToast(msg, type="xp") {
@@ -3092,7 +4130,7 @@
         const def = IS.ITEM_DEFS[entry.id]; if (!def) return;
         const row = document.createElement("div");
         row.className = "inv-item-row" + (invSelectedId === entry.id ? " sel" : "");
-        row.onclick = () => { invSelectedId = entry.id; renderInventoryList(); renderInventoryDetail(entry.id); };
+        row.onclick = () => { invSelectedId = entry.id; renderInventoryList(); renderInventoryDetail(entry.id); playItemSelectAnim(entry.id); };
         const cvs = document.createElement("canvas"); cvs.className = "inv-item-canvas"; cvs.width = 32; cvs.height = 32;
         drawItemIconCanvas(entry.id, cvs);
         const name = document.createElement("span"); name.className = "inv-item-name"; name.textContent = def.name;
@@ -3100,6 +4138,45 @@
         row.appendChild(cvs); row.appendChild(name); row.appendChild(qty);
         listEl.appendChild(row);
       });
+    }
+
+    function getItemSelectAnim(itemId) {
+      const IS = window.ItemSystem;
+      if (!IS) return null;
+      const def = IS.ITEM_DEFS[itemId];
+      if (!def) return null;
+      // Decidir animación según acciones del ítem
+      const acts = def.actions || [];
+      if (acts.includes("eat")) return { anim:"hold_item", sheet:"special" };
+      if (acts.includes("drink")) return { anim:"hold_item", sheet:"special" };
+      if (acts.includes("equip")) return { anim:"hold_item", sheet:"special" };
+      if (acts.includes("use_radar")) return { anim:"hold_item", sheet:"special" };
+      if (def.isDragonBall) return { anim:"hold_item", sheet:"special" };
+      return null;
+    }
+
+    function playItemSelectAnim(itemId) {
+      if (!csAnimator) return;
+      const info = getItemSelectAnim(itemId);
+      if (!info) return;
+      const hold = 1500;
+      rpActionUntil = performance.now() + hold;
+      if (info.sheet === "special") {
+        csAnimator.setSpecialMode && csAnimator.setSpecialMode(true);
+        csAnimator.play(info.anim, () => {
+          csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
+          csAnimator.play(isFlying ? "fly" : "idle");
+        });
+      } else {
+        if (csAnimator.specialMode) csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
+        csAnimator.play(info.anim);
+        setTimeout(() => {
+          if (performance.now() >= rpActionUntil && csAnimator && !player.moving) {
+            csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
+            csAnimator.play(isFlying ? "fly" : "idle");
+          }
+        }, hold);
+      }
     }
 
     function renderInventoryDetail(itemId) {
@@ -3162,8 +4239,10 @@
       const CS = window.CharacterSystem;
       if (CS && csAnimator) {
         CS.player.direction = player.facing;
-        const rpLocked = performance.now() < rpActionUntil;
-        const atkLocked = csAnimator.meta && !csAnimator.meta.loop;
+        const rpLocked = performance.now() < rpActionUntil || performance.now() < (_playerHitLockUntil || 0);
+        // atkLocked: animaciones no-loop bloquean cambios, EXCEPTO 'sit' terminado si el jugador se mueve
+        const _sitFinished = csAnimator.action === "sit" && csAnimator.frame >= (csAnimator.meta?.frames ?? 1) - 1;
+        const atkLocked = csAnimator.meta && !csAnimator.meta.loop && !(_sitFinished && player.moving);
         const pvpLockedAnim = window.PvpSystem?.getLockedAnim?.();
         if (pvpLockedAnim && csAnimator.action !== pvpLockedAnim) {
           csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
@@ -3179,11 +4258,60 @@
             }
             // Si est quieto en special mode, dejar que la animación siga
           } else if ((controlMode === "pvp" || isCombatMode) && csAnimator.battleMode) {
-            if (isFlying) csAnimator.play("knockback_fly");
-            else if (player.moving) csAnimator.play("dash");
+            if (isFlying) {
+              csAnimator.play("fly");
+              // Frames direccionales de vuelo en combate (igual que RP)
+              if (csAnimator.action === "fly") {
+                if (my < -0.3) {
+                  csAnimator.frame = 1; csAnimator.elapsed = 0; csAnimator._frameOverride = true;
+                } else if (my > 0.3) {
+                  csAnimator.frame = 2; csAnimator.elapsed = 0; csAnimator._frameOverride = true;
+                } else {
+                  const _fmc = csAnimator.meta;
+                  if (_fmc) {
+                    csAnimator._frameOverride = true;
+                    const _fdc = 1000 / _fmc.fps;
+                    csAnimator.elapsed += (dt * 1000);
+                    while (csAnimator.elapsed >= _fdc) { csAnimator.elapsed -= _fdc; csAnimator.frame = csAnimator.frame === 0 ? 3 : 0; }
+                  }
+                }
+              }
+            }
+            else if (player.moving) {
+              if (csAnimator.action !== "dash") csAnimator.play("dash");
+              csAnimator.frame = 2;
+              csAnimator.elapsed = 0;
+              csAnimator._frameOverride = true;
+            }
             else csAnimator.play("combat_idle");
           } else if (isFlying) {
             csAnimator.play("fly");
+            // Forzar frame según dirección vertical de vuelo
+            if (csAnimator.action === "fly") {
+              if (my < -0.3) {
+                // Subiendo → frame 1 (índice 1)
+                csAnimator.frame = 1; csAnimator.elapsed = 0;
+                csAnimator._frameOverride = true;
+              } else if (my > 0.3) {
+                // Bajando → frame 2 (índice 2)
+                csAnimator.frame = 2; csAnimator.elapsed = 0;
+                csAnimator._frameOverride = true;
+              } else {
+                // Lateral/neutro → alternar frame 0 y 3 con el fps del animator
+                // El update() normal maneja el timing, solo restringimos los frames válidos
+                // Para que update() no salte a frame 1 o 2, lo hacemos manualmente:
+                const _fm = csAnimator.meta;
+                if (_fm) {
+                  csAnimator._frameOverride = true;
+                  const _fd = 1000 / _fm.fps;
+                  csAnimator.elapsed += (dt * 1000);
+                  while (csAnimator.elapsed >= _fd) {
+                    csAnimator.elapsed -= _fd;
+                    csAnimator.frame = csAnimator.frame === 0 ? 3 : 0;
+                  }
+                }
+              }
+            }
           } else if (player.moving && isRunning) {
             csAnimator.play("run");
           } else if (player.moving) {
@@ -3197,19 +4325,40 @@
       const speedMult = isRunning ? 2.0 : 1.0;
       const vx = mx*player.speed*speedMult, vy = my*player.speed*speedMult;
       const nx = player.x + vx, ny = player.y + vy;
-      const hw=player.w/2, hh=player.h/2;
-      const cx1=Math.floor((nx-hw)/TILE), cx2=Math.floor((nx+hw)/TILE);
-      const cy1=Math.floor((ny-hh*.3)/TILE), cy2=Math.floor((ny+hh*.5)/TILE);
-      if (isWalkable(cx1,cy1)&&isWalkable(cx2,cy1)&&isWalkable(cx1,cy2)&&isWalkable(cx2,cy2)) {
-        player.x=nx; player.y=ny;
+      if (isFlying) {
+        player.x = nx; player.y = ny;
       } else {
-        if (isWalkable(Math.floor((nx-hw)/TILE),Math.floor((player.y-hh*.3)/TILE))&&isWalkable(Math.floor((nx+hw)/TILE),Math.floor((player.y+hh*.5)/TILE))) player.x=nx;
-        if (isWalkable(Math.floor((player.x-hw)/TILE),Math.floor((ny-hh*.3)/TILE))&&isWalkable(Math.floor((player.x+hw)/TILE),Math.floor((ny+hh*.5)/TILE))) player.y=ny;
+        const hw=player.w/2, hh=player.h/2;
+        const cx1=Math.floor((nx-hw)/TILE), cx2=Math.floor((nx+hw)/TILE);
+        const cy1=Math.floor((ny-hh*.3)/TILE), cy2=Math.floor((ny+hh*.5)/TILE);
+        if (isWalkable(cx1,cy1)&&isWalkable(cx2,cy1)&&isWalkable(cx1,cy2)&&isWalkable(cx2,cy2)) {
+          player.x=nx; player.y=ny;
+        } else {
+          if (isWalkable(Math.floor((nx-hw)/TILE),Math.floor((player.y-hh*.3)/TILE))&&isWalkable(Math.floor((nx+hw)/TILE),Math.floor((player.y+hh*.5)/TILE))) player.x=nx;
+          if (isWalkable(Math.floor((player.x-hw)/TILE),Math.floor((ny-hh*.3)/TILE))&&isWalkable(Math.floor((player.x+hw)/TILE),Math.floor((ny+hh*.5)/TILE))) player.y=ny;
+        }
       }
 
       const mapDef = MAPS[currentMap];
       player.x = Math.max(TILE, Math.min(player.x, (mapDef.w-1)*TILE));
       player.y = Math.max(TILE, Math.min(player.y, (mapDef.h-1)*TILE));
+
+      // -- BARRERA DE VUELO (solo lobby) --
+      // Línea en Y=23: solo bloquea cruzar de abajo hacia arriba sin volar.
+      // Una vez arriba (volando o caminando por estructuras), movimiento libre.
+      if (currentMap === "lobby" && !isFlying) {
+        const FLY_BARRIER_Y = 23 * TILE;
+        if (player.y < FLY_BARRIER_Y && player._prevY >= FLY_BARRIER_Y) {
+          player.y = FLY_BARRIER_Y;
+          const now = performance.now();
+          if (!window._flyBarrierToastAt || now - window._flyBarrierToastAt > 3000) {
+            window._flyBarrierToastAt = now;
+            showHudToast("🦅 Necesitás volar para llegar ahí — presioná F", "info");
+          }
+        }
+      }
+      player._prevY = player.y;
+
       player.auraPhase += dt*3; player.animTimer += dt;
       if (player.animTimer >= 1/8) { player.animTimer=0; player.animFrame=(player.animFrame+1)%4; }
 
@@ -3253,11 +4402,36 @@
         ctx.drawImage(lobbyBgImage, -cam.x, -cam.y, totalW, totalH);
       }
 
+      // -- TALLER MECANICO INTERIOR: dibujar imagen de fondo --
+      if (currentMap === "taller_interior" && mecanicoInteriorBgImage) {
+        const totalW = mapDef.w * TILE;
+        const totalH = mapDef.h * TILE;
+        ctx.drawImage(mecanicoInteriorBgImage, -cam.x, -cam.y, totalW, totalH);
+      }
+
+      // -- ESTRATEGIA INTERIOR: dibujar imagen de fondo --
+      if (currentMap === "estrategia_interior" && estrategiaInteriorBgImage) {
+        const totalW = mapDef.w * TILE;
+        const totalH = mapDef.h * TILE;
+        ctx.drawImage(estrategiaInteriorBgImage, -cam.x, -cam.y, totalW, totalH);
+      }
+
+      // -- DIRECTOR Z INTERIOR: dibujar imagen de fondo --
+      if (currentMap === "director_z_interior" && directorZInteriorBgImage) {
+        const totalW = mapDef.w * TILE;
+        const totalH = mapDef.h * TILE;
+        ctx.drawImage(directorZInteriorBgImage, -cam.x, -cam.y, totalW, totalH);
+      }
+
       const startX=Math.floor(cam.x/TILE), startY=Math.floor(cam.y/TILE);
       const endX=Math.min(mapDef.w, startX+Math.ceil(canvas.width/TILE)+2);
       const endY=Math.min(mapDef.h, startY+Math.ceil(canvas.height/TILE)+2);
       // En el lobby con imagen de fondo, todos los tiles se omiten
       const lobbyHasBg = currentMap === "lobby" && lobbyBgImage;
+      // En el taller con imagen de fondo, solo portales; paredes se dibujan en overlay posterior
+      const tallerHasBg = currentMap === "taller_interior" && mecanicoInteriorBgImage;
+      const directorZHasBg = currentMap === "director_z_interior" && directorZInteriorBgImage;
+      const estrategiaHasBg = currentMap === "estrategia_interior" && estrategiaInteriorBgImage;
 
       for (let ty=startY;ty<endY;ty++) for (let tx=startX;tx<endX;tx++) {
         const tile = map[ty]?.[tx]??0;
@@ -3266,6 +4440,18 @@
 
         // En lobby con bg: solo portales (tile===3) visibles
         if (lobbyHasBg) {
+          if (tile !== 3) continue;
+        }
+        // En taller con bg: solo portales; paredes van en overlay sobre el jugador
+        if (tallerHasBg) {
+          if (tile !== 3) continue;
+        }
+        // En director Z con bg: igual
+        if (directorZHasBg) {
+          if (tile !== 3) continue;
+        }
+        // En estrategia con bg: igual
+        if (estrategiaHasBg) {
           if (tile !== 3) continue;
         }
 
@@ -3311,43 +4497,43 @@
       ctx.textAlign = "center";
       if (currentMap==="lobby") {
         if (lobbyBgImage) {
-          // Taller Mecánico: arriba izquierda
+          // Taller Mecánico: puerta en X:15 Y:20
           {
-            const bw=18*TILE, bh=32*TILE;
-            const bx=4*TILE-cam.x, by=-4*TILE-cam.y;
+            const bw=16*TILE, bh=22*TILE;
+            const bx=11*TILE-cam.x, by=-2*TILE-cam.y;
             if (lobbyBuildings.taller) {
               ctx.drawImage(lobbyBuildings.taller, bx, by, bw, bh);
             } else {
-              ctx.fillStyle="#0d1020"; ctx.fillRect(bx,by+10*TILE,bw,14*TILE);
-              ctx.fillStyle="#ff6a00"; ctx.fillRect(bx,by+10*TILE,bw,4);
+              ctx.fillStyle="#0d1020"; ctx.fillRect(bx,by+6*TILE,bw,12*TILE);
+              ctx.fillStyle="#ff6a00"; ctx.fillRect(bx,by+6*TILE,bw,4);
               ctx.fillStyle="rgba(255,255,255,.7)"; ctx.font="bold 9px Orbitron,monospace";
-              ctx.fillText("TALLER MECÁNICO",bx+bw/2,by+10*TILE-6);
+              ctx.fillText("TALLER MECÁNICO",bx+bw/2,by+6*TILE-8);
             }
           }
-          // Director Z: arriba derecha
+          // Sala de Estrategia: expandida hacia arriba
           {
-            const bw=22*TILE, bh=20*TILE;
-            const bx=52*TILE-cam.x, by=0*TILE-cam.y;
-            if (lobbyBuildings.directorZ) {
-              ctx.drawImage(lobbyBuildings.directorZ, bx, by, bw, bh);
-            } else {
-              ctx.fillStyle="#0d1525"; ctx.fillRect(bx,by+8*TILE,bw,8*TILE);
-              ctx.fillStyle="#00e5ff"; ctx.fillRect(bx,by+8*TILE,bw,4);
-              ctx.fillStyle="rgba(255,255,255,.7)"; ctx.font="bold 10px Orbitron,monospace";
-              ctx.fillText("DIRECTOR Z",bx+bw/2,by+8*TILE-6);
-            }
-          }
-          // Sala de Estrategia: abajo centro
-          {
-            const bw=18*TILE, bh=32*TILE;
-            const bx=31*TILE-cam.x, by=30*TILE-cam.y;
+            const bw=16*TILE, bh=28*TILE;
+            const bx=62*TILE-cam.x, by=-8*TILE-cam.y;
             if (lobbyBuildings.estrategia) {
               ctx.drawImage(lobbyBuildings.estrategia, bx, by, bw, bh);
             } else {
-              ctx.fillStyle="#0d1020"; ctx.fillRect(bx,by+10*TILE,bw,14*TILE);
-              ctx.fillStyle="#aa00ff"; ctx.fillRect(bx,by+10*TILE,bw,4);
+              ctx.fillStyle="#0d1020"; ctx.fillRect(bx,by+6*TILE,bw,18*TILE);
+              ctx.fillStyle="#aa00ff"; ctx.fillRect(bx,by+6*TILE,bw,4);
               ctx.fillStyle="rgba(255,255,255,.7)"; ctx.font="bold 9px Orbitron,monospace";
-              ctx.fillText("ESTRATEGIA",bx+bw/2,by+10*TILE-6);
+              ctx.fillText("ESTRATEGIA",bx+bw/2,by+6*TILE-8);
+            }
+          }
+          // Director Z: centrado izquierda, más arriba
+          {
+            const bw=22*TILE, bh=22*TILE;
+            const bx=30*TILE-cam.x, by=-6*TILE-cam.y;
+            if (lobbyBuildings.directorZ) {
+              ctx.drawImage(lobbyBuildings.directorZ, bx, by, bw, bh);
+            } else {
+              ctx.fillStyle="#0d1525"; ctx.fillRect(bx,by+4*TILE,bw,10*TILE);
+              ctx.fillStyle="#00e5ff"; ctx.fillRect(bx,by+4*TILE,bw,4);
+              ctx.fillStyle="rgba(255,255,255,.7)"; ctx.font="bold 10px Orbitron,monospace";
+              ctx.fillText("DIRECTOR Z",bx+bw/2,by+4*TILE-8);
             }
           }
           return;
@@ -3417,8 +4603,22 @@
         ctx.lineWidth=2; ctx.stroke();
         ctx.fillStyle="rgba(255,255,255,.85)"; ctx.font="bold 9px Orbitron,monospace";
         ctx.fillText("PORTAL A TIERRA",px+2*TILE,py-8);
+      } else if (currentMap === "taller_interior") {
+        // -- Decoraciones del Taller Mecánico --
+        for (const dec of TALLER_DECOR) {
+          const img = DECOR_IMGS[dec.key];
+          if (!img) continue;
+          const dw = img.naturalWidth  || 2*TILE;
+          const dh = img.naturalHeight || 2*TILE;
+          const dx = dec.x*TILE - cam.x - dw/2 + TILE/2;
+          const dy = dec.y*TILE - cam.y - dh + TILE;
+          ctx.drawImage(img, dx, dy, dw, dh);
+        }
       } else if (MAPS[currentMap]?.indoor) {
         const labels = {
+          director_z_interior:["SALA DE MANDO","ARCHIVOS","COMUNICACIONES","BRIEFING","TÁCTICA"],
+          taller_interior:["ZONA DE TRABAJO","FOSA MECÁNICA","OFICINA","DEPÓSITO","PRUEBAS"],
+          estrategia_interior:["SALA DE GUERRA","INTELIGENCIA","COMUNICACIONES","REUNIÓN","DESCANSO"],
           capsule_corp:["LABORATORIOS","HANGAR","SALA DE CAPSULAS","DORMITORIOS"],
           karin_tower:["MIRADOR","SALA DE KARIN","DOJO","DESCANSO"],
           galactic_patrol:["SALA TACTICA","CELDAS","HANGAR","OFICINAS"],
@@ -3468,22 +4668,195 @@
       }
     }
 
+    // -- NPC ANIMATORS: un SpriteAnimator por NPC, igual que jugadores remotos --
+    const npcAnimators = {};
+
+    // -- NPC SKIN IMAGES: caché de imágenes de skin --
+    // Si el NPC tiene skinRow, se recorta esa fila del sheet en un canvas offscreen.
+    const npcSkinImages = {};
+
+    // Recorta una fila de un spritesheet y devuelve un canvas offscreen con solo esa fila.
+    // Se devuelve el canvas directamente (válido como fuente en drawImage) para evitar
+    // el SecurityError de toDataURL() con imágenes cross-origin.
+    function _cropSkinRow(srcImg, row, totalRows) {
+      const rowH = Math.floor(srcImg.naturalHeight / totalRows);
+      const c = document.createElement("canvas");
+      c.width = srcImg.naturalWidth; c.height = rowH;
+      // Marcamos propiedades para que luzca como Image en las comprobaciones de caché
+      c.naturalWidth = srcImg.naturalWidth;
+      c.naturalHeight = rowH;
+      c.complete = true;
+      try {
+        c.getContext("2d").drawImage(srcImg, 0, row * rowH, srcImg.naturalWidth, rowH, 0, 0, srcImg.naturalWidth, rowH);
+      } catch(e) {
+        console.warn("[_cropSkinRow] No se pudo recortar la fila:", e);
+      }
+      return c;
+    }
+
+    function getNpcAnimator(npcId) {
+      const CS = window.CharacterSystem;
+      if (!CS || !csImageMap) return null;
+      if (!npcAnimators[npcId]) {
+        const npc = npcs.find(n => n.id === npcId);
+        // NPCs de combate arrancan en combat_idle con battleMode=true
+        const isCombatNpc = !!(npc && npc.combatNpc);
+        const startAnim = isCombatNpc ? "combat_idle" : ((npc && npc.defaultAnim) || "idle");
+        const animator = new CS.SpriteAnimator(startAnim, isCombatNpc ? { battleMode: true } : {});
+        if (isCombatNpc) {
+          animator.setBattleMode && animator.setBattleMode(true);
+          animator.play("combat_idle");
+        }
+        if (npc && npc.customMeta) {
+          Object.defineProperty(animator, "meta", { get: () => npc.customMeta });
+        }
+        npcAnimators[npcId] = animator;
+      }
+      return npcAnimators[npcId];
+    }
+
     function drawNpcs() {
       const t = Date.now()*.003;
+      const CS = window.CharacterSystem;
+      const now = performance.now();
       npcs.forEach(npc => {
+        if (npc._dead) return;  // NPC eliminado tras KO — no dibujarlo
         const sx=npc.x-cam.x, sy=npc.y-cam.y;
-        if (sx<-40||sx>canvas.width+40||sy<-40||sy>canvas.height+40) return;
-        ctx.shadowColor=npc.color; ctx.shadowBlur=10;
-        ctx.fillStyle="rgba(0,0,0,.3)"; ctx.beginPath(); ctx.ellipse(sx,sy+4,12,4,0,0,Math.PI*2); ctx.fill();
-        ctx.fillStyle=npc.color; ctx.fillRect(sx-8,sy-24,16,28);
-        ctx.beginPath(); ctx.arc(sx,sy-28,10,0,Math.PI*2); ctx.fill();
-        ctx.shadowBlur=0;
-        ctx.fillStyle="rgba(255,255,255,.8)"; ctx.font="bold 9px Orbitron,monospace"; ctx.textAlign="center";
-        ctx.fillText(npc.name, sx, sy-40);
+        if (sx<-80||sx>canvas.width+80||sy<-160||sy>canvas.height+80) return;
+
+        const anim = getNpcAnimator(npc.id);
+
+        if (CS && csImageMap && anim) {
+          anim.update(now);
+
+          // -- Resolución de skin --
+          // Si el NPC tiene skinKey o skinPath, se usa esa imagen como sprite completo.
+          // No se aplica ropa ni accesorios encima: la skin ES el personaje.
+          const hasSkin = !!(npc.skinKey || npc.skinPath);
+          const npcVariantCustomizations = {};
+
+          if (hasSkin) {
+            const hasRow = npc.skinRow !== undefined && npc.skinRow !== null;
+            // La clave de caché incluye la fila si aplica
+            const baseCacheKey = npc._skinCacheKey || npc.skinKey || ("__path__" + npc.skinPath);
+            const cacheKey = hasRow ? (baseCacheKey + ":row" + npc.skinRow) : baseCacheKey;
+
+            // 1. Cargar imagen base si no está en caché
+            if (!npcSkinImages[baseCacheKey]) {
+              let baseImg = null;
+              if (npc.skinKey && csImageMap[npc.skinKey] &&
+                  csImageMap[npc.skinKey].complete && csImageMap[npc.skinKey].naturalWidth) {
+                baseImg = csImageMap[npc.skinKey];
+              }
+              if (baseImg) {
+                npcSkinImages[baseCacheKey] = baseImg;
+              } else {
+                const src = npc.skinPath || (CS.SPRITE_IMAGES && CS.SPRITE_IMAGES[npc.skinKey]);
+                if (src) {
+                  // Usamos fetch → blob → objectURL para evitar tainted canvas
+                  // tanto en file:// (local) como en http:// (cross-origin).
+                  // Esto no requiere CORS headers y funciona en ambos contextos.
+                  const simg = new Image();
+                  npcSkinImages[baseCacheKey] = simg; // sentinel para no relanzar fetch
+                  fetch(src)
+                    .then(r => r.blob())
+                    .then(blob => {
+                      const objURL = URL.createObjectURL(blob);
+                      simg.onload = () => { npcSkinImages[baseCacheKey] = simg; };
+                      simg.onerror = () => { npcSkinImages[baseCacheKey] = null; };
+                      simg.src = objURL;
+                    })
+                    .catch(() => {
+                      // Fallback: carga directa sin crossOrigin (puede taintar canvas pero al menos muestra la skin)
+                      simg.onload = () => { npcSkinImages[baseCacheKey] = simg; };
+                      simg.onerror = () => { npcSkinImages[baseCacheKey] = null; };
+                      simg.src = src;
+                    });
+                }
+              }
+            }
+
+            // 2. Si necesitamos una fila específica, recortarla una sola vez
+            if (hasRow && !npcSkinImages[cacheKey]) {
+              const baseImg = npcSkinImages[baseCacheKey];
+              if (baseImg && baseImg.complete && baseImg.naturalWidth) {
+                const totalRows = npc.skinTotalRows || CS.TOTAL_ROWS || 37;
+                npcSkinImages[cacheKey] = _cropSkinRow(baseImg, npc.skinRow, totalRows);
+              }
+            }
+
+            const skinImg = npcSkinImages[cacheKey] || npcSkinImages[baseCacheKey];
+            // skinImg puede ser HTMLImageElement o HTMLCanvasElement (del recorte de fila)
+            const skinImgReady = skinImg && (skinImg.complete !== false) && (skinImg.naturalWidth || skinImg.width);
+            if (skinImgReady) {
+              const entry = {
+                spriteImage: skinImg, userImage: skinImg,
+                combatSpriteImage: skinImg, combatUserImage: skinImg,
+                specialSpriteImage: skinImg, specialUserImage: skinImg,
+              };
+              npcVariantCustomizations["base"] = entry;
+            }
+          }
+
+          // Apariencia del NPC: si tiene skin, topId/bottomId/shoes/gloves/accessory
+          // se dejan en null/"gm0"/"ac_none" para no superponerse al sprite.
+          const npcApp = {
+            raceId:    npc.raceId    || "human",
+            gender:    npc.gender    || "male",
+            variantId: "base",
+            variantCustomizations: npcVariantCustomizations,
+            combatCustomization: {},
+            faceId:    hasSkin ? null : (npc.faceId || null),
+            faceColor: hasSkin ? null : (npc.faceColor || null),
+            eyeColor:  hasSkin ? "#3a2a1a" : (npc.eyeColor || "#3a2a1a"),
+            browColor: null, pupilColor: null,
+            hairId:    hasSkin ? "hm0" : (npc.hairId || "hm0"),
+            hairColor: npc.skinColor || "#e8c898",
+            topId:     hasSkin ? null : (npc.topId    || null),
+            bottomId:  hasSkin ? null : (npc.bottomId || null),
+            shoesId:   hasSkin ? null : (npc.shoesId  || null),
+            glovesId:  "gm0",
+            skinColor: npc.skinColor || "#e8c898",
+            auraId:    "a0",
+            auraColor: npc.color || "#fdd835",
+            accessoryId: "ac_none",
+            clothColorA: null, clothColorB: null,
+            displayW: 180, displayH: 220,
+          };
+
+          const npcCSPlayer = { appearance: npcApp, direction: npc.facing || 1 };
+          const npcState = {
+            glovesId: "gm0", auraId: "a0",
+            auraColor: npc.color || "#fdd835",
+            accessoryId: "ac_none", auraPhase: 0,
+            viewKey: null, spriteVariantId: npc.combatNpc ? "fight" : null,
+          };
+
+          ctx.fillStyle = "rgba(0,0,0,0.3)";
+          ctx.beginPath();
+          ctx.ellipse(sx, sy+3, SPRITE_DRAW_W*0.3, SPRITE_DRAW_W*0.1, 0, 0, Math.PI*2);
+          ctx.fill();
+          ctx.save();
+          ctx.imageSmoothingEnabled = true;
+          CS.drawPlayer(ctx, sx, sy, npcCSPlayer, csImageMap, anim, npcState);
+          ctx.restore();
+
+        } else {
+          // Fallback procedural si CS no está listo
+          ctx.shadowColor=npc.color; ctx.shadowBlur=10;
+          ctx.fillStyle="rgba(0,0,0,.3)"; ctx.beginPath(); ctx.ellipse(sx,sy+4,12,4,0,0,Math.PI*2); ctx.fill();
+          ctx.fillStyle=npc.color; ctx.fillRect(sx-8,sy-24,16,28);
+          ctx.beginPath(); ctx.arc(sx,sy-28,10,0,Math.PI*2); ctx.fill();
+          ctx.shadowBlur=0;
+        }
+
+        // Nombre y prompt de interacción
+        ctx.fillStyle="rgba(255,255,255,.9)"; ctx.font="bold 9px Orbitron,monospace"; ctx.textAlign="center";
+        ctx.fillText(npc.name, sx, sy-SPRITE_DRAW_H-6);
         if (Math.hypot(npc.x-player.x,npc.y-player.y)<80) {
           ctx.fillStyle=`rgba(245,196,0,${.5+.5*Math.sin(t*4)})`;
           ctx.font="bold 12px Orbitron,monospace";
-          ctx.fillText("[Z]",sx,sy-54+Math.sin(t*3)*3);
+          ctx.fillText("[Z]",sx,sy-SPRITE_DRAW_H-22+Math.sin(t*3)*3);
         }
         ctx.textAlign="left";
       });
@@ -3674,6 +5047,10 @@
           worldMaps.earth = generateEarthMap();
           worldMaps.sky = generateSkyMap();
           worldMaps.space = generateSpaceMap();
+          worldMaps.director_z_interior = generateDirectorZMap();
+          worldMaps.taller_interior     = generateTallerMap();
+          worldMaps.estrategia_interior = generateEstrategiaMap();
+          worldMaps.simulador_combate   = generateSimuladorMap();
           worldMaps.capsule_corp = generateFacilityMap("capsule_corp");
           worldMaps.karin_tower = generateFacilityMap("karin_tower");
           worldMaps.galactic_patrol = generateFacilityMap("galactic_patrol");
@@ -3824,6 +5201,8 @@
       if (gameState==="playing") {
         updatePlayer(dt);
         updateCamera();
+        if (window.tickNpcCombat) tickNpcCombat();
+        if (window.checkNpcCombatProximity) checkNpcCombatProximity();
       }
 
       if (gameState==="trailer") {
@@ -3849,6 +5228,14 @@
       drawCombatEffects(dt);
       ctx.restore();
       drawMinimap();
+
+      // Actualizar coordenadas en tiempo real
+      const _elX = document.getElementById("coordX");
+      const _elY = document.getElementById("coordY");
+      if (_elX && _elY) {
+        _elX.textContent = "X:" + Math.floor(player.x / TILE);
+        _elY.textContent = "Y:" + Math.floor(player.y / TILE);
+      }
 
       requestAnimationFrame(gameLoop);
     }

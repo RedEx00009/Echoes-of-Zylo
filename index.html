@@ -1909,6 +1909,61 @@ function initEvents() {
     renderKiAttackEditor();
     showToast("Ataques de ki restaurados", "warning");
   });
+
+  // ── Sliders de tamaño del personaje (previsualización en tiempo real) ──
+  function _applySpriteSize(w, h) {
+    w = Math.max(40, Math.min(400, parseInt(w) || 180));
+    h = Math.max(40, Math.min(500, parseInt(h) || 220));
+    document.getElementById("spriteWSlider").value = w;
+    document.getElementById("spriteWInput").value  = w;
+    document.getElementById("spriteWVal").textContent = w;
+    document.getElementById("spriteHSlider").value = h;
+    document.getElementById("spriteHInput").value  = h;
+    document.getElementById("spriteHVal").textContent = h;
+    const pc = document.getElementById("previewCanvas");
+    if (pc) { pc.width = w; pc.height = h; }
+    const CS = window.CharacterSystem;
+    if (CS && typeof CS.setDisplaySize === "function") CS.setDisplaySize(w, h);
+  }
+
+  document.getElementById("spriteWSlider")?.addEventListener("input", e => {
+    const w = parseInt(e.target.value) || 180;
+    const h = parseInt(document.getElementById("spriteHSlider").value) || 220;
+    document.getElementById("spriteWVal").textContent = w;
+    document.getElementById("spriteWInput").value = w;
+    const pc = document.getElementById("previewCanvas");
+    if (pc) { pc.width = w; pc.height = h; }
+    const CS = window.CharacterSystem;
+    if (CS && typeof CS.setDisplaySize === "function") CS.setDisplaySize(w, h);
+  });
+
+  document.getElementById("spriteHSlider")?.addEventListener("input", e => {
+    const h = parseInt(e.target.value) || 220;
+    const w = parseInt(document.getElementById("spriteWSlider").value) || 180;
+    document.getElementById("spriteHVal").textContent = h;
+    document.getElementById("spriteHInput").value = h;
+    const pc = document.getElementById("previewCanvas");
+    if (pc) { pc.width = w; pc.height = h; }
+    const CS = window.CharacterSystem;
+    if (CS && typeof CS.setDisplaySize === "function") CS.setDisplaySize(w, h);
+  });
+
+  document.getElementById("spriteWInput")?.addEventListener("change", e => {
+    const w = Math.max(40, Math.min(400, parseInt(e.target.value) || 180));
+    const h = parseInt(document.getElementById("spriteHSlider").value) || 220;
+    _applySpriteSize(w, h);
+  });
+
+  document.getElementById("spriteHInput")?.addEventListener("change", e => {
+    const h = Math.max(40, Math.min(500, parseInt(e.target.value) || 220));
+    const w = parseInt(document.getElementById("spriteWSlider").value) || 180;
+    _applySpriteSize(w, h);
+  });
+
+  document.getElementById("btnResetSize")?.addEventListener("click", () => {
+    _applySpriteSize(180, 220);
+    showToast("Tamaño reseteado a 180×220", "success");
+  });
 }
 
 /* ════ INIT ════ */
@@ -2350,13 +2405,15 @@ function _tmStartPreview() {
     if (app.pupilColor)  tp.appearance.pupilColor  = app.pupilColor;
     if (app.clothColorA) tp.appearance.clothColorA = app.clothColorA;
     if (app.clothColorB) tp.appearance.clothColorB = app.clothColorB;
-    // Si hay PNG custom, inyectarlo
-    if (_transEditSkinDataURL && _tmEditSkinImage) {
+    // Si hay PNG custom o skin predefinida (skinKey como Ozaru), inyectarla al preview
+    if (_tmEditSkinImage && (_transEditSkinDataURL || _transEditSkinKey)) {
       const varId = player.appearance.variantId || "base";
       tp.appearance.variantCustomizations = Object.assign({}, tp.appearance.variantCustomizations || {});
       tp.appearance.variantCustomizations[varId] = Object.assign({}, tp.appearance.variantCustomizations[varId] || {});
       tp.appearance.variantCustomizations[varId].spriteImage   = _tmEditSkinImage;
-      tp.appearance.variantCustomizations[varId].spriteDataURL = _transEditSkinDataURL;
+      if (_transEditSkinDataURL) {
+        tp.appearance.variantCustomizations[varId].spriteDataURL = _transEditSkinDataURL;
+      }
     }
     ctx.clearRect(0, 0, cv.width, cv.height);
     // Aura glow en el canvas

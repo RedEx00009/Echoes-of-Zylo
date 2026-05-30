@@ -588,7 +588,7 @@
     anim.play(animName, () => {
       const finish = () => {
         if (cb) cb();
-        else anim.play(G.flying ? "fly_combat" : "combat_idle");
+        else anim.play(G.flying ? "fly" : "combat_idle");
       };
       setTimeout(finish, Math.max(0, myLockUntil - Date.now()));
     });
@@ -778,7 +778,7 @@
     push(p.x, p.y - 56, (blocked ? "BLOQUEO " : "-") + damage, blocked ? "#90caf9" : "#ff1744", 1.3);
 
     playLocalAnim(blocked ? "block" : "hit", () => {
-      if (p.hp > 0) playLocalAnim(G.flying ? "fly_combat" : "combat_idle");
+      if (p.hp > 0) playLocalAnim(G.flying ? "fly" : "combat_idle");
     });
 
     writeCombatAnim(blocked ? "block" : "hit", {

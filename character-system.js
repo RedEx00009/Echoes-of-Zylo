@@ -131,6 +131,8 @@
     charge:        { row: 24, frames: 3, fps: 4,  loop: true,  label: "Charge"        },
     sparring:      { row: 25, frames: 4, fps: 8,  loop: true,  label: "Sparring"      },
     knockback_fly: { row: 26, frames: 1, fps: 1,  loop: false, label: "Knockback Fly" },
+    // Vuelo en combate — misma fila y parámetros que en RP
+    fly:           { row:  7, frames: 4, fps: 6,  loop: true,  label: "Fly"           },
   };
 
   const COMBAT_IDLE_ROW = COMBAT_ACTIONS_META.combat_idle.row; // 15
@@ -151,7 +153,7 @@
     use_item:        { row: 32, frames: 4, fps: 6,  loop: false, label: "Use Item"        },
     eat_drink:       { row: 33, frames: 3, fps: 4,  loop: false, label: "Eat/Drink"       },
     drive:           { row: 34, frames: 1, fps: 1,  loop: true,  label: "Drive"           },
-    sit:             { row: 35, frames: 3, fps: 2,  loop: true,  label: "Sentarse"        },
+    sit:             { row: 35, frames: 3, fps: 2,  loop: false, label: "Sentarse"        },
     emote:           { row: 36, frames: 3, fps: 4,  loop: false, label: "Emote"           },
   };
 
@@ -174,6 +176,7 @@
     charge:        "meditate",
     sparring:      "idle",
     knockback_fly: "fly",
+    fly:           "fly",
   };
 
   /** RP → combate equivalente */
@@ -183,7 +186,7 @@
     run:         "dash",
     fall:        "dash",
     jump:        "dash",
-    fly:         "knockback_fly",
+    fly:         "fly",
     hover:       "combat_idle",
     meditate:    "charge",
     sleep:       "knockback_fly",
@@ -1059,6 +1062,10 @@
       this._lastTime = now;
       const m = this.meta;
       if (!m) return;
+      // _freezeFrame: bloqueo permanente (combos manuales). El frame no avanza hasta que se libere.
+      if (this._freezeFrame) return;
+      // _frameOverride: salta un solo ciclo (vuelo direccional)
+      if (this._frameOverride) { this._frameOverride = false; return; }
       this.elapsed += delta;
       const fd = 1000 / m.fps;
       while (this.elapsed >= fd) {
