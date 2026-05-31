@@ -202,6 +202,50 @@
       }
       #trailerInterior.visible { display:flex; flex-direction:column; }
       #trailerCanvas { flex:1; display:block; width:100%; }
+      /* Joystick móvil dentro del trailer */
+      #trailerMobileControls {
+        display:none;
+        position:absolute;
+        bottom:90px; left:12px;
+        z-index:60;
+        flex-direction:column;
+        align-items:center;
+        gap:8px;
+        pointer-events:auto;
+      }
+      @media (pointer:coarse) {
+        #trailerMobileControls { display:flex; }
+      }
+      #trailerJoystickBase {
+        position:absolute; inset:0;
+        background:rgba(255,255,255,.06);
+        border:2px solid rgba(255,255,255,.15);
+        border-radius:50%;
+        backdrop-filter:blur(4px);
+      }
+      #trailerJoystickKnob {
+        position:absolute;
+        width:52px; height:52px;
+        background:radial-gradient(circle,rgba(245,196,0,.85),rgba(245,196,0,.45));
+        border:2px solid rgba(245,196,0,.7);
+        border-radius:50%;
+        top:34px; left:34px;
+        box-shadow:0 0 14px rgba(245,196,0,.5);
+        pointer-events:none;
+      }
+      .trailer-mobile-act-btn {
+        padding:10px 18px;
+        background:rgba(0,229,255,.15);
+        border:1px solid #00e5ff;
+        border-radius:8px;
+        color:#00e5ff;
+        font-family:var(--font-head);
+        font-size:9px;
+        letter-spacing:1px;
+        cursor:pointer;
+        touch-action:manipulation;
+        pointer-events:auto;
+      }
       .trailer-hud-bar {
         display:flex; align-items:center; gap:10px; padding:8px 16px;
         background:rgba(8,9,15,.95); border-top:1px solid #2a3560;
@@ -436,6 +480,14 @@
     <!-- INTERIOR TRAILER -->
     <div id="trailerInterior">
       <canvas id="trailerCanvas"></canvas>
+      <!-- Joystick móvil para moverse dentro del trailer -->
+      <div id="trailerMobileControls">
+        <div class="joystick-wrap" id="trailerJoystickWrap">
+          <div id="trailerJoystickBase"></div>
+          <div id="trailerJoystickKnob"></div>
+        </div>
+        <button class="trailer-mobile-act-btn" onclick="trailerInteract()">💬 ACCIÓN</button>
+      </div>
       <div class="trailer-drive-panel" id="trailerDrivePanel">
         <div class="trailer-drive-title">TABLA DE TELETRANSPORTE</div>
         <div class="trailer-drive-grid" id="trailerTravelBtns"></div>
@@ -2091,6 +2143,12 @@
       const now = performance.now();
       if (now - mpLastSend < MP_SEND_RATE) return;
       mpLastSend = now;
+      // Si está conduciendo el trailer, mantener al jugador oculto y dejar que
+      // updateTrailerDrive sincronice la posición del vehículo
+      if (trailerDrive?.active) {
+        db.ref("players/" + myPlayerId).update({ inTrailerDrive: true, t: Date.now() });
+        return;
+      }
       let animAction;
       const pvpLockedAnim = window.PvpSystem?.getLockedAnim?.();
       if (pvpLockedAnim) {
@@ -3923,6 +3981,35 @@
     window.addEventListener("touchmove", (e) => { e.preventDefault(); if(!joystick.active)return; const t=e.touches[0]; const dx=t.clientX-joystick.startX,dy=t.clientY-joystick.startY; const maxR=40,dist=Math.sqrt(dx*dx+dy*dy); const nx=dist>maxR?(dx/dist)*maxR:dx,ny=dist>maxR?(dy/dist)*maxR:dy; joystick.dx=nx/maxR; joystick.dy=ny/maxR; jk.style.transform=`translate(${nx}px,${ny}px)`; }, {passive:false});
     window.addEventListener("touchend", () => { if(!joystick.active)return; joystick.active=false; joystick.dx=0; joystick.dy=0; jk.style.transform="translate(0,0)"; });
 
+    // Joystick del interior del trailer (mobile)
+    const tjw = document.getElementById("trailerJoystickWrap");
+    const tjk = document.getElementById("trailerJoystickKnob");
+    const trailerJoystick = { active:false, dx:0, dy:0, startX:0, startY:0 };
+    if (tjw) {
+      tjw.addEventListener("touchstart", (e) => {
+        e.preventDefault();
+        const r = tjw.getBoundingClientRect();
+        trailerJoystick.active = true;
+        trailerJoystick.startX = r.left + r.width/2;
+        trailerJoystick.startY = r.top + r.height/2;
+      }, {passive:false});
+      window.addEventListener("touchmove", (e) => {
+        if (!trailerJoystick.active) return;
+        const t = e.touches[0];
+        const dx = t.clientX - trailerJoystick.startX, dy = t.clientY - trailerJoystick.startY;
+        const maxR = 40, d = Math.sqrt(dx*dx+dy*dy);
+        const nx = d>maxR?(dx/d)*maxR:dx, ny = d>maxR?(dy/d)*maxR:dy;
+        trailerJoystick.dx = nx/maxR; trailerJoystick.dy = ny/maxR;
+        if (tjk) tjk.style.transform = `translate(${nx}px,${ny}px)`;
+      }, {passive:false});
+      window.addEventListener("touchend", () => {
+        if (!trailerJoystick.active) return;
+        trailerJoystick.active = false; trailerJoystick.dx = 0; trailerJoystick.dy = 0;
+        if (tjk) tjk.style.transform = "translate(0,0)";
+      });
+    }
+    window.trailerJoystick = trailerJoystick;
+
     canvas.addEventListener("pointerdown", (e) => {
       // Permitir interacción de combate también en `frieza_ship` durante el Reto del Imperio
       if (gameState !== "playing" || !(currentMap === "simulador_combate" || currentMap === "sala_entrenamiento" || (pendingFactionChallenge === "intergalactic_empire" && currentMap === "frieza_ship"))) return;
@@ -4550,7 +4637,10 @@
       if (keys["ArrowRight"]||keys["KeyD"]) mx+=1;
       if (keys["ArrowUp"]||keys["KeyW"]) my-=1;
       if (keys["ArrowDown"]||keys["KeyS"]) my+=1;
+      // Joystick principal (cuando el main HUD es visible — modo conducción)
       if (joystick.active) { mx=joystick.dx; my=joystick.dy; }
+      // Joystick del interior del trailer (mobile, cuando gameState === "trailer")
+      if (window.trailerJoystick?.active) { mx=window.trailerJoystick.dx; my=window.trailerJoystick.dy; }
       if (mx || my) { const len = Math.sqrt(mx*mx + my*my); mx/=len; my/=len; }
       return { mx, my };
     }
