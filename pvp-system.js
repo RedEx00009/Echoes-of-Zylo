@@ -158,6 +158,24 @@
       @keyframes pvpDmgFloat{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-40px) scale(1.2)}}
       #pvpEndBar{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);z-index:130;display:none;gap:8px;pointer-events:auto}
       #pvpEndBar.open{display:flex}
+      #partyInviteToast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:160;display:none;flex-direction:column;background:rgba(8,9,15,.97);border:1px solid #00e5ff;border-radius:12px;backdrop-filter:blur(14px);font-family:Rajdhani,sans-serif;color:#e8eaf6;width:min(300px,90vw);overflow:hidden;box-shadow:0 0 30px rgba(0,229,255,.2)}
+      #partyInviteToast.open{display:flex}
+      .pit-header{background:linear-gradient(135deg,rgba(0,229,255,.15),rgba(41,121,255,.1));padding:14px 16px 10px;border-bottom:1px solid rgba(0,229,255,.2)}
+      .pit-title{font-family:Orbitron,monospace;font-size:10px;letter-spacing:2px;color:#00e5ff;margin-bottom:4px}
+      .pit-msg{font-size:13px;color:#c8cfe8;line-height:1.4}
+      .pit-btns{display:flex;gap:8px;padding:12px 16px}
+      .pit-btn{flex:1;padding:10px;border-radius:8px;border:none;font-family:Orbitron,monospace;font-size:9px;letter-spacing:1px;cursor:pointer;transition:all .15s}
+      .pit-btn-accept{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(41,121,255,.2));border:1px solid rgba(0,229,255,.5)!important;color:#00e5ff}
+      .pit-btn-reject{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.15)!important;color:#8892b0}
+      #playerContextMenu{position:fixed;z-index:155;display:none;flex-direction:column;background:rgba(8,9,15,.97);border:1px solid #2a3560;border-radius:10px;backdrop-filter:blur(12px);font-family:Rajdhani,sans-serif;min-width:180px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.6)}
+      #playerContextMenu.open{display:flex}
+      .pcm-header{padding:10px 14px 8px;border-bottom:1px solid #2a3560;background:rgba(245,196,0,.06)}
+      .pcm-name{font-family:Orbitron,monospace;font-size:10px;letter-spacing:1.5px;color:#f5c400}
+      .pcm-tag{font-size:10px;color:#4a5880;margin-top:2px}
+      .pcm-btn{padding:10px 14px;font-size:12px;color:#c8cfe8;cursor:pointer;border:none;background:none;text-align:left;width:100%;transition:background .12s}
+      .pcm-btn:hover{background:rgba(255,255,255,.06);color:#fff}
+      .pcm-btn.hi{color:#00e5ff}.pcm-btn.danger-c{color:#ff5252}
+      .pvp-tp-btn{border-color:rgba(0,229,255,.4)!important;background:rgba(0,229,255,.1)!important;color:#00e5ff!important}
     `;
     document.head.appendChild(s);
   }
@@ -207,6 +225,41 @@
     endBar.innerHTML = `<button class="pvp-btn" type="button" id="pvpMutualEndBtn">🤝 PEDIR FIN DEL COMBATE</button>`;
     document.body.appendChild(endBar);
 
+    // ── Toast de invitación a party (reemplaza confirm()) ──
+    const invToast = document.createElement("div");
+    invToast.id = "partyInviteToast";
+    invToast.innerHTML = `
+      <div class="pit-header">
+        <div class="pit-title">👥 INVITACIÓN A PARTY</div>
+        <div class="pit-msg" id="pitMsg">Te invita a su party</div>
+      </div>
+      <div class="pit-btns">
+        <button class="pit-btn pit-btn-accept" id="pitAccept">✔ ACEPTAR</button>
+        <button class="pit-btn pit-btn-reject" id="pitReject">✕ RECHAZAR</button>
+      </div>`;
+    document.body.appendChild(invToast);
+
+    // ── Menú contextual al hacer clic en jugador ──
+    const pcm = document.createElement("div");
+    pcm.id = "playerContextMenu";
+    pcm.innerHTML = `
+      <div class="pcm-header">
+        <div class="pcm-name" id="pcmPlayerName">Jugador</div>
+        <div class="pcm-tag" id="pcmPlayerTag"></div>
+      </div>
+      <button class="pcm-btn hi" id="pcmInviteParty">👥 Invitar a Party</button>
+      <button class="pcm-btn" id="pcmChallenge">⚔️ Desafiar a Combate</button>
+      <button class="pcm-btn" id="pcmTpTo">🌀 Teleportarme aquí</button>
+    `;
+    document.body.appendChild(pcm);
+
+    // Cerrar PCM al clicar fuera
+    document.addEventListener("pointerdown", (e) => {
+      if (!document.getElementById("playerContextMenu").contains(e.target)) {
+        closePlayerContextMenu();
+      }
+    });
+
     document.getElementById("partyPanelClose").onclick = () => panel.classList.remove("open");
     document.getElementById("pvpModalClose").onclick = closeChallengeModal;
     document.getElementById("partyInviteBtn").onclick = inviteNearestPlayer;
@@ -224,22 +277,38 @@
     const list = document.getElementById("partyMemberList");
     if (!list) return;
     const me = G.player;
-    let html = `<div class="pvp-member"><span class="pvp-member-name">🟢 ${me?.name || "Tú"} (tú)</span></div>`;
+    const iAmLeader = amILeader();
+    const leaderMark = iAmLeader ? " 👑" : "";
+    let html = `<div class="pvp-member"><span class="pvp-member-name">🟢 ${me?.name || "Tú"}${leaderMark} (tú)</span></div>`;
     getPartyMemberIds().forEach((id) => {
       const m = partyMembers[id];
       const name = m?.name || G.others[id]?.name || id.slice(0, 10);
       const sel = selectedMemberId === id ? " sel" : "";
-      html += `<div class="pvp-member${sel}" data-id="${id}"><span class="pvp-member-name">${name}</span></div>`;
+      const isLeaderMember = myPartyId && myPartyId === "party_" + id;
+      const memberTag = isLeaderMember ? " 👑" : "";
+      html += `<div class="pvp-member${sel}" data-id="${id}">
+        <span class="pvp-member-name">${name}${memberTag}</span>
+        <button class="pvp-btn pvp-tp-btn" style="width:auto;padding:4px 8px;margin:0;font-size:8px" data-tp="${id}">🌀 TP</button>
+        ${iAmLeader ? `<button class="pvp-btn" style="width:auto;padding:4px 8px;margin:0;font-size:8px;border-color:rgba(255,152,0,.5);background:rgba(255,152,0,.12);color:#ffa726" data-leader-tp="${id}">📡 LLAMAR</button>` : ""}
+      </div>`;
     });
     if (!getPartyMemberIds().length) {
       html += `<div style="font-size:12px;color:#4a5880;text-align:center;padding:8px">Sin miembros — invitá a alguien cercano</div>`;
     }
     list.innerHTML = html;
     list.querySelectorAll(".pvp-member[data-id]").forEach((el) => {
-      el.onclick = () => {
+      el.addEventListener("click", (e) => {
+        if (e.target.dataset.tp) return; // no seleccionar al clickear TP
+        if (e.target.dataset.leaderTp) return;
         selectedMemberId = el.getAttribute("data-id");
         renderPartyList();
-      };
+      });
+    });
+    list.querySelectorAll("[data-tp]").forEach((btn) => {
+      btn.onclick = (e) => { e.stopPropagation(); tpToPartyMember(btn.dataset.tp); };
+    });
+    list.querySelectorAll("[data-leader-tp]").forEach((btn) => {
+      btn.onclick = (e) => { e.stopPropagation(); leaderTpMemberToMe(btn.dataset.leaderTp); };
     });
   }
 
@@ -311,14 +380,29 @@
     inviteListener.on("value", (snap) => {
       const inv = snap.val();
       if (!inv || !inv.partyId) return;
-      toast(`${inv.fromName} te invita a su party`, "info");
-      if (confirm(`${inv.fromName} te invita a la party. ¿Aceptar?`)) {
-        joinParty(inv.partyId, inv.fromId);
-        snap.ref.remove();
-      } else {
-        snap.ref.remove();
-      }
+      showPartyInviteToast(inv, snap.ref);
     });
+  }
+
+  function showPartyInviteToast(inv, ref) {
+    const toast = document.getElementById("partyInviteToast");
+    const msg = document.getElementById("pitMsg");
+    const accept = document.getElementById("pitAccept");
+    const reject = document.getElementById("pitReject");
+    if (!toast) return;
+    msg.textContent = `${inv.fromName || "Alguien"} te invita a su party`;
+    toast.classList.add("open");
+    const cleanup = () => {
+      toast.classList.remove("open");
+      accept.onclick = null;
+      reject.onclick = null;
+      ref.remove();
+    };
+    accept.onclick = () => {
+      joinParty(inv.partyId, inv.fromId);
+      cleanup();
+    };
+    reject.onclick = cleanup;
   }
 
   function inviteNearestPlayer() {
@@ -367,6 +451,174 @@
     selectedMemberId = null;
     renderPartyList();
     toast("Saliste de la party", "info");
+  }
+
+  // ── Leader tracking ──────────────────────────────────────────────────
+  let partyLeaderId = null;
+
+  // listenParty ya carga los members; extender para trackear leaderId
+  const _origListenParty = listenParty;
+
+  // ── Player Context Menu ──────────────────────────────────────────────
+  let _pcmTargetId = null;
+
+  function openPlayerContextMenu(id, screenX, screenY) {
+    const op = G.others[id];
+    if (!op) return;
+    _pcmTargetId = id;
+    const menu = document.getElementById("playerContextMenu");
+    const nameEl = document.getElementById("pcmPlayerName");
+    const tagEl = document.getElementById("pcmPlayerTag");
+    const tpBtn = document.getElementById("pcmTpTo");
+
+    const name = op.name || id.slice(0, 10);
+    const lvl = op.level ? ` Lv.${op.level}` : "";
+    nameEl.textContent = name + lvl;
+    tagEl.textContent = isPartyMember(id) ? "🟢 En tu party" : "👤 Jugador";
+
+    // TP a ese jugador solo si es party member
+    tpBtn.style.display = isPartyMember(id) ? "block" : "none";
+
+    // Posicionar el menú
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const mw = 190, mh = 160;
+    let x = screenX + 10, y = screenY - 20;
+    if (x + mw > vw) x = screenX - mw - 10;
+    if (y + mh > vh) y = vh - mh - 10;
+    menu.style.left = x + "px";
+    menu.style.top = y + "px";
+    menu.classList.add("open");
+
+    document.getElementById("pcmInviteParty").onclick = () => {
+      invitePlayerById(id);
+      closePlayerContextMenu();
+    };
+    document.getElementById("pcmChallenge").onclick = () => {
+      selectedMemberId = id;
+      sendChallengeToSelected();
+      closePlayerContextMenu();
+    };
+    tpBtn.onclick = () => {
+      tpToPartyMember(id);
+      closePlayerContextMenu();
+    };
+  }
+
+  function closePlayerContextMenu() {
+    document.getElementById("playerContextMenu")?.classList.remove("open");
+    _pcmTargetId = null;
+  }
+
+  function invitePlayerById(targetId) {
+    if (!G.online || !G.myId) return toast("Conectate al servidor primero", "dmg");
+    const op = G.others[targetId];
+    if (!op) return toast("Jugador no encontrado", "dmg");
+    const partyId = ensurePartyId();
+    const p = G.player;
+    const members = { [G.myId]: { name: p.name, t: Date.now() } };
+    G.db.ref("parties/" + partyId).transaction((cur) => {
+      if (!cur) return { leaderId: G.myId, members, createdAt: Date.now() };
+      cur.members = cur.members || {};
+      cur.members[G.myId] = { name: p.name, t: Date.now() };
+      return cur;
+    });
+    G.db.ref("partyInvites/" + targetId).set({
+      partyId,
+      fromId: G.myId,
+      fromName: p.name,
+      t: Date.now(),
+    });
+    toast(`Invitación enviada a ${op.name || targetId.slice(0,8)}`, "info");
+  }
+
+  // ── Party Teleport ────────────────────────────────────────────────────
+  // Cualquier miembro puede TP a otro miembro de la party.
+  // Solo el líder puede forzar a un miembro a teleportarse hacia él.
+
+  function amILeader() {
+    if (!myPartyId) return false;
+    // El partyId es "party_<leaderId>" por convención
+    return myPartyId === "party_" + G.myId;
+  }
+
+  function tpToPartyMember(targetId) {
+    const op = G.others[targetId];
+    if (!op) return toast("Jugador no visible", "dmg");
+    if (!isPartyMember(targetId)) return toast("Solo podés TP a party members", "dmg");
+    const p = G.player;
+    if (op.map && op.map !== G.map) {
+      toast("Ese jugador está en otro mapa. Viajá primero.", "dmg");
+      return;
+    }
+    p.x = op.x + 36;
+    p.y = op.y;
+    if (typeof window.sendPlayerUpdate === "function") window.sendPlayerUpdate();
+    toast("🌀 Teleportado a " + (op.name || "party member"), "info");
+  }
+
+  function leaderTpMemberToMe(targetId) {
+    if (!amILeader()) return toast("Solo el líder puede hacer TP forzado", "dmg");
+    if (!isPartyMember(targetId)) return toast("No es miembro de la party", "dmg");
+    const p = G.player;
+    // Escribir un comando de TP en Firebase que el miembro va a leer
+    G.db.ref("partyTp/" + targetId).set({
+      fromId: G.myId,
+      fromName: p.name,
+      x: Math.floor(p.x),
+      y: Math.floor(p.y),
+      map: G.map,
+      t: Date.now(),
+    });
+    toast("🌀 TP enviado a " + (G.others[targetId]?.name || targetId.slice(0,8)), "info");
+  }
+
+  function listenPartyTp() {
+    if (!G.db || !G.myId) return;
+    G.db.ref("partyTp/" + G.myId).on("value", (snap) => {
+      const cmd = snap.val();
+      if (!cmd || !cmd.x || Date.now() - cmd.t > 8000) return;
+      const p = G.player;
+      if (cmd.map && cmd.map !== G.map) {
+        toast(`El líder ${cmd.fromName} te llama pero estás en otro mapa`, "dmg");
+        snap.ref.remove();
+        return;
+      }
+      p.x = cmd.x + 40;
+      p.y = cmd.y;
+      if (typeof window.sendPlayerUpdate === "function") window.sendPlayerUpdate();
+      toast(`🌀 Teleportado por el líder ${cmd.fromName}`, "info");
+      snap.ref.remove();
+    });
+  }
+
+  // ── Hook canvas click for player interaction ─────────────────────────
+  function hookCanvasClick() {
+    const canvas = document.getElementById("gameCanvas");
+    if (!canvas || canvas._pvpClickHooked) return;
+    canvas._pvpClickHooked = true;
+    canvas.addEventListener("pointerup", (e) => {
+      if (window.gameState !== "playing") return;
+      const cam = window.cam;
+      if (!cam) return;
+      const rect = canvas.getBoundingClientRect();
+      const sx = (e.clientX - rect.left) * (canvas.width / rect.width);
+      const sy = (e.clientY - rect.top) * (canvas.height / rect.height);
+      const z = cam.zoom || 1;
+      const wx = ((sx - canvas.width / 2) / z) + canvas.width / 2 + cam.x;
+      const wy = ((sy - canvas.height / 2) / z) + canvas.height / 2 + cam.y;
+
+      // Buscar jugador remoto en esa posición
+      const SPRITE_W = 120, SPRITE_H = 148;
+      let hit = null, bestD = Infinity;
+      for (const [id, op] of Object.entries(G.others)) {
+        if (op.map && op.map !== G.map) continue;
+        if (op.inTrailerDrive) continue;
+        const d = Math.hypot(wx - op.x, wy - (op.y - SPRITE_H / 2));
+        if (d < SPRITE_W * 0.55 && d < bestD) { hit = id; bestD = d; }
+      }
+      if (!hit) return;
+      openPlayerContextMenu(hit, e.clientX, e.clientY);
+    });
   }
 
   // ── PvP Challenge ────────────────────────────────────────────────────
@@ -977,9 +1229,11 @@
     listenParty();
     listenInvites();
     listenChallenges();
+    listenPartyTp();
     initCombatAnimsListener();
     initHitListener();
     hookSendPlayerUpdate();
+    hookCanvasClick();
     exportApi();
     setInterval(patchRemoteAnimators, 1500);
     console.log("[pvp-system] Party + PvP challenge listo");
