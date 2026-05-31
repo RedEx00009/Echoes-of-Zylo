@@ -199,9 +199,12 @@
       #trailerInterior {
         position:fixed; inset:0; display:none; z-index:50;
         background:#0a0510;
+        min-height:100vh;
+        width:100vw;
+        overflow:hidden;
       }
       #trailerInterior.visible { display:flex; flex-direction:column; }
-      #trailerCanvas { flex:1; display:block; width:100%; }
+      #trailerCanvas { flex:1 1 auto; display:block; width:100%; min-height:0; }
       /* Joystick móvil dentro del trailer */
       #trailerMobileControls {
         display:none;
@@ -436,6 +439,16 @@
         .variant-panel { padding:7px 8px; }
         .variant-label { display:none; }
         .variant-select { min-width:88px; max-width:96px; font-size:8px; padding:5px 6px; }
+        #trailerInterior { inset:0; }
+        #trailerCanvas { height:calc(100vh - 68px); }
+        .trailer-hud-bar { flex-wrap:wrap; justify-content:center; gap:10px; }
+        .trailer-chat-input { flex:1 1 100%; min-width:0; }
+        .trailer-hud-bar > button { flex:0 1 auto; }
+        .trailer-drive-panel, .trailer-room-panel { width:min(94vw, 340px); left:50%; transform:translateX(-50%); right:auto; }
+        .trailer-drive-panel { top:auto; bottom:90px; }
+        .trailer-room-panel { bottom:160px; }
+        .trailer-drive-grid { grid-template-columns:1fr; }
+        .trailer-drive-btn { width:100%; }
       }
       @media (pointer:fine) and (min-width:769px) {
         .mobile-controls { display:none !important; }
@@ -444,7 +457,14 @@
         .dialog-box { bottom:120px; }
         .hud-top { left:64px; }
       }
-      @media (max-width:400px) { :root { --btn-size:44px; --btn-icon:17px; } .mobile-controls { height:250px; } .joystick-wrap { width:100px; height:100px; } #joystickKnob { width:40px; height:40px; top:30px; left:30px; } }
+      @media (max-width:400px) {
+        :root { --btn-size:44px; --btn-icon:17px; }
+        .mobile-controls { height:250px; }
+        .joystick-wrap { width:100px; height:100px; }
+        #joystickKnob { width:40px; height:40px; top:30px; left:30px; }
+        #trailerMobileControls { left:50%; transform:translateX(-50%); bottom:114px; }
+        .trailer-mobile-act-btn { width:100%; max-width:240px; }
+      }
       @media (max-height:460px) and (orientation:landscape) {
         :root { --btn-size:44px; --btn-icon:16px; }
         .mobile-controls { height:130px; padding:0 10px 8px; }
@@ -1681,8 +1701,10 @@
 
     function resizeCanvas() {
       canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-      trailerCanvas.width = trailerCanvas.offsetWidth || window.innerWidth;
-      trailerCanvas.height = trailerCanvas.offsetHeight || window.innerHeight - 60;
+      const trailerWidth = trailerCanvas.clientWidth || window.innerWidth;
+      const trailerHeight = trailerCanvas.clientHeight || window.innerHeight - 60;
+      trailerCanvas.width = trailerWidth;
+      trailerCanvas.height = trailerHeight;
     }
     resizeCanvas();
     window.addEventListener("resize", resizeCanvas);
