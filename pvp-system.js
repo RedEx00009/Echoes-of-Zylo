@@ -701,6 +701,9 @@
 
     playLocalAnim(atk.anim, () => {});
     push(p.x + p.facing * 24, p.y - 48, atk.label, atk.color, 0.85);
+    if (typeof window.triggerAttackWorldDamage === "function") {
+      window.triggerAttackWorldDamage(actionId === "special" ? "special1" : actionId === "heavy" ? "combo2" : "combo1", p.x + p.facing * 72, p.y - 24);
+    }
 
     G.db.ref("pvpChallenge/" + activeChallenge.id).update({ lastHitSeq: seq, t: Date.now() });
     G.db.ref("pvpChallenge/" + activeChallenge.id + "/hits").push({
@@ -752,13 +755,80 @@
     });
   }
 
+  const SPECIAL_BLOCK_KI_COST = 18;  // mismo costo que lanzar un especial
+  const SPECIAL_BLOCK_WINDOW_MS = 1400; // tiempo para reaccionar
+  let _pendingSpecialBlock = null;
+
+  function showSpecialBlockPrompt(onBlock, onTake) {
+    // Crear/reusar el prompt de bloqueo especial
+    let el = document.getElementById("pvpSpecialBlockPrompt");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "pvpSpecialBlockPrompt";
+      el.style.cssText = `
+        position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+        z-index:200;background:rgba(8,9,15,.96);border:2px solid #00e5ff;
+        border-radius:12px;padding:16px 24px;text-align:center;pointer-events:auto;
+        font-family:Orbitron,monospace;color:#fff;min-width:260px;
+        box-shadow:0 0 30px rgba(0,229,255,.5);
+      `;
+      document.body.appendChild(el);
+    }
+    const p = window.player;
+    const canBlock = p && p.ki >= SPECIAL_BLOCK_KI_COST;
+    el.innerHTML = `
+      <div style="font-size:11px;letter-spacing:2px;color:#00e5ff;margin-bottom:8px">⚠️ ¡ATAQUE ESPECIAL ENTRANTE!</div>
+      <div style="font-size:12px;color:#c8cfe8;margin-bottom:14px">${canBlock ? `Podés bloquear (-${SPECIAL_BLOCK_KI_COST} Ki)` : 'Ki insuficiente para bloquear'}</div>
+      <div style="display:flex;gap:10px;justify-content:center">
+        ${canBlock ? `<button id="pvpSBBlock" style="padding:10px 18px;background:rgba(0,229,255,.2);border:1px solid #00e5ff;border-radius:6px;color:#00e5ff;font-family:Orbitron,monospace;font-size:9px;letter-spacing:1px;cursor:pointer">🛡️ BLOQUEAR</button>` : ''}
+        <button id="pvpSBTake" style="padding:10px 18px;background:rgba(255,23,68,.2);border:1px solid #ff5252;border-radius:6px;color:#ff5252;font-family:Orbitron,monospace;font-size:9px;letter-spacing:1px;cursor:pointer">💢 RECIBIR</button>
+      </div>`;
+    el.style.display = "block";
+    const timer = setTimeout(() => { hideSpecialBlockPrompt(); onTake(); }, SPECIAL_BLOCK_WINDOW_MS);
+    const blockBtn = document.getElementById("pvpSBBlock");
+    const takeBtn = document.getElementById("pvpSBTake");
+    if (blockBtn) blockBtn.onclick = () => { clearTimeout(timer); hideSpecialBlockPrompt(); onBlock(); };
+    if (takeBtn) takeBtn.onclick = () => { clearTimeout(timer); hideSpecialBlockPrompt(); onTake(); };
+    _pendingSpecialBlock = { timer };
+  }
+
+  function hideSpecialBlockPrompt() {
+    const el = document.getElementById("pvpSpecialBlockPrompt");
+    if (el) el.style.display = "none";
+    if (_pendingSpecialBlock?.timer) clearTimeout(_pendingSpecialBlock.timer);
+    _pendingSpecialBlock = null;
+  }
+
   function processIncomingHit(hit, challengeId) {
     if (!isFighter() || koInProgress) return;
+
+    // ── Ataque especial: dar ventana de bloqueo reactivo ─────────────
+    if (hit.action === "special") {
+      showSpecialBlockPrompt(
+        // Opción bloquear
+        () => {
+          const p = G.player;
+          const kiCost = SPECIAL_BLOCK_KI_COST;
+          p.ki = Math.max(0, p.ki - kiCost);
+          const reducedDmg = Math.max(1, Math.round((hit.damage || 0) * BLOCK_REDUCE));
+          _applyHit({ ...hit, damage: reducedDmg }, challengeId, true);
+          if (typeof window.updatePlayerHud === "function") window.updatePlayerHud();
+        },
+        // Opción recibir (o timeout)
+        () => { _applyHit(hit, challengeId, false); }
+      );
+      return;
+    }
+
+    _applyHit(hit, challengeId, false);
+  }
+
+  function _applyHit(hit, challengeId, forceBlocked) {
     const p = G.player;
     let damage = hit.damage || 0;
-    let blocked = false;
+    let blocked = forceBlocked;
 
-    if (isBlocking && facingAttacker(p.facing, p.x, G.others[hit.fromId]?.x ?? p.x)) {
+    if (!blocked && isBlocking && facingAttacker(p.facing, p.x, G.others[hit.fromId]?.x ?? p.x)) {
       damage = Math.max(1, Math.round(damage * BLOCK_REDUCE));
       blocked = true;
     }
@@ -845,10 +915,13 @@
       getPcSkillsHtml,
       getMobileActionsHtml,
       update: updatePvp,
+      getPartyMemberIds,
     };
     window.isPartyMember = isPartyMember;
     window.performPvpAction = performPvpAction;
     window.releasePvpBlock = releaseBlock;
+    // Helper para lock-on en game.html
+    window._pvpOpponentId = opponentId;
   }
 
   function getPcSkillsHtml() {

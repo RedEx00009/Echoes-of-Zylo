@@ -268,7 +268,7 @@
     constructor(config = {}) {
       this.id          = config.id          || `tr_${Date.now()}_${Math.random().toString(36).slice(2, 5)}`;
       this.name        = config.name        || "Transformación";
-      this.level       = Math.max(1, Math.min(99, parseInt(config.level) || 1));
+      this.level       = Math.max(1, Math.min(100, parseInt(config.level) || 1));
       this.races       = Array.isArray(config.races) ? config.races : ["all"];
       this.auraColor   = config.auraColor   || "#fdd835";
       this.icon        = config.icon        || "⚡";
