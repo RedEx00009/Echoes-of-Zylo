@@ -2156,6 +2156,7 @@
         // Sala de entrenamiento es privada — solo se ven party members
         if (currentMap === "sala_entrenamiento" && partyIds.length > 0 && !partyIds.includes(id)) continue;
         if (p.fusionHidden) continue; // ocultar jugador absorbido en fusión
+        if (p.inTrailerDrive) continue; // ocultar conductor dentro del trailer en movimiento
         const sx = p.x - cam.x, sy = p.y - cam.y;
         const anim = otherPlayerAnimators[id];
         if (anim) anim.update(now);
@@ -4602,7 +4603,17 @@
       }
       if (mpConnected && myPlayerId && performance.now() - (trailerDrive._lastSync || 0) > 250) {
         trailerDrive._lastSync = performance.now();
-        db.ref("trailers/" + myPlayerId).update({ x:Math.floor(tr.x), y:Math.floor(tr.y), map:tr.map, flying:trailerDrive.flying, t:Date.now() });
+        db.ref("trailers/" + myPlayerId).update({
+          x: Math.floor(tr.x), y: Math.floor(tr.y), map: tr.map,
+          flying: trailerDrive.flying,
+          action: trailerDrive.action,
+          frame: trailerDrive.frame,
+          facing: trailerDrive.facing,
+          driving: true,
+          t: Date.now()
+        });
+        // Ocultar el avatar del conductor para otros jugadores
+        db.ref("players/" + myPlayerId).update({ inTrailerDrive: true, t: Date.now() });
       }
     }
 
@@ -4722,6 +4733,13 @@
       trailerDrive.active = false;
       closeTrailerTravelPanel();
       placePlayerAtMyTrailer();
+      // Limpiar estado de conducción en Firebase
+      if (mpConnected && myPlayerId) {
+        db.ref("players/" + myPlayerId).update({ inTrailerDrive: false, t: Date.now() });
+        if (trailers[myPlayerId]) {
+          db.ref("trailers/" + myPlayerId).update({ driving: false, action: "idle", frame: 0, t: Date.now() });
+        }
+      }
       showHudToast("Trailer estacionado", "info");
       if (typeof renderActionBars === "function") renderActionBars();
     }
@@ -7183,6 +7201,12 @@
         if (sx<-200||sx>canvas.width+200||sy<-200||sy>canvas.height+200) continue;
         if (tid === myPlayerId && trailerDrive.active) {
           drawTrailerVehicleSprite(ctx, tid, trailerDrive.action, sx + TRAILER_W/2, sy + TRAILER_H/2, TRAILER_W, TRAILER_H, trailerDrive.facing, { frame:trailerDrive.frame });
+        } else if (tid !== myPlayerId && tr.driving) {
+          // Trailer remoto en conducción: usar action/frame/facing sincronizados desde Firebase
+          const remoteAction = tr.action || "idle";
+          const remoteFrame = tr.frame || 0;
+          const remoteFacing = tr.facing || 1;
+          drawTrailerVehicleSprite(ctx, tid, remoteAction, sx + TRAILER_W/2, sy + TRAILER_H/2, TRAILER_W, TRAILER_H, remoteFacing, { frame: remoteFrame });
         } else {
           // Trailer estacionado: frame 0 fila 0 del sheet base, o custom plana
           const exteriorEntry = getTrailerCustomEntry(tid, "exterior");
