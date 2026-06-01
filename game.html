@@ -85,6 +85,47 @@
       .slot-load-lbl { font-family:var(--font-head); font-size:8px; color:var(--accent); opacity:.7; }
       .slot-empty-label { font-family:var(--font-head); font-size:9px; color:#3d4a6b; text-align:center; padding:6px 0; }
 
+      /* -- CAMERA CONTROL -- */
+      .cam-zoom-grid { display:grid; grid-template-columns:1fr 1fr; gap:5px; margin-bottom:8px; }
+      .cam-zoom-btn {
+        padding:9px 6px; border-radius:7px; border:1px solid rgba(245,196,0,.18);
+        background:rgba(245,196,0,.06); color:#c8cfe8;
+        font-family:var(--font-head); font-size:9px; letter-spacing:.5px;
+        cursor:pointer; transition:all .15s; touch-action:manipulation;
+        display:flex; flex-direction:column; align-items:center; gap:3px;
+        pointer-events:auto;
+      }
+      .cam-zoom-btn .cz-icon { font-size:16px; line-height:1; }
+      .cam-zoom-btn .cz-lbl { font-size:7px; letter-spacing:1px; color:#5a7aaa; }
+      .cam-zoom-btn:hover { border-color:rgba(245,196,0,.45); background:rgba(245,196,0,.14); color:#fff; }
+      .cam-zoom-btn.active { border-color:var(--accent); background:rgba(245,196,0,.18); color:var(--accent); box-shadow:0 0 10px rgba(245,196,0,.2); }
+      .cam-zoom-btn.active .cz-lbl { color:var(--accent); }
+      .cam-slider-row { display:flex; align-items:center; gap:8px; margin-top:4px; }
+      .cam-slider-icon { font-size:12px; flex-shrink:0; }
+      .cam-slider {
+        flex:1; -webkit-appearance:none; appearance:none;
+        height:4px; border-radius:2px;
+        background:linear-gradient(90deg, var(--accent) var(--pct, 50%), rgba(255,255,255,.1) var(--pct, 50%));
+        outline:none; cursor:pointer;
+      }
+      .cam-slider::-webkit-slider-thumb {
+        -webkit-appearance:none; appearance:none;
+        width:16px; height:16px; border-radius:50%;
+        background:var(--accent); border:2px solid #08090f;
+        box-shadow:0 0 6px rgba(245,196,0,.5); cursor:pointer;
+      }
+      .cam-slider::-moz-range-thumb {
+        width:16px; height:16px; border-radius:50%;
+        background:var(--accent); border:2px solid #08090f;
+        box-shadow:0 0 6px rgba(245,196,0,.5); cursor:pointer;
+      }
+      .cam-val-badge {
+        font-family:var(--font-head); font-size:8px; letter-spacing:1px;
+        color:var(--accent); background:rgba(245,196,0,.1);
+        border:1px solid rgba(245,196,0,.3); border-radius:3px;
+        padding:2px 6px; min-width:34px; text-align:center; flex-shrink:0;
+      }
+
       /* -- HUD TOP -- */
       .hud-top { position:absolute; top:12px; left:64px; right:12px; display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
       .player-hud { background:var(--ui-bg); border:1px solid #2a3560; border-radius:8px; padding:8px 12px; min-width:180px; backdrop-filter:blur(8px); }
@@ -574,6 +615,35 @@
           <div class="menu-section-label">Bando</div>
           <button class="menu-btn" onclick="openFactionPanel();closeMenu()"><span class="btn-ic">FX</span> BANDO / REQUISITOS</button>
           <button class="menu-btn" onclick="openImperialNamingPanel();closeMenu()"><span class="btn-ic">IM</span> NOMBRAR IMPERIO</button>
+        </div>
+
+        <div class="menu-section">
+          <div class="menu-section-label">Cámara</div>
+          <div class="cam-zoom-grid">
+            <button class="cam-zoom-btn" id="czBtn0" onclick="setCamZoomPreset(0.55)" title="Muy alejado">
+              <span class="cz-icon">🔭</span>
+              <span class="cz-lbl">MUY LEJOS</span>
+            </button>
+            <button class="cam-zoom-btn" id="czBtn1" onclick="setCamZoomPreset(0.75)" title="Alejado">
+              <span class="cz-icon">🌍</span>
+              <span class="cz-lbl">LEJOS</span>
+            </button>
+            <button class="cam-zoom-btn active" id="czBtn2" onclick="setCamZoomPreset(1.0)" title="Normal">
+              <span class="cz-icon">👁️</span>
+              <span class="cz-lbl">NORMAL</span>
+            </button>
+            <button class="cam-zoom-btn" id="czBtn3" onclick="setCamZoomPreset(1.35)" title="Cercano">
+              <span class="cz-icon">🔍</span>
+              <span class="cz-lbl">CERCA</span>
+            </button>
+          </div>
+          <div class="cam-slider-row">
+            <span class="cam-slider-icon">🔭</span>
+            <input type="range" class="cam-slider" id="camZoomSlider" min="40" max="160" value="100" step="5"
+              oninput="onCamSliderInput(this.value)" ontouchstart="event.stopPropagation()" />
+            <span class="cam-slider-icon">🔍</span>
+            <span class="cam-val-badge" id="camZoomVal">100%</span>
+          </div>
         </div>
 
         <div class="menu-section">
@@ -2118,9 +2188,19 @@
           }
           if (otherPlayerAnimators[id]) {
             const anim = otherPlayerAnimators[id];
-            // Sincronizar modo del animador remoto
-            if (data.specialMode && anim.setSpecialMode) anim.setSpecialMode(true);
-            else if (anim.setBattleMode) anim.setBattleMode(!!data.combatMode);
+            // Sincronizar modo del animador remoto — ORDEN IMPORTANTE:
+            // primero setear el modo, luego play(), para que el animador use
+            // la sheet correcta desde el primer frame.
+            if (data.specialMode) {
+              if (anim.setSpecialMode) anim.setSpecialMode(true);
+              else if (anim.setBattleMode) anim.setBattleMode(false);
+            } else if (data.combatMode) {
+              if (anim.setSpecialMode) anim.setSpecialMode(false);
+              if (anim.setBattleMode) anim.setBattleMode(true);
+            } else {
+              if (anim.setSpecialMode) anim.setSpecialMode(false);
+              if (anim.setBattleMode) anim.setBattleMode(false);
+            }
             if (data.animAction) anim.play(data.animAction);
           }
           const newAccURL = data.appearance?.accessoryDataURL || null;
@@ -2356,13 +2436,41 @@
             const remApp = Object.assign({}, app, { accessoryId: remoteAccId });
             const remCSPlayer = { appearance: remApp, direction: p.facing || 1 };
             // Determinar spriteVariantId remoto
+            // "special" = transformación activa con special mode
+            // "fight"   = combatMode sin special
+            // null      = exploración normal
             let remSpriteVariantId = null;
             if (p.specialMode) remSpriteVariantId = "special";
             else if (p.combatMode) remSpriteVariantId = "fight";
+
+            // Re-sincronizar el animador remoto cada frame ANTES de drawPlayer.
+            // drawPlayer() resetea internamente los modos del animador basándose en
+            // spriteVariantId, lo que haría perder la acción ya establecida.
+            // Seteamos el modo y la acción aquí para que drawPlayer los encuentre
+            // ya correctos y no necesite sobreescribirlos.
+            if (anim) {
+              const remAction = p.animAction || "idle";
+              if (p.specialMode) {
+                if (!anim.specialMode) { anim.specialMode = true; anim.battleMode = false; }
+              } else if (p.combatMode) {
+                if (!anim.battleMode || anim.specialMode) { anim.battleMode = true; anim.specialMode = false; }
+              } else {
+                if (anim.battleMode || anim.specialMode) { anim.battleMode = false; anim.specialMode = false; }
+              }
+              // Forzar la acción sin perder frame si ya es la correcta y es loop
+              const resolvedNow = anim._resolveAction ? anim._resolveAction(remAction) : remAction;
+              if (anim.action !== resolvedNow) {
+                anim.action = resolvedNow;
+                anim.frame = 0; anim.elapsed = 0;
+              }
+            }
+
             const remState = {
               glovesId: remApp.glovesId, auraId: remApp.auraId, auraColor: remApp.auraColor,
               accessoryId: remoteAccId, auraPhase: (now * 0.003) % (Math.PI * 2),
               viewKey: null, spriteVariantId: remSpriteVariantId,
+              flying: !!(p.flying),
+              isFlying: !!(p.flying),
             };
             const remoteMobileScale = (window.matchMedia?.("(pointer:coarse)").matches && window.innerHeight < 520) ? 0.84 : 1;
             const _rdBaseW = SPRITE_DRAW_W * remoteMobileScale, _rdBaseH = SPRITE_DRAW_H * remoteMobileScale;
@@ -6845,6 +6953,56 @@
       }
     }
 
+    // ── ZOOM DE CÁMARA CONTROLADO POR EL USUARIO ─────────────────────────────
+    // Rango: 0.4 (muy alejado) — 1.6 (muy cercano). Se multiplica con el zoom
+    // automático de transformaciones. Se guarda en localStorage.
+    const CAM_ZOOM_STORAGE_KEY = "dragonWorldZ_userCamZoom";
+    let userCamZoom = (function() {
+      try { const v = parseFloat(localStorage.getItem(CAM_ZOOM_STORAGE_KEY)); return isFinite(v) && v >= 0.4 && v <= 1.6 ? v : 1.0; } catch(e) { return 1.0; }
+    })();
+
+    function _saveUserCamZoom(v) {
+      try { localStorage.setItem(CAM_ZOOM_STORAGE_KEY, String(v)); } catch(e) {}
+    }
+
+    function _updateCamZoomUI(v) {
+      const pct = Math.round(v * 100);
+      const badge = document.getElementById("camZoomVal");
+      if (badge) badge.textContent = pct + "%";
+      const slider = document.getElementById("camZoomSlider");
+      if (slider) {
+        slider.value = pct;
+        // Actualiza el color de la pista del slider con CSS custom property
+        const rel = (pct - 40) / (160 - 40) * 100;
+        slider.style.setProperty("--pct", rel.toFixed(1) + "%");
+      }
+      // Highlight botón activo
+      const presets = [0.55, 0.75, 1.0, 1.35];
+      presets.forEach((p, i) => {
+        const btn = document.getElementById("czBtn" + i);
+        if (!btn) return;
+        btn.classList.toggle("active", Math.abs(p - v) < 0.04);
+      });
+    }
+
+    function setCamZoomPreset(v) {
+      userCamZoom = v;
+      _saveUserCamZoom(v);
+      _updateCamZoomUI(v);
+    }
+
+    function onCamSliderInput(rawVal) {
+      const v = Math.max(0.4, Math.min(1.6, parseInt(rawVal, 10) / 100));
+      userCamZoom = v;
+      _saveUserCamZoom(v);
+      _updateCamZoomUI(v);
+    }
+
+    // Inicializar UI al cargar (esperar DOM)
+    document.addEventListener("DOMContentLoaded", () => { _updateCamZoomUI(userCamZoom); });
+    // También al momento de ejecución por si el DOM ya está listo
+    _updateCamZoomUI(userCamZoom);
+
     function updateCamera() {
       const mapDef = MAPS[currentMap];
       // Adaptive zoom: only zoom out when a transformation with a bigger sprite is active
@@ -6859,11 +7017,15 @@
         }
       }
       if (!cam.zoom) cam.zoom = 1.0;
-      cam.zoom += (targetZoom - cam.zoom) * 0.05; // smooth transition
+      cam.zoom += (targetZoom * userCamZoom - cam.zoom) * 0.05; // smooth transition
       // Standard camera tracking (zoom applied via canvas transform in game loop)
       const focusTrailer = trailerDrive?.active && trailers[myPlayerId];
       const focusX = focusTrailer ? trailers[myPlayerId].x + TRAILER_W/2 : player.x;
       const focusY = focusTrailer ? trailers[myPlayerId].y + TRAILER_H/2 : player.y;
+      const effZ = cam.zoom || 1;
+      // Virtual viewport size in world units (larger when zoomed out)
+      const vw = canvas.width / effZ;
+      const vh = canvas.height / effZ;
       cam.tx = focusX - canvas.width/2; cam.ty = focusY - canvas.height/2;
       cam.tx = Math.max(0, Math.min(cam.tx, mapDef.w*TILE - canvas.width));
       cam.ty = Math.max(0, Math.min(cam.ty, mapDef.h*TILE - canvas.height));
