@@ -65,7 +65,7 @@
         transform:translateX(calc(-1 * var(--menu-w) - 10px));
         transition:transform .3s cubic-bezier(.4,0,.2,1);
         overflow-y:auto; overflow-x:hidden;
-        touch-action:pan-y; -webkit-overflow-scrolling:touch;
+        touch-action:pan-y; -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
       }
       #leftMenu.open { transform:translateX(0); }
       .menu-header { display:flex; align-items:center; justify-content:center; padding:16px 16px 10px; border-bottom:1px solid #2a3560; flex-shrink:0; }
@@ -646,31 +646,24 @@
             <span class="cam-val-badge" id="camZoomVal">100%</span>
           </div>
           <div style="margin-top:8px;">
-            <div class="menu-section-label" style="margin-bottom:8px;">Posición de cámara</div>
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;max-width:180px;margin:0 auto 8px;">
-              <div></div>
-              <button class="cam-zoom-btn" onclick="event.stopPropagation();_moveCamOffset(0,-50)" title="Arriba" style="padding:10px 6px;">
-                <span class="cz-icon">▲</span><span class="cz-lbl">ARRIBA</span>
-              </button>
-              <div></div>
-              <button class="cam-zoom-btn" onclick="event.stopPropagation();_moveCamOffset(-50,0)" title="Izquierda" style="padding:10px 6px;">
-                <span class="cz-icon">◀</span><span class="cz-lbl">IZQ</span>
-              </button>
-              <button class="cam-zoom-btn" onclick="event.stopPropagation();resetCamOffset()" title="Centrar" style="padding:10px 6px;">
-                <span class="cz-icon">🎯</span><span class="cz-lbl">CTR</span>
-              </button>
-              <button class="cam-zoom-btn" onclick="event.stopPropagation();_moveCamOffset(50,0)" title="Derecha" style="padding:10px 6px;">
-                <span class="cz-icon">▶</span><span class="cz-lbl">DER</span>
-              </button>
-              <div></div>
-              <button class="cam-zoom-btn" onclick="event.stopPropagation();_moveCamOffset(0,50)" title="Abajo" style="padding:10px 6px;">
-                <span class="cz-icon">▼</span><span class="cz-lbl">ABAJO</span>
-              </button>
-              <div></div>
+            <div class="menu-section-label" style="margin-bottom:5px;">Posición de cámara</div>
+            <div class="cam-slider-row" style="margin-bottom:5px;">
+              <span class="cam-slider-icon">◀</span>
+              <input type="range" class="cam-slider" id="camOffsetXSlider" min="-400" max="400" value="0" step="10"
+                oninput="_setCamOffsetX(parseInt(this.value))" ontouchstart="event.stopPropagation()" onpointerdown="event.stopPropagation()" onclick="event.stopPropagation()" />
+              <span class="cam-slider-icon">▶</span>
+              <span class="cam-val-badge" id="camOffsetXVal">0</span>
             </div>
-            <div style="font-family:var(--font-head);font-size:7px;color:#3d4a6b;letter-spacing:1px;margin-top:4px;line-height:1.5;text-align:center;">
-              Offset: X=<span id="camOffsetXVal">0</span> Y=<span id="camOffsetYVal">0</span><br>
-              PC: clic derecho + arrastrar
+            <div class="cam-slider-row" style="margin-bottom:5px;">
+              <span class="cam-slider-icon">▲</span>
+              <input type="range" class="cam-slider" id="camOffsetYSlider" min="-400" max="400" value="0" step="10"
+                oninput="_setCamOffsetY(parseInt(this.value))" ontouchstart="event.stopPropagation()" onpointerdown="event.stopPropagation()" onclick="event.stopPropagation()" />
+              <span class="cam-slider-icon">▼</span>
+              <span class="cam-val-badge" id="camOffsetYVal">0</span>
+            </div>
+            <button class="menu-btn" style="margin-top:4px" onclick="event.stopPropagation();resetCamOffset();_updateCamOffsetUI()"><span class="btn-ic">🎯</span> CENTRAR CÁMARA</button>
+            <div style="font-family:var(--font-head);font-size:7px;color:#3d4a6b;letter-spacing:1px;margin-top:6px;line-height:1.5;">
+              PC: Clic derecho + arrastrar<br>Mobile: Deslizá con 2 dedos
             </div>
           </div>
         </div>
@@ -913,18 +906,30 @@
     }
     window.toggleMenu = toggleMenu;
     document.getElementById("menuBackdrop").addEventListener("click", () => closeMenu());
-    document.addEventListener("click", (e) => {
-      if (!menuOpen) return;
-      // Ignorar el click que acaba de abrir el menú
-      if (Date.now() - _menuToggleTime < 200) return;
-      // Ignorar si el pan de cámara está activo o acaba de terminar
-      if (window._camPanJustEnded && Date.now() - window._camPanJustEnded < 300) return;
-      if (e.button === 1 || e.button === 2) return;
-      const menu = document.getElementById("leftMenu"), btn = document.getElementById("menuToggleBtn");
-      if (!menu || !btn) return;
-      if (e.target.closest("#leftMenu") || e.target.closest("#menuToggleBtn")) return;
-      closeMenu();
-    });
+    document.getElementById("menuBackdrop").addEventListener("touchend", (e) => { e.preventDefault(); closeMenu(); }, { passive: false });
+    // Scroll táctil del menú: body tiene touch-action:none (necesario para el joystick),
+    // así que manejamos el scroll del menú manualmente con touchmove.
+    (function() {
+      const menu = document.getElementById("leftMenu");
+      let _tY = 0;
+      menu.addEventListener("touchstart", (e) => {
+        _tY = e.touches[0].clientY;
+        e.stopPropagation(); // no llega al canvas/joystick
+      }, { passive: true });
+      menu.addEventListener("touchmove", (e) => {
+        e.stopPropagation();
+        const dy = _tY - e.touches[0].clientY;
+        _tY = e.touches[0].clientY;
+        menu.scrollTop += dy;
+        // Prevenir scroll del body solo si el menú tiene contenido scrollable
+        const canScrollUp   = menu.scrollTop > 0;
+        const canScrollDown = menu.scrollTop < menu.scrollHeight - menu.clientHeight;
+        if ((dy < 0 && canScrollUp) || (dy > 0 && canScrollDown)) {
+          e.preventDefault();
+        }
+      }, { passive: false });
+      menu.addEventListener("touchend", (e) => { e.stopPropagation(); }, { passive: true });
+    })();
     // También bloquear cierre en mousedown con botón derecho/medio
     document.addEventListener("mousedown", (e) => {
       if (e.button === 1 || e.button === 2) { window._camPanJustEnded = Date.now(); }
@@ -7020,12 +7025,6 @@
     // Exponer para que los handlers inline del HTML puedan leer/escribir
     window._setCamOffsetX = function(v) { camOffsetX = v; window._camOffsetX = v; _saveCamOffset(); };
     window._setCamOffsetY = function(v) { camOffsetY = v; window._camOffsetY = v; _saveCamOffset(); };
-    window._moveCamOffset = function(dx, dy) {
-      camOffsetX = Math.max(-CAM_OFFSET_MAX, Math.min(CAM_OFFSET_MAX, camOffsetX + dx));
-      camOffsetY = Math.max(-CAM_OFFSET_MAX, Math.min(CAM_OFFSET_MAX, camOffsetY + dy));
-      _saveCamOffset();
-      _updateCamOffsetUI();
-    };
 
     // PC: botón derecho o medio para arrastrar cámara
     let _camPan = { active:false, startX:0, startY:0, baseOX:0, baseOY:0 };
@@ -7161,10 +7160,9 @@
       // Virtual viewport size in world units (larger when zoomed out)
       const vw = canvas.width / effZ;
       const vh = canvas.height / effZ;
-      cam.tx = focusX - canvas.width/2; cam.ty = focusY - canvas.height/2;
+      cam.tx = focusX - canvas.width/2 + camOffsetX; cam.ty = focusY - canvas.height/2 + camOffsetY;
       cam.tx = Math.max(0, Math.min(cam.tx, mapDef.w*TILE - canvas.width));
       cam.ty = Math.max(0, Math.min(cam.ty, mapDef.h*TILE - canvas.height));
-      cam.tx += camOffsetX; cam.ty += camOffsetY;
       cam.x += (cam.tx-cam.x)*CAM_LERP; cam.y += (cam.ty-cam.y)*CAM_LERP;
     }
 
