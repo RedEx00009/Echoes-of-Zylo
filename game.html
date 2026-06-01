@@ -65,6 +65,7 @@
         transform:translateX(calc(-1 * var(--menu-w) - 10px));
         transition:transform .3s cubic-bezier(.4,0,.2,1);
         overflow-y:auto; overflow-x:hidden;
+        touch-action:pan-y; -webkit-overflow-scrolling:touch;
       }
       #leftMenu.open { transform:translateX(0); }
       .menu-header { display:flex; align-items:center; justify-content:center; padding:16px 16px 10px; border-bottom:1px solid #2a3560; flex-shrink:0; }
@@ -469,7 +470,7 @@
       /* -- RESPONSIVE -- */
       @media (pointer:coarse), (max-width:768px) {
         :root { --btn-size:52px; --btn-icon:19px; }
-        #menuBackdrop { display:block; }
+        #menuBackdrop.open { display:block; }
         .mobile-controls { display:flex; height:286px; }
         .skills-bar { display:none; }
         .region-label { position:absolute; bottom:182px; left:50%; transform:translateX(-50%); }
@@ -579,7 +580,7 @@
         <span></span><span></span><span></span>
       </button>
 
-      <div id="leftMenu">
+      <div id="leftMenu" onclick="event.stopPropagation()" ontouchstart="event.stopPropagation()" onpointerdown="event.stopPropagation()">
         <div style="height:64px;flex-shrink:0;"></div>
         <div class="menu-header"><span class="menu-header-title">⚡ DRAGON WORLD Z</span></div>
 
@@ -617,22 +618,22 @@
           <button class="menu-btn" onclick="openImperialNamingPanel();closeMenu()"><span class="btn-ic">IM</span> NOMBRAR IMPERIO</button>
         </div>
 
-        <div class="menu-section">
+        <div class="menu-section" onclick="event.stopPropagation()" ontouchstart="event.stopPropagation()" onpointerdown="event.stopPropagation()">
           <div class="menu-section-label">Cámara</div>
           <div class="cam-zoom-grid">
-            <button class="cam-zoom-btn" id="czBtn0" onclick="setCamZoomPreset(0.55)" title="Muy alejado">
+            <button class="cam-zoom-btn" id="czBtn0" onclick="event.stopPropagation();setCamZoomPreset(0.55)" title="Muy alejado">
               <span class="cz-icon">🔭</span>
               <span class="cz-lbl">MUY LEJOS</span>
             </button>
-            <button class="cam-zoom-btn" id="czBtn1" onclick="setCamZoomPreset(0.75)" title="Alejado">
+            <button class="cam-zoom-btn" id="czBtn1" onclick="event.stopPropagation();setCamZoomPreset(0.75)" title="Alejado">
               <span class="cz-icon">🌍</span>
               <span class="cz-lbl">LEJOS</span>
             </button>
-            <button class="cam-zoom-btn active" id="czBtn2" onclick="setCamZoomPreset(1.0)" title="Normal">
+            <button class="cam-zoom-btn active" id="czBtn2" onclick="event.stopPropagation();setCamZoomPreset(1.0)" title="Normal">
               <span class="cz-icon">👁️</span>
               <span class="cz-lbl">NORMAL</span>
             </button>
-            <button class="cam-zoom-btn" id="czBtn3" onclick="setCamZoomPreset(1.35)" title="Cercano">
+            <button class="cam-zoom-btn" id="czBtn3" onclick="event.stopPropagation();setCamZoomPreset(1.35)" title="Cercano">
               <span class="cz-icon">🔍</span>
               <span class="cz-lbl">CERCA</span>
             </button>
@@ -640,9 +641,37 @@
           <div class="cam-slider-row">
             <span class="cam-slider-icon">🔭</span>
             <input type="range" class="cam-slider" id="camZoomSlider" min="40" max="160" value="100" step="5"
-              oninput="onCamSliderInput(this.value)" ontouchstart="event.stopPropagation()" />
+              oninput="onCamSliderInput(this.value)" ontouchstart="event.stopPropagation()" onpointerdown="event.stopPropagation()" onclick="event.stopPropagation()" />
             <span class="cam-slider-icon">🔍</span>
             <span class="cam-val-badge" id="camZoomVal">100%</span>
+          </div>
+          <div style="margin-top:8px;">
+            <div class="menu-section-label" style="margin-bottom:8px;">Posición de cámara</div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;max-width:180px;margin:0 auto 8px;">
+              <div></div>
+              <button class="cam-zoom-btn" onclick="event.stopPropagation();_moveCamOffset(0,-50)" title="Arriba" style="padding:10px 6px;">
+                <span class="cz-icon">▲</span><span class="cz-lbl">ARRIBA</span>
+              </button>
+              <div></div>
+              <button class="cam-zoom-btn" onclick="event.stopPropagation();_moveCamOffset(-50,0)" title="Izquierda" style="padding:10px 6px;">
+                <span class="cz-icon">◀</span><span class="cz-lbl">IZQ</span>
+              </button>
+              <button class="cam-zoom-btn" onclick="event.stopPropagation();resetCamOffset()" title="Centrar" style="padding:10px 6px;">
+                <span class="cz-icon">🎯</span><span class="cz-lbl">CTR</span>
+              </button>
+              <button class="cam-zoom-btn" onclick="event.stopPropagation();_moveCamOffset(50,0)" title="Derecha" style="padding:10px 6px;">
+                <span class="cz-icon">▶</span><span class="cz-lbl">DER</span>
+              </button>
+              <div></div>
+              <button class="cam-zoom-btn" onclick="event.stopPropagation();_moveCamOffset(0,50)" title="Abajo" style="padding:10px 6px;">
+                <span class="cz-icon">▼</span><span class="cz-lbl">ABAJO</span>
+              </button>
+              <div></div>
+            </div>
+            <div style="font-family:var(--font-head);font-size:7px;color:#3d4a6b;letter-spacing:1px;margin-top:4px;line-height:1.5;text-align:center;">
+              Offset: X=<span id="camOffsetXVal">0</span> Y=<span id="camOffsetYVal">0</span><br>
+              PC: clic derecho + arrastrar
+            </div>
           </div>
         </div>
 
@@ -873,7 +902,9 @@
 
     // -- MENÚ --
     let menuOpen = false;
+    let _menuToggleTime = 0;
     function toggleMenu() {
+      _menuToggleTime = Date.now();
       menuOpen = !menuOpen;
       document.getElementById("leftMenu").classList.toggle("open", menuOpen);
       document.getElementById("menuToggleBtn").classList.toggle("open", menuOpen);
@@ -884,8 +915,19 @@
     document.getElementById("menuBackdrop").addEventListener("click", () => closeMenu());
     document.addEventListener("click", (e) => {
       if (!menuOpen) return;
+      // Ignorar el click que acaba de abrir el menú
+      if (Date.now() - _menuToggleTime < 200) return;
+      // Ignorar si el pan de cámara está activo o acaba de terminar
+      if (window._camPanJustEnded && Date.now() - window._camPanJustEnded < 300) return;
+      if (e.button === 1 || e.button === 2) return;
       const menu = document.getElementById("leftMenu"), btn = document.getElementById("menuToggleBtn");
-      if (!menu.contains(e.target) && !btn.contains(e.target)) closeMenu();
+      if (!menu || !btn) return;
+      if (e.target.closest("#leftMenu") || e.target.closest("#menuToggleBtn")) return;
+      closeMenu();
+    });
+    // También bloquear cierre en mousedown con botón derecho/medio
+    document.addEventListener("mousedown", (e) => {
+      if (e.button === 1 || e.button === 2) { window._camPanJustEnded = Date.now(); }
     });
     function closeMenu() {
       menuOpen = false;
@@ -6953,6 +6995,85 @@
       }
     }
 
+    // ── PAN DE CÁMARA (desplazamiento manual por el usuario) ─────────────────
+    // PC: click derecho o botón central + arrastrar
+    // Mobile: segundo dedo sobre el canvas arrastra el pan
+    const CAM_OFFSET_KEY = "dragonWorldZ_camOffset";
+    let camOffsetX = 0, camOffsetY = 0;
+    const CAM_OFFSET_MAX = 400; // px máximo de desplazamiento en world-units
+    (function() {
+      try {
+        const v = JSON.parse(localStorage.getItem(CAM_OFFSET_KEY) || "null");
+        if (v && isFinite(v.x) && isFinite(v.y)) { camOffsetX = v.x; camOffsetY = v.y; }
+      } catch(e) {}
+    })();
+    function _saveCamOffset() {
+      try { localStorage.setItem(CAM_OFFSET_KEY, JSON.stringify({x:camOffsetX,y:camOffsetY})); } catch(e) {}
+    }
+    function resetCamOffset() {
+      camOffsetX = 0; camOffsetY = 0;
+      window._camOffsetX = 0; window._camOffsetY = 0;
+      _saveCamOffset();
+      showHudToast("Posición de cámara centrada", "info");
+    }
+    window.resetCamOffset = resetCamOffset;
+    // Exponer para que los handlers inline del HTML puedan leer/escribir
+    window._setCamOffsetX = function(v) { camOffsetX = v; window._camOffsetX = v; _saveCamOffset(); };
+    window._setCamOffsetY = function(v) { camOffsetY = v; window._camOffsetY = v; _saveCamOffset(); };
+    window._moveCamOffset = function(dx, dy) {
+      camOffsetX = Math.max(-CAM_OFFSET_MAX, Math.min(CAM_OFFSET_MAX, camOffsetX + dx));
+      camOffsetY = Math.max(-CAM_OFFSET_MAX, Math.min(CAM_OFFSET_MAX, camOffsetY + dy));
+      _saveCamOffset();
+      _updateCamOffsetUI();
+    };
+
+    // PC: botón derecho o medio para arrastrar cámara
+    let _camPan = { active:false, startX:0, startY:0, baseOX:0, baseOY:0 };
+    canvas.addEventListener("mousedown", (e) => {
+      if (e.button === 1 || e.button === 2) {
+        e.preventDefault();
+        _camPan.active = true;
+        _camPan.startX = e.clientX; _camPan.startY = e.clientY;
+        _camPan.baseOX = camOffsetX; _camPan.baseOY = camOffsetY;
+        canvas.style.cursor = "grab";
+      }
+    });
+    window.addEventListener("mousemove", (e) => {
+      if (!_camPan.active) return;
+      const effZ = cam.zoom || 1;
+      camOffsetX = Math.max(-CAM_OFFSET_MAX, Math.min(CAM_OFFSET_MAX, _camPan.baseOX - (e.clientX - _camPan.startX) / effZ));
+      camOffsetY = Math.max(-CAM_OFFSET_MAX, Math.min(CAM_OFFSET_MAX, _camPan.baseOY - (e.clientY - _camPan.startY) / effZ));
+    });
+    window.addEventListener("mouseup", (e) => {
+      if ((e.button === 1 || e.button === 2) && _camPan.active) {
+        _camPan.active = false; canvas.style.cursor = ""; _saveCamOffset();
+        window._camPanJustEnded = Date.now();
+      }
+    });
+    canvas.addEventListener("contextmenu", (e) => { e.preventDefault(); });
+
+    // Mobile: segundo dedo (touch index 1) arrastra el pan de cámara
+    let _touch2Pan = { active:false, startX:0, startY:0, baseOX:0, baseOY:0 };
+    canvas.addEventListener("touchstart", (e) => {
+      if (e.touches.length === 2) {
+        _touch2Pan.active = true;
+        const t = e.touches[1];
+        _touch2Pan.startX = t.clientX; _touch2Pan.startY = t.clientY;
+        _touch2Pan.baseOX = camOffsetX; _touch2Pan.baseOY = camOffsetY;
+      }
+    }, { passive:true });
+    canvas.addEventListener("touchmove", (e) => {
+      if (_touch2Pan.active && e.touches.length >= 2) {
+        const t = e.touches[1];
+        const effZ = cam.zoom || 1;
+        camOffsetX = Math.max(-CAM_OFFSET_MAX, Math.min(CAM_OFFSET_MAX, _touch2Pan.baseOX - (t.clientX - _touch2Pan.startX) / effZ));
+        camOffsetY = Math.max(-CAM_OFFSET_MAX, Math.min(CAM_OFFSET_MAX, _touch2Pan.baseOY - (t.clientY - _touch2Pan.startY) / effZ));
+      }
+    }, { passive:true });
+    canvas.addEventListener("touchend", (e) => {
+      if (_touch2Pan.active && e.touches.length < 2) { _touch2Pan.active = false; _saveCamOffset(); }
+    }, { passive:true });
+
     // ── ZOOM DE CÁMARA CONTROLADO POR EL USUARIO ─────────────────────────────
     // Rango: 0.4 (muy alejado) — 1.6 (muy cercano). Se multiplica con el zoom
     // automático de transformaciones. Se guarda en localStorage.
@@ -6999,9 +7120,23 @@
     }
 
     // Inicializar UI al cargar (esperar DOM)
-    document.addEventListener("DOMContentLoaded", () => { _updateCamZoomUI(userCamZoom); });
+    document.addEventListener("DOMContentLoaded", () => { _updateCamZoomUI(userCamZoom); _updateCamOffsetUI(); });
     // También al momento de ejecución por si el DOM ya está listo
     _updateCamZoomUI(userCamZoom);
+
+    function _updateCamOffsetUI() {
+      const sx = document.getElementById("camOffsetXSlider");
+      const sy = document.getElementById("camOffsetYSlider");
+      const vx = document.getElementById("camOffsetXVal");
+      const vy = document.getElementById("camOffsetYVal");
+      if (sx) { sx.value = camOffsetX; const r=(camOffsetX+400)/800*100; sx.style.setProperty("--pct", r.toFixed(1)+"%"); }
+      if (sy) { sy.value = camOffsetY; const r=(camOffsetY+400)/800*100; sy.style.setProperty("--pct", r.toFixed(1)+"%"); }
+      if (vx) vx.textContent = Math.round(camOffsetX);
+      if (vy) vy.textContent = Math.round(camOffsetY);
+    }
+    window._updateCamOffsetUI = _updateCamOffsetUI;
+    window._saveCamOffset = _saveCamOffset;
+    _updateCamOffsetUI();
 
     function updateCamera() {
       const mapDef = MAPS[currentMap];
@@ -7029,6 +7164,7 @@
       cam.tx = focusX - canvas.width/2; cam.ty = focusY - canvas.height/2;
       cam.tx = Math.max(0, Math.min(cam.tx, mapDef.w*TILE - canvas.width));
       cam.ty = Math.max(0, Math.min(cam.ty, mapDef.h*TILE - canvas.height));
+      cam.tx += camOffsetX; cam.ty += camOffsetY;
       cam.x += (cam.tx-cam.x)*CAM_LERP; cam.y += (cam.ty-cam.y)*CAM_LERP;
     }
 
