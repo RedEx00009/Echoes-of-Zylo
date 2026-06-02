@@ -54,6 +54,43 @@
       #menuToggleBtn.open span:nth-child(2) { opacity:0; }
       #menuToggleBtn.open span:nth-child(3) { transform:translateY(-7px) rotate(-45deg); }
 
+      #sideActionToggle {
+        position:fixed; bottom:14px; right:12px; left:auto; z-index:120;
+        width:44px; height:44px; background:var(--ui-bg); border:1px solid #2a3560;
+        border-radius:8px; display:flex; align-items:center; justify-content:center;
+        color:var(--accent); font-size:20px; cursor:pointer; pointer-events:auto;
+        touch-action:manipulation; backdrop-filter:blur(8px);
+      }
+      #sideActionToggle.open { border-color:rgba(245,196,0,.45); background:rgba(245,196,0,.1); }
+      #sideActionBackdrop { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:115; opacity:0; transition:opacity .3s ease; pointer-events:none; }
+      #sideActionBackdrop.open { opacity:1; pointer-events:auto; }
+      #sideActionMenu {
+        position:fixed; top:12%; right:0; width:var(--menu-w); max-height:72vh; height:auto;
+        background:var(--ui-bg); border-left:1px solid #2a3560;
+        z-index:120; transform:translateX(calc(100% + 10px));
+        transition:transform .3s cubic-bezier(.4,0,.2,1);
+        overflow-y:auto; overflow-x:hidden; display:flex; flex-direction:column;
+        touch-action:pan-y; -webkit-overflow-scrolling:touch;
+        pointer-events:auto;
+      }
+      #sideActionMenu.open { transform:translateX(0); }
+      #sideActionScrollBtns {
+        position:fixed; right:calc(var(--menu-w) + 4px); top:50%; transform:translateY(-50%);
+        display:none; flex-direction:column; gap:6px; z-index:121; pointer-events:auto;
+      }
+      #sideActionMenu.open ~ #sideActionScrollBtns { display:flex; }
+      #skillsBar.hidden { display:none; }
+      .side-action-scroll-btn {
+        width:32px; height:56px; background:var(--ui-bg); border:1px solid #2a3560;
+        border-right:none; border-radius:8px 0 0 8px; color:var(--accent); font-size:18px;
+        display:flex; align-items:center; justify-content:center; cursor:pointer;
+        touch-action:manipulation; pointer-events:auto; backdrop-filter:blur(8px);
+      }
+      .side-action-scroll-btn:active { background:rgba(245,196,0,.18); }
+      .side-action-header { display:flex; align-items:center; justify-content:center; padding:16px 16px 10px; border-bottom:1px solid #2a3560; flex-shrink:0; }
+      .side-action-header-title { font-family:var(--font-head); font-size:11px; letter-spacing:3px; color:var(--accent); }
+      .side-action-list { display:flex; flex-direction:column; gap:6px; padding:10px 12px 20px; }
+
       #menuBackdrop { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:100; opacity:0; transition:opacity .3s ease; pointer-events:none; }
       #menuBackdrop.open { opacity:1; pointer-events:auto; }
 
@@ -509,7 +546,6 @@
       }
       @media (pointer:fine) and (min-width:769px) {
         .mobile-controls { display:none !important; }
-        .skills-bar { display:flex; }
         .region-label { position:absolute; bottom:92px; left:50%; transform:translateX(-50%); }
         .dialog-box { bottom:120px; }
         .hud-top { left:64px; }
@@ -590,7 +626,16 @@
 
     <div id="hud">
       <div id="menuBackdrop"></div>
-
+      <div id="sideActionBackdrop" onclick="closeSideActionMenu()"></div>
+      <button id="sideActionToggle" onclick="toggleSideActionMenu()" title="Acciones rápidas">⚡</button>
+      <div id="sideActionMenu" onclick="event.stopPropagation()" ontouchstart="event.stopPropagation()" onpointerdown="event.stopPropagation()">
+        <div class="side-action-header"><span class="side-action-header-title">⚡ ACCIONES</span></div>
+        <div class="side-action-list" id="sideActionList"></div>
+      </div>
+      <div id="sideActionScrollBtns">
+        <button class="side-action-scroll-btn" id="sideActionScrollUp">▲</button>
+        <button class="side-action-scroll-btn" id="sideActionScrollDown">▼</button>
+      </div>
       <button id="menuToggleBtn" onclick="toggleMenu()">
         <span></span><span></span><span></span>
       </button>
@@ -913,6 +958,7 @@
     let menuOpen = false;
     function toggleMenu() {
       menuOpen = !menuOpen;
+      if (menuOpen) closeSideActionMenu();
       document.getElementById("leftMenu").classList.toggle("open", menuOpen);
       document.getElementById("menuToggleBtn").classList.toggle("open", menuOpen);
       document.getElementById("menuBackdrop").classList.toggle("open", menuOpen);
@@ -920,6 +966,37 @@
     }
     window.toggleMenu = toggleMenu;
     document.getElementById("menuBackdrop").addEventListener("click", () => closeMenu());
+    let sideActionOpen = false;
+    function openSideActionMenu() {
+      sideActionOpen = true;
+      const menu = document.getElementById("sideActionMenu");
+      const btn = document.getElementById("sideActionToggle");
+      if (!menu || !btn) return;
+      menu.classList.add("open");
+      btn.classList.add("open");
+      document.getElementById("sideActionBackdrop")?.classList.remove("open");
+    }
+    function closeSideActionMenu() {
+      sideActionOpen = false;
+      document.getElementById("sideActionMenu")?.classList.remove("open");
+      document.getElementById("sideActionToggle")?.classList.remove("open");
+      document.getElementById("sideActionBackdrop")?.classList.remove("open");
+    }
+    window.closeSideActionMenu = closeSideActionMenu;
+    function toggleSideActionMenu() {
+      sideActionOpen = !sideActionOpen;
+      const menu = document.getElementById("sideActionMenu");
+      const btn = document.getElementById("sideActionToggle");
+      if (!menu || !btn) return;
+      menu.classList.toggle("open", sideActionOpen);
+      btn.classList.toggle("open", sideActionOpen);
+      if (sideActionOpen) {
+        closeMenu();
+        renderActionBars();
+      }
+    }
+    window.toggleSideActionMenu = toggleSideActionMenu;
+    document.getElementById("sideActionBackdrop").addEventListener("click", () => closeSideActionMenu());
     document.addEventListener("mousedown", (e) => {
       if (e.button === 1 || e.button === 2) { window._camPanJustEnded = Date.now(); }
     });
@@ -931,13 +1008,35 @@
       document.getElementById("factionPanel")?.classList.remove("open");
     }
     window.closeMenu = closeMenu;
-    document.addEventListener("keydown", (e) => { if (e.code === "Escape") closeMenu(); });
+    document.addEventListener("keydown", (e) => { if (e.code === "Escape") { closeMenu(); closeSideActionMenu(); } });
 
     // -- Botones de scroll del menú (▲ ▼ al costado) --
     (function() {
       const menu  = document.getElementById("leftMenu");
       const btnUp = document.getElementById("menuScrollUp");
       const btnDn = document.getElementById("menuScrollDown");
+      const STEP = 130, MS = 80;
+      let _iv = null;
+      function startScroll(dir) {
+        menu.scrollTop += dir * STEP;
+        _iv = setInterval(() => { menu.scrollTop += dir * STEP; }, MS);
+      }
+      function stopScroll() { clearInterval(_iv); _iv = null; }
+      btnUp.addEventListener("mousedown",  (e) => { e.stopPropagation(); startScroll(-1); });
+      btnDn.addEventListener("mousedown",  (e) => { e.stopPropagation(); startScroll(1);  });
+      document.addEventListener("mouseup", stopScroll);
+      [btnUp, btnDn].forEach(btn => {
+        btn.addEventListener("touchstart",  (e) => { e.stopPropagation(); e.preventDefault(); startScroll(btn === btnUp ? -1 : 1); }, { passive: false });
+        btn.addEventListener("touchend",    (e) => { e.stopPropagation(); stopScroll(); }, { passive: false });
+        btn.addEventListener("touchcancel", (e) => { e.stopPropagation(); stopScroll(); }, { passive: false });
+      });
+    })();
+
+    (function() {
+      const menu  = document.getElementById("sideActionMenu");
+      const btnUp = document.getElementById("sideActionScrollUp");
+      const btnDn = document.getElementById("sideActionScrollDown");
+      if (!menu || !btnUp || !btnDn) return;
       const STEP = 130, MS = 80;
       let _iv = null;
       function startScroll(dir) {
@@ -1668,15 +1767,83 @@
       return `<div class="action-btn ${cls || "btn-emote"}" onclick="${action}"><span class="btn-icon">${icon}</span><span class="btn-label">${label}</span></div>`;
     }
 
-    // -- RP ACTIONS — ahora incluye acciones del sheet "special" --
+    // -- RP ACTIONS — ahora incluye acciones del sheet "special" y sub-animaciones --
     const RP_ACTIONS = [
-      { id:"train",     icon:"💪", key:"Q", label:"ENTRENAR", title:"Entrenar",   anim:"training",     text:"ENTRENA",  color:"#ff7043", sheet:"special", hold:2200 },
-      { id:"meditate",  icon:"🧘", key:"E", label:"MEDITAR",  title:"Meditar",    anim:"meditate",     text:"MEDITA",   color:"#00e5ff", sheet:"base",    hold:2200 },
-      { id:"sit",       icon:"🪑", key:"R", label:"SENTARSE", title:"Sentarse",   anim:"sit",          text:"SENTADO",  color:"#c8cfe8", sheet:"special", hold:1800 },
-      { id:"emote",     icon:"🎭", key:"C", label:"EMOTE",    title:"Emote",      anim:"emote",        text:"EMOTE",    color:"#aa00ff", sheet:"special" },
-      { id:"eat",       icon:"🍖", key:"V", label:"COMER",    title:"Comer",      anim:"eat_drink",    text:"COME",     color:"#66bb6a", sheet:"special", objectIcon:"🍖", hold:1300 },
-      { id:"object",    icon:"📦", key:"B", label:"OBJETO",   title:"Objeto",     anim:"hold_item",    text:"OBJETO",   color:"#90caf9", sheet:"special", objectIcon:"📦", hold:1300 },
+      { id:"train",     icon:"💪", key:"Q", label:"ENTRENAR", title:"Entrenar",   anim:"training",       text:"ENTRENA",  color:"#ff7043", sheet:"special", hold:2200 },
+      { id:"meditate",  icon:"🧘", key:"E", label:"MEDITAR",  title:"Meditar",    anim:"meditate",       text:"MEDITA",   color:"#00e5ff", sheet:"base",    hold:2200 },
+      // sit sub-animaciones: sit (sentado 1), sit_2 (sentado 2 — loopea), sit_3 (sentado 3)
+      { id:"sit",       icon:"🪑", key:"R", label:"SENTARSE", title:"Sentado 1",  anim:"sit",            text:"SENTADO",  color:"#c8cfe8", sheet:"special", hold:1800 },
+      { id:"sit_2",     icon:"🪑", key:"",  label:"SENTADO 2",title:"Sentado 2",  anim:"sit_2",          text:"SENTADO",  color:"#c8cfe8", sheet:"special", hold:3000 },
+      { id:"sit_3",     icon:"🪑", key:"",  label:"SENTADO 3",title:"Sentado 3",  anim:"sit_3",          text:"SENTADO",  color:"#c8cfe8", sheet:"special", hold:1800 },
+      { id:"emote",     icon:"🎭", key:"C", label:"EMOTE",    title:"Emote",      anim:"emote",          text:"EMOTE",    color:"#aa00ff", sheet:"special" },
+      { id:"eat",       icon:"🍖", key:"V", label:"COMER",    title:"Comer",      anim:"eat_drink",      text:"COME",     color:"#66bb6a", sheet:"special", objectIcon:"🍖", hold:1300 },
+      { id:"object",    icon:"📦", key:"B", label:"OBJETO",   title:"Objeto",     anim:"hold_item",      text:"OBJETO",   color:"#90caf9", sheet:"special", objectIcon:"📦", hold:1300 },
+      // Sleep sub-animaciones
+      { id:"sleep",         icon:"💤", key:"", label:"DORMIR 1",  title:"Dormir Costado",  anim:"sleep",       text:"DUERME", color:"#7986cb", sheet:"base", hold:5000 },
+      { id:"sleep_relax",   icon:"💤", key:"", label:"DORMIR 2",  title:"Dormir Relajado", anim:"sleep_relax", text:"DUERME", color:"#7986cb", sheet:"base", hold:5000 },
+      { id:"sleep_flat",    icon:"💤", key:"", label:"DORMIR 3",  title:"Dormir Acostado", anim:"sleep_flat",  text:"DUERME", color:"#7986cb", sheet:"base", hold:5000 },
+      // Pose sub-animaciones
+      { id:"pose_1",        icon:"🥊", key:"", label:"POSE 1",    title:"Pose 1",          anim:"pose_1",           text:"POSE",  color:"#ffd54f", sheet:"base", hold:3000 },
+      { id:"pose_2",        icon:"🥊", key:"", label:"POSE 2",    title:"Pose 2",          anim:"pose_2",           text:"POSE",  color:"#ffd54f", sheet:"base", hold:3000 },
+      { id:"pose_arrodillado", icon:"🙏", key:"", label:"ARRODILL.", title:"Arrodillado",   anim:"pose_arrodillado", text:"ARROD", color:"#a5d6a7", sheet:"base", hold:3000 },
+      { id:"pose_inconsciente",icon:"😵", key:"", label:"KO",       title:"Inconsciente",  anim:"pose_inconsciente",text:"KO",    color:"#ef9a9a", sheet:"base", hold:3000 },
+      // Acciones sub-animaciones
+      { id:"sostener",   icon:"🤲", key:"", label:"SOSTENER",  title:"Sostener Objeto", anim:"acciones",         text:"SOSTIENE", color:"#90caf9", sheet:"base", hold:2000 },
+      { id:"espalda",    icon:"🔄", key:"", label:"ESPALDA",   title:"Acción Espalda",  anim:"accion_espalda",   text:"ESPALDA",  color:"#90caf9", sheet:"base", hold:2000 },
+      { id:"agarrar",    icon:"👇", key:"", label:"AGARRAR",   title:"Agarrar Objeto",  anim:"accion_agarrar",   text:"AGARRA",   color:"#90caf9", sheet:"base", hold:1500 },
+      { id:"lanzar",     icon:"🤾", key:"", label:"LANZAR",    title:"Lanzar Objeto",   anim:"accion_lanzar",    text:"LANZA",    color:"#ff8a65", sheet:"base", hold:1200 },
+      // Drive sub-animaciones
+      { id:"drive_moto",     icon:"🏍️", key:"", label:"MOTO",    title:"Conducir Moto",  anim:"drive",          text:"MOTO",    color:"#78909c", sheet:"special", hold:4000 },
+      { id:"drive_auto",     icon:"🚗", key:"", label:"AUTO",    title:"Conducir Auto",  anim:"drive_auto",     text:"AUTO",    color:"#78909c", sheet:"special", hold:4000 },
+      { id:"drive_nube",     icon:"☁️", key:"", label:"NUBE",    title:"Nube Voladora",  anim:"drive_nube",     text:"NUBE",    color:"#b3e5fc", sheet:"special", hold:4000 },
+      { id:"drive_nube_run", icon:"💨", key:"", label:"NUBE RUN", title:"Nube a Toda Velocidad", anim:"drive_nube_run", text:"NUBE", color:"#b3e5fc", sheet:"special", hold:4000 },
+      // Idle sub-animaciones
+      { id:"idle_2", icon:"🧍", key:"", label:"IDLE 2", title:"Pose Idle 2", anim:"idle_2", text:"IDLE", color:"#c8cfe8", sheet:"base", hold:3000 },
+      { id:"idle_3", icon:"🧍", key:"", label:"IDLE 3", title:"Pose Idle 3", anim:"idle_3", text:"IDLE", color:"#c8cfe8", sheet:"base", hold:3000 },
+      // Lagartijas
+      { id:"lagartijas", icon:"🤸", key:"", label:"LAGARTIJ.", title:"Lagartijas", anim:"lagartijas", text:"EJERCICIO", color:"#ff7043", sheet:"base", hold:4000 },
+      // Fusión
+      { id:"fusion_metamoru", icon:"🤜", key:"", label:"FUSION M",  title:"Fusión Metamoru", anim:"fusion_metamoru", text:"FUSION", color:"#ffd54f", sheet:"special", hold:3000 },
+      { id:"fusion_potara",   icon:"💍", key:"", label:"FUSION P",  title:"Fusión Potara",   anim:"fusion_potara",   text:"FUSION", color:"#ffd54f", sheet:"special", hold:2500 },
     ];
+
+    /**
+     * Cambia la expresión facial en base_view sin afectar la animación de juego.
+     * viewKey: "base_view" | "base_view_enojado" | "base_view_triste" |
+     *          "base_view_feliz" | "base_view_sorprendido" | "base_view_guino"
+     */
+    function setFaceExpression(viewKey) {
+      if (!csAnimator) return;
+      csAnimator.setView && csAnimator.setView(viewKey);
+    }
+    window.setFaceExpression = setFaceExpression;
+
+    /**
+     * Activa una sub-animación RP por clave directa (idle_2, sleep_relax, pose_1, etc.)
+     * Usa performRpAction buscando en RP_ACTIONS, o reproduce directamente si no existe entrada.
+     */
+    function playSubAnim(animKey, sheet, hold) {
+      const found = RP_ACTIONS.find(a => a.anim === animKey);
+      if (found) { performRpAction(found.id); return; }
+      // Fallback: reproducir directamente
+      if (!csAnimator) return;
+      const _sheet = sheet || "base";
+      const _hold  = hold || 2000;
+      if (_sheet === "special") {
+        csAnimator.setSpecialMode && csAnimator.setSpecialMode(true);
+        csAnimator.play(animKey, () => {
+          csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
+          csAnimator.play(isFlying ? "fly" : "idle");
+        });
+      } else {
+        if (csAnimator.specialMode) csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
+        csAnimator.play(animKey);
+        setTimeout(() => {
+          if (csAnimator && !player.moving) csAnimator.play(isFlying ? "fly" : "idle");
+        }, _hold);
+      }
+    }
+    window.playSubAnim = playSubAnim;
 
     // -- Resolución de animación por sheet para el animator --
     // Ahora setSpecialMode es soportado
@@ -1695,11 +1862,13 @@
 
     function renderActionBars() {
       const skills = document.getElementById("skillsBar");
+      const sideList = document.getElementById("sideActionList");
       const grid = document.getElementById("actionGrid");
       const PS = window.PvpSystem;
       if (skills) {
         if (controlMode === "pvp" && PS && PS.isFighter()) {
           skills.innerHTML = PS.getPcSkillsHtml();
+          skills.classList.remove("hidden");
         } else if (controlMode === "combat") {
           skills.innerHTML = [
             makePcSkill({ icon:"👊", key:"Z", title:"Combo 1", action:"performCombatAction('combo1')" }),
@@ -1711,6 +1880,7 @@
             makePcSkill({ icon:"💨", key:"C", title:"Z-Vanish", action:"performCombatAction('vanish')" }),
             makePcSkill({ icon:"🔄", key:"RP", title:"Volver a rol", action:"setControlMode('rp')" }),
           ].join("");
+          skills.classList.remove("hidden");
         } else {
           const transActive = window.TransformationsSystem?.playerTransState?.activeTransformation;
           skills.innerHTML = RP_ACTIONS.map((a, idx) =>
@@ -1723,6 +1893,14 @@
           ]).concat([
             `<div class="skill-btn trans-dropdown-wrap ${transActive ? 'trans-active' : ''}" id="skillTransBtn" onclick="toggleTransDropdown(event)" title="Transformaciones [T]"><span class="skill-icon">⚡</span><span class="skill-key">${transActive ? '★' : 'T'}</span></div>`,
           ]).join("");
+          skills.classList.add("hidden");
+        }
+      }
+      if (sideList && skills) {
+        if (controlMode === "combat" || (controlMode === "pvp" && PS && PS.isFighter())) {
+          sideList.innerHTML = '<div class="side-action-note">Controles de combate visibles fuera del menú.</div>';
+        } else {
+          sideList.innerHTML = skills.innerHTML;
         }
       }
       if (grid) {
@@ -5464,13 +5642,13 @@
     // ── Duraciones de animaciones de combate (ms) ────────────────────────
     // Row 18: light_combo  4f@10fps = 400ms
     // Row 19: heavy_combo  3f@9fps  = 333ms
-    // Row 20: special      3f@8fps  = 375ms
+    // Row 20: special      6f@8fps  = 750ms  (3 frames special1 + 3 frames special2)
     // Row 22: hit          3f@8fps  = 375ms  (pero solo mostramos 2 frames = 250ms)
     // Row 22: knockback/KO 3f@8fps  = 375ms  (misma fila, todos los frames)
     const NPC_ANIM_DUR = {
       light_combo: Math.ceil((4 / NPC_LIGHT_COMBO_FPS) * 1000),
       heavy_combo: 360,
-      special:     400,
+      special:     750,
       hit_2f:      260,   // 2 frames de hit (recibir golpe)
       hit_ko:      400,   // 3 frames de hit (morir)
     };
@@ -6315,7 +6493,7 @@
       document.getElementById("dialogBox").classList.remove("visible");
     }
 
-    // -- performRpAction — actualizado para 3 sheets --
+    // -- performRpAction — actualizado para 3 sheets y sub-animaciones --
     function performRpAction(actionId) {
       const action = RP_ACTIONS.find(a => a.id === actionId) || RP_ACTIONS[0];
       const hold = action.hold || 900;
@@ -6323,36 +6501,35 @@
 
       if (csAnimator) {
         const sheet = action.sheet || "base";
-        // Configurar el modo del animador según el sheet de la accin
+        const anim  = action.anim || "idle";
+        // Configurar el modo del animador según el sheet de la acción
         if (sheet === "special") {
           csAnimator.setSpecialMode && csAnimator.setSpecialMode(true);
-          if ((action.anim || "sit") === "sit") {
-            // sit: reproducir una vez y quedarse en el último frame hasta que el usuario se mueva
-            csAnimator.play("sit");
+          if (anim === "sit" || anim === "sit_2" || anim === "sit_3") {
+            // sit sub-animaciones: reproducir y quedarse en el último frame hasta moverse
+            csAnimator.play(anim);
           } else {
-            csAnimator.play(action.anim || "sit", () => {
+            csAnimator.play(anim, () => {
               csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
               csAnimator.play(isFlying ? "fly" : "idle");
             });
           }
         } else if (sheet === "combat") {
-          // Acciones RP en sheet de combate (si las hubiera)
           csAnimator.setBattleMode && csAnimator.setBattleMode(true);
-          csAnimator.play(action.anim || "combat_idle", () => {
+          csAnimator.play(anim, () => {
             if (!isCombatMode) {
               csAnimator.setBattleMode && csAnimator.setBattleMode(false);
               csAnimator.play(isFlying ? "fly" : "idle");
             }
           });
         } else {
-          // Sheet base — asegurar que no est en modo special
+          // Sheet base — asegurar que no está en modo special
           if (csAnimator.specialMode) csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
           if (!isCombatMode && csAnimator.battleMode) csAnimator.setBattleMode && csAnimator.setBattleMode(false);
-          const anim = action.anim || "idle";
           if (anim === "attack_1" || anim === "attack_2" || anim === "jump") {
             csAnimator.play(anim, () => csAnimator.play(isFlying ? "fly" : "idle"));
           } else {
-            csAnimator.play(anim || "idle");
+            csAnimator.play(anim);
             setTimeout(() => {
               if (performance.now() >= rpActionUntil && csAnimator && !player.moving) {
                 csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
@@ -6511,8 +6688,8 @@
         }, chargeDur);
         return;
       }
-      const combatAnims = { combo1:"light_combo", combo2:"heavy_combo", special1:"special", special2:"special" };
-      const anim = combatAnims[action] || (action === "combo2" || action === "special2" ? "heavy_combo" : "light_combo");
+      const combatAnims = { combo1:"light_combo", combo2:"heavy_combo", special1:"special", special2:"special_2" };
+      const anim = combatAnims[action] || (action === "combo2" ? "heavy_combo" : "light_combo");
       let effectLabel = labels[action] || "ATAQUE";
       let color = action.startsWith("special") ? "#00e5ff" : "#f5c400";
       if (action === "special1" || action === "special2") {
@@ -6863,7 +7040,8 @@
         CS.player.direction = player.facing;
         const rpLocked = performance.now() < rpActionUntil || performance.now() < (_playerHitLockUntil || 0);
         // atkLocked: animaciones no-loop bloquean cambios, EXCEPTO 'sit' terminado si el jugador se mueve
-        const _sitFinished = csAnimator.action === "sit" && csAnimator.frame >= (csAnimator.meta?.frames ?? 1) - 1;
+        const _SIT_ANIMS = ["sit", "sit_2", "sit_3"];
+        const _sitFinished = _SIT_ANIMS.includes(csAnimator.action) && csAnimator.frame >= (csAnimator.meta?.frames ?? 1) - 1;
         const atkLocked = csAnimator.meta && !csAnimator.meta.loop && !(_sitFinished && player.moving);
         const pvpLockedAnim = window.PvpSystem?.getLockedAnim?.();
         if (pvpLockedAnim && csAnimator.action !== pvpLockedAnim) {

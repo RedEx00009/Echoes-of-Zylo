@@ -10,27 +10,27 @@
  * ══════════════════════════════════════════════════════════════════
  *
  *  ── *_Sheet.png  (Unificado) ── MAX_COLS=6, TOTAL_ROWS=37
- *   Row  0 → base_view        (1 frame)
- *   Row  1 → idle             (3 frames)
+ *   Row  0 → base_view        (6 frames: frame 1: normal, frame 2: enojado, frame 3: triste, frame 4: feliz, frame 5: sorprendido, frame 6: guiño)
+ *   Row  1 → idle             (6 frames: 2 frames: idle 1, 2 frames: idle 2, 2 frames: idle 3)
  *   Row  2 → walk             (4 frames)
  *   Row  3 → run              (4 frames)
- *   Row  4 → jump             (3 frames)
- *   Row  5 → fall             (1 frame)
- *   Row  6 → land             (3 frames)
- *   Row  7 → fly              (4 frames)
- *   Row  8 → hover            (2 frames)
+ *   Row  4 → Combo_Arma1      (3 frames funcionan como el light combo)
+ *   Row  5 → Combo_Arma2      (3 frames)
+ *   Row  6 → Ultimate         (2 frames: Ultimate 1, 3 frames: ultimate 2)
+ *   Row  7 → fly              (4 frames: frame 1: vuelo costados, frame 2: vuelo arriba, frame 3: vuelo abajo, frame 4: hover)
+ *   Row  8 → acciones         (4 frames: frame 1: sostener objeto, frame 2: accion de espalda, frame 3: agarrar objeto abajo, frame 4: lanzar objeto)
  *   Row  9 → meditate         (3 frames)
- *   Row 10 → sleep            (3 frames)
- *   Row 11 → interaction      (3 frames)
- *   Row 12 → (reservada)
- *   Row 13 → (reservada)
- *   Row 14 → combat_view      (1 frame)
- *   Row 15 → combat_idle      (4 frames)
+ *   Row 10 → sleep            (3 frames: frame 1: dormir costado, frame 2: dormir relajado, frame 3: dormir acostado)
+ *   Row 11 → poses            (4 frames: frame 1: arrodillado, frame 2: inconciente, frame 3: pose 1, frame 4: pose 2)
+ *   Row 12 → Transformacion   (4 frames)
+ *   Row 13 → destransformacion(2 frames)
+ *   Row 14 → lagartijas       (2 frames)
+ *   Row 15 → combat_idle      (2 frames: pose 1, 2 frames: pose 2)
  *   Row 16 → dash             (3 frames)
  *   Row 17 → rush             (3 frames)
  *   Row 18 → light_combo      (4 frames)
  *   Row 19 → heavy_combo      (3 frames)
- *   Row 20 → special          (3 frames)
+ *   Row 20 → special          (3 frames: special 1, 3 frames: special 2)
  *   Row 21 → block            (2 frames)
  *   Row 22 → hit              (3 frames)
  *   Row 23 → recovery         (3 frames)
@@ -44,8 +44,8 @@
  *   Row 31 → hold_item        (4 frames)
  *   Row 32 → use_item         (4 frames)
  *   Row 33 → eat_drink        (3 frames)
- *   Row 34 → drive            (1 frame)
- *   Row 35 → sit              (3 frames)
+ *   Row 34 → drive            (1 frame: Motocicleta, 1 frame: auto, 1 frame: nube voladora, 1 frame: nube voladora run)
+ *   Row 35 → sit              (1 frame: sentado 1, 2 frames: sentado 2, 1 frame: sentado 3)
  *   Row 36 → emote            (3 frames)
  */
 
@@ -76,9 +76,16 @@
 
   /**
    * VIEW_META: meta de la fila de previsualización del personaje.
+   * Row 0 tiene 6 frames con expresiones distintas — cada una es su propio sub-estado.
    */
   const VIEW_META = {
-    base_view: { row: 0, frames: 1, fps: 1, loop: true, label: "Base" },
+    // Row 0 — base_view (6 frames de expresión facial estática)
+    base_view:         { row: 0, frames: 1, frameStart: 0, fps: 1, loop: true,  label: "Normal"      },
+    base_view_enojado: { row: 0, frames: 1, frameStart: 1, fps: 1, loop: true,  label: "Enojado"     },
+    base_view_triste:  { row: 0, frames: 1, frameStart: 2, fps: 1, loop: true,  label: "Triste"      },
+    base_view_feliz:   { row: 0, frames: 1, frameStart: 3, fps: 1, loop: true,  label: "Feliz"       },
+    base_view_sorprendido: { row: 0, frames: 1, frameStart: 4, fps: 1, loop: true, label: "Sorprendido" },
+    base_view_guino:   { row: 0, frames: 1, frameStart: 5, fps: 1, loop: true,  label: "Guiño"       },
   };
 
   /**
@@ -87,18 +94,64 @@
    * (nunca asumimos que todas tienen MAX_COLS frames).
    */
   const ACTIONS_META = {
-    idle:        { row:  1, frames: 3, fps: 3,  loop: true,  label: "Idle"        },
-    walk:        { row:  2, frames: 4, fps: 6,  loop: true,  label: "Walk"        },
-    run:         { row:  3, frames: 4, fps: 12, loop: true,  label: "Run"         },
-    jump:        { row:  4, frames: 3, fps: 8,  loop: false, label: "Jump"        },
-    fall:        { row:  5, frames: 1, fps: 6,  loop: false, label: "Fall"        },
-    Land:        { row:  6, frames: 3, fps: 6,  loop: false, label: "Land"        },
-    fly:         { row:  7, frames: 4, fps: 6,  loop: true,  label: "Fly"         },
-    hover:       { row:  8, frames: 2, fps: 4,  loop: true,  label: "Hover"       },
-    meditate:    { row:  9, frames: 3, fps: 2,  loop: true,  label: "Meditar"     },
-    sleep:       { row: 10, frames: 3, fps: 1,  loop: true,  label: "Sleep"       },
-    interaction: { row: 11, frames: 3, fps: 4,  loop: false, label: "Interaction" },
-    // Filas 12-13 reservadas — no exponer animaciones hasta tener contenido
+    // ── Row 1: idle — 6 frames divididos en 3 sub-estados de 2 frames cada uno ──
+    idle:             { row:  1, frames: 2, frameStart: 0, fps: 3,  loop: true,  label: "Idle 1"           },
+    idle_2:           { row:  1, frames: 2, frameStart: 2, fps: 3,  loop: true,  label: "Idle 2"           },
+    idle_3:           { row:  1, frames: 2, frameStart: 4, fps: 3,  loop: true,  label: "Idle 3"           },
+
+    // ── Row 2: walk — 4 frames completos ───────────────────────────────────────
+    walk:             { row:  2, frames: 4, frameStart: 0, fps: 6,  loop: true,  label: "Walk"             },
+
+    // ── Row 3: run — 4 frames completos ────────────────────────────────────────
+    run:              { row:  3, frames: 4, frameStart: 0, fps: 12, loop: true,  label: "Run"              },
+
+    // ── Row 4: Combo_Arma1 — 3 frames ──────────────────────────────────────────
+    Combo_Arma1:      { row:  4, frames: 3, frameStart: 0, fps: 8,  loop: false, label: "Combo Arma 1"     },
+
+    // ── Row 5: Combo_Arma2 — 3 frames ──────────────────────────────────────────
+    Combo_Arma2:      { row:  5, frames: 3, frameStart: 0, fps: 8,  loop: false, label: "Combo Arma 2"     },
+
+    // ── Row 6: ultimate — 2 frames de Ultimate 1 + 3 frames de Ultimate 2 ──────
+    ultimate:         { row:  6, frames: 2, frameStart: 0, fps: 6,  loop: false, label: "Ultimate 1"       },
+    ultimate_2:       { row:  6, frames: 3, frameStart: 2, fps: 6,  loop: false, label: "Ultimate 2"       },
+
+    // ── Row 7: fly — 4 frames direccionales (gestionados manualmente igual que antes)
+    //   frame 0: costados, frame 1: arriba, frame 2: abajo, frame 3: hover
+    fly:              { row:  7, frames: 4, frameStart: 0, fps: 6,  loop: true,  label: "Fly"              },
+    fly_side:         { row:  7, frames: 1, frameStart: 0, fps: 6,  loop: true,  label: "Fly Costados"     },
+    fly_up:           { row:  7, frames: 1, frameStart: 1, fps: 6,  loop: true,  label: "Fly Arriba"       },
+    fly_down:         { row:  7, frames: 1, frameStart: 2, fps: 6,  loop: true,  label: "Fly Abajo"        },
+    fly_hover:        { row:  7, frames: 2, frameStart: 0, fps: 6,  loop: true,  label: "Hover"            },
+
+    // ── Row 8: acciones — 4 frames distintos ───────────────────────────────────
+    acciones:         { row:  8, frames: 1, frameStart: 0, fps: 4,  loop: false, label: "Sostener Objeto"  },
+    accion_espalda:   { row:  8, frames: 1, frameStart: 1, fps: 4,  loop: false, label: "Acción Espalda"  },
+    accion_agarrar:   { row:  8, frames: 1, frameStart: 2, fps: 4,  loop: false, label: "Agarrar Abajo"   },
+    accion_lanzar:    { row:  8, frames: 1, frameStart: 3, fps: 4,  loop: false, label: "Lanzar Objeto"   },
+
+    // ── Row 9: meditate — 3 frames ─────────────────────────────────────────────
+    meditate:         { row:  9, frames: 3, frameStart: 0, fps: 2,  loop: true,  label: "Meditar"          },
+
+    // ── Row 10: sleep — 3 frames con poses distintas ────────────────────────────
+    sleep:            { row: 10, frames: 1, frameStart: 0, fps: 1,  loop: true,  label: "Dormir Costado"   },
+    sleep_relax:      { row: 10, frames: 1, frameStart: 1, fps: 1,  loop: true,  label: "Dormir Relajado"  },
+    sleep_flat:       { row: 10, frames: 1, frameStart: 2, fps: 1,  loop: true,  label: "Dormir Acostado"  },
+
+    // ── Row 11: poses — 4 frames con poses distintas ────────────────────────────
+    pose_arrodillado: { row: 11, frames: 1, frameStart: 0, fps: 2,  loop: false, label: "Arrodillado"      },
+    pose_inconsciente:{ row: 11, frames: 1, frameStart: 1, fps: 2,  loop: false, label: "Inconsciente"     },
+    pose_1:           { row: 11, frames: 1, frameStart: 2, fps: 2,  loop: false, label: "Pose 1"           },
+    pose_2:           { row: 11, frames: 1, frameStart: 3, fps: 2,  loop: false, label: "Pose 2"           },
+    poses:            { row: 11, frames: 4, frameStart: 0, fps: 2,  loop: false, label: "Poses"            },
+
+    // ── Row 12: Transformacion — 4 frames ──────────────────────────────────────
+    Transformacion:   { row: 12, frames: 4, frameStart: 0, fps: 6,  loop: false, label: "Transformación"   },
+
+    // ── Row 13: destransformacion — 2 frames ───────────────────────────────────
+    destransformacion:{ row: 13, frames: 2, frameStart: 0, fps: 6,  loop: false, label: "Destransformación"},
+
+    // ── Row 14: lagartijas — 2 frames ──────────────────────────────────────────
+    lagartijas:       { row: 14, frames: 2, frameStart: 0, fps: 4,  loop: true,  label: "Lagartijas"       },
   };
 
   const ACTIONS_META_MALE   = ACTIONS_META;
@@ -107,54 +160,107 @@
   const IDLE_ROW = ACTIONS_META.idle.row; // 1
 
   // ═══════════════════════════════════════════════════════════════
-  //  COMBATE — grilla 4 columnas × 13 filas
+  //  COMBATE — filas 15-26 del sheet unificado (MAX_COLS=6, TOTAL_ROWS=37)
   // ═══════════════════════════════════════════════════════════════
 
-  const COMBAT_MAX_COLS   = 4;
-  const COMBAT_TOTAL_ROWS = 13;
+  const COMBAT_MAX_COLS   = 6;
+  const COMBAT_TOTAL_ROWS = 37;
 
   const COMBAT_VIEW_META = {
-    combat_view: { row: 0, frames: 1, fps: 1, loop: true, label: "Combat View" },
+    combat_view: { row: 15, frames: 1, frameStart: 0, fps: 1, loop: true, label: "Combat View" },
   };
 
   const COMBAT_ACTIONS_META = {
-    combat_view:   { row: 14, frames: 1, fps: 1,  loop: true,  label: "Combat View"   },
-    combat_idle:   { row: 15, frames: 4, fps: 4,  loop: true,  label: "Combat Idle"   },
-    dash:          { row: 16, frames: 3, fps: 12, loop: false, label: "Dash"          },
-    rush:          { row: 17, frames: 3, fps: 12, loop: false, label: "Rush"          },
-    light_combo:   { row: 18, frames: 4, fps: 10, loop: false, label: "Light Combo"   },
-    heavy_combo:   { row: 19, frames: 3, fps: 9,  loop: false, label: "Heavy Combo"   },
-    special:       { row: 20, frames: 3, fps: 8,  loop: false, label: "Special"       },
-    block:         { row: 21, frames: 2, fps: 6,  loop: false, label: "Block"         },
-    hit:           { row: 22, frames: 3, fps: 8,  loop: false, label: "Hit"           },
-    recovery:      { row: 23, frames: 3, fps: 6,  loop: false, label: "Recovery"      },
-    charge:        { row: 24, frames: 3, fps: 4,  loop: true,  label: "Charge"        },
-    sparring:      { row: 25, frames: 4, fps: 8,  loop: true,  label: "Sparring"      },
-    knockback_fly: { row: 26, frames: 1, fps: 1,  loop: false, label: "Knockback Fly" },
-    // Vuelo en combate — misma fila y parámetros que en RP
-    fly:           { row:  7, frames: 4, fps: 6,  loop: true,  label: "Fly"           },
+    // ── Row 15: combat_idle — 2 frames pose 1 + 2 frames pose 2 ───────────────
+    combat_idle:   { row: 15, frames: 2, frameStart: 0, fps: 4,  loop: true,  label: "Combat Idle 1"  },
+    combat_idle_2: { row: 15, frames: 2, frameStart: 2, fps: 4,  loop: true,  label: "Combat Idle 2"  },
+
+    // ── Row 16: dash — 3 frames ────────────────────────────────────────────────
+    dash:          { row: 16, frames: 3, frameStart: 0, fps: 12, loop: false, label: "Dash"           },
+
+    // ── Row 17: rush — 3 frames ────────────────────────────────────────────────
+    rush:          { row: 17, frames: 3, frameStart: 0, fps: 12, loop: false, label: "Rush"           },
+
+    // ── Row 18: light_combo — 4 frames ────────────────────────────────────────
+    light_combo:   { row: 18, frames: 4, frameStart: 0, fps: 10, loop: false, label: "Light Combo"    },
+
+    // ── Row 19: heavy_combo — 3 frames ────────────────────────────────────────
+    heavy_combo:   { row: 19, frames: 3, frameStart: 0, fps: 9,  loop: false, label: "Heavy Combo"    },
+
+    // ── Row 20: special — 3 frames special 1 + 3 frames special 2 ─────────────
+    special:       { row: 20, frames: 3, frameStart: 0, fps: 8,  loop: false, label: "Special 1"      },
+    special_2:     { row: 20, frames: 3, frameStart: 3, fps: 8,  loop: false, label: "Special 2"      },
+
+    // ── Row 21: block — 2 frames ───────────────────────────────────────────────
+    block:         { row: 21, frames: 2, frameStart: 0, fps: 6,  loop: false, label: "Block"          },
+
+    // ── Row 22: hit — 3 frames ─────────────────────────────────────────────────
+    hit:           { row: 22, frames: 3, frameStart: 0, fps: 8,  loop: false, label: "Hit"            },
+
+    // ── Row 23: recovery — 3 frames ───────────────────────────────────────────
+    recovery:      { row: 23, frames: 3, frameStart: 0, fps: 6,  loop: false, label: "Recovery"       },
+
+    // ── Row 24: charge — 3 frames ─────────────────────────────────────────────
+    charge:        { row: 24, frames: 3, frameStart: 0, fps: 4,  loop: true,  label: "Charge"         },
+
+    // ── Row 25: sparring — 4 frames ───────────────────────────────────────────
+    sparring:      { row: 25, frames: 4, frameStart: 0, fps: 8,  loop: true,  label: "Sparring"       },
+
+    // ── Row 26: knockback_fly — 1 frame ───────────────────────────────────────
+    knockback_fly: { row: 26, frames: 1, frameStart: 0, fps: 1,  loop: false, label: "Knockback Fly"  },
+
+    // ── Vuelo en combate — misma fila y parámetros que en RP ──────────────────
+    fly:           { row:  7, frames: 4, frameStart: 0, fps: 6,  loop: true,  label: "Fly"            },
+    fly_side:      { row:  7, frames: 1, frameStart: 0, fps: 6,  loop: true,  label: "Fly Costados"   },
+    fly_up:        { row:  7, frames: 1, frameStart: 1, fps: 6,  loop: true,  label: "Fly Arriba"     },
+    fly_down:      { row:  7, frames: 1, frameStart: 2, fps: 6,  loop: true,  label: "Fly Abajo"      },
+    fly_hover:     { row:  7, frames: 2, frameStart: 0, fps: 6,  loop: true,  label: "Hover"          },
   };
 
   const COMBAT_IDLE_ROW = COMBAT_ACTIONS_META.combat_idle.row; // 15
 
   // ═══════════════════════════════════════════════════════════════
-  //  ESPECIALES — grilla 6 columnas × 10 filas
+  //  ESPECIALES — filas 27-36 del sheet unificado (MAX_COLS=6, TOTAL_ROWS=37)
   // ═══════════════════════════════════════════════════════════════
 
   const SPECIAL_MAX_COLS   = 6;
-  const SPECIAL_TOTAL_ROWS = 10;
+  const SPECIAL_TOTAL_ROWS = 37;
 
   const SPECIAL_ACTIONS_META = {
-    fusion_metamoru: { row: 27, frames: 4, fps: 4,  loop: false, label: "Fusion Metamoru" },
-    fusion_potara:   { row: 28, frames: 3, fps: 4,  loop: false, label: "Fusion Potara"   },
-    carry_player:    { row: 29, frames: 4, fps: 6,  loop: true,  label: "Carry Player"    },
-    training:        { row: 30, frames: 6, fps: 8,  loop: true,  label: "Training"        },
-    hold_item:       { row: 31, frames: 4, fps: 4,  loop: true,  label: "Hold Item"       },
-    use_item:        { row: 32, frames: 4, fps: 6,  loop: false, label: "Use Item"        },
-    eat_drink:       { row: 33, frames: 3, fps: 4,  loop: false, label: "Eat/Drink"       },
-    drive:           { row: 34, frames: 1, fps: 1,  loop: true,  label: "Drive"           },
-    sit:             { row: 35, frames: 3, fps: 2,  loop: false, label: "Sentarse"        },
-    emote:           { row: 36, frames: 3, fps: 4,  loop: false, label: "Emote"           },
+    // ── Row 27: fusion_metamoru — 4 frames ────────────────────────────────────
+    fusion_metamoru: { row: 27, frames: 4, frameStart: 0, fps: 4,  loop: false, label: "Fusion Metamoru" },
+
+    // ── Row 28: fusion_potara — 3 frames ──────────────────────────────────────
+    fusion_potara:   { row: 28, frames: 3, frameStart: 0, fps: 4,  loop: false, label: "Fusion Potara"   },
+
+    // ── Row 29: carry_player — 4 frames ───────────────────────────────────────
+    carry_player:    { row: 29, frames: 4, frameStart: 0, fps: 6,  loop: true,  label: "Carry Player"    },
+
+    // ── Row 30: training — 6 frames ───────────────────────────────────────────
+    training:        { row: 30, frames: 6, frameStart: 0, fps: 8,  loop: true,  label: "Training"        },
+
+    // ── Row 31: hold_item — 4 frames ──────────────────────────────────────────
+    hold_item:       { row: 31, frames: 4, frameStart: 0, fps: 4,  loop: true,  label: "Hold Item"       },
+
+    // ── Row 32: use_item — 4 frames ───────────────────────────────────────────
+    use_item:        { row: 32, frames: 4, frameStart: 0, fps: 6,  loop: false, label: "Use Item"        },
+
+    // ── Row 33: eat_drink — 3 frames ──────────────────────────────────────────
+    eat_drink:       { row: 33, frames: 3, frameStart: 0, fps: 4,  loop: false, label: "Eat/Drink"       },
+
+    // ── Row 34: drive — 4 frames con vehículos distintos ──────────────────────
+    drive:           { row: 34, frames: 1, frameStart: 0, fps: 1,  loop: true,  label: "Moto"            },
+    drive_auto:      { row: 34, frames: 1, frameStart: 1, fps: 1,  loop: true,  label: "Auto"            },
+    drive_nube:      { row: 34, frames: 1, frameStart: 2, fps: 1,  loop: true,  label: "Nube Voladora"   },
+    drive_nube_run:  { row: 34, frames: 1, frameStart: 3, fps: 1,  loop: true,  label: "Nube Run"        },
+
+    // ── Row 35: sit — 3 sub-poses ─────────────────────────────────────────────
+    sit:             { row: 35, frames: 1, frameStart: 0, fps: 2,  loop: false, label: "Sentado 1"       },
+    sit_2:           { row: 35, frames: 2, frameStart: 1, fps: 2,  loop: true,  label: "Sentado 2"       },
+    sit_3:           { row: 35, frames: 1, frameStart: 3, fps: 2,  loop: false, label: "Sentado 3"       },
+
+    // ── Row 36: emote — 3 frames ──────────────────────────────────────────────
+    emote:           { row: 36, frames: 3, frameStart: 0, fps: 4,  loop: false, label: "Emote"           },
   };
 
   // ═══════════════════════════════════════════════════════════════
@@ -165,11 +271,13 @@
   const COMBAT_TO_IDLE_MAP = {
     combat_view:   "idle",
     combat_idle:   "idle",
+    combat_idle_2: "idle",
     dash:          "run",
     rush:          "run",
     light_combo:   "idle",
     heavy_combo:   "idle",
     special:       "idle",
+    special_2:     "idle",
     block:         "idle",
     hit:           "idle",
     recovery:      "idle",
@@ -177,20 +285,44 @@
     sparring:      "idle",
     knockback_fly: "fly",
     fly:           "fly",
+    fly_side:      "fly",
+    fly_up:        "fly",
+    fly_down:      "fly",
+    fly_hover:     "fly",
   };
 
   /** RP → combate equivalente */
   const LEGACY_TO_COMBAT_MAP = {
-    idle:        "combat_idle",
-    walk:        "combat_idle",
-    run:         "dash",
-    fall:        "dash",
-    jump:        "dash",
-    fly:         "fly",
-    hover:       "combat_idle",
-    meditate:    "charge",
-    sleep:       "knockback_fly",
-    interaction: "combat_idle",
+    idle:             "combat_idle",
+    idle_2:           "combat_idle_2",
+    idle_3:           "combat_idle",
+    walk:             "combat_idle",
+    run:              "dash",
+    fly:              "fly",
+    fly_side:         "fly_side",
+    fly_up:           "fly_up",
+    fly_down:         "fly_down",
+    fly_hover:        "fly_hover",
+    meditate:         "charge",
+    sleep:            "knockback_fly",
+    sleep_relax:      "knockback_fly",
+    sleep_flat:       "knockback_fly",
+    acciones:         "combat_idle",
+    accion_espalda:   "combat_idle",
+    accion_agarrar:   "combat_idle",
+    accion_lanzar:    "combat_idle",
+    poses:            "combat_idle",
+    pose_arrodillado: "combat_idle",
+    pose_inconsciente:"knockback_fly",
+    pose_1:           "combat_idle",
+    pose_2:           "combat_idle",
+    Combo_Arma1:      "light_combo",
+    Combo_Arma2:      "heavy_combo",
+    ultimate:         "special",
+    ultimate_2:       "special_2",
+    Transformacion:   "combat_idle",
+    destransformacion:"combat_idle",
+    lagartijas:       "combat_idle",
   };
 
   function resolveCombatAction(action, battleMode) {
@@ -1042,6 +1174,21 @@
       return this;
     }
 
+    /**
+     * Establece directamente una sub-animación de la fila actual como vista.
+     * Se puede usar para base_view_enojado, base_view_feliz, etc.
+     */
+    setSubView(viewKey) {
+      if (VIEW_META[viewKey]) return this.setView(viewKey);
+      // También acepta claves de ACTIONS_META para sub-animaciones RP
+      if (!this.battleMode && !this.specialMode && ACTIONS_META[viewKey]) {
+        this.action = viewKey; this.frame = 0; this.elapsed = 0;
+        this.currentView = null;
+        return this;
+      }
+      return this;
+    }
+
     clearView() { this.currentView = null; return this; }
 
     play(action, onComplete = null) {
@@ -1064,13 +1211,14 @@
       if (!m) return;
       // _freezeFrame: bloqueo permanente (combos manuales). El frame no avanza hasta que se libere.
       if (this._freezeFrame) return;
-      // _frameOverride: salta un solo ciclo (vuelo direccional)
+      // _frameOverride: salta un solo ciclo (vuelo direccional / sub-anim manual)
       if (this._frameOverride) { this._frameOverride = false; return; }
       this.elapsed += delta;
       const fd = 1000 / m.fps;
       while (this.elapsed >= fd) {
         this.elapsed -= fd;
         this.frame++;
+        // this.frame es RELATIVO al frameStart — siempre entre 0 y m.frames-1
         if (this.frame >= m.frames) {
           if (m.loop) {
             this.frame = 0;
@@ -1085,20 +1233,20 @@
 
     /**
      * Retorna las coordenadas de recorte del frame actual en el sheet.
-     * El tamaño de celda (fw, fh) se calcula SIEMPRE usando la grilla estándar de 6×14.
+     * El tamaño de celda (fw, fh) se calcula SIEMPRE usando la grilla estándar de 6×37.
+     * Respeta frameStart para sub-animaciones dentro de la misma fila.
      */
     getFrameCoords(img = null) {
       const m = this.meta;
       let fw = FRAME_W, fh = FRAME_H;
       if (img) {
-        // Usa SIEMPRE la grilla de 6 columnas × 14 filas
         const sz = _computeFrameSize(img, MAX_COLS, TOTAL_ROWS);
         fw = sz.fw; fh = sz.fh;
       }
+      const frameStart = m.frameStart || 0;
       const frame = Math.min(this.frame, Math.max(0, m.frames - 1));
-      // Validación: el frame no puede exceder el ancho real del sheet (6 columnas máximo)
       const maxFrameInRow = Math.min(img ? Math.floor(img.naturalWidth / fw) : MAX_COLS, MAX_COLS);
-      const safeFrame = Math.min(frame, maxFrameInRow - 1);
+      const safeFrame = Math.min(frameStart + frame, maxFrameInRow - 1);
       return {
         srcX:   safeFrame * fw,
         srcY:   m.row * fh,
@@ -1113,11 +1261,12 @@
      * Coordenadas para capas (ropa, pelo, accesorios).
      * Siempre usa el sheet de exploración/base (MAX_COLS × TOTAL_ROWS).
      * En modo combate o especial, mapea la acción al equivalente RP.
+     * Respeta frameStart para sub-animaciones.
      */
     getLayerFrameCoords(img = null) {
       let layerKey;
       if (this.specialMode) {
-        layerKey = "idle"; // durante especiales, capas usan idle del sheet base
+        layerKey = "idle";
       } else if (this.battleMode) {
         layerKey = COMBAT_TO_IDLE_MAP[this.currentView || this.action] || "idle";
       } else {
@@ -1126,13 +1275,13 @@
       const m = ACTIONS_META[layerKey] || ACTIONS_META.idle;
       let fw = FRAME_W, fh = FRAME_H;
       if (img) {
-        // Capas siempre usan el sheet base
         const sz = _computeFrameSize(img, MAX_COLS, TOTAL_ROWS);
         fw = sz.fw; fh = sz.fh;
       }
+      const frameStart = m.frameStart || 0;
       const frame = Math.min(this.frame, Math.max(0, m.frames - 1));
       const maxFrameInRow = img ? Math.floor(img.naturalWidth / fw) : MAX_COLS;
-      const safeFrame = Math.min(frame, maxFrameInRow - 1);
+      const safeFrame = Math.min(frameStart + frame, maxFrameInRow - 1);
       return {
         srcX:   safeFrame * fw,
         srcY:   m.row * fh,
@@ -1958,6 +2107,12 @@
 
     SpriteAnimator, initPlayer, preloadAssets, drawPlayer,
     setDisplaySize, getDisplaySize,
+    // ── Sub-animación helpers ────────────────────────────────────
+    // Claves de sub-animaciones RP disponibles para .play() / .setSubView()
+    RP_SUB_ANIMS: Object.keys(ACTIONS_META),
+    VIEW_SUB_ANIMS: Object.keys(VIEW_META),
+    COMBAT_SUB_ANIMS: Object.keys(COMBAT_ACTIONS_META),
+    SPECIAL_SUB_ANIMS: Object.keys(SPECIAL_ACTIONS_META),
 
     tintHair, tintLayer, tintFaceColor, tintFaceDetailed, tintClothDetailed, invalidateHairCache,
     _hexToRgb, _rgbToHsl, _hslToRgb, _tintSprite,

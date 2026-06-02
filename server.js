@@ -39,6 +39,9 @@ io.on("connection", (socket) => {
       y: data.y || 0,
       facing: data.facing || 1,
       animAction: data.animAction || "idle",
+      // Sub-animación: specialMode y combatMode necesarios para renderizar correctamente
+      specialMode: !!data.specialMode,
+      combatMode:  !!data.combatMode,
       race: data.race || "human",
       auraColor: data.auraColor || "#fdd835",
       charColor: data.charColor || "#f5c400",
@@ -58,6 +61,8 @@ io.on("connection", (socket) => {
     players[socket.id].y = data.y;
     players[socket.id].facing = data.facing;
     players[socket.id].animAction = data.animAction;
+    players[socket.id].specialMode = !!data.specialMode;
+    players[socket.id].combatMode  = !!data.combatMode;
     players[socket.id].hp = data.hp;
 
     // Broadcast a todos menos al emisor
