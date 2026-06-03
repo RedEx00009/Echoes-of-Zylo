@@ -5,16 +5,17 @@
 (function () {
   "use strict";
 
-  const MAX_PARTY = 6;
   const HIT_RANGE = 92;
   const ATK_COOLDOWN_MS = 380;
   const BLOCK_REDUCE = 0.22;
   const MUTUAL_END_NEEDED = 2;
+  const KNOCKBACK_GRAVITY = 900;  // px/s² - del game.html
+  const SPARRING_RANGE = 92;      // px - rango de ataque
 
   const ATTACKS = {
-    light:   { anim: "light_combo",  ki: 0,  dmgBase: 0.06, dmgVar: 0.02, label: "GOLPE LIGERO", color: "#f5c400" },
-    heavy:   { anim: "heavy_combo",  ki: 8,  dmgBase: 0.11, dmgVar: 0.03, label: "GOLPE PESADO", color: "#ff7043" },
-    special: { anim: "special",      ki: 18, dmgBase: 0.15, dmgVar: 0.04, label: "ESPECIAL",     color: "#00e5ff" },
+    light:   { anim: "light_combo",  ki: 0,  dmgBase: 0.06, dmgVar: 0.02, label: "GOLPE LIGERO", color: "#f5c400", knockback: 0.0 },
+    heavy:   { anim: "heavy_combo",  ki: 8,  dmgBase: 0.11, dmgVar: 0.03, label: "GOLPE PESADO", color: "#ff7043", knockback: 1.0 },
+    special: { anim: "special",      ki: 18, dmgBase: 0.15, dmgVar: 0.04, label: "ESPECIAL",     color: "#00e5ff", knockback: 1.35 },
     dash:    { anim: "dash_rush",    ki: 4,  dmgBase: 0,    dmgVar: 0,    label: "DASH",         color: "#b0bec5", move: 72 },
     jump:    { anim: "dash_rush",    ki: 3,  dmgBase: 0,    dmgVar: 0,    label: "SALTO",        color: "#c8cfe8", move: 0, jump: 38 },
   };
@@ -40,6 +41,7 @@
   let myLockAnim = "combat_idle";
   let animProtect = {};
   let selectedMemberId = null;
+  let knockbackState = {};  // Track knockback velocity for remote players: { playerId: { vx, vy, active } }
 
   const G = {
     get db() { return window.db; },
@@ -111,9 +113,15 @@
   function calcDamage(atkType, atkStr, defDef, defMaxHp) {
     const m = ATTACKS[atkType] || ATTACKS.light;
     if (!m.dmgBase) return 0;
-    const v = Math.random() * m.dmgVar * 2 - m.dmgVar;
-    const f = Math.max(0.5, Math.min(2.5, atkStr / Math.max(1, defDef)));
-    return Math.max(1, Math.round(defMaxHp * (m.dmgBase + v) * f));
+    // Similar a game.html: dmg = max(1, floor(str × mult - def × 0.3 + random(±5)))
+    const multiplier = {
+      light: 1.0,
+      heavy: 1.6,
+      special: 2.2,
+    }[atkType] || 1.0;
+    const variance = Math.random() * 10 - 5; // ±5
+    const damage = Math.max(1, Math.floor(atkStr * multiplier - defDef * 0.3 + variance));
+    return damage;
   }
 
   function dist(ax, ay, bx, by) {
@@ -837,13 +845,17 @@
     const anim = G.myAnim;
     if (!anim) return cb && cb();
     if (anim.setBattleMode) anim.setBattleMode(true);
+    const dur = ANIM_DUR[animName] || 800;
     anim.play(animName, () => {
       const finish = () => {
         if (cb) cb();
         else anim.play(G.flying ? "fly" : "combat_idle");
       };
+      // Esperar a que se complete myLockUntil
       setTimeout(finish, Math.max(0, myLockUntil - Date.now()));
     });
+    myLockUntil = Date.now() + dur + 200;  // Lockear después de la animación
+    myLockAnim = animName;
     writeCombatAnim(animName);
   }
 
@@ -874,6 +886,12 @@
     }
     if (rp && data.dmg && G.cam) {
       spawnNum(rp.x - G.cam.x, rp.y - G.cam.y - 50, data.dmg, data.color || "#ff1744");
+    }
+    
+    // Reproducir efecto de impacto para ataques
+    if (data.anim && data.anim.includes("combo") && rp && typeof window.triggerAttackWorldDamage === "function") {
+      const attackType = animName === "light_combo" ? "combo1" : "combo2";
+      window.triggerAttackWorldDamage(attackType, rp.x, rp.y - 24);
     }
   }
 
@@ -965,6 +983,7 @@
       action: actionId,
       damage,
       blocked: false,
+      knockbackPower: atk.knockback || 0,  // Incluir poder de knockback
       fromName: p.name,
       t: Date.now(),
     });
@@ -1008,7 +1027,7 @@
   }
 
   const SPECIAL_BLOCK_KI_COST = 18;  // mismo costo que lanzar un especial
-  const SPECIAL_BLOCK_WINDOW_MS = 1400; // tiempo para reaccionar
+  const SPECIAL_BLOCK_WINDOW_MS = 1400; // tiempo para reaccionar (como game.html)
   let _pendingSpecialBlock = null;
 
   function showSpecialBlockPrompt(onBlock, onTake) {
@@ -1062,8 +1081,9 @@
           const p = G.player;
           const kiCost = SPECIAL_BLOCK_KI_COST;
           p.ki = Math.max(0, p.ki - kiCost);
+          // El daño se reduce a 22% del daño original (como BLOCK_REDUCE)
           const reducedDmg = Math.max(1, Math.round((hit.damage || 0) * BLOCK_REDUCE));
-          _applyHit({ ...hit, damage: reducedDmg }, challengeId, true);
+          _applyHit({ ...hit, damage: reducedDmg, knockbackPower: 0 }, challengeId, true);  // Sin knockback si bloqueamos
           if (typeof window.updatePlayerHud === "function") window.updatePlayerHud();
         },
         // Opción recibir (o timeout)
@@ -1072,6 +1092,7 @@
       return;
     }
 
+    // Para ataques normales, permitir bloqueo pasivo si está en posición
     _applyHit(hit, challengeId, false);
   }
 
@@ -1108,6 +1129,15 @@
       label: (blocked ? "BLOQUEO " : "-") + damage,
       color: blocked ? "#90caf9" : "#ff1744",
     });
+
+    // Aplicar knockback si no está bloqueado (como en game.html)
+    if (!blocked && hit.knockbackPower != null && hit.knockbackPower > 0) {
+      const direction = (G.others[hit.fromId]?.x ?? p.x) > p.x ? 1 : -1;
+      const knockVx = direction * (260 + 70 * hit.knockbackPower);
+      const knockVy = 420 + 80 * hit.knockbackPower;
+      knockbackState[G.myId] = { vx: knockVx, vy: knockVy, active: true, startTime: Date.now() };
+      playLocalAnim("knockback_fly");
+    }
 
     if (G.online && G.myId) {
       G.db.ref("players/" + G.myId).update({ hp: p.hp, t: Date.now() });
@@ -1218,6 +1248,27 @@
           G.player.x = ch.arenaX + Math.cos(ang) * 100;
           G.player.y = ch.arenaY + Math.sin(ang) * 100;
         }
+      }
+    }
+
+    // Actualizar física de knockback para jugador local
+    if (knockbackState[G.myId]?.active && G.player) {
+      const kb = knockbackState[G.myId];
+      const elapsedMs = Date.now() - kb.startTime;
+      if (elapsedMs < 900) {  // knockback dura ~900ms
+        kb.vy += KNOCKBACK_GRAVITY * (dt || 0.016);  // Aplicar gravedad
+        G.player.x += kb.vx * (dt || 0.016);
+        G.player.y += kb.vy * (dt || 0.016);
+        // Limitar para no salir del mapa
+        if (typeof window.currentMap === "string") {
+          const mapData = window.MAPS?.[window.currentMap];
+          if (mapData) {
+            G.player.x = Math.max(0, Math.min(mapData.w * 64, G.player.x));
+            G.player.y = Math.max(0, Math.min(mapData.h * 64, G.player.y));
+          }
+        }
+      } else {
+        knockbackState[G.myId].active = false;
       }
     }
   }
