@@ -80,6 +80,7 @@
       }
       #sideActionMenu.open ~ #sideActionScrollBtns { display:flex; }
       #skillsBar.hidden { display:none; }
+      #skillsBarFixed { position:absolute; bottom:20px; left:50%; transform:translateX(-50%); display:flex; gap:10px; }
       .side-action-scroll-btn {
         width:32px; height:56px; background:var(--ui-bg); border:1px solid #2a3560;
         border-right:none; border-radius:8px 0 0 8px; color:var(--accent); font-size:18px;
@@ -254,23 +255,32 @@
       .trailer-btn-enter:hover { background:rgba(245,196,0,.3); box-shadow:0 0 10px rgba(245,196,0,.3); }
       #trailerCustomizer {
         display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
-        width:min(520px,94vw); max-height:min(620px,84vh); z-index:135;
+        width:min(420px,92vw); max-height:min(540px,84vh); z-index:135;
         background:var(--ui-bg); border:1px solid rgba(245,196,0,.45); border-radius:10px;
         pointer-events:auto; overflow:hidden; backdrop-filter:blur(14px); box-shadow:0 12px 44px rgba(0,0,0,.65);
       }
       #trailerCustomizer.visible { display:flex; flex-direction:column; }
       .trailer-custom-header { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:14px 16px; border-bottom:1px solid #2a3560; }
       .trailer-custom-title { font-family:var(--font-head); font-size:11px; letter-spacing:2px; color:var(--accent); }
-      .trailer-custom-close { background:transparent; border:1px solid rgba(255,255,255,.18); border-radius:6px; color:#8892b0; width:34px; height:34px; cursor:pointer; pointer-events:auto; }
+      .trailer-custom-close { background:transparent; border:1px solid rgba(255,255,255,.18); border-radius:6px; color:#8892b0; width:34px; height:34px; cursor:pointer; pointer-events:auto; font-size:14px; }
       .trailer-custom-body { padding:14px 16px 16px; overflow:auto; display:flex; flex-direction:column; gap:10px; }
-      .trailer-custom-help { font-size:13px; line-height:1.45; color:#c8cfe8; }
       #trailerPreviewCanvas { width:100%; height:150px; background:#070913; border:1px solid #2a3560; border-radius:8px; display:block; }
-      .trailer-custom-row { display:grid; grid-template-columns:92px 1fr auto auto; gap:9px; align-items:center; padding:10px; background:rgba(255,255,255,.04); border:1px solid #2a3560; border-radius:8px; }
-      .trailer-custom-slot { font-family:var(--font-head); font-size:8px; letter-spacing:1px; color:#00e5ff; }
-      .trailer-custom-name { min-width:0; color:#e8eaf6; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-      .trailer-custom-btn { padding:8px 10px; border-radius:6px; border:1px solid rgba(245,196,0,.45); background:rgba(245,196,0,.12); color:var(--accent); font-family:var(--font-head); font-size:8px; letter-spacing:1px; cursor:pointer; pointer-events:auto; }
-      .trailer-custom-btn.reset { border-color:rgba(255,255,255,.18); background:rgba(255,255,255,.05); color:#8892b0; }
+      /* Botones de modo vehículo */
+      .vc-vehicle-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+      .vc-mode-btn { padding:11px 8px; border-radius:8px; border:1px solid rgba(245,196,0,.3); background:rgba(245,196,0,.08); color:#c8a800; font-family:var(--font-head); font-size:10px; letter-spacing:1px; cursor:pointer; pointer-events:auto; transition:background .15s,border-color .15s,color .15s; }
+      .vc-mode-btn.active { background:rgba(245,196,0,.22); border-color:#f5c400; color:#f5c400; box-shadow:0 0 12px rgba(245,196,0,.25); }
+      .vc-mode-btn:hover:not(.active) { background:rgba(245,196,0,.14); }
+      /* Sección de interiores */
+      .vc-section-label { font-family:var(--font-head); font-size:8px; letter-spacing:2px; color:#2a3560; text-align:center; padding:2px 0 0; }
+      .vc-slot-row { display:grid; grid-template-columns:52px 28px 1fr 28px; gap:6px; align-items:center; padding:9px 10px; background:rgba(255,255,255,.03); border:1px solid #2a3560; border-radius:8px; }
+      .vc-slot-label { font-family:var(--font-head); font-size:8px; letter-spacing:1px; color:#00e5ff; }
+      .vc-slot-name { color:#e8eaf6; font-size:12px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+      .vc-arrow { background:rgba(255,255,255,.06); border:1px solid #2a3560; border-radius:5px; color:#8892b0; width:28px; height:28px; cursor:pointer; pointer-events:auto; font-size:11px; display:flex; align-items:center; justify-content:center; transition:background .12s; }
+      .vc-arrow:hover { background:rgba(0,229,255,.15); color:#00e5ff; border-color:#00e5ff; }
+      /* Acciones */
       .trailer-custom-actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; padding-top:4px; }
+      .vc-action-btn { padding:8px 12px; border-radius:6px; border:1px solid rgba(245,196,0,.45); background:rgba(245,196,0,.12); color:var(--accent); font-family:var(--font-head); font-size:8px; letter-spacing:1px; cursor:pointer; pointer-events:auto; }
+      .vc-action-btn.reset { border-color:rgba(255,255,255,.18); background:rgba(255,255,255,.05); color:#8892b0; }
       .trailer-room-panel {
         position:absolute; bottom:60px; left:50%; transform:translateX(-50%); display:none;
         background:rgba(8,9,15,.95); border:1px solid rgba(245,196,0,.45); border-radius:10px;
@@ -524,7 +534,7 @@
         :root { --btn-size:52px; --btn-icon:19px; }
         #menuBackdrop.open { display:block; }
         .mobile-controls { display:flex; height:286px; }
-        .skills-bar { display:none; }
+        .skills-bar, #skillsBarFixed { display:none; }
         .region-label { position:absolute; bottom:182px; left:50%; transform:translateX(-50%); }
         .dialog-box { bottom:190px; }
         .minimap-wrap { top:12px; right:12px; width:80px; height:80px; }
@@ -819,72 +829,59 @@
       </div>
 
       <!-- Trailer Customizer -->
+      <!-- Trailer Customizer -->
       <div id="trailerCustomizer">
         <div class="trailer-custom-header">
-          <div class="trailer-custom-title">TALLER DE CASA RODANTE</div>
-          <button class="trailer-custom-close" onclick="closeTrailerCustomizer()" type="button">X</button>
+          <div class="trailer-custom-title">PERSONALIZAR VEHÍCULO</div>
+          <button class="trailer-custom-close" onclick="closeTrailerCustomizer()" type="button">✕</button>
         </div>
         <div class="trailer-custom-body">
-          <div class="trailer-custom-help">Subi tus PNG para cambiar el exterior del trailer y las salas interiores. Se guardan en este navegador y se sincronizan con tu trailer cuando estas online.</div>
+          <div class="vc-vehicle-row">
+            <button class="vc-mode-btn" id="vehicleModeBtn_base" onclick="setVehicleMode('base')" type="button">🚛 TRAILER</button>
+            <button class="vc-mode-btn" id="vehicleModeBtn_nave" onclick="setVehicleMode('nave')" type="button">🚀 NAVE</button>
+          </div>
           <canvas id="trailerPreviewCanvas" width="480" height="150"></canvas>
-          <div class="trailer-custom-row">
-            <div class="trailer-custom-slot">EXTERIOR</div>
-            <div class="trailer-custom-name" id="trailerCustomName_exterior">Base del taller</div>
-            <button class="trailer-custom-btn" onclick="cycleTrailerAsset('exterior')" type="button">CAMBIAR</button>
-            <button class="trailer-custom-btn reset" onclick="resetTrailerSlot('exterior')" type="button">BASE</button>
+          <div class="vc-section-label">INTERIORES</div>
+          <div class="vc-slot-row">
+            <span class="vc-slot-label">SALA</span>
+            <button class="vc-arrow" onclick="vcPrevSlot('topFloor')" type="button">◀</button>
+            <span class="vc-slot-name" id="vcName_topFloor">—</span>
+            <button class="vc-arrow" onclick="vcNextSlot('topFloor')" type="button">▶</button>
           </div>
-          <div class="trailer-custom-row">
-            <div class="trailer-custom-slot">PISO ARRIBA</div>
-            <div class="trailer-custom-name" id="trailerCustomName_topFloor">Base del taller</div>
-            <button class="trailer-custom-btn" onclick="cycleTrailerAsset('topFloor')" type="button">CAMBIAR</button>
-            <button class="trailer-custom-btn reset" onclick="resetTrailerSlot('topFloor')" type="button">BASE</button>
+          <div class="vc-slot-row">
+            <span class="vc-slot-label">CABINA</span>
+            <button class="vc-arrow" onclick="vcPrevSlot('cockpit')" type="button">◀</button>
+            <span class="vc-slot-name" id="vcName_cockpit">—</span>
+            <button class="vc-arrow" onclick="vcNextSlot('cockpit')" type="button">▶</button>
           </div>
-          <div class="trailer-custom-row">
-            <div class="trailer-custom-slot">CABINA</div>
-            <div class="trailer-custom-name" id="trailerCustomName_cockpit">Base del taller</div>
-            <button class="trailer-custom-btn" onclick="cycleTrailerAsset('cockpit')" type="button">CAMBIAR</button>
-            <button class="trailer-custom-btn reset" onclick="resetTrailerSlot('cockpit')" type="button">BASE</button>
-          </div>
-          <div class="trailer-custom-row">
-            <div class="trailer-custom-slot">PISO ABAJO</div>
-            <div class="trailer-custom-name" id="trailerCustomName_bottomFloor">Base del taller</div>
-            <button class="trailer-custom-btn" onclick="cycleTrailerAsset('bottomFloor')" type="button">CAMBIAR</button>
-            <button class="trailer-custom-btn reset" onclick="resetTrailerSlot('bottomFloor')" type="button">BASE</button>
-          </div>
-          <div class="trailer-custom-row">
-            <div class="trailer-custom-slot">IDLE 2F</div>
-            <div class="trailer-custom-name" id="trailerCustomName_driveIdle">Base del taller</div>
-            <button class="trailer-custom-btn" onclick="cycleTrailerAsset('driveIdle')" type="button">CAMBIAR</button>
-            <button class="trailer-custom-btn reset" onclick="resetTrailerSlot('driveIdle')" type="button">BASE</button>
-          </div>
-          <div class="trailer-custom-row">
-            <div class="trailer-custom-slot">MOV. 3F</div>
-            <div class="trailer-custom-name" id="trailerCustomName_driveMove">Base del taller</div>
-            <button class="trailer-custom-btn" onclick="cycleTrailerAsset('driveMove')" type="button">CAMBIAR</button>
-            <button class="trailer-custom-btn reset" onclick="resetTrailerSlot('driveMove')" type="button">BASE</button>
-          </div>
-          <div class="trailer-custom-row">
-            <div class="trailer-custom-slot">VUELO 4F</div>
-            <div class="trailer-custom-name" id="trailerCustomName_driveFly">Base del taller</div>
-            <button class="trailer-custom-btn" onclick="cycleTrailerAsset('driveFly')" type="button">CAMBIAR</button>
-            <button class="trailer-custom-btn reset" onclick="resetTrailerSlot('driveFly')" type="button">BASE</button>
+          <div class="vc-slot-row">
+            <span class="vc-slot-label">BODEGA</span>
+            <button class="vc-arrow" onclick="vcPrevSlot('bottomFloor')" type="button">◀</button>
+            <span class="vc-slot-name" id="vcName_bottomFloor">—</span>
+            <button class="vc-arrow" onclick="vcNextSlot('bottomFloor')" type="button">▶</button>
           </div>
           <div class="trailer-custom-actions">
-            <button class="trailer-custom-btn" onclick="openMyTrailer();closeTrailerCustomizer()" type="button">VER TRAILER</button>
-            <button class="trailer-custom-btn reset" onclick="resetAllTrailerCustomization()" type="button">RESTAURAR TODO</button>
+            <button class="vc-action-btn" onclick="openMyTrailer();closeTrailerCustomizer()" type="button">VER INTERIOR</button>
+            <button class="vc-action-btn reset" onclick="resetAllTrailerCustomization()" type="button">RESTAURAR TODO</button>
           </div>
         </div>
       </div>
 
-      <!-- Skills bar PC -->
-      <div class="skills-bar" id="skillsBar">
-        <div class="skill-btn" onclick="interactNearby()" title="Interactuar [Z]"><span class="skill-icon">💬</span><span class="skill-key">Z</span></div>
-        <div class="skill-btn" onclick="openMyTrailer()" title="Mi Trailer [Q]"><span class="skill-icon">🚌</span><span class="skill-key">Q</span></div>
-        <div class="skill-btn" onclick="openInventoryPanel()" title="Inventario [I]"><span class="skill-icon">🎒</span><span class="skill-key">I</span></div>
-        <div class="skill-btn" onclick="toggleFly()" title="Volar [F]"><span class="skill-icon">🦅</span><span class="skill-key">F</span></div>
-        <div class="skill-btn" onclick="sendEmote('bow')" title="Reverencia [R]"><span class="skill-icon">🙇</span><span class="skill-key">R</span></div>
-        <div class="skill-btn" id="skillRun" onclick="toggleRunPC()"><span class="skill-icon">💨</span><span class="skill-key">SHIFT</span></div>
+      <!-- Skills bar PC — botones fijos siempre visibles -->
+      <div class="skills-bar" id="skillsBarFixed">
+        <div class="skill-btn" onclick="interactNearby()" title="Interactuar [Z]" id="skillInteract"><span class="skill-icon">💬</span><span class="skill-key">Z</span></div>
+        <div class="skill-btn" onclick="toggleFly()" title="Volar [F]" id="skillFly"><span class="skill-icon">🦅</span><span class="skill-key">F</span></div>
+        <div class="skill-btn" onclick="setControlMode('combat')" title="Modo combate [X]" id="skillCombatMode"><span class="skill-icon">⚔️</span><span class="skill-key">X</span></div>
+        <div class="skill-btn" onclick="toggleRunPC()" title="Correr [SHIFT]" id="skillRun"><span class="skill-icon">💨</span><span class="skill-key">SHIFT</span></div>
+        <div class="skill-btn trans-dropdown-wrap" id="skillTransBtn" onclick="toggleTransDropdown(event)" title="Transformaciones [T]"><span class="skill-icon">⚡</span><span class="skill-key">T</span></div>
+        <div style="width:1px;background:rgba(245,196,0,.25);align-self:stretch;margin:4px 2px;"></div>
+        <div class="skill-btn run-active" id="skillIdle1" onclick="selectIdle('idle')" title="Idle 1"><span class="skill-icon">🧍</span><span class="skill-key">I1</span></div>
+        <div class="skill-btn" id="skillIdle2" onclick="selectIdle('idle_2')" title="Idle 2"><span class="skill-icon">🧍</span><span class="skill-key">I2</span></div>
+        <div class="skill-btn" id="skillIdle3" onclick="selectIdle('idle_3')" title="Idle 3"><span class="skill-icon">🧍</span><span class="skill-key">I3</span></div>
       </div>
+
+      <!-- Skills bar PC — acciones variables (combate / RP / PvP) -->
+      <div class="skills-bar" id="skillsBar" style="bottom:84px;"></div>
 
       <!-- Mobile controls -->
       <div class="mobile-controls">
@@ -896,10 +893,8 @@
           </div>
         </div>
         <div class="action-grid" id="actionGrid">
-          <div class="action-btn btn-interact" onclick="interactNearby()"><span class="btn-icon">💬</span><span class="btn-label">HABLAR</span></div>
-          <div class="action-btn btn-trailer" onclick="openMyTrailer()"><span class="btn-icon">🚌</span><span class="btn-label">TRAILER</span></div>
-          <div class="action-btn btn-run" onclick="toggleFly()"><span class="btn-icon">🦅</span><span class="btn-label">VOLAR</span></div>
-          <div class="action-btn btn-emote" onclick="sendEmote('bow')"><span class="btn-icon">🙇</span><span class="btn-label">REVERENC.</span></div>
+          <div class="action-btn btn-interact" onclick="interactNearby()" id="mobileTalkBtn"><span class="btn-icon">💬</span><span class="btn-label">HABLAR</span></div>
+          <div class="action-btn btn-run" id="mobileFlyBtn" onclick="toggleFly()"><span class="btn-icon">🦅</span><span class="btn-label">VOLAR</span></div>
           <div class="action-btn btn-run" id="mobileRunBtn" onclick="toggleRunMobile()" style="border-radius:12px;width:100%;grid-column:span 2;height:calc(var(--btn-size)*0.7);">
             <span class="btn-icon">💨</span><span class="btn-label" id="runBtnLabel">CORRER: OFF</span>
           </div>
@@ -1127,7 +1122,7 @@
       player.maxKi = Math.floor(raceS.ki * 8 * Math.pow(1.12, lv - 1));
       player.hp = player.maxHp; player.ki = player.maxKi;
       player.strength = raceS.strength; player.defense = raceS.defense;
-      player.speed = 2.2 + (raceS.speed / 100) * 1.8;
+      player.speed = 2.3 + (raceS.speed / 100) * 1.9;
       player.auraColor = slotData.auraColor || "#fdd835";
       player.charColor = BASE_RACE_COLORS[newRaceId] || "#f5c400";
       savedKiAttacks = loadKiAttackData(slotData);
@@ -1197,7 +1192,7 @@
       isFlying = !isFlying;
       if (csAnimator) {
         csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
-        csAnimator.play(isFlying ? "fly" : "idle");
+        csAnimator.play(getIdleAnim());
       }
       showHudToast(isFlying ? "🦅 Vuelo activado" : "🦅 Vuelo desactivado", "info");
       renderActionBars();
@@ -1611,7 +1606,7 @@
         // Volver a idle/fly tras aplicar
         if (csAnimator) {
           csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
-          csAnimator.play(isFlying ? "fly" : "idle");
+          csAnimator.play(getIdleAnim());
         }
       }
 
@@ -1628,6 +1623,7 @@
       csAnimator.setSpecialMode && csAnimator.setSpecialMode(true);
       csAnimator.play("transform", () => {
         // Al terminar la animación de transform → aplicar cambio visual
+        rpActionUntil = 0; // liberar el lock antes de publicar para no emitir "transform" a la red
         _doApply();
       });
     }
@@ -1722,7 +1718,7 @@
         renderActionBars();
         if (csAnimator) {
           csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
-          csAnimator.play(isFlying ? "fly" : "idle");
+          csAnimator.play(getIdleAnim());
         }
       }
 
@@ -1734,6 +1730,7 @@
       rpActionUntil = performance.now() + animDuration + 80;
       csAnimator.setSpecialMode && csAnimator.setSpecialMode(true);
       csAnimator.play("detransform", () => {
+        rpActionUntil = 0; // liberar el lock antes de publicar para no emitir "detransform" a la red
         _doRevert();
       });
     }
@@ -1833,13 +1830,13 @@
         csAnimator.setSpecialMode && csAnimator.setSpecialMode(true);
         csAnimator.play(animKey, () => {
           csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
-          csAnimator.play(isFlying ? "fly" : "idle");
+          csAnimator.play(getIdleAnim());
         });
       } else {
         if (csAnimator.specialMode) csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
         csAnimator.play(animKey);
         setTimeout(() => {
-          if (csAnimator && !player.moving) csAnimator.play(isFlying ? "fly" : "idle");
+          if (csAnimator && !player.moving) csAnimator.play(getIdleAnim());
         }, _hold);
       }
     }
@@ -1862,9 +1859,46 @@
 
     function renderActionBars() {
       const skills = document.getElementById("skillsBar");
+      const skillsFixed = document.getElementById("skillsBarFixed");
       const sideList = document.getElementById("sideActionList");
       const grid = document.getElementById("actionGrid");
       const PS = window.PvpSystem;
+
+      // -- Actualizar siempre el estado de los botones fijos --
+      if (skillsFixed) {
+        const flyBtn = skillsFixed.querySelector("#skillFly");
+        if (flyBtn) flyBtn.className = "skill-btn" + (isFlying ? " run-active" : "");
+        const runBtn = skillsFixed.querySelector("#skillRun");
+        if (runBtn) runBtn.className = "skill-btn" + (isRunning ? " run-active" : "");
+        const transBtn = skillsFixed.querySelector("#skillTransBtn");
+        if (transBtn) {
+          const transActive = window.TransformationsSystem?.playerTransState?.activeTransformation;
+          transBtn.className = "skill-btn trans-dropdown-wrap" + (transActive ? " trans-active" : "");
+          const tKey = transBtn.querySelector(".skill-key");
+          if (tKey) tKey.textContent = transActive ? "★" : "T";
+        }
+        // Idle selector
+        ["idle","idle_2","idle_3"].forEach((key, i) => {
+          const btn = skillsFixed.querySelector(`#skillIdle${i+1}`);
+          if (btn) btn.className = "skill-btn" + (selectedIdle === key ? " run-active" : "");
+        });
+        // En combate, cambiar el botón X entre "Modo combate" y "Volver a RP"
+        const combatModeBtn = skillsFixed.querySelector("#skillCombatMode");
+        if (combatModeBtn) {
+          if (isCombatMode) {
+            combatModeBtn.title = "Volver a RP [X]";
+            combatModeBtn.setAttribute("onclick", "setControlMode('rp')");
+            combatModeBtn.querySelector(".skill-icon").textContent = "🔄";
+            combatModeBtn.querySelector(".skill-key").textContent = "X";
+          } else {
+            combatModeBtn.title = "Modo combate [X]";
+            combatModeBtn.setAttribute("onclick", "setControlMode('combat')");
+            combatModeBtn.querySelector(".skill-icon").textContent = "⚔️";
+            combatModeBtn.querySelector(".skill-key").textContent = "X";
+          }
+        }
+      }
+
       if (skills) {
         if (controlMode === "pvp" && PS && PS.isFighter()) {
           skills.innerHTML = PS.getPcSkillsHtml();
@@ -1876,23 +1910,16 @@
             makePcSkill({ icon:"💥", key:"E", title:"Ataque especial 1", action:"performCombatAction('special1')" }),
             makePcSkill({ icon:"🌟", key:"R", title:"Ataque especial 2", action:"performCombatAction('special2')" }),
             makePcSkill({ icon:"🔋", key:"G", title:"Cargar Ki", action:"performCombatAction('charge')" }),
-            makePcSkill({ icon:"🦅", key:"F", title:"Volar", action:"performCombatAction('fly')", id:"skillFly", cls:isFlying?"run-active":"" }),
+            makePcSkill({ icon:"🛡️", key:"B", title:"Cubrirse", action:"performCombatAction('block')" }),
+            makePcSkill({ icon:"🦅", key:"F", title:"Volar", action:"performCombatAction('fly')", id:"skillFlyCombat", cls:isFlying?"run-active":"" }),
             makePcSkill({ icon:"💨", key:"C", title:"Z-Vanish", action:"performCombatAction('vanish')" }),
-            makePcSkill({ icon:"🔄", key:"RP", title:"Volver a rol", action:"setControlMode('rp')" }),
           ].join("");
           skills.classList.remove("hidden");
         } else {
-          const transActive = window.TransformationsSystem?.playerTransState?.activeTransformation;
-          skills.innerHTML = RP_ACTIONS.map((a, idx) =>
-            makePcSkill({ icon:a.icon, key:a.key, title:`${a.title} [${a.key}]`, action:`performRpAction('${a.id}')` })
-          ).concat([
-            makePcSkill({ icon:"💬", key:"Z", title:"Interactuar [Z]", action:"interactNearby()", id:"skillInteract" }),
-            makePcSkill({ icon:"🦅", key:"F", title:"Volar [F]", action:"toggleFly()", id:"skillFly", cls:isFlying?"run-active":"" }),
-            makePcSkill({ icon:"⚔️", key:"X", title:"Modo combate [X]", action:"setControlMode('combat')" }),
-            makePcSkill({ icon:"💨", key:"SHIFT", title:"Correr", action:"toggleRunPC()", id:"skillRun", cls:isRunning?"run-active":"" }),
-          ]).concat([
-            `<div class="skill-btn trans-dropdown-wrap ${transActive ? 'trans-active' : ''}" id="skillTransBtn" onclick="toggleTransDropdown(event)" title="Transformaciones [T]"><span class="skill-icon">⚡</span><span class="skill-key">${transActive ? '★' : 'T'}</span></div>`,
-          ]).join("");
+          // Modo RP: skillsBar oculta — su contenido alimenta el sideList
+          skills.innerHTML = RP_ACTIONS.filter(a => a.id !== "idle_2" && a.id !== "idle_3").map((a) =>
+            makePcSkill({ icon:a.icon, key:a.key, title:`${a.title} [${a.key}]`, action:`performRpAction('${a.id}')`, cls: DRIVE_IDS.has(a.id) && activeDrive === a.id ? "run-active" : "" })
+          ).join("");
           skills.classList.add("hidden");
         }
       }
@@ -1920,20 +1947,27 @@
             makeMobileAction({ icon:"💥", label:"ESP. 1", action:"performCombatAction('special1')", cls:"btn-interact" }),
             makeMobileAction({ icon:"🌟", label:"ESP. 2", action:"performCombatAction('special2')", cls:"btn-interact" }),
             makeMobileAction({ icon:"🔋", label:"CARGAR KI", action:"performCombatAction('charge')", cls:"btn-trailer" }),
+            makeMobileAction({ icon:"🛡️", label:"CUBRIRSE", action:"performCombatAction('block')", cls:"btn-interact" }),
             makeMobileAction({ icon:"🦅", label:isFlying?"VUELO ON":"VOLAR", action:"performCombatAction('fly')", cls:"btn-run" + (isFlying ? " run-active" : "") }),
             makeMobileAction({ icon:"💨", label:"Z-VANISH", action:"performCombatAction('vanish')", cls:"btn-trailer" }),
             `<div class="action-btn btn-run" onclick="setControlMode('rp')" style="border-radius:12px;width:100%;grid-column:span 2;height:calc(var(--btn-size)*0.7);"><span class="btn-icon">🔄</span><span class="btn-label">VOLVER A RP</span></div>`,
           ].join("");
         } else {
-          grid.innerHTML = RP_ACTIONS.map((a, idx) =>
-            makeMobileAction({ icon:a.icon, label:a.label, action:`performRpAction('${a.id}')`, cls:idx % 2 ? "btn-trailer" : "btn-emote" })
-          ).concat([
-              makeMobileAction({ icon:"⚔️", label:"COMBATE", action:"setControlMode('combat')", cls:"btn-interact" }),
-          ]).concat([
-            makeMobileAction({ icon:"💬", label:"HABLAR", action:"interactNearby()", cls:"btn-interact" }),
-            makeMobileAction({ icon:"🦅", label:isFlying?"VUELO ON":"VOLAR", action:"toggleFly()", cls:"btn-run" + (isFlying ? " run-active" : ""), id:"mobileFlyBtn" }),
-            `<div class="action-btn btn-run ${isRunning ? "run-active" : ""}" id="mobileRunBtn" onclick="toggleRunMobile()" style="border-radius:12px;width:100%;grid-column:span 2;height:calc(var(--btn-size)*0.7);"><span class="btn-icon">💨</span><span class="btn-label" id="runBtnLabel">CORRER: ${isRunning ? "ON" : "OFF"}</span></div>`,
-          ]).join("");
+          // Modo RP: restaurar los botones fijos si el grid fue sobreescrito por combate
+          if (grid && !document.getElementById("mobileTalkBtn")) {
+            grid.innerHTML = [
+              `<div class="action-btn btn-interact" onclick="interactNearby()" id="mobileTalkBtn"><span class="btn-icon">💬</span><span class="btn-label">HABLAR</span></div>`,
+              `<div class="action-btn btn-run" id="mobileFlyBtn" onclick="toggleFly()"><span class="btn-icon">🦅</span><span class="btn-label">VOLAR</span></div>`,
+              `<div class="action-btn btn-run" id="mobileRunBtn" onclick="toggleRunMobile()" style="border-radius:12px;width:100%;grid-column:span 2;height:calc(var(--btn-size)*0.7);"><span class="btn-icon">💨</span><span class="btn-label" id="runBtnLabel">CORRER: ${isRunning ? "ON" : "OFF"}</span></div>`,
+            ].join("");
+          }
+          // Las acciones RP están en el menú lateral (sideActionList).
+          // Solo actualizamos el estado visual de los botones fijos.
+          const flyBtn = document.getElementById("mobileFlyBtn");
+          if (flyBtn) {
+            flyBtn.className = "action-btn btn-run" + (isFlying ? " run-active" : "");
+            flyBtn.querySelector(".btn-label").textContent = isFlying ? "VUELO ON" : "VOLAR";
+          }
           // Update static mobileTransBtn
           const mobTB = document.getElementById("mobileTransBtn");
           if (mobTB) {
@@ -1963,11 +1997,11 @@
         if (isCombatMode) {
           csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
           csAnimator.setBattleMode(true);
-          csAnimator.play("combat_idle");
+          csAnimator.play(getCombatIdleAnim());
         } else {
           csAnimator.setBattleMode(false);
           csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
-          csAnimator.play(isFlying ? "fly" : "idle");
+          csAnimator.play(getIdleAnim());
         }
       }
       renderActionBars();
@@ -1979,7 +2013,7 @@
     function combatEndAnim() {
       if (!csAnimator) return;
       if (csAnimator._freezeFrame) csAnimator._freezeFrame = false;
-      csAnimator.play(isFlying ? "fly" : (csAnimator.battleMode ? "combat_idle" : "idle"));
+      csAnimator.play(isFlying ? "fly" : (csAnimator.battleMode ? getCombatIdleAnim() : getIdleAnim()));
     }
     window.setControlMode = setControlMode;
 
@@ -2385,6 +2419,18 @@
       myPlayerId = "player_" + Math.random().toString(36).substr(2, 9) + "_" + Date.now();
       const myRef = db.ref("players/" + myPlayerId);
       myRef.onDisconnect().remove();
+      // Garantizar que el trailer de ESTA sesión se elimine al desconectar,
+      // incluso si spawnMyTrailer() nunca llegó a ejecutarse
+      db.ref("trailers/" + myPlayerId).onDisconnect().remove();
+      // Eliminar cualquier trailer huérfano propio de sesiones anteriores
+      db.ref("trailers/" + myPlayerId).remove().catch(()=>{});
+      // Limpiar trailers viejos de OTROS jugadores (más de 30s sin actualizar)
+      db.ref("trailers").orderByChild("t").endAt(Date.now() - 30000).once("value", snap => {
+        const all = snap.val() || {};
+        Object.keys(all).forEach(tid => {
+          if (tid !== myPlayerId) db.ref("trailers/" + tid).remove().catch(()=>{});
+        });
+      }).catch(()=>{});
       mpConnected = true;
       myRef.set({
         name:player.name, x:Math.floor(player.x), y:Math.floor(player.y), facing:player.facing,
@@ -2500,17 +2546,19 @@
         return;
       }
       // Determinar animación actual incluyendo special mode
-      if (csAnimator?.specialMode) {
+      // "transform" y "detransform" son animaciones locales de transición — nunca se publican a la red
+      const _isTransAnim = ["transform", "detransform"].includes(csAnimator?.action);
+      if (!_isTransAnim && csAnimator?.specialMode) {
         animAction = csAnimator.action || "sit";
       } else if (isCombatMode && csAnimator?.battleMode) {
-        animAction = isFlying ? "knockback_fly" : (player.moving ? "dash" : "combat_idle");
+        animAction = isFlying ? "knockback_fly" : (player.moving ? "dash" : getCombatIdleAnim());
       } else {
         animAction = isFlying ? "fly" : (player.moving ? (isRunning ? "run" : "walk") : "idle");
       }
-      if (performance.now() < rpActionUntil && csAnimator) animAction = csAnimator.action || animAction;
+      if (performance.now() < rpActionUntil && csAnimator && !_isTransAnim) animAction = csAnimator.action || animAction;
       db.ref("players/" + myPlayerId).update({
         x:Math.floor(player.x), y:Math.floor(player.y), facing:player.facing, animAction,
-        combatMode:isCombatMode, specialMode:!!(csAnimator?.specialMode),
+        combatMode:isCombatMode, specialMode:!!(csAnimator?.specialMode) && !_isTransAnim,
         flying:isFlying, hp:player.hp, maxHp:player.maxHp,
         strength:player.strength, defense:player.defense,
         level:player.level, faction:player.faction, empireLeader:isEmpireLeader(), map:currentMap, t:Date.now(),
@@ -3028,7 +3076,7 @@
       lobby: { x:40, y:35 },
       earth: { x:60, y:40 },
       earth_west_north: { x:44, y:52 },
-      earth_west_south: { x:44, y:52 },
+      earth_west_south: { x:44, y:44 },  // centro del mapa, lejos de ambos portales
       rocky_plains: { x:48, y:56 },
       earth_forest: { x:48, y:56 },
       makai_biome: { x:48, y:56 },
@@ -3163,6 +3211,15 @@
       ],
       planet_vegeta: [
         { map:"space", label:"VOLVER AL ESPACIO", cls:"portal-btn-space" },
+      ],
+    };
+
+    // Portales con destino directo por zona de tiles (sin panel de seleccion).
+    // { xMin, xMax, yMin, yMax, map, label } — si el jugador pisa esa region y pulsa Z/E, viaja directo.
+    const PORTAL_ZONES = {
+      earth_west_south: [
+        { xMin:42, xMax:50, yMin:32, yMax:36, map:"capsule_corp", label:"CORPORACION CAPSULA" },
+        { xMin:40, xMax:48, yMin:58, yMax:62, map:"earth",        label:"VOLVER A TIERRA"     },
       ],
     };
 
@@ -3409,7 +3466,13 @@
         addRoom(map, 8, 30, 18, 14, 16, wall);
       }
       const cx = Math.floor(def.w/2);
-      fillRectMap(map, cx-2, def.h-6, 4, 4, 3);
+      // earth_west_south: portal separado para Capsule Corp (puerta del edificio) + portal de salida a Tierra
+      if (kind === "earth_west_south") {
+        fillRectMap(map, 44, 33, 4, 3, 3);  // puerta Capsule Corp  (zona PORTAL_ZONES xMin:42..50, yMin:32..36)
+        fillRectMap(map, cx-2, def.h-6, 4, 4, 3); // salida a Tierra (zona PORTAL_ZONES xMin:40..48, yMin:58..62)
+      } else {
+        fillRectMap(map, cx-2, def.h-6, 4, 4, 3);
+      }
       if (kind === "earth_west_north") fillRectMap(map, Math.floor(def.w/2)-2, 12, 4, 4, 3);
       if (kind === "upa_village") fillRectMap(map, 50, 19, 4, 4, 3);
       return map;
@@ -4264,7 +4327,7 @@
       name:savedChar?.name||"Guerrero Z", race:raceId, auraColor, charColor,
       faction:loadPlayerFaction(),
       x:40*TILE, y:30*TILE, w:44, h:64, vx:0, vy:0,
-      speed:2.2+(raceStats.speed/100)*1.8,
+      speed:2.3+(raceStats.speed/100)*1.9,
       facing:1, moving:false,
       level:savedChar?.level||1, xp:0, xpToNext:100,
       maxHp:Math.floor(raceStats.health*10*Math.pow(1.15,(savedChar?.level||1)-1)),
@@ -4282,6 +4345,39 @@
     let isCombatMode = false;
     let isFlying = false;
     let rpActionUntil = 0;
+    let selectedIdle = "idle"; // "idle" | "idle_2" | "idle_3"
+    let activeDrive = null;    // id del drive activo: "drive_moto"|"drive_auto"|"drive_nube"|"drive_nube_run"|null
+
+    const DRIVE_IDS = new Set(["drive_moto","drive_auto","drive_nube","drive_nube_run"]);
+
+    // Animaciones que se interrumpen al moverse o elegir otra acción RP
+    const RP_INTERRUPTIBLE = new Set([
+      "pose_1","pose_2","pose_arrodillado","pose_inconsciente",
+      "sleep","sleep_relax","sleep_flat",
+      "meditate","lagartijas","acciones","accion_espalda","accion_agarrar",
+      "idle_2","idle_3",
+    ]);
+
+    // Devuelve la animación idle activa según preferencia del jugador
+    function getIdleAnim() { return isFlying ? "fly" : selectedIdle; }
+
+    // Devuelve el combat idle correspondiente al idle seleccionado
+    function getCombatIdleAnim() { return selectedIdle === "idle_2" ? "combat_idle_2" : "combat_idle"; }
+
+    // Selecciona el idle preferido, lo reproduce de inmediato y actualiza la UI
+    function selectIdle(idleKey) {
+      selectedIdle = idleKey || "idle";
+      if (csAnimator && !player.moving) {
+        if (isCombatMode && csAnimator.battleMode) {
+          csAnimator.play(getCombatIdleAnim());
+        } else if (!isCombatMode) {
+          if (csAnimator.specialMode) csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
+          csAnimator.play(getIdleAnim());
+        }
+      }
+      renderActionBars();
+    }
+    window.selectIdle = selectIdle;
 
     function runActionSlot(slot) {
       if (controlMode === "pvp" && window.PvpSystem?.isFighter()) {
@@ -4623,6 +4719,7 @@
     const VEHICLE_SPRITE_PATHS = {
       exterior: "Vehiculo_Exterior/Trailer.png",
       trailerSheet: "Vehiculo_Exterior/Trailer.png",
+      naveSheet: "Vehiculo_Exterior/GC.png",
       topFloor: "Vehiculo_interiores/Piso_arriba/GC.png",
       cockpit: "Vehiculo_interiores/cabina_conduccion/confi.png",
       bottomFloor: "Vehiculo_interiores/Piso_abajo/Confi.png",
@@ -4647,16 +4744,14 @@
       topFloor: { label:"Piso arriba", fallback:"topFloor" },
       cockpit: { label:"Cabina", fallback:"cockpit" },
       bottomFloor: { label:"Piso abajo", fallback:"bottomFloor" },
-      driveIdle: { label:"Conduccion idle", fallback:"exterior", frames:1, sheetRow:0, sheetCols:4, sheetFrameStart:0 },
-      driveMove: { label:"Conduccion movimiento", fallback:"exterior", frames:3, sheetRow:0, sheetCols:4, sheetFrameStart:1 },
-      driveFly: { label:"Conduccion vuelo", fallback:"exterior", frames:4, sheetRow:1, sheetCols:4, sheetFrameStart:0 },
+      driveIdle: { label:"Conduccion idle", fallback:"exterior", frames:1, sheetRow:0, sheetRows:2, sheetCols:4, sheetFrameStart:0 },
+      driveMove: { label:"Conduccion movimiento", fallback:"exterior", frames:3, sheetRow:0, sheetRows:2, sheetCols:4, sheetFrameStart:1 },
+      driveFly: { label:"Conduccion vuelo", fallback:"exterior", frames:4, sheetRow:1, sheetRows:2, sheetCols:4, sheetFrameStart:0 },
     };
     const TRAILER_ASSET_OPTIONS = {
       exterior: [
-        { name:"Base exterior", src:"Vehiculo_Exterior/exterior.png" },
-        { name:"Exterior 1", src:"Vehiculo_Exterior/exterior_1.png" },
-        { name:"Exterior 2", src:"Vehiculo_Exterior/exterior_2.png" },
-        { name:"Exterior 3", src:"Vehiculo_Exterior/exterior_3.png" },
+        { name:"Trailer",  src:"Vehiculo_Exterior/Trailer.png" },
+        { name:"Nave GC",  src:"Vehiculo_Exterior/GC.png" },
       ],
       topFloor: [
         { name:"Piso arriba base", src:"Vehiculo_interiores/Piso_arriba/fondo.png" },
@@ -4688,6 +4783,22 @@
     };
     const trailerCustomImageCache = {};
     let trailerCustomization = loadTrailerCustomization();
+    // Restaurar el vehicleMode guardado si el exterior no fue guardado en la customización
+    (function _restoreVehicleModeOnLoad() {
+      if (trailerCustomization.exterior) return;
+      try {
+        const savedMode = localStorage.getItem("dragonWorldZ_vehicleMode_v1") || "base";
+        const modeMap = {
+          base: { src:"Vehiculo_Exterior/Trailer.png", name:"Trailer" },
+          nave: { src:"Vehiculo_Exterior/GC.png",      name:"Nave GC" },
+        };
+        const def = modeMap[savedMode] || modeMap.base;
+        trailerCustomization.exterior = { src:def.src, name:def.name, updatedAt:1 }; // fijo para cache estable
+      } catch(e) {}
+    })();
+    // Si el exterior no fue guardado en la customización pero sí hay un vehicleMode guardado,
+    // restaurarlo para que el sprite idle muestre el vehículo correcto desde el primer frame.
+    
 
     function emptyTrailerCustomization() {
       return { exterior:null, rooms:{ topFloor:null, cockpit:null, bottomFloor:null }, drive:{ driveIdle:null, driveMove:null, driveFly:null } };
@@ -4779,12 +4890,28 @@
       return VEHICLE_SPRITES[TRAILER_CUSTOM_SLOTS[slot]?.fallback || slot] || null;
     }
 
+    function resolveTrailerExteriorSheet(ownerId) {
+      const exteriorEntry = getTrailerCustomEntry(ownerId, "exterior");
+      const exteriorImg = getTrailerSlotImage(ownerId, "exterior");
+      if (exteriorImg && exteriorImg.complete && exteriorImg.naturalWidth) {
+        return exteriorImg;
+      }
+      let isNave = exteriorEntry?.src?.includes("GC.png");
+      if (!exteriorEntry && ownerId === myPlayerId) {
+        try { isNave = (localStorage.getItem("dragonWorldZ_vehicleMode_v1") || "base") === "nave"; } catch (e) {}
+      }
+      return isNave ? (VEHICLE_SPRITES.naveSheet || VEHICLE_SPRITES.exterior)
+                    : (VEHICLE_SPRITES.trailerSheet || VEHICLE_SPRITES.exterior);
+    }
+
     function renderTrailerCustomizer() {
-      Object.keys(TRAILER_CUSTOM_SLOTS).forEach(slot => {
-        const el = document.getElementById("trailerCustomName_" + slot);
+      // Actualizar nombres de slots de interiores
+      ["topFloor","cockpit","bottomFloor"].forEach(slot => {
+        const el = document.getElementById("vcName_" + slot);
         if (!el) return;
         const entry = getTrailerCustomEntry(myPlayerId, slot);
-        el.textContent = entry?.name || "Base del taller";
+        const options = TRAILER_ASSET_OPTIONS[slot] || [];
+        el.textContent = entry?.name || (options[0]?.name) || "Base";
       });
       drawTrailerCustomizerPreview();
     }
@@ -4853,6 +4980,29 @@
     }
     window.cycleTrailerAsset = cycleTrailerAsset;
 
+    // Navegar entre opciones con flechas ◀ ▶
+    function vcNextSlot(slot) {
+      const options = TRAILER_ASSET_OPTIONS[slot] || [];
+      if (!options.length) return;
+      const cur = getTrailerCustomEntry(myPlayerId, slot);
+      const idx = options.findIndex(o => o.src === cur?.src);
+      const next = options[(idx + 1) % options.length];
+      setTrailerSlot(slot, { src:next.src, name:next.name, updatedAt:Date.now() });
+      renderTrailerCustomizer();
+    }
+    window.vcNextSlot = vcNextSlot;
+
+    function vcPrevSlot(slot) {
+      const options = TRAILER_ASSET_OPTIONS[slot] || [];
+      if (!options.length) return;
+      const cur = getTrailerCustomEntry(myPlayerId, slot);
+      const idx = options.findIndex(o => o.src === cur?.src);
+      const prev = options[(idx - 1 + options.length) % options.length];
+      setTrailerSlot(slot, { src:prev.src, name:prev.name, updatedAt:Date.now() });
+      renderTrailerCustomizer();
+    }
+    window.vcPrevSlot = vcPrevSlot;
+
     function setTrailerSlot(slot, entry) {
       if (slot === "exterior") trailerCustomization.exterior = entry;
       else if (trailerCustomization.drive && slot in trailerCustomization.drive) trailerCustomization.drive[slot] = entry;
@@ -4873,6 +5023,48 @@
       showHudToast("Casa rodante restaurada", "info");
     }
     window.resetAllTrailerCustomization = resetAllTrailerCustomization;
+
+    // ── SISTEMA DE MODO VEHÍCULO (Base / Nave) ─────────────────────────────
+    // Solo cambia el spritesheet del exterior. Los interiores se cambian por separado.
+    const VEHICLE_MODES = {
+      base: { label:"BASE", exteriorSrc:"Vehiculo_Exterior/Trailer.png", exteriorName:"Trailer" },
+      nave: { label:"NAVE", exteriorSrc:"Vehiculo_Exterior/GC.png",      exteriorName:"Nave GC" },
+    };
+
+    const VEHICLE_MODE_STORAGE_KEY = "dragonWorldZ_vehicleMode_v1";
+
+    function getCurrentVehicleMode() {
+      try { return localStorage.getItem(VEHICLE_MODE_STORAGE_KEY) || "base"; } catch(e) { return "base"; }
+    }
+
+    function setVehicleMode(mode) {
+      if (!VEHICLE_MODES[mode]) return;
+      const def = VEHICLE_MODES[mode];
+      setTrailerSlot("exterior", { src:def.exteriorSrc, name:def.exteriorName, updatedAt:Date.now() });
+      try { localStorage.setItem(VEHICLE_MODE_STORAGE_KEY, mode); } catch(e) {}
+      updateVehicleModeBtns(mode);
+      showHudToast("Vehículo: " + def.label, "xp");
+    }
+    window.setVehicleMode = setVehicleMode;
+
+    function updateVehicleModeBtns(activeMode) {
+      ["base","nave"].forEach(m => {
+        const btn = document.getElementById("vehicleModeBtn_" + m);
+        if (btn) btn.classList.toggle("active", m === activeMode);
+      });
+    }
+
+    // Sincronizar botones de modo al abrir el customizador
+    const _origOpenTrailerCustomizer = openTrailerCustomizer;
+    openTrailerCustomizer = function() {
+      _origOpenTrailerCustomizer();
+      // Detectar modo activo según el src actual del exterior
+      const cur = getTrailerCustomEntry(myPlayerId, "exterior");
+      const activeMode = cur?.src?.includes("GC.png") ? "nave" : "base";
+      updateVehicleModeBtns(activeMode);
+    };
+    window.openTrailerCustomizer = openTrailerCustomizer;
+    // ── FIN SISTEMA DE MODO VEHÍCULO ───────────────────────────────────────
 
     setTimeout(() => {
       renderTrailerCustomizer();
@@ -5043,19 +5235,23 @@
         player.x = tr.x + TRAILER_W / 2;
         player.y = tr.y + TRAILER_H + 18;
       }
+      const _prevAction = trailerDrive.action;
       trailerDrive.action = trailerDrive.flying ? "fly" : ((mx || my) ? "move" : "idle");
+      if (trailerDrive.action !== _prevAction) { trailerDrive.frame = 0; trailerDrive.elapsed = 0; }
       trailerDrive.elapsed += dt;
+      const _driveSlot = trailerDrive.action === "fly" ? "driveFly" : trailerDrive.action === "move" ? "driveMove" : "driveIdle";
+      const _driveFrames = TRAILER_CUSTOM_SLOTS[_driveSlot]?.frames || 1;
       const fps = trailerDrive.action === "idle" ? 4 : trailerDrive.action === "move" ? 7 : 6;
       if (trailerDrive.elapsed >= 1/fps) {
         trailerDrive.elapsed = 0;
-        const frames = trailerDrive.action === "idle" ? 2 : trailerDrive.action === "move" ? 3 : 4;
-        trailerDrive.frame = (trailerDrive.frame + 1) % frames;
+        trailerDrive.frame = (trailerDrive.frame + 1) % _driveFrames;
       }
       if (trailerDrive.action === "fly") {
         if (my < -0.3) trailerDrive.frame = 1;
-        else if (my > 0.3) trailerDrive.frame = 2;
+        else if (my > 0.3) trailerDrive.frame = 3;
         else if (mx < -0.3) trailerDrive.frame = 3;
         else if (mx > 0.3) trailerDrive.frame = 0;
+        else trailerDrive.frame = 2; // hover: sin input → frame 2
       }
       if (mpConnected && myPlayerId && performance.now() - (trailerDrive._lastSync || 0) > 250) {
         trailerDrive._lastSync = performance.now();
@@ -5298,7 +5494,7 @@
       const slotDef = TRAILER_CUSTOM_SLOTS[slot];
       const hasDriveSheet = !!getTrailerCustomEntry(ownerId, slot);
 
-      // Si tiene sheet custom separado, úsalo como antes
+      // Si tiene sheet custom separado para esta acción, usarlo
       if (hasDriveSheet) {
         const img = getTrailerSlotImage(ownerId, slot);
         const frames = slotDef?.frames || 1;
@@ -5316,20 +5512,43 @@
         return;
       }
 
-      // Sin custom: usar Trailer.png base con soporte de filas
-      const sheet = VEHICLE_SPRITES.trailerSheet || VEHICLE_SPRITES.exterior;
-      const frames    = slotDef?.frames          || 1;
-      const sheetCols = slotDef?.sheetCols       || 4;
-      const rowIndex  = slotDef?.sheetRow        || 0;
-      const colStart  = slotDef?.sheetFrameStart || 0;
+      // Sin custom drive sheet: usar el spritesheet del vehículo activo.
+      // Detectar nave vs trailer: primero por customización, si no por vehicleMode guardado.
+      const sheet = resolveTrailerExteriorSheet(ownerId);
+
+      // driveIdle: dibuja el primer frame del sheet en lugar de la imagen completa
+      if (slot === "driveIdle") {
+        const sheetCols = slotDef?.sheetCols ?? 4;
+        const sheetRows = slotDef?.sheetRows ?? 2;
+        const rowIndex  = slotDef?.sheetRow        ?? 0;
+        const colStart  = slotDef?.sheetFrameStart ?? 0;
+
+        if (sheet && sheet.complete && sheet.naturalWidth) {
+          const fw = Math.floor(sheet.naturalWidth  / sheetCols);
+          const fh = Math.floor(sheet.naturalHeight / sheetRows);
+          const sx = colStart * fw;
+          const sy = rowIndex * fh;
+          drawCtx.save();
+          if (facing < 0) { drawCtx.translate(cx*2, 0); drawCtx.scale(-1, 1); }
+          drawCtx.drawImage(sheet, sx, sy, fw, fh, cx - dw/2, cy - dh/2, dw, dh);
+          drawCtx.restore();
+        }
+        return;
+      }
+
+      const sheetCols = slotDef?.sheetCols ?? 4;
+      const sheetRows = slotDef?.sheetRows ?? 2;
+      const rowIndex  = slotDef?.sheetRow        ?? 0;
+      const colStart  = slotDef?.sheetFrameStart ?? 0;
+      const frames    = slotDef?.frames          ?? 1;
 
       let frame = 0;
       if (opts.forceTime) frame = Math.floor(opts.forceTime / 220) % frames;
       else frame = Math.min(opts.frame || 0, frames - 1);
 
       if (sheet && sheet.complete && sheet.naturalWidth) {
-        const fw = Math.floor(sheet.naturalWidth  / sheetCols);   // 256
-        const fh = Math.floor(sheet.naturalHeight / 2);           // 448
+        const fw = Math.floor(sheet.naturalWidth  / sheetCols);
+        const fh = Math.floor(sheet.naturalHeight / sheetRows);
         const sx = (colStart + frame) * fw;
         const sy = rowIndex * fh;
         drawCtx.save();
@@ -5337,7 +5556,6 @@
         drawCtx.drawImage(sheet, sx, sy, fw, fh, cx - dw/2, cy - dh/2, dw, dh);
         drawCtx.restore();
       } else {
-        // Fallback dibujado si la imagen no cargó
         drawCtx.save();
         if (facing < 0) { drawCtx.translate(cx*2, 0); drawCtx.scale(-1, 1); }
         drawCtx.fillStyle = "#1a2a3a"; drawCtx.fillRect(cx-dw/2, cy-dh/2, dw, dh);
@@ -5519,7 +5737,17 @@
       if (activeNpc) { closeDialog(); return; }
       const ptx = Math.floor(player.x/TILE), pty = Math.floor(player.y/TILE);
       const tile = worldMaps[currentMap]?.[pty]?.[ptx];
-      if (tile === 3) { openPortalPanel(); return; }
+      if (tile === 3) {
+        // Revisar si hay una zona de portal directa para este mapa y posicion
+        const zones = PORTAL_ZONES[currentMap];
+        const ptx2 = Math.floor(player.x/TILE), pty2 = Math.floor(player.y/TILE);
+        if (zones) {
+          const zone = zones.find(z => ptx2 >= z.xMin && ptx2 <= z.xMax && pty2 >= z.yMin && pty2 <= z.yMax);
+          if (zone) { travelTo(zone.map); return; }
+        }
+        openPortalPanel();
+        return;
+      }
       for (const [tid, tr] of Object.entries(trailers)) {
         if (tid === myPlayerId) continue;
         if (Math.hypot((tr.x + TRAILER_W/2) - player.x, (tr.y + TRAILER_H/2) - player.y) < 120 && tr.map === currentMap) {
@@ -6467,6 +6695,7 @@
           else if (o.action === "startCombat") { closeDialog(); setControlMode("combat"); simuladorCombatStarted = true; currentWave = -1; waveEnemies = []; hideNpcCombatHud(); _lastNpcTick = performance.now(); setTimeout(() => spawnWave(0), 500); }
           else if (o.action === "startEntrenamiento") { closeDialog(); setControlMode("combat"); entrenamientoCombatStarted = true; currentWave = -1; waveEnemies = []; hideNpcCombatHud(); _lastNpcTick = performance.now(); setTimeout(() => spawnWave(0), 500); }
           else if (o.action === "grantFaction") { closeDialog(); grantFaction(o.faction, o.reason || "Bando desbloqueado"); }
+          else if (o.action === "portal") { closeDialog(); if (o.map) travelTo(o.map); }
           else if (o.action === "repairShip") { closeDialog(); repairShip(); }
           else if (o.action === "openImperialNaming") { closeDialog(); openImperialNamingPanel(true); }
           else if (o.action === "startEmpireChallenge") {
@@ -6497,7 +6726,54 @@
     function performRpAction(actionId) {
       const action = RP_ACTIONS.find(a => a.id === actionId) || RP_ACTIONS[0];
       const hold = action.hold || 900;
-      rpActionUntil = performance.now() + hold;
+      // Animaciones que persisten hasta que el usuario se mueva o elija otra acción
+      const PERSIST_ANIMS = new Set(["sleep","sleep_relax","sleep_flat","pose_1","pose_2","pose_arrodillado"]);
+      const isPersistent = PERSIST_ANIMS.has(action.anim);
+
+      // -- DRIVES: comportamiento toggle igual que fly --
+      if (DRIVE_IDS.has(actionId)) {
+        const turningOff = activeDrive === actionId;
+        activeDrive = turningOff ? null : actionId;
+        // Si había una pose interrumpible activa, limpiarla
+        if (csAnimator && RP_INTERRUPTIBLE.has(csAnimator.action)) rpActionUntil = 0;
+        if (turningOff) {
+          // Apagar: salir de special mode y volver al idle
+          if (csAnimator) {
+            csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
+            csAnimator.play(getIdleAnim());
+          }
+          rpActionUntil = 0;
+          showHudToast(`${action.icon} ${action.title} desactivado`, "info");
+        } else {
+          // Encender: activar la animación y mantenerla indefinidamente
+          if (csAnimator) {
+            csAnimator.setSpecialMode && csAnimator.setSpecialMode(true);
+            csAnimator.play(action.anim);
+          }
+          rpActionUntil = Infinity;
+          showHudToast(`${action.icon} ${action.title}`, "info");
+        }
+        if (mpConnected && myPlayerId) {
+          db.ref("players/" + myPlayerId).update({
+            animAction: activeDrive ? action.anim : "idle",
+            specialMode: !!activeDrive,
+            t: Date.now()
+          });
+        }
+        renderActionBars();
+        return;
+      }
+      // Si había una pose interrumpible activa, cancelarla antes de iniciar la nueva
+      if (csAnimator && RP_INTERRUPTIBLE.has(csAnimator.action)) {
+        rpActionUntil = 0;
+        if (csAnimator.specialMode) csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
+      }
+      // Si había un drive activo, apagarlo
+      if (activeDrive) {
+        activeDrive = null;
+        if (csAnimator) csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
+      }
+      rpActionUntil = isPersistent ? Infinity : performance.now() + hold;
 
       if (csAnimator) {
         const sheet = action.sheet || "base";
@@ -6511,7 +6787,7 @@
           } else {
             csAnimator.play(anim, () => {
               csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
-              csAnimator.play(isFlying ? "fly" : "idle");
+              csAnimator.play(getIdleAnim());
             });
           }
         } else if (sheet === "combat") {
@@ -6519,7 +6795,7 @@
           csAnimator.play(anim, () => {
             if (!isCombatMode) {
               csAnimator.setBattleMode && csAnimator.setBattleMode(false);
-              csAnimator.play(isFlying ? "fly" : "idle");
+              csAnimator.play(getIdleAnim());
             }
           });
         } else {
@@ -6527,13 +6803,16 @@
           if (csAnimator.specialMode) csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
           if (!isCombatMode && csAnimator.battleMode) csAnimator.setBattleMode && csAnimator.setBattleMode(false);
           if (anim === "attack_1" || anim === "attack_2" || anim === "jump") {
-            csAnimator.play(anim, () => csAnimator.play(isFlying ? "fly" : "idle"));
+            csAnimator.play(anim, () => csAnimator.play(getIdleAnim()));
+          } else if (isPersistent) {
+            // Persistente: solo reproduce y loopea — se cancela por movimiento o nueva acción
+            csAnimator.play(anim);
           } else {
             csAnimator.play(anim);
             setTimeout(() => {
               if (performance.now() >= rpActionUntil && csAnimator && !player.moving) {
                 csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
-                csAnimator.play(isFlying ? "fly" : "idle");
+                csAnimator.play(getIdleAnim());
               }
             }, hold);
           }
@@ -6635,7 +6914,7 @@
     function performCombatAction(action) {
       if (window.PvpSystem?.isFighter()) return;
       if (controlMode !== "combat" && controlMode !== "pvp" && action !== "fly") setControlMode("combat");
-      const labels = { combo1:"COMBO 1", combo2:"COMBO 2", special1:"ESPECIAL 1", special2:"ESPECIAL 2", fly:"VOLAR", vanish:"Z-VANISH", charge:"CARGAR KI" };
+      const labels = { combo1:"COMBO 1", combo2:"COMBO 2", special1:"ESPECIAL 1", special2:"ESPECIAL 2", fly:"VOLAR", vanish:"Z-VANISH", charge:"CARGAR KI", block:"CUBRIRSE" };
       if (action === "fly") {
         // Mismo comportamiento que toggleFly() en modo RP
         toggleFly(); return;
@@ -6646,6 +6925,28 @@
         combatEffects.push({ x: player.x - player.facing * 30, y: player.y - 35, text: "Z-VANISH", timer: 0.9, color: "#00e5ff" });
         showHudToast("Z-Vanish", "info");
         if (csAnimator) { csAnimator.setSpecialMode && csAnimator.setSpecialMode(false); csAnimator.play("dash", combatEndAnim); }
+        return;
+      }
+      // ── Cubrirse ─────────────────────────────────────────────────────────
+      if (action === "block") {
+        if (window._blockActive) return;
+        const blockDur = 1800; // ms que dura la guardia
+        window._blockActive = true;
+        showHudToast("🛡️ CUBIERTO", "info");
+        combatEffects.push({ x: player.x, y: player.y - 50, text: "🛡️", timer: 1.5, color: "#90caf9" });
+        if (csAnimator) {
+          csAnimator.setBattleMode && csAnimator.setBattleMode(true);
+          csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
+          if (csAnimator._freezeFrame) csAnimator._freezeFrame = false;
+          if (window._comboTimeout) { clearTimeout(window._comboTimeout); window._comboTimeout = null; }
+          csAnimator.play("block");
+        }
+        setTimeout(() => {
+          window._blockActive = false;
+          if (csAnimator && csAnimator.action === "block") {
+            csAnimator.play(getCombatIdleAnim());
+          }
+        }, blockDur);
         return;
       }
       // ── Cargar Ki ────────────────────────────────────────────────────────
@@ -6683,7 +6984,7 @@
           updatePlayerHud();
           showHudToast(`⚡ +${kiGain} Ki`, "info");
           if (csAnimator) {
-            csAnimator.play("combat_idle");
+            csAnimator.play(getCombatIdleAnim());
           }
         }, chargeDur);
         return;
@@ -6734,7 +7035,7 @@
             window._comboTimeout = null;
             if (csAnimator && (csAnimator.action === "light_combo" || csAnimator.action === "heavy_combo")) {
               csAnimator._freezeFrame = false;
-              csAnimator.play(isFlying ? "fly" : "combat_idle");
+              csAnimator.play(isFlying ? "fly" : getCombatIdleAnim());
             }
           }, 3000);
         } else {
@@ -6762,7 +7063,7 @@
         isFlying = false;
         if (csAnimator && !player.moving) {
           csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
-          csAnimator.play("idle");
+          csAnimator.play(getIdleAnim());
         }
       }
     }
@@ -6933,7 +7234,7 @@
         csAnimator.setSpecialMode && csAnimator.setSpecialMode(true);
         csAnimator.play(info.anim, () => {
           csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
-          csAnimator.play(isFlying ? "fly" : "idle");
+          csAnimator.play(getIdleAnim());
         });
       } else {
         if (csAnimator.specialMode) csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
@@ -6941,7 +7242,7 @@
         setTimeout(() => {
           if (performance.now() >= rpActionUntil && csAnimator && !player.moving) {
             csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
-            csAnimator.play(isFlying ? "fly" : "idle");
+            csAnimator.play(getIdleAnim());
           }
         }, hold);
       }
@@ -7039,6 +7340,11 @@
       if (CS && csAnimator) {
         CS.player.direction = player.facing;
         const rpLocked = performance.now() < rpActionUntil || performance.now() < (_playerHitLockUntil || 0);
+        // Si el jugador se mueve y la pose activa es interrumpible → cancelar el lock
+        if (rpLocked && player.moving && csAnimator && RP_INTERRUPTIBLE.has(csAnimator.action)) {
+          rpActionUntil = 0;
+          if (csAnimator.specialMode) csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
+        }
         // atkLocked: animaciones no-loop bloquean cambios, EXCEPTO 'sit' terminado si el jugador se mueve
         const _SIT_ANIMS = ["sit", "sit_2", "sit_3"];
         const _sitFinished = _SIT_ANIMS.includes(csAnimator.action) && csAnimator.frame >= (csAnimator.meta?.frames ?? 1) - 1;
@@ -7063,17 +7369,17 @@
               // Frames direccionales de vuelo en combate (igual que RP)
               if (csAnimator.action === "fly") {
                 if (my < -0.3) {
+                  // Subiendo → frame 1
                   csAnimator.frame = 1; csAnimator.elapsed = 0; csAnimator._frameOverride = true;
                 } else if (my > 0.3) {
+                  // Bajando → frame 2
                   csAnimator.frame = 2; csAnimator.elapsed = 0; csAnimator._frameOverride = true;
+                } else if (Math.abs(mx) > 0.3) {
+                  // Volando lateral (A/D) → frame 0
+                  csAnimator.frame = 0; csAnimator.elapsed = 0; csAnimator._frameOverride = true;
                 } else {
-                  const _fmc = csAnimator.meta;
-                  if (_fmc) {
-                    csAnimator._frameOverride = true;
-                    const _fdc = 1000 / _fmc.fps;
-                    csAnimator.elapsed += (dt * 1000);
-                    while (csAnimator.elapsed >= _fdc) { csAnimator.elapsed -= _fdc; csAnimator.frame = csAnimator.frame === 0 ? 3 : 0; }
-                  }
+                  // Hover (quieto) → frame 3
+                  csAnimator.frame = 3; csAnimator.elapsed = 0; csAnimator._frameOverride = true;
                 }
               }
             }
@@ -7083,33 +7389,27 @@
               csAnimator.elapsed = 0;
               csAnimator._frameOverride = true;
             }
-            else csAnimator.play("combat_idle");
+            else csAnimator.play(getCombatIdleAnim());
           } else if (isFlying) {
             csAnimator.play("fly");
-            // Forzar frame según dirección vertical de vuelo
+            // Forzar frame según dirección de vuelo
             if (csAnimator.action === "fly") {
               if (my < -0.3) {
-                // Subiendo → frame 1 (índice 1)
+                // Subiendo → frame 1
                 csAnimator.frame = 1; csAnimator.elapsed = 0;
                 csAnimator._frameOverride = true;
               } else if (my > 0.3) {
-                // Bajando → frame 2 (índice 2)
+                // Bajando → frame 2
                 csAnimator.frame = 2; csAnimator.elapsed = 0;
                 csAnimator._frameOverride = true;
+              } else if (Math.abs(mx) > 0.3) {
+                // Volando lateral (A/D) → frame 0
+                csAnimator.frame = 0; csAnimator.elapsed = 0;
+                csAnimator._frameOverride = true;
               } else {
-                // Lateral/neutro → alternar frame 0 y 3 con el fps del animator
-                // El update() normal maneja el timing, solo restringimos los frames válidos
-                // Para que update() no salte a frame 1 o 2, lo hacemos manualmente:
-                const _fm = csAnimator.meta;
-                if (_fm) {
-                  csAnimator._frameOverride = true;
-                  const _fd = 1000 / _fm.fps;
-                  csAnimator.elapsed += (dt * 1000);
-                  while (csAnimator.elapsed >= _fd) {
-                    csAnimator.elapsed -= _fd;
-                    csAnimator.frame = csAnimator.frame === 0 ? 3 : 0;
-                  }
-                }
+                // Hover (quieto) → frame 3
+                csAnimator.frame = 3; csAnimator.elapsed = 0;
+                csAnimator._frameOverride = true;
               }
             }
           } else if (player.moving && isRunning) {
@@ -7117,13 +7417,14 @@
           } else if (player.moving) {
             csAnimator.play("walk");
           } else {
-            csAnimator.play("idle");
+            csAnimator.play(getIdleAnim());
           }
         }
       }
 
-      const speedMult = isRunning ? 2.0 : 1.0;
-      const vx = mx*player.speed*speedMult, vy = my*player.speed*speedMult;
+      const speedMult = isRunning ? 2.2 : 1.0;
+      const flyMult = isFlying ? 1.15 : 1.0;
+      const vx = mx*player.speed*speedMult*flyMult, vy = my*player.speed*speedMult*flyMult;
       const nx = player.x + vx, ny = player.y + vy;
       if (isFlying) {
         player.x = nx; player.y = ny;
@@ -7185,7 +7486,9 @@
       const ptx=Math.floor(player.x/TILE), pty=Math.floor(player.y/TILE);
       const tile=worldMaps[currentMap]?.[pty]?.[ptx];
       if (tile===3 && !document.getElementById("portalPanel").classList.contains("visible") && gameState==="playing") {
-        showHudToast("🌀 Portal — presioná Z","info");
+        const _zones = PORTAL_ZONES[currentMap];
+        const _zone = _zones && _zones.find(z => ptx >= z.xMin && ptx <= z.xMax && pty >= z.yMin && pty <= z.yMax);
+        showHudToast(_zone ? `🌀 ${_zone.label} — presioná Z` : "🌀 Portal — presioná Z", "info");
       }
     }
 
@@ -7814,20 +8117,13 @@
           const remoteFacing = tr.facing || 1;
           drawTrailerVehicleSprite(ctx, tid, remoteAction, sx + TRAILER_W/2, sy + TRAILER_H/2, TRAILER_W, TRAILER_H, remoteFacing, { frame: remoteFrame });
         } else {
-          // Trailer estacionado: frame 0 fila 0 del sheet base, o custom plana
-          const exteriorEntry = getTrailerCustomEntry(tid, "exterior");
-          if (exteriorEntry?.src) {
-            const exteriorImg = getTrailerSlotImage(tid, "exterior");
-            if (exteriorImg && exteriorImg.complete && exteriorImg.naturalWidth) {
-              ctx.drawImage(exteriorImg, sx, sy, TRAILER_W, TRAILER_H);
-            }
+          // Trailer estacionado: frame 0 fila 0 del sheet, ocupa TRAILER_W x TRAILER_H
+          const activeSheet = resolveTrailerExteriorSheet(tid);
+          if (activeSheet && activeSheet.complete && activeSheet.naturalWidth) {
+            const fw = Math.floor(activeSheet.naturalWidth / 4);
+            const fh = Math.floor(activeSheet.naturalHeight / 2);
+            ctx.drawImage(activeSheet, 0, 0, fw, fh, sx, sy, TRAILER_W, TRAILER_H);
           } else {
-            const sheet = VEHICLE_SPRITES.trailerSheet || VEHICLE_SPRITES.exterior;
-            if (sheet && sheet.complete && sheet.naturalWidth) {
-              const fw = Math.floor(sheet.naturalWidth / 4);
-              const fh = Math.floor(sheet.naturalHeight / 2);
-              ctx.drawImage(sheet, 0, 0, fw, fh, sx, sy, TRAILER_W, TRAILER_H);
-            } else {
               ctx.fillStyle = tid===myPlayerId ? "#3a2a10" : "#1a2a3a";
               ctx.fillRect(sx,sy,TRAILER_W,TRAILER_H);
               ctx.fillStyle = tid===myPlayerId ? "#f5c400" : "#00e5ff";
@@ -7837,7 +8133,6 @@
               ctx.beginPath(); ctx.arc(sx+TRAILER_W-TILE*.8,sy+TRAILER_H+5,10,0,Math.PI*2); ctx.fill();
               ctx.fillStyle="rgba(100,180,255,.4)"; ctx.fillRect(sx+12,sy+14,24,18); ctx.fillRect(sx+TRAILER_W-36,sy+14,24,18);
               ctx.fillStyle="rgba(255,255,255,.15)"; ctx.fillRect(sx+TRAILER_W/2-10,sy+TRAILER_H-30,20,30);
-            }
           }
         }
         ctx.fillStyle="rgba(255,255,255,.8)"; ctx.font="bold 9px Orbitron,monospace"; ctx.textAlign="center";
@@ -8439,12 +8734,15 @@
           publishMyAppearance(true);
           db.ref("trailers").on("value", snap => {
             const all=snap.val()||{};
+            const now = Date.now();
             for (const [tid,tr] of Object.entries(all)) {
               if (tid===myPlayerId) continue;
+              // Ignorar trailers viejos sin actualización reciente (sesiones anteriores)
+              if (tr.t && now - tr.t > 15000) continue;
               if (!trailers[tid]) trailers[tid]={};
               Object.assign(trailers[tid],tr,{ownerId:tid,ownerName:tr.ownerName||"?",map:tr.map||"lobby",invited:trailers[tid].invited||new Set()});
             }
-            for (const tid in trailers) { if (!all[tid] && tid!==myPlayerId) delete trailers[tid]; }
+            for (const tid in trailers) { if ((!all[tid] || (all[tid].t && now - all[tid].t > 15000)) && tid!==myPlayerId) delete trailers[tid]; }
           });
           await new Promise(r=>setTimeout(r,300));
         }],
