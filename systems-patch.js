@@ -168,14 +168,14 @@ const RpgChatSystem = (() => {
     style.textContent = `
       /* ── RPG Chat Panel ── */
       #rpgChatPanel {
-        position:fixed; bottom:0; left:0;
+        position:relative; top:auto; left:auto; right:auto; bottom:auto;
         width: clamp(260px, 32vw, 380px);
         height:auto; max-height:52px;
         background:#080a10; border:1px solid #2a3560;
-        border-top-right-radius:10px; border-bottom:none; border-left:none;
+        border-bottom-right-radius:10px; border-top-right-radius:10px; border-bottom:none; border-left:none;
         z-index:30; font-family:Rajdhani,sans-serif; display:flex;
         flex-direction:column;
-        transition:max-height .28s cubic-bezier(.4,0,.2,1);
+        transition:max-height .28s cubic-bezier(.4,0,.2,1), left .3s ease;
         pointer-events:auto;
         overflow:hidden;
       }
@@ -283,6 +283,58 @@ const RpgChatSystem = (() => {
       #leftActionMenu .left-action-rows { display:flex; flex-direction:column; gap:6px; flex:1; }
       .left-action-btn { background:rgba(255,255,255,.03); border:1px solid #2a3560; padding:8px; border-radius:6px; color:#c8cfe8; text-align:center; cursor:pointer; font-family:"Orbitron",monospace; font-size:11px; }
       .left-action-btn:active { background:rgba(170,0,255,.06); }
+      #leftPanelStack {
+        position:fixed !important;
+        left:12px !important;
+        bottom:12px !important;
+        display:flex !important;
+        flex-direction:column !important;
+        gap:8px !important;
+        width:min(360px,32vw) !important;
+        max-width:420px !important;
+        z-index:220 !important;
+        pointer-events:none !important;
+      }
+      #leftPanelStack > div {
+        position:relative !important;
+        width:100% !important;
+        left:auto !important;
+        right:auto !important;
+        top:auto !important;
+        bottom:auto !important;
+        margin:0 !important;
+      }
+      #woPanel { order:1 !important; }
+      #npcPanel { order:2 !important; }
+      #rpgChatPanel { order:3 !important; }
+      #woPanel,
+      #npcPanel,
+      #rpgChatPanel { border-radius:12px !important; }
+      #mobileActionCorner { display:none !important; }
+      @media (pointer:coarse), (max-width:768px) {
+        #mobileActionCorner {
+          display:flex !important;
+          position:fixed !important;
+          top:12px !important;
+          right:12px !important;
+          flex-direction:column !important;
+          gap:8px !important;
+          z-index:230 !important;
+          pointer-events:auto !important;
+        }
+        #mobileActionCorner .action-btn {
+          width:52px !important;
+          height:52px !important;
+          min-width:52px !important;
+          min-height:52px !important;
+          border-radius:18px !important;
+          justify-content:center !important;
+        }
+        .mobile-controls .action-grid { display:none !important; }
+      }
+      @media (pointer:fine) {
+        #mobileActionCorner { display:none !important; }
+      }
     `;
     document.head.appendChild(style);
 
@@ -307,22 +359,8 @@ const RpgChatSystem = (() => {
           <button id="rpgSendBtn" onclick="RpgChatSystem.send()">➤</button>
         </div>
       </div>`;
-    const _leftMenu = document.getElementById("leftMenu");
-    if (_leftMenu) {
-      // Insert RPG chat at the top of the left menu for easy access
-      _leftMenu.insertBefore(panel, _leftMenu.firstElementChild);
-      // Build a compact action panel below the chat: combat + HABLAR/VOLAR
-      const actionPanel = document.createElement("div");
-      actionPanel.id = "leftActionMenu";
-      actionPanel.innerHTML = `
-        <div class="left-action-combat" onclick="setControlMode('combat')" title="Modo combate [X]">⚔️</div>
-        <div class="left-action-rows">
-          <button class="left-action-btn" onclick="interactNearby()">💬 HABLAR</button>
-          <button class="left-action-btn" onclick="toggleFly()">🦅 VOLAR</button>
-        </div>`;
-      // Place action panel just below the chat panel
-      _leftMenu.insertBefore(actionPanel, _leftMenu.children[1] || null);
-    } else document.body.appendChild(panel);
+    const _panelHolder = document.getElementById("leftPanelStack") || document.body;
+    _panelHolder.appendChild(panel);
 
     // Render emotion picker
     const picker = document.getElementById("rpgEmPicker");
@@ -758,7 +796,7 @@ const WorldObjectsSystem = (() => {
     const style = document.createElement("style");
     style.textContent = `
       #woPanel {
-        position:fixed; bottom:0; right:0;
+        position:relative; top:auto; left:auto; right:auto; bottom:auto;
         width: clamp(260px, 32vw, 360px);
         height:auto; max-height:52px;
         background:#080a10; border:1px solid #2a3560;
@@ -868,8 +906,8 @@ const WorldObjectsSystem = (() => {
           <button id="woRemoveBtn" onclick="WorldObjectsSystem.removeOwned()">🗑️ Borrar</button>
         </div>
       </div>`;
-    const _leftMenu = document.getElementById("leftMenu");
-    if (_leftMenu) _leftMenu.appendChild(panel); else document.body.appendChild(panel);
+    const _panelHolder = document.getElementById("leftPanelStack") || document.body;
+    _panelHolder.appendChild(panel);
 
     // Categorías
     const catRow = document.getElementById("woCatRow");
@@ -2832,7 +2870,7 @@ const NpcSystem = (() => {
     style.textContent = `
       /* ═══ NPC PANEL ═══ */
       #npcPanel {
-        position:fixed; bottom:52px; left:0;
+        position:relative; top:auto; left:auto; right:auto; bottom:auto;
         width:clamp(260px,32vw,380px);
         height:auto; max-height:52px;
         background:#080a10; border:1px solid #2a3560;
@@ -3095,7 +3133,8 @@ const NpcSystem = (() => {
         </div>
       </div>
     `;
-    document.body.appendChild(panel);
+    const _panelHolder = document.getElementById("leftPanelStack") || document.body;
+    _panelHolder.appendChild(panel);
     _npcPanelEl = panel;
     _npcTabSummonEl = panel.querySelector("#npcTabSummon");
     _npcTabActiveEl = panel.querySelector("#npcTabActive");

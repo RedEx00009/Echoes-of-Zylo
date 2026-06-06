@@ -42,7 +42,7 @@
 
       /* -- HAMBURGER -- */
       #menuToggleBtn {
-        position:fixed; top:12px; left:12px; z-index:162;
+        position:fixed; top:12px; left:12px; z-index:270;
         width:44px; height:44px; background:var(--ui-bg); border:1px solid #2a3560;
         border-radius:8px; display:flex; flex-direction:column;
         align-items:center; justify-content:center; gap:5px;
@@ -92,14 +92,14 @@
       .side-action-header-title { font-family:var(--font-head); font-size:11px; letter-spacing:3px; color:var(--accent); }
       .side-action-list { display:flex; flex-direction:column; gap:6px; padding:10px 12px 20px; }
 
-      #menuBackdrop { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:155; opacity:0; transition:opacity .3s ease; pointer-events:none; }
+      #menuBackdrop { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:255; opacity:0; transition:opacity .3s ease; pointer-events:none; }
       #menuBackdrop.open { opacity:1; pointer-events:auto; }
 
       #leftMenu {
         position:fixed; top:0; left:0; width:var(--menu-w); height:100vh;
         background:var(--ui-bg); border-right:1px solid #2a3560;
         display:flex; flex-direction:column; backdrop-filter:blur(12px);
-        box-shadow:4px 0 24px rgba(0,0,0,.5); z-index:160;
+        box-shadow:4px 0 24px rgba(0,0,0,.5); z-index:260;
         transform:translateX(calc(-1 * var(--menu-w) - 10px));
         transition:transform .3s cubic-bezier(.4,0,.2,1);
         overflow-y:auto; overflow-x:hidden;
@@ -108,7 +108,7 @@
       #leftMenu.open { transform:translateX(0); }
       #menuScrollBtns {
         position:fixed; left:var(--menu-w); top:50%; transform:translateY(-50%);
-        display:none; flex-direction:column; gap:6px; z-index:161; pointer-events:auto;
+        display:none; flex-direction:column; gap:6px; z-index:261; pointer-events:auto;
       }
       #leftMenu.open ~ #menuScrollBtns { display:flex; }
       .menu-scroll-btn {
@@ -395,6 +395,7 @@
       .btn-interact { background:rgba(0,229,255,.2); border-color:rgba(0,229,255,.7); }
       .btn-trailer  { background:rgba(245,196,0,.15); border-color:rgba(245,196,0,.6); }
       .btn-emote    { background:rgba(170,0,255,.2); border-color:rgba(170,0,255,.7); }
+      .btn-combat   { background:rgba(170,0,255,.22); border-color:rgba(170,0,255,.85); color:#ffeb3b; }
       .btn-run      { background:rgba(0,230,118,.15); border-color:rgba(0,230,118,.6); transition:all .2s; }
       .btn-run.run-active { background:rgba(0,230,118,.4); border-color:#00e676; box-shadow:0 0 14px rgba(0,230,118,.5); }
       .action-btn .btn-icon  { font-size:var(--btn-icon); }
@@ -581,44 +582,27 @@
         .faction-chip,.integrity-chip { font-size:7px; padding:5px 6px; }
         .dialog-box { bottom:140px; }
       }
-      /* ── MENU PRIORITY: suppress overlapping panels when open ── */
-      /* Suppress overlapping panels when main menu is open — chat NEVER suppressed */
-      body.menu-open #woPanel,
-      body.menu-open #npcPanel {
-        pointer-events: none !important;
-        z-index: 1 !important;
+      /* ── MENU PRIORITY: keep left panels visible outside main menu ── */
+      #leftPanelStack {
+        position:fixed; left:12px; bottom:12px;
+        display:flex; flex-direction:column; gap:10px;
+        align-items:flex-start; z-index:220 !important;
+        max-width:clamp(280px,32vw,420px);
+        pointer-events:none;
       }
-      body.menu-open #rpgChatPanel {
-        pointer-events: auto !important;
+      #leftPanelStack > div {
+        pointer-events:auto;
       }
-      /* rpgChatPanel always wins over npcPanel globally */
-      #rpgChatPanel { z-index: 35 !important; }
-      #rpgChatPanel.open { z-index: 35 !important; }
-      #npcPanel { z-index: 29 !important; }
-      /* On mobile vertical: push rpgChat right when menu is open */
+      #rpgChatPanel { z-index:220 !important; }
+      #npcPanel { z-index:220 !important; }
+      #woPanel { z-index:220 !important; }
       @media (pointer:coarse), (max-width:768px) {
-        #rpgChatPanel {
-          transition: height .35s cubic-bezier(.4,0,.2,1),
-                      left .3s cubic-bezier(.4,0,.2,1),
-                      width .3s cubic-bezier(.4,0,.2,1) !important;
-        }
-        body.menu-open #rpgChatPanel {
-          left: var(--menu-w) !important;
-          width: calc(100vw - var(--menu-w)) !important;
-          pointer-events: auto !important;
-          z-index: 30 !important;
-        }
-        body.menu-open #woPanel {
-          pointer-events: none !important;
-          z-index: 1 !important;
-        }
+        #leftPanelStack { display:none !important; }
+        #mobileActionCorner { display:flex !important; }
+        .mobile-controls .action-grid { display:none !important; }
       }
-      /* Landscape mobile: keep chat accessible */
-      @media (max-height:460px) and (orientation:landscape) {
-        body.menu-open #rpgChatPanel {
-          left: var(--menu-w) !important;
-          width: calc(100vw - var(--menu-w)) !important;
-        }
+      @media (pointer:fine) {
+        #mobileActionCorner { display:none !important; }
       }
     </style>
   </head>
@@ -681,6 +665,11 @@
         <div class="side-action-header"><span class="side-action-header-title">⚡ ACCIONES</span></div>
         <div class="side-action-list" id="sideActionList"></div>
       </div>
+      <div id="mobileActionCorner">
+        <button class="action-btn btn-combat" id="mobileCornerCombatBtn" onclick="setControlMode(controlMode==='combat'?'rp':'combat')"><span class="btn-icon">⚔️</span><span class="btn-label">COMB.</span></button>
+        <button class="action-btn btn-interact" id="mobileCornerTalkBtn" onclick="interactNearby()"><span class="btn-icon">💬</span><span class="btn-label">HABLAR</span></button>
+        <button class="action-btn btn-run" id="mobileCornerFlyBtn" onclick="toggleFly()"><span class="btn-icon">🦅</span><span class="btn-label">VOLAR</span></button>
+      </div>
       <div id="sideActionScrollBtns">
         <button class="side-action-scroll-btn" id="sideActionScrollUp">▲</button>
         <button class="side-action-scroll-btn" id="sideActionScrollDown">▼</button>
@@ -724,6 +713,11 @@
         <div class="menu-section">
           <div class="menu-section-label">NPCs</div>
           <button class="menu-btn" onclick="if(window.NpcSystem){var p=document.getElementById('npcPanel');if(!p||!p.classList.contains('open'))NpcSystem.togglePanel();var btn=document.querySelector('#npcPanel .npc-tab:nth-child(2)');NpcSystem.switchTab('active',btn);}closeMenu()"><span class="btn-ic">🤖</span> GESTIONAR NPCs</button>
+        </div>
+
+        <div class="menu-section">
+          <div class="menu-section-label">Mundo</div>
+          <button class="menu-btn" onclick="if(window.WorldObjectsSystem){WorldObjectsSystem.toggleUI();}closeMenu()"><span class="btn-ic">🏗️</span> OBJETOS MUNDO</button>
         </div>
 
         <div class="menu-section">
@@ -784,6 +778,7 @@
           <div class="slot-list" id="menuSlotList"><div class="slot-empty-label">Cargando...</div></div>
         </div>
       </div>
+      <div id="leftPanelStack"></div>
       <div id="menuScrollBtns">
         <button class="menu-scroll-btn" id="menuScrollUp">▲</button>
         <button class="menu-scroll-btn" id="menuScrollDown">▼</button>
@@ -937,6 +932,7 @@
           </div>
         </div>
         <div class="action-grid" id="actionGrid">
+          <div class="action-btn btn-combat" id="mobileCombatBtn" onclick="setControlMode('combat')"><span class="btn-icon">⚔️</span><span class="btn-label">COMBATE</span></div>
           <div class="action-btn btn-interact" onclick="interactNearby()" id="mobileTalkBtn"><span class="btn-icon">💬</span><span class="btn-label">HABLAR</span></div>
           <div class="action-btn btn-run" id="mobileFlyBtn" onclick="toggleFly()"><span class="btn-icon">🦅</span><span class="btn-label">VOLAR</span></div>
           <div class="action-btn btn-run" id="mobileRunBtn" onclick="toggleRunMobile()" style="border-radius:12px;width:100%;grid-column:span 2;height:calc(var(--btn-size)*0.7);">
@@ -2002,6 +1998,7 @@
           // Modo RP: restaurar los botones fijos si el grid fue sobreescrito por combate
           if (grid && !document.getElementById("mobileTalkBtn")) {
             grid.innerHTML = [
+              `<div class="action-btn btn-combat" id="mobileCombatBtn" onclick="setControlMode('combat')"><span class="btn-icon">⚔️</span><span class="btn-label">COMBATE</span></div>`,
               `<div class="action-btn btn-interact" onclick="interactNearby()" id="mobileTalkBtn"><span class="btn-icon">💬</span><span class="btn-label">HABLAR</span></div>`,
               `<div class="action-btn btn-run" id="mobileFlyBtn" onclick="toggleFly()"><span class="btn-icon">🦅</span><span class="btn-label">VOLAR</span></div>`,
               `<div class="action-btn btn-run" id="mobileRunBtn" onclick="toggleRunMobile()" style="border-radius:12px;width:100%;grid-column:span 2;height:calc(var(--btn-size)*0.7);"><span class="btn-icon">💨</span><span class="btn-label" id="runBtnLabel">CORRER: ${isRunning ? "ON" : "OFF"}</span></div>`,
