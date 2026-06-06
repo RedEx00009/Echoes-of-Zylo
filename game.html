@@ -42,7 +42,7 @@
 
       /* -- HAMBURGER -- */
       #menuToggleBtn {
-        position:fixed; top:12px; left:12px; z-index:120;
+        position:fixed; top:12px; left:12px; z-index:162;
         width:44px; height:44px; background:var(--ui-bg); border:1px solid #2a3560;
         border-radius:8px; display:flex; flex-direction:column;
         align-items:center; justify-content:center; gap:5px;
@@ -55,19 +55,19 @@
       #menuToggleBtn.open span:nth-child(3) { transform:translateY(-7px) rotate(-45deg); }
 
       #sideActionToggle {
-        position:fixed; bottom:14px; right:12px; left:auto; z-index:120;
+        position:fixed; bottom:62px; right:6px; left:auto; z-index:29;
         width:44px; height:44px; background:var(--ui-bg); border:1px solid #2a3560;
         border-radius:8px; display:flex; align-items:center; justify-content:center;
         color:var(--accent); font-size:20px; cursor:pointer; pointer-events:auto;
         touch-action:manipulation; backdrop-filter:blur(8px);
       }
       #sideActionToggle.open { border-color:rgba(245,196,0,.45); background:rgba(245,196,0,.1); }
-      #sideActionBackdrop { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:115; opacity:0; transition:opacity .3s ease; pointer-events:none; }
+      #sideActionBackdrop { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:133; opacity:0; transition:opacity .3s ease; pointer-events:none; }
       #sideActionBackdrop.open { opacity:1; pointer-events:auto; }
       #sideActionMenu {
-        position:fixed; top:12%; right:0; width:var(--menu-w); max-height:72vh; height:auto;
+        position:fixed; top:12%; right:0; width:min(200px, 56vw); max-height:72vh; height:auto;
         background:var(--ui-bg); border-left:1px solid #2a3560;
-        z-index:120; transform:translateX(calc(100% + 10px));
+        z-index:135; transform:translateX(calc(100% + 10px));
         transition:transform .3s cubic-bezier(.4,0,.2,1);
         overflow-y:auto; overflow-x:hidden; display:flex; flex-direction:column;
         touch-action:pan-y; -webkit-overflow-scrolling:touch;
@@ -75,8 +75,8 @@
       }
       #sideActionMenu.open { transform:translateX(0); }
       #sideActionScrollBtns {
-        position:fixed; right:calc(var(--menu-w) + 4px); top:50%; transform:translateY(-50%);
-        display:none; flex-direction:column; gap:6px; z-index:121; pointer-events:auto;
+        position:fixed; right:min(200px, 56vw); top:50%; transform:translateY(-50%);
+        display:none; flex-direction:column; gap:6px; z-index:136; pointer-events:auto;
       }
       #sideActionMenu.open ~ #sideActionScrollBtns { display:flex; }
       #skillsBar.hidden { display:none; }
@@ -92,14 +92,14 @@
       .side-action-header-title { font-family:var(--font-head); font-size:11px; letter-spacing:3px; color:var(--accent); }
       .side-action-list { display:flex; flex-direction:column; gap:6px; padding:10px 12px 20px; }
 
-      #menuBackdrop { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:100; opacity:0; transition:opacity .3s ease; pointer-events:none; }
+      #menuBackdrop { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:155; opacity:0; transition:opacity .3s ease; pointer-events:none; }
       #menuBackdrop.open { opacity:1; pointer-events:auto; }
 
       #leftMenu {
         position:fixed; top:0; left:0; width:var(--menu-w); height:100vh;
         background:var(--ui-bg); border-right:1px solid #2a3560;
         display:flex; flex-direction:column; backdrop-filter:blur(12px);
-        box-shadow:4px 0 24px rgba(0,0,0,.5); z-index:110;
+        box-shadow:4px 0 24px rgba(0,0,0,.5); z-index:160;
         transform:translateX(calc(-1 * var(--menu-w) - 10px));
         transition:transform .3s cubic-bezier(.4,0,.2,1);
         overflow-y:auto; overflow-x:hidden;
@@ -108,7 +108,7 @@
       #leftMenu.open { transform:translateX(0); }
       #menuScrollBtns {
         position:fixed; left:var(--menu-w); top:50%; transform:translateY(-50%);
-        display:none; flex-direction:column; gap:6px; z-index:115; pointer-events:auto;
+        display:none; flex-direction:column; gap:6px; z-index:161; pointer-events:auto;
       }
       #leftMenu.open ~ #menuScrollBtns { display:flex; }
       .menu-scroll-btn {
@@ -409,28 +409,6 @@
       .dialog-opt { background:rgba(74,106,255,.1); border:1px solid rgba(74,106,255,.3); border-radius:4px; padding:10px 12px; font-size:13px; color:#c8cfe8; cursor:pointer; transition:all .15s; min-height:44px; display:flex; align-items:center; touch-action:manipulation; }
       .dialog-opt:hover { background:rgba(74,106,255,.25); border-color:rgba(74,106,255,.6); }
 
-      /* -- NPC SOCIAL / PARTY BANNER -- */
-      #npcSocialPanel { position:absolute; top:12px; left:426px; width:min(360px,calc(100vw - 450px)); min-width:260px; z-index:12; pointer-events:auto; font-family:Rajdhani,sans-serif; color:#e8eaf6; }
-      #npcSocialPanel.min #npcSocialBody { display:none; }
-      .npc-social-head { height:34px; display:flex; align-items:center; justify-content:space-between; gap:8px; padding:0 9px; background:rgba(8,9,15,.92); border:1px solid #2a3560; border-radius:8px 8px 0 0; backdrop-filter:blur(8px); }
-      .npc-social-title { font-family:var(--font-head); font-size:8px; letter-spacing:1.4px; color:#f5c400; white-space:nowrap; }
-      .npc-social-tools { display:flex; align-items:center; gap:5px; }
-      .npc-social-btn { height:23px; border:1px solid rgba(0,229,255,.42); border-radius:4px; background:rgba(0,229,255,.12); color:#00e5ff; font-family:var(--font-head); font-size:8px; letter-spacing:.8px; padding:0 7px; cursor:pointer; }
-      .npc-social-body { display:grid; grid-template-columns:64px 1fr; gap:8px; padding:8px; background:rgba(8,9,15,.92); border:1px solid #2a3560; border-top:0; border-radius:0 0 8px 8px; backdrop-filter:blur(8px); }
-      .npc-portrait { width:64px; height:64px; border:1px solid rgba(245,196,0,.35); border-radius:6px; background:linear-gradient(180deg,rgba(245,196,0,.16),rgba(0,229,255,.08)); display:flex; align-items:center; justify-content:center; overflow:hidden; }
-      .npc-portrait img { width:100%; height:100%; object-fit:cover; image-rendering:auto; }
-      .npc-portrait-fallback { font-family:var(--font-head); font-size:22px; color:#f5c400; }
-      .npc-banner { min-width:0; border:1px solid rgba(245,196,0,.32); border-radius:6px; background:rgba(13,18,34,.82); overflow:hidden; }
-      .npc-banner-top { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:5px 7px; border-bottom:1px solid rgba(245,196,0,.18); font-family:var(--font-head); font-size:8px; letter-spacing:1px; color:#f5c400; }
-      .npc-banner-emotion { color:#00e5ff; }
-      .npc-banner-text { min-height:34px; padding:7px; font-size:13px; line-height:1.25; color:#d7dcf0; word-break:break-word; }
-      .npc-social-form { grid-column:1 / -1; display:grid; grid-template-columns:92px 1fr 34px; gap:5px; align-items:center; }
-      .npc-social-form select,.npc-social-form input { height:30px; min-width:0; border:1px solid #2a3560; border-radius:4px; background:#12172e; color:#e8eaf6; font-family:Rajdhani,sans-serif; font-size:12px; outline:none; }
-      .npc-social-form input { padding:0 8px; }
-      .npc-social-raid { grid-column:1 / -1; display:grid; grid-template-columns:1fr auto auto; gap:5px; align-items:center; padding-top:2px; }
-      .npc-raid-status { min-width:0; color:#8892b0; font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-      @media (pointer:coarse),(max-width:768px){ #npcSocialPanel{top:54px;left:8px;width:calc(100vw - 16px);min-width:0}.npc-social-body{grid-template-columns:52px 1fr}.npc-portrait{width:52px;height:52px}.npc-social-form{grid-template-columns:86px 1fr 34px} }
-
       /* -- TOASTS -- */
       #toastHud { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); pointer-events:none; }
       .hud-toast { font-family:var(--font-head); font-size:14px; letter-spacing:3px; color:white; text-shadow:0 0 10px var(--accent); text-align:center; animation:toastPop 2s forwards; white-space:nowrap; position:absolute; }
@@ -603,6 +581,45 @@
         .faction-chip,.integrity-chip { font-size:7px; padding:5px 6px; }
         .dialog-box { bottom:140px; }
       }
+      /* ── MENU PRIORITY: suppress overlapping panels when open ── */
+      /* Suppress overlapping panels when main menu is open — chat NEVER suppressed */
+      body.menu-open #woPanel,
+      body.menu-open #npcPanel {
+        pointer-events: none !important;
+        z-index: 1 !important;
+      }
+      body.menu-open #rpgChatPanel {
+        pointer-events: auto !important;
+      }
+      /* rpgChatPanel always wins over npcPanel globally */
+      #rpgChatPanel { z-index: 35 !important; }
+      #rpgChatPanel.open { z-index: 35 !important; }
+      #npcPanel { z-index: 29 !important; }
+      /* On mobile vertical: push rpgChat right when menu is open */
+      @media (pointer:coarse), (max-width:768px) {
+        #rpgChatPanel {
+          transition: height .35s cubic-bezier(.4,0,.2,1),
+                      left .3s cubic-bezier(.4,0,.2,1),
+                      width .3s cubic-bezier(.4,0,.2,1) !important;
+        }
+        body.menu-open #rpgChatPanel {
+          left: var(--menu-w) !important;
+          width: calc(100vw - var(--menu-w)) !important;
+          pointer-events: auto !important;
+          z-index: 30 !important;
+        }
+        body.menu-open #woPanel {
+          pointer-events: none !important;
+          z-index: 1 !important;
+        }
+      }
+      /* Landscape mobile: keep chat accessible */
+      @media (max-height:460px) and (orientation:landscape) {
+        body.menu-open #rpgChatPanel {
+          left: var(--menu-w) !important;
+          width: calc(100vw - var(--menu-w)) !important;
+        }
+      }
     </style>
   </head>
   <body>
@@ -702,6 +719,11 @@
         <div class="menu-section">
           <div class="menu-section-label">Party / PvP</div>
           <button class="menu-btn" onclick="PvpSystem&&PvpSystem.togglePartyPanel();closeMenu()"><span class="btn-ic">⚔️</span> PARTY Y DESAFÍOS</button>
+        </div>
+
+        <div class="menu-section">
+          <div class="menu-section-label">NPCs</div>
+          <button class="menu-btn" onclick="if(window.NpcSystem){var p=document.getElementById('npcPanel');if(!p||!p.classList.contains('open'))NpcSystem.togglePanel();var btn=document.querySelector('#npcPanel .npc-tab:nth-child(2)');NpcSystem.switchTab('active',btn);}closeMenu()"><span class="btn-ic">🤖</span> GESTIONAR NPCs</button>
         </div>
 
         <div class="menu-section">
@@ -979,6 +1001,7 @@
       document.getElementById("leftMenu").classList.toggle("open", menuOpen);
       document.getElementById("menuToggleBtn").classList.toggle("open", menuOpen);
       document.getElementById("menuBackdrop").classList.toggle("open", menuOpen);
+      document.body.classList.toggle("menu-open", menuOpen);
       if (menuOpen) renderMenuSlots();
     }
     window.toggleMenu = toggleMenu;
@@ -1023,6 +1046,7 @@
       document.getElementById("menuToggleBtn").classList.remove("open");
       document.getElementById("menuBackdrop").classList.remove("open");
       document.getElementById("factionPanel")?.classList.remove("open");
+      document.body.classList.remove("menu-open");
     }
     window.closeMenu = closeMenu;
     document.addEventListener("keydown", (e) => { if (e.code === "Escape") { closeMenu(); closeSideActionMenu(); } });
@@ -2078,6 +2102,7 @@
     const otherPlayerAccessoryLoading = new Set();
     const otherPlayerPreviewLoading = new Set();
     let myPlayerId = null, mpConnected = false, mpLastSend = 0, mpLastAppearance = 0;
+    window.myPlayerId = null; // expuesto globalmente para NpcSystem (se actualiza en initMultiplayer)
     const MP_SEND_RATE = 80;
     const MP_APPEARANCE_RATE = 2500;
     const chatMessages = [], CHAT_MAX = 80;
@@ -2439,6 +2464,7 @@
 
     function initMultiplayer() {
       myPlayerId = "player_" + Math.random().toString(36).substr(2, 9) + "_" + Date.now();
+      window.myPlayerId = myPlayerId; // expuesto globalmente para NpcSystem y otros sistemas
       const myRef = db.ref("players/" + myPlayerId);
       myRef.onDisconnect().remove();
       // Garantizar que el trailer de ESTA sesión se elimine al desconectar,
@@ -2528,42 +2554,6 @@
         const msg = snap.val(); if (!msg || msg.id === myPlayerId) return;
         addChatMsg(msg.name, msg.text, "#00e5ff");
       });
-      db.ref("npc_party_chat").limitToLast(1).on("child_added", (snap) => {
-        const msg = snap.val();
-        if (!msg || msg.id === myPlayerId) return;
-        if (msg.map && msg.map !== currentMap) return;
-        renderNpcBannerMessage(msg);
-      });
-      db.ref("npc_summons").limitToLast(20).on("child_added", (snap) => {
-        const s = snap.val();
-        if (!s || s.owner === myPlayerId || s.map !== currentMap) return;
-        if (Date.now() - (s.t || 0) > 45000) return;
-        if (npcs.some(n => n.id === "remote_" + snap.key)) return;
-        npcs.push(makeSummonedNpc(s.archetype || "neutral", {
-          id:"remote_" + snap.key, name:s.name, x:s.x, y:s.y, color:s.color,
-          faction:s.faction, dialog:"Invocado por " + (s.ownerName || "otro jugador") + "."
-        }));
-      });
-      function watchNpcRaidsForCurrentMap() {
-        if (npcSocialRaidListener) {
-          db.ref("npc_raids").off("value", npcSocialRaidListener);
-          npcSocialRaidListener = null;
-        }
-        npcSocialRaidListener = db.ref("npc_raids").on("value", snap => {
-          const all = snap.val() || {};
-          const raids = Object.values(all[currentMap] || {}).filter(r => r && r.status === "active");
-          raids.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
-          activeMapRaid = raids[0] || null;
-          if (activeMapRaid && !waveEnemies.some(e => e.raidId === activeMapRaid.id)) {
-            spawnRaidEnemiesLocally(activeMapRaid.id, activeMapRaid.invaderArchetype || "evil", false);
-            if (activeMapRaid.host !== myPlayerId) {
-              renderNpcBannerMessage({ speaker:"SISTEMA RAID", emotion:"angry", text:"Raid activa en este mapa. Unete como defensor o invasor.", map:currentMap, t:Date.now() });
-            }
-          }
-          updateNpcRaidHud();
-        });
-      }
-      watchNpcRaidsForCurrentMap();
       db.ref("worldDamage").on("child_added", (mapSnap) => {
         const mapKey = mapSnap.key;
         mapSnap.ref.limitToLast(80).on("child_added", (hitSnap) => {
@@ -2820,6 +2810,8 @@
             const _rdScaleW = _rdw / 180, _rdScaleH = _rdh / 220;
             const _rdrawW = _rdBaseW * _rdScaleW, _rdrawH = _rdBaseH * _rdScaleH;
             ctx.fillStyle = "rgba(0,0,0,0.3)"; ctx.beginPath(); ctx.ellipse(sx, sy+3, _rdrawW*0.3, _rdrawW*0.1, 0, 0, Math.PI*2); ctx.fill();
+            // [PATCH] Vehículo debajo del jugador remoto
+            if (window.VehicleOverlay) VehicleOverlay.drawRemote(ctx, sx, sy, p, null, "below");
             ctx.save();
             ctx.translate(sx, sy);
             ctx.scale(_rdScaleW, _rdScaleH);
@@ -2827,6 +2819,8 @@
             ctx.imageSmoothingEnabled = true;
             CS.drawPlayer(ctx, sx, sy, remCSPlayer, csImageMap, anim, remState);
             ctx.restore();
+            // [PATCH] Vehículo encima del jugador remoto
+            if (window.VehicleOverlay) VehicleOverlay.drawRemote(ctx, sx, sy, p, null, "above");
             if (injectedAcc) { const idx = CS.ACCESSORIES_CATALOG.indexOf(injectedAcc); if (idx !== -1) CS.ACCESSORIES_CATALOG.splice(idx, 1); }
             _drawRemotePlayerLabel(p, sx, sy);
             continue;
@@ -2984,121 +2978,6 @@
         if(chevron&&p)chevron.textContent=p.classList.contains("chat-open")?"▴":"▾";
       };
     }
-
-    const NPC_SOCIAL_EMOTIONS = {
-      neutral: { label:"Neutral", color:"#c8cfe8" },
-      happy: { label:"Alegre", color:"#00e676" },
-      angry: { label:"Enojado", color:"#ff5252" },
-      sad: { label:"Triste", color:"#7cb9ff" },
-      epic: { label:"Epico", color:"#f5c400" },
-      whisper: { label:"Susurro", color:"#b0bec5" },
-    };
-    const NPC_SOCIAL_ARCHETYPES = {
-      good: { label:"Bueno", color:"#00e5ff", names:["DEFENSOR Z","PATRULLERO","HEROE LOCAL"], factions:["z_warrior","galactic_patrol","heroes"] },
-      evil: { label:"Malo", color:"#ff5252", names:["SOLDADO IMPERIAL","VILLANO","MERCENARIO"], factions:["intergalactic_empire","villains"] },
-      neutral: { label:"Neutral", color:"#b0bec5", names:["VIAJERO","GUIA","TESTIGO"], factions:["neutral"] },
-    };
-    let npcSocialLastBanner = null;
-    let activeMapRaid = null;
-    let npcSocialRaidListener = null;
-    let npcSocialJoinedRaidId = null;
-
-    function escapeUiText(value) {
-      return String(value || "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
-    }
-
-    function getFactionArchetype(factionId) {
-      if (["z_warrior","galactic_patrol","heroes"].includes(factionId)) return "good";
-      if (["intergalactic_empire","villains"].includes(factionId)) return "evil";
-      return "neutral";
-    }
-
-    function buildNpcSocialHud() {
-      const hud=document.getElementById("hud");
-      if(!hud || document.getElementById("npcSocialPanel")) return;
-      const panel=document.createElement("div");
-      panel.id="npcSocialPanel";
-      panel.className="min";
-      panel.innerHTML=`
-        <div class="npc-social-head">
-          <span class="npc-social-title">NPC / PARTY BANNER</span>
-          <div class="npc-social-tools">
-            <button class="npc-social-btn" type="button" onclick="summonFactionNpc()">INVOCAR</button>
-            <button class="npc-social-btn" type="button" onclick="startNpcInvasionRaid()">RAID</button>
-            <button class="npc-social-btn" type="button" onclick="toggleNpcSocialPanel()">MENU</button>
-          </div>
-        </div>
-        <div class="npc-social-body" id="npcSocialBody">
-          <div class="npc-portrait" id="npcSocialPortrait"><span class="npc-portrait-fallback">RP</span></div>
-          <div class="npc-banner">
-            <div class="npc-banner-top"><span id="npcBannerSpeaker">${escapeUiText(window.player?.name || "Jugador")}</span><span class="npc-banner-emotion" id="npcBannerEmotion">Neutral</span></div>
-            <div class="npc-banner-text" id="npcBannerText">Escribe como tu personaje o deja que un NPC responda en la escena.</div>
-          </div>
-          <div class="npc-social-form">
-            <select id="npcEmotionSelect">
-              ${Object.entries(NPC_SOCIAL_EMOTIONS).map(([id,e])=>`<option value="${id}">${e.label}</option>`).join("")}
-            </select>
-            <input id="npcBannerInput" maxlength="130" placeholder="Hablar en banner..." onkeydown="if(event.key==='Enter')sendNpcBannerMessage()"/>
-            <button class="npc-social-btn" type="button" onclick="sendNpcBannerMessage()">OK</button>
-          </div>
-          <div class="npc-social-raid">
-            <span class="npc-raid-status" id="npcRaidStatus">Sin raid activa en este mapa.</span>
-            <button class="npc-social-btn" type="button" onclick="joinNpcRaidSide('defender')">DEF</button>
-            <button class="npc-social-btn" type="button" onclick="joinNpcRaidSide('invader')">INV</button>
-          </div>
-        </div>`;
-      hud.appendChild(panel);
-      updateNpcSocialPortrait();
-    }
-
-    function toggleNpcSocialPanel() {
-      const panel=document.getElementById("npcSocialPanel");
-      if(!panel) { buildNpcSocialHud(); return; }
-      panel.classList.toggle("min");
-      updateNpcRaidHud();
-    }
-    window.toggleNpcSocialPanel = toggleNpcSocialPanel;
-
-    function updateNpcSocialPortrait() {
-      const box=document.getElementById("npcSocialPortrait");
-      if(!box) return;
-      let src=null;
-      try { src=buildMyAppearancePayload(false)?.previewDataURL || null; } catch(e) {}
-      const initials=(window.player?.name || "RP").slice(0,2).toUpperCase();
-      box.innerHTML = src ? `<img alt="personaje" src="${src}">` : `<span class="npc-portrait-fallback">${escapeUiText(initials)}</span>`;
-    }
-
-    function renderNpcBannerMessage(msg) {
-      if(!msg) return;
-      npcSocialLastBanner = msg;
-      buildNpcSocialHud();
-      const panel=document.getElementById("npcSocialPanel");
-      const speaker=document.getElementById("npcBannerSpeaker");
-      const emotion=document.getElementById("npcBannerEmotion");
-      const text=document.getElementById("npcBannerText");
-      const e=NPC_SOCIAL_EMOTIONS[msg.emotion] || NPC_SOCIAL_EMOTIONS.neutral;
-      if(panel) panel.classList.remove("min");
-      if(speaker) speaker.textContent = msg.speaker || msg.name || "NPC";
-      if(emotion) { emotion.textContent = e.label; emotion.style.color = e.color; }
-      if(text) { text.textContent = msg.text || ""; text.style.color = e.color === "#c8cfe8" ? "#d7dcf0" : e.color; }
-      if(msg.text) addChatMsg(msg.speaker || msg.name || "NPC", msg.text, e.color);
-    }
-
-    function sendNpcBannerMessage() {
-      const inp=document.getElementById("npcBannerInput");
-      const sel=document.getElementById("npcEmotionSelect");
-      const text=(inp?.value || "").trim();
-      if(!text) return;
-      if(inp) inp.value="";
-      const payload={
-        id:myPlayerId, name:player.name, speaker:player.name,
-        faction:player.faction || "neutral", map:currentMap,
-        emotion:sel?.value || "neutral", text:text.slice(0,130), t:Date.now()
-      };
-      renderNpcBannerMessage(payload);
-      if(mpConnected && myPlayerId) db.ref("npc_party_chat").push(payload);
-    }
-    window.sendNpcBannerMessage = sendNpcBannerMessage;
 
     const TILE=48, CAM_LERP=0.12, SPRITE_DRAW_W=120, SPRITE_DRAW_H=148;
 
@@ -4598,7 +4477,6 @@
         setControlMode("combat");
       }
       if (e.code==="KeyP") { e.preventDefault(); window.PvpSystem?.togglePartyPanel(); }
-      if (e.code==="KeyN") { e.preventDefault(); toggleNpcSocialPanel(); }
       if (e.code==="KeyI") { e.preventDefault(); openInventoryPanel(); }
       if (e.code==="KeyH") { e.preventDefault(); toggleFly(); }
       if (e.code==="Escape") { closeInventoryPanel(); if (window.PvpSystem?.isFighter()) window.requestMutualEnd?.(); }
@@ -4648,7 +4526,7 @@
 
     canvas.addEventListener("pointerdown", (e) => {
       // Permitir interacción de combate también en `frieza_ship` durante el Reto del Imperio
-      if (gameState !== "playing" || !(currentMap === "simulador_combate" || currentMap === "sala_entrenamiento" || (pendingFactionChallenge === "intergalactic_empire" && currentMap === "frieza_ship") || waveEnemies.some(e => e.raidNpc && e.npcHp > 0 && !e._dead))) return;
+      if (gameState !== "playing" || !(currentMap === "simulador_combate" || currentMap === "sala_entrenamiento" || (pendingFactionChallenge === "intergalactic_empire" && currentMap === "frieza_ship"))) return;
       if (e.target !== canvas) return;
       if (sparringState) {
         e.preventDefault();
@@ -4879,100 +4757,14 @@
     })();
 
     let npcs = NPC_DEFS.lobby;
+    // Exponer npcs al window para que parches externos puedan leer/escribir la variable local
+    Object.defineProperty(window, "npcs", {
+      get: () => npcs,
+      set: (v) => { npcs = v; },
+      configurable: true
+    });
     let activeNpc = null, dialogPage = 0;
     let particles = [], combatEffects = [];
-
-    function makeSummonedNpc(archetypeId, opts={}) {
-      const arch=NPC_SOCIAL_ARCHETYPES[archetypeId] || NPC_SOCIAL_ARCHETYPES.neutral;
-      const n=arch.names[Math.floor(Math.random()*arch.names.length)];
-      return {
-        id:(opts.id || ("summon_" + (myPlayerId || "local") + "_" + Date.now())),
-        name:opts.name || n,
-        x:opts.x || (player.x + player.facing * 72),
-        y:opts.y || (player.y + 8),
-        color:opts.color || arch.color,
-        faction:opts.faction || player.faction || "neutral",
-        summoned:true,
-        dialogs:[{ text:opts.dialog || ("Estoy aqui por el bando " + arch.label + ". Marca el objetivo y avanzamos."),
-          opts:[{label:"Hablar en banner",action:"npcBanner"},{label:"Quedate cerca.",next:-1}] }]
-      };
-    }
-
-    function summonFactionNpc() {
-      if(!myPlayerId) return showHudToast("Conectate al mundo primero", "dmg");
-      const archetype=getFactionArchetype(player.faction);
-      const npc=makeSummonedNpc(archetype);
-      npcs.push(npc);
-      renderNpcBannerMessage({ speaker:npc.name, emotion:"epic", text:"Invocado por " + (player.name || "jugador") + ".", t:Date.now(), map:currentMap });
-      if(mpConnected) db.ref("npc_summons").push({
-        owner:myPlayerId, ownerName:player.name, map:currentMap, archetype, faction:player.faction || "neutral",
-        x:Math.round(npc.x), y:Math.round(npc.y), name:npc.name, color:npc.color, t:Date.now()
-      });
-      showHudToast("NPC invocado: " + npc.name, "xp");
-    }
-    window.summonFactionNpc = summonFactionNpc;
-
-    function startNpcInvasionRaid() {
-      if(!mpConnected || !myPlayerId) return showHudToast("Raid requiere multijugador", "dmg");
-      const raidId="raid_" + currentMap + "_" + Date.now();
-      const archetype=getFactionArchetype(player.faction) === "evil" ? "good" : "evil";
-      db.ref("npc_raids/" + currentMap + "/" + raidId).set({
-        id:raidId, host:myPlayerId, hostName:player.name, map:currentMap,
-        targetFaction:player.faction || "neutral", invaderArchetype:archetype,
-        status:"active", createdAt:Date.now(),
-        members:{ [myPlayerId]:{ name:player.name, side:"defender", faction:player.faction || "neutral", t:Date.now() } }
-      });
-      spawnRaidEnemiesLocally(raidId, archetype, true);
-      showHudToast("Raid de invasion creada", "warning");
-    }
-    window.startNpcInvasionRaid = startNpcInvasionRaid;
-
-    function spawnRaidEnemiesLocally(raidId, archetypeId, announce=false) {
-      const arch=NPC_SOCIAL_ARCHETYPES[archetypeId] || NPC_SOCIAL_ARCHETYPES.evil;
-      const base=[
-        { dx:-120, dy:-80, hp:360, atk:24, def:12, xp:70 },
-        { dx:130, dy:-70, hp:360, atk:24, def:12, xp:70 },
-        { dx:0, dy:120, hp:520, atk:34, def:18, xp:120 },
-      ];
-      const raidNpcs=base.map((t,i)=>Object.assign({}, t, {
-        id:`${raidId}_${i}`,
-        name:i===2 ? "CAPITAN " + arch.label.toUpperCase() : arch.names[i % arch.names.length],
-        color:arch.color,
-        x:Math.max(TILE, player.x + t.dx),
-        y:Math.max(TILE, player.y + t.dy),
-        combatNpc:true, raidNpc:true, raidId,
-        npcMaxHp:t.hp, npcHp:t.hp, npcAtk:t.atk, npcDef:t.def, npcXp:t.xp,
-        facing:1, _anim:"combat_idle", _animLocked:false,
-        _attackTimer:Date.now() + NPC_COMBAT_INTERVAL + Math.random()*600,
-        _specialTimer:Date.now() + NPC_SPECIAL_INTERVAL + Math.random()*1200,
-      }));
-      waveEnemies = [...waveEnemies.filter(e=>e.raidId !== raidId), ...raidNpcs];
-      npcs = [...(NPC_DEFS[currentMap] || []), ...waveEnemies];
-      raidNpcs.forEach(e => { delete npcAnimators[e.id]; });
-      npcCombatActive = true;
-      if(announce) renderNpcBannerMessage({ speaker:raidNpcs[2].name, emotion:"angry", text:"Invasion iniciada. Defensores e invasores pueden unirse desde el banner.", map:currentMap, t:Date.now() });
-    }
-
-    function updateNpcRaidHud() {
-      const el=document.getElementById("npcRaidStatus");
-      if(!el) return;
-      if(!activeMapRaid) { el.textContent="Sin raid activa en este mapa."; return; }
-      const members=activeMapRaid.members || {};
-      const def=Object.values(members).filter(m=>m.side==="defender").length;
-      const inv=Object.values(members).filter(m=>m.side==="invader").length;
-      el.textContent=`Raid activa: DEF ${def} / INV ${inv}`;
-    }
-
-    function joinNpcRaidSide(side) {
-      if(!activeMapRaid?.id || !mpConnected || !myPlayerId) return showHudToast("No hay raid activa en este mapa", "dmg");
-      const cleanSide=side === "invader" ? "invader" : "defender";
-      db.ref("npc_raids/" + currentMap + "/" + activeMapRaid.id + "/members/" + myPlayerId).set({
-        name:player.name, side:cleanSide, faction:player.faction || "neutral", t:Date.now()
-      });
-      npcSocialJoinedRaidId = activeMapRaid.id;
-      showHudToast(cleanSide === "invader" ? "Te uniste a los invasores" : "Te uniste a los defensores", "info");
-    }
-    window.joinNpcRaidSide = joinNpcRaidSide;
 
     // -- TRAILERS --
     const trailers = {};
@@ -6030,6 +5822,8 @@
           openMyTrailer(); return;
         }
       }
+      // [PATCH] NPCs del NpcSystem (interacción por proximidad)
+      if (window.NpcSystem && NpcSystem.tryInteract(player.x, player.y)) return;
       const npc = npcs.find(n => Math.hypot(n.x-player.x, n.y-player.y) < 65);
       if (npc) openDialog(npc);
     }
@@ -6237,7 +6031,7 @@
 
     function getCombatNpcAtScreen(clientX, clientY) {
       // Permitir selección de NPCs de combate también durante el Reto del Imperio en la frieza_ship
-      if (!(currentMap === "simulador_combate" || currentMap === "sala_entrenamiento" || (pendingFactionChallenge === "intergalactic_empire" && currentMap === "frieza_ship") || waveEnemies.some(e => e.raidNpc && e.npcHp > 0 && !e._dead))) return null;
+      if (!(currentMap === "simulador_combate" || currentMap === "sala_entrenamiento" || (pendingFactionChallenge === "intergalactic_empire" && currentMap === "frieza_ship"))) return null;
       const p = screenToWorld(clientX, clientY);
       let best = null, bestDist = Infinity;
       waveEnemies.forEach(npc => {
@@ -6463,7 +6257,7 @@
         });
       });
       npcs = [...(NPC_DEFS[currentMap] || []), ...waveEnemies];
-      waveEnemies.forEach(e => { delete npcAnimators[e.id]; });
+      waveEnemies.forEach(e => { delete npcAnimators[e.id]; delete _npcOC[e.id]; delete _npcOCCtx[e.id]; delete _npcOCFrame[e.id]; delete _npcAppCache[e.id]; delete _npcStateCache[e.id]; });
       showHudToast("⚔️ ¡Oleada " + (waveIndex+1) + " de " + templates.length + "!", "warning");
     }
 
@@ -6505,18 +6299,88 @@
 
     function checkSimulatorEntry() {
       const inCombatMap = currentMap === "simulador_combate" || currentMap === "sala_entrenamiento";
-      if (!inCombatMap) { currentWave = -1; waveEnemies = []; simuladorCombatStarted = false; entrenamientoCombatStarted = false; return; }
+      if (!inCombatMap && !npcCombatActive) { currentWave = -1; waveEnemies = []; simuladorCombatStarted = false; entrenamientoCombatStarted = false; return; }
       if (currentMap === "simulador_combate" && simuladorCombatStarted && currentWave === -1) { _lastNpcTick = performance.now(); spawnWave(0); }
       if (currentMap === "sala_entrenamiento" && entrenamientoCombatStarted && currentWave === -1) { _lastNpcTick = performance.now(); spawnWave(0); }
     }
+
+    window.startRpNpcCombat = function(combatNpc) {
+      if (!combatNpc || !combatNpc.rpNpcId || npcCombatActive) return;
+      const baseHp = combatNpc.npcHp || combatNpc.npcMaxHp || 100;
+      const maxHp = combatNpc.npcMaxHp || baseHp;
+
+      // Posicionar el NPC cerca del jugador antes de crear la entrada en waveEnemies
+      const side = (player.facing || 1);
+      const startX = combatNpc.x || (player.x + side * 220);
+      const startY = combatNpc.y || player.y;
+
+      waveEnemies = [{
+        ...combatNpc,
+        id: "rpcombat_" + combatNpc.rpNpcId,
+        templateId: combatNpc.rpNpcId,
+        combatNpc: true,
+        npcHp: baseHp,
+        npcMaxHp: maxHp,
+        npcAtk: combatNpc.npcAtk || 20,
+        npcDef: combatNpc.npcDef || 10,
+        npcXp: combatNpc.npcXp || Math.max(10, Math.floor((combatNpc.npcAtk || 20) + maxHp / 20)),
+        _anim: "combat_idle",
+        _animLocked: false,
+        _attackTimer: Date.now() + NPC_COMBAT_INTERVAL + Math.random() * 600,
+        _specialTimer: Date.now() + NPC_SPECIAL_INTERVAL + Math.random() * 1200,
+        _skinCacheKey: `rpcombat_${combatNpc.rpNpcId}:${combatNpc.skinPath || "default"}`,
+        x: startX,
+        y: startY,
+      }];
+      npcCombatActive = true;
+      currentWave = 0;
+      lockedCombatNpcId = waveEnemies[0].id;
+
+      // Inyectar el NPC en window.npcs para que drawNpcs() lo dibuje con animaciones de combate
+      const ce = waveEnemies[0];
+      const NPC_DEFS_cur = window.NPC_DEFS || {};
+      const baseNpcs = (NPC_DEFS_cur[currentMap] || []).filter(n => !n.combatNpc);
+      npcs = [...baseNpcs, ce];
+
+      // Marcar el NPC fuente en NpcSystem para que no se dibuje doble
+      if (window.NpcSystem && typeof window.NpcSystem.getActiveNpcs === "function") {
+        const activeNpcs = window.NpcSystem.getActiveNpcs();
+        if (activeNpcs && activeNpcs[combatNpc.rpNpcId]) {
+          activeNpcs[combatNpc.rpNpcId]._combatRequested = true;
+        }
+      }
+
+      // Limpiar animator para recrearlo en battleMode
+      if (window.npcAnimators) { delete window.npcAnimators[ce.id]; delete _npcOC[ce.id]; delete _npcOCCtx[ce.id]; delete _npcOCFrame[ce.id]; delete _npcAppCache[ce.id]; delete _npcStateCache[ce.id]; }
+
+      if (typeof setControlMode === "function") setControlMode("combat");
+      if (typeof hideNpcCombatHud === "function") hideNpcCombatHud();
+      if (typeof showNpcCombatHud === "function") showNpcCombatHud(waveEnemies[0]);
+      _lastNpcTick = performance.now();
+      showHudToast("⚔️ Combate iniciado contra " + waveEnemies[0].name, "warning");
+    };
+
+    window._restoreRpNpc = function(rpNpcSourceId, outcome) {
+      if (!window.NpcSystem || typeof window.NpcSystem.getActiveNpcs !== "function") return;
+      const activeNpcs = window.NpcSystem.getActiveNpcs();
+      const npc = activeNpcs && activeNpcs[rpNpcSourceId];
+      if (!npc) return;
+      // Restaurar visibilidad del NPC en NpcSystem
+      npc._combatRequested = false;
+      npc._combatTargetId = null;
+      if (outcome === "win") {
+        npc.hp = Math.max(0, npc.hp - 0);
+      }
+    };
 
     // Ataques que puede usar el NPC (igual que el jugador)
     const _NPC_ATK_POOL_NORMAL = ["light_combo", "light_combo", "heavy_combo"];
     const _NPC_ATK_POOL_BOSS   = ["light_combo", "heavy_combo", "heavy_combo"];
 
     function getCombatNpcTarget() {
-      // Permitir target de combate también durante el Reto del Imperio en `frieza_ship`.
-      if (!(currentMap === "simulador_combate" || currentMap === "sala_entrenamiento" || (pendingFactionChallenge === "intergalactic_empire" && currentMap === "frieza_ship") || waveEnemies.some(e => e.raidNpc && e.npcHp > 0 && !e._dead))) return null;
+      // Permitir target de combate también durante el Reto del Imperio en `frieza_ship`
+      // y durante el combate de NPCs en el mapa actual.
+      if (!(currentMap === "simulador_combate" || currentMap === "sala_entrenamiento" || (pendingFactionChallenge === "intergalactic_empire" && currentMap === "frieza_ship") || npcCombatActive)) return null;
       if (!waveEnemies.length) return null;
       const locked = getLockedCombatNpc();
       if (locked && !sparringState) return locked;
@@ -6719,8 +6583,8 @@
 
     function tickNpcCombat() {
       // Permitir el tick de combate también cuando se está ejecutando
-      // el Reto del Imperio dentro de la `frieza_ship`.
-      if (!(currentMap === "simulador_combate" || currentMap === "sala_entrenamiento" || (pendingFactionChallenge === "intergalactic_empire" && currentMap === "frieza_ship") || waveEnemies.some(e => e.raidNpc && e.npcHp > 0 && !e._dead))) return;
+      // el Reto del Imperio dentro de la `frieza_ship` o un combate RPC local.
+      if (!(currentMap === "simulador_combate" || currentMap === "sala_entrenamiento" || (pendingFactionChallenge === "intergalactic_empire" && currentMap === "frieza_ship") || npcCombatActive)) return;
       if (waveEnemies.length === 0) return;
 
       // Delta-time real con cap (evita saltos por tab inactivo)
@@ -6732,7 +6596,8 @@
       if (_playerKoActive || player.hp <= 0) return;
 
       const now = Date.now();
-      const ATTACK_RANGE = 80;
+      const ATTACK_RANGE = 80;  // rango para golpear al jugador
+      const STOP_DISTANCE = 10; // distancia mínima a la que el NPC se detiene junto al jugador
 
       let allDead = true;
       waveEnemies.forEach(npc => {
@@ -6756,15 +6621,22 @@
         // Siempre mira al jugador
         npc.facing = dx > 0 ? 1 : -1;
 
-        if (d > ATTACK_RANGE) {
+        if (d > STOP_DISTANCE) {
           // ── Mover hacia el jugador ───────────────────────────────────
           npc.x += (dx / d) * NPC_SPEED * dt;
           npc.y += (dy / d) * NPC_SPEED * dt;
 
-          // Animación: combat_idle mientras se acerca (mismas frames que el jugador)
-          if (!npc._animLocked) _playNpcDashHeld(npc, anim);
+          // Animación: run/dash mientras se acerca si está lejos; combat_idle si está cerca
+          if (!npc._animLocked) {
+            if (d > ATTACK_RANGE) {
+              _playNpcDashHeld(npc, anim);
+            } else {
+              // Cerca pero aún acercándose: combat_idle
+              _playNpcCombatIdle(npc, anim);
+            }
+          }
         } else {
-          // ── En rango ─────────────────────────────────────────────────
+          // ── En rango de pelea (junto al jugador) ─────────────────────
           // combat_idle cuando no está bloqueado por otra animación
           if (!npc._animLocked && npc._anim !== "combat_idle") {
             _playNpcCombatIdle(npc, anim);
@@ -6807,8 +6679,15 @@
             if (player.hp <= 0) {
               // KO: 3 frames completos
               _playPlayerHitKo(3000, () => {
+                const rpSourceId = waveEnemies[0]?.rpNpcId;
                 currentWave = -1; waveEnemies = []; simuladorCombatStarted = false; entrenamientoCombatStarted = false;
-                npcs = NPC_DEFS[currentMap] || [];
+                if (npcCombatActive) {
+                  npcCombatActive = false;
+                  npcs = NPC_DEFS[currentMap] || [];
+                  if (typeof window._restoreRpNpc === "function") window._restoreRpNpc(rpSourceId, "lose");
+                } else {
+                  npcs = NPC_DEFS[currentMap] || [];
+                }
                 player.hp = Math.floor(player.maxHp * 0.5);
                 const startPos = MAP_STARTS[currentMap] || { x:24, y:28 };
                 player.x = startPos.x * TILE; player.y = startPos.y * TILE;
@@ -6846,17 +6725,22 @@
         showHudToast("✅ ¡Oleada " + (currentWave + 1) + " superada! +" + totalXp + " XP", "xp");
         hideNpcCombatHud();
         if (typeof setControlMode === "function") setControlMode("rp");
+        if (npcCombatActive) {
+          if (typeof window._restoreRpNpc === "function") window._restoreRpNpc(waveEnemies[0]?.rpNpcId, "win");
+          npcCombatActive = false;
+          waveEnemies = [];
+          npcs = NPC_DEFS[currentMap] || [];
+          currentWave = -1;
+          return;
+        }
         setTimeout(() => spawnWave(currentWave + 1), 2000);
         waveEnemies = [];
         npcs = NPC_DEFS[currentMap] || [];
+
       }
     }
 
-    window.performCombatAction = (function(_orig) {
-      return function(action) {
-        if (_orig) _orig(action);
-      };
-    })(window.performCombatAction);
+    // performCombatAction se define y exporta más abajo (línea ~7205)
 
     function showFloatingDmg(dmg, sx, sy, color) {
       const cvs = document.getElementById("gameCanvas");
@@ -6920,6 +6804,18 @@
     window.tickNpcCombat = tickNpcCombat;
     window.checkNpcCombatProximity = checkNpcCombatProximity;
 
+    // Exponer variables de combate para parches externos
+    Object.defineProperty(window, "npcCombatActive", {
+      get: () => npcCombatActive,
+      set: (v) => { npcCombatActive = v; },
+      configurable: true
+    });
+    Object.defineProperty(window, "waveEnemies", {
+      get: () => waveEnemies,
+      set: (v) => { waveEnemies = v; },
+      configurable: true
+    });
+
 
     function openPortalPanel() {
       const container = document.getElementById("portalBtns");
@@ -6964,15 +6860,6 @@
           else if (o.action === "portal") { closeDialog(); if (o.map) travelTo(o.map); }
           else if (o.action === "repairShip") { closeDialog(); repairShip(); }
           else if (o.action === "openImperialNaming") { closeDialog(); openImperialNamingPanel(true); }
-          else if (o.action === "npcBanner") {
-            const inp = document.getElementById("npcBannerInput");
-            const panel = document.getElementById("npcSocialPanel");
-            closeDialog();
-            buildNpcSocialHud();
-            if (panel) panel.classList.remove("min");
-            renderNpcBannerMessage({ speaker:npc.name, emotion:"neutral", text:"...", map:currentMap, t:Date.now() });
-            if (inp) inp.focus();
-          }
           else if (o.action === "startEmpireChallenge") {
             closeDialog();
             pendingFactionChallenge = "intergalactic_empire";
@@ -7320,7 +7207,7 @@
           csAnimator.play(anim, combatEndAnim);
         }
       }
-      if ((currentMap === "simulador_combate" || currentMap === "sala_entrenamiento" || (pendingFactionChallenge === "intergalactic_empire" && currentMap === "frieza_ship") || waveEnemies.some(e => e.raidNpc && e.npcHp > 0 && !e._dead)) && waveEnemies.length > 0) {
+      if (((currentMap === "simulador_combate" || currentMap === "sala_entrenamiento" || (pendingFactionChallenge === "intergalactic_empire" && currentMap === "frieza_ship")) || npcCombatActive) && waveEnemies.length > 0) {
         applyPlayerAttackToCombatNpc(action);
       }
       showHudToast(effectLabel, action.startsWith("special") ? "info" : "xp");
@@ -8062,6 +7949,9 @@
         }
       }
       drawWorldObjects();
+      // [PATCH] Objetos colocables del mundo
+      if (window.WorldObjectsSystem) WorldObjectsSystem.draw(ctx, cam);
+      if (window.NpcSystem) NpcSystem.draw(ctx, cam);
       drawTrailers();
       drawNpcs();
     }
@@ -8424,6 +8314,96 @@
 
     // -- NPC ANIMATORS: un SpriteAnimator por NPC, igual que jugadores remotos --
     const npcAnimators = {};
+    window.npcAnimators = npcAnimators; // exponer para parches externos
+
+    // -- NPC OFFSCREEN CACHE — evita llamar CS.drawPlayer cada frame --
+    // Igual que NpcSystem.draw(), redibujar solo cuando cambia frame/acción/dirección
+    const _npcOC    = {};   // { id: OffscreenCanvas | HTMLCanvasElement }
+    const _npcOCCtx = {};   // { id: CanvasRenderingContext2D }
+    const _npcOCFrame = {}; // { id: { a: action, f: frame, d: dir } }
+    // Player-like object reutilizable para llamar CS.drawPlayer sin crear objetos nuevos
+    const _npcPlayerLike = { appearance: null, direction: 1 };
+    // Objetos de estado reutilizables para no crear garbage cada frame
+    const _npcAppCache    = {}; // { npcId: npcApp object }
+    const _npcStateCache  = {}; // { npcId: npcState object }
+
+    function _getNpcOffscreen(npc, CS) {
+      const NW = 180, NH = 220;
+      let oc = _npcOC[npc.id];
+      if (!oc) {
+        oc = (typeof OffscreenCanvas !== "undefined")
+          ? new OffscreenCanvas(NW, NH)
+          : document.createElement("canvas");
+        oc.width = NW; oc.height = NH;
+        _npcOC[npc.id] = oc;
+        _npcOCCtx[npc.id] = oc.getContext("2d");
+      }
+      return { oc, oCtx: _npcOCCtx[npc.id] };
+    }
+
+    // Llama a CS.drawPlayer en el offscreen solo si cambió algo visual
+    function _renderNpcToOffscreen(npc, anim, CS, csImageMap, hasSkin, npcVariantCustomizations) {
+      const NW = 180, NH = 220;
+      const curAction = anim ? anim.action : "idle";
+      const curFrame  = anim ? anim.frame  : 0;
+      const npcDir    = npc.facing || 1;
+      const last = _npcOCFrame[npc.id];
+      if (last && last.a === curAction && last.f === curFrame && last.d === npcDir) {
+        return _npcOC[npc.id]; // sin cambios — reutilizar
+      }
+
+      // Reusar o crear el objeto npcApp
+      let npcApp = _npcAppCache[npc.id];
+      if (!npcApp) {
+        npcApp = {
+          raceId: "human", gender: "male", variantId: "base",
+          variantCustomizations: null, combatCustomization: {},
+          faceId: null, faceColor: null, eyeColor: "#3a2a1a",
+          browColor: null, pupilColor: null,
+          hairId: "hm0", hairColor: "#e8c898",
+          topId: null, bottomId: null, shoesId: null,
+          glovesId: "gm0", skinColor: "#e8c898",
+          auraId: "a0", auraColor: "#fdd835",
+          accessoryId: "ac_none",
+          clothColorA: null, clothColorB: null,
+          displayW: NW, displayH: NH,
+        };
+        _npcAppCache[npc.id] = npcApp;
+      }
+      // Actualizar campos que pueden cambiar
+      npcApp.raceId    = npc.raceId    || "human";
+      npcApp.gender    = npc.gender    || "male";
+      npcApp.variantCustomizations = npcVariantCustomizations;
+      npcApp.faceId    = hasSkin ? null : (npc.faceId    || null);
+      npcApp.faceColor = hasSkin ? null : (npc.faceColor || null);
+      npcApp.eyeColor  = hasSkin ? "#3a2a1a" : (npc.eyeColor || "#3a2a1a");
+      npcApp.hairId    = hasSkin ? "hm0" : (npc.hairId   || "hm0");
+      npcApp.hairColor = npc.skinColor || "#e8c898";
+      npcApp.topId     = hasSkin ? null : (npc.topId     || null);
+      npcApp.bottomId  = hasSkin ? null : (npc.bottomId  || null);
+      npcApp.shoesId   = hasSkin ? null : (npc.shoesId   || null);
+      npcApp.skinColor = npc.skinColor || "#e8c898";
+      npcApp.auraColor = npc.color     || "#fdd835";
+
+      // Reusar o crear npcState
+      let npcState = _npcStateCache[npc.id];
+      if (!npcState) {
+        npcState = { glovesId: "gm0", auraId: "a0", auraColor: "#fdd835",
+                     accessoryId: "ac_none", auraPhase: 0, viewKey: null, spriteVariantId: null };
+        _npcStateCache[npc.id] = npcState;
+      }
+      npcState.auraColor       = npc.color || "#fdd835";
+      npcState.spriteVariantId = npc.combatNpc ? "fight" : null;
+
+      _npcPlayerLike.appearance = npcApp;
+      _npcPlayerLike.direction  = npcDir;
+
+      const { oc, oCtx } = _getNpcOffscreen(npc, CS);
+      oCtx.clearRect(0, 0, NW, NH);
+      CS.drawPlayer(oCtx, NW / 2, NH, _npcPlayerLike, csImageMap, anim, npcState);
+      _npcOCFrame[npc.id] = { a: curAction, f: curFrame, d: npcDir };
+      return oc;
+    }
 
     // -- NPC SKIN IMAGES: caché de imágenes de skin --
     // Si el NPC tiene skinRow, se recorta esa fila del sheet en un canvas offscreen.
@@ -8490,7 +8470,8 @@
           // Si el NPC tiene skinKey o skinPath, se usa esa imagen como sprite completo.
           // No se aplica ropa ni accesorios encima: la skin ES el personaje.
           const hasSkin = !!(npc.skinKey || npc.skinPath);
-          const npcVariantCustomizations = {};
+          // Reusar objeto para evitar garbage: se limpia antes de rellenar
+          const npcVariantCustomizations = {}; // pequeño — ok crearlo aquí, el peso es CS.drawPlayer
 
             // If NPC has a preloaded custom image and requests split-top-bottom, draw manually
             if (npc._img && npc.splitTopBottom && npc.displayW && npc.displayH) {
@@ -8600,40 +8581,7 @@
             }
           }
 
-          // Apariencia del NPC: si tiene skin, topId/bottomId/shoes/gloves/accessory
-          // se dejan en null/"gm0"/"ac_none" para no superponerse al sprite.
-          const npcApp = {
-            raceId:    npc.raceId    || "human",
-            gender:    npc.gender    || "male",
-            variantId: "base",
-            variantCustomizations: npcVariantCustomizations,
-            combatCustomization: {},
-            faceId:    hasSkin ? null : (npc.faceId || null),
-            faceColor: hasSkin ? null : (npc.faceColor || null),
-            eyeColor:  hasSkin ? "#3a2a1a" : (npc.eyeColor || "#3a2a1a"),
-            browColor: null, pupilColor: null,
-            hairId:    hasSkin ? "hm0" : (npc.hairId || "hm0"),
-            hairColor: npc.skinColor || "#e8c898",
-            topId:     hasSkin ? null : (npc.topId    || null),
-            bottomId:  hasSkin ? null : (npc.bottomId || null),
-            shoesId:   hasSkin ? null : (npc.shoesId  || null),
-            glovesId:  "gm0",
-            skinColor: npc.skinColor || "#e8c898",
-            auraId:    "a0",
-            auraColor: npc.color || "#fdd835",
-            accessoryId: "ac_none",
-            clothColorA: null, clothColorB: null,
-            displayW: 180, displayH: 220,
-          };
-
-          const npcCSPlayer = { appearance: npcApp, direction: npc.facing || 1 };
-          const npcState = {
-            glovesId: "gm0", auraId: "a0",
-            auraColor: npc.color || "#fdd835",
-            accessoryId: "ac_none", auraPhase: 0,
-            viewKey: null, spriteVariantId: npc.combatNpc ? "fight" : null,
-          };
-
+          // Dibujar sombra y aro de combate
           ctx.fillStyle = "rgba(0,0,0,0.3)";
           ctx.beginPath();
           ctx.ellipse(sx, groundSy+3, SPRITE_DRAW_W*0.3, SPRITE_DRAW_W*0.1, 0, 0, Math.PI*2);
@@ -8645,10 +8593,21 @@
             ctx.ellipse(sx, groundSy+4, SPRITE_DRAW_W*0.38, SPRITE_DRAW_W*0.14, 0, 0, Math.PI*2);
             ctx.stroke();
           }
-          ctx.save();
-          ctx.imageSmoothingEnabled = true;
-          CS.drawPlayer(ctx, sx, sy, npcCSPlayer, csImageMap, anim, npcState);
-          ctx.restore();
+
+          // Usar caché offscreen: solo re-renderiza si cambió frame/acción/dirección
+          const NW_NPC = 180, NH_NPC = 220;
+          const oc = _renderNpcToOffscreen(npc, anim, CS, csImageMap, hasSkin, npcVariantCustomizations);
+          if (oc) {
+            ctx.save();
+            ctx.imageSmoothingEnabled = false;
+            // Flip horizontal si mira a la izquierda
+            if ((npc.facing || 1) === -1) {
+              ctx.translate(sx * 2, 0);
+              ctx.scale(-1, 1);
+            }
+            ctx.drawImage(oc, sx - NW_NPC / 2, sy - NH_NPC);
+            ctx.restore();
+          }
 
         } else {
           // Fallback procedural si CS no está listo
@@ -8721,6 +8680,8 @@
         const _drawW = _baseW * _scaleW, _drawH = _baseH * _scaleH;
         // Sombra proporcional al tamao real del sprite en pantalla
         ctx.fillStyle="rgba(0,0,0,0.3)"; ctx.beginPath(); ctx.ellipse(sx, groundSy+3, _drawW*0.3, _drawW*0.1, 0, 0, Math.PI*2); ctx.fill();
+        // [PATCH] Vehículo debajo del jugador (moto, nube)
+        if (window.VehicleOverlay) VehicleOverlay.draw(ctx, sx, groundSy, player, SPRITE_DRAW_W, SPRITE_DRAW_H, "below");
         ctx.save();
         ctx.translate(sx,sy);
         ctx.scale(_scaleW, _scaleH);
@@ -8728,6 +8689,8 @@
         ctx.imageSmoothingEnabled=true;
         CS.drawPlayer(ctx,sx,sy,CS.player,csImageMap,csAnimator,csState);
         ctx.restore();
+        // [PATCH] Vehículo encima del jugador (auto)
+        if (window.VehicleOverlay) VehicleOverlay.draw(ctx, sx, groundSy, player, SPRITE_DRAW_W, SPRITE_DRAW_H, "above");
         return;
       }
       // Fallback procedural
@@ -9304,10 +9267,6 @@
         _cleanupTrainingSync();
       }
       _origTravelTo(mapKey);
-      setTimeout(() => {
-        activeMapRaid = null;
-        updateNpcRaidHud();
-      }, 100);
     };
 
     function exportGameGlobals() {
@@ -9335,9 +9294,9 @@
 
     loadGame().then(()=>{ exportGameGlobals(); lastTime=performance.now(); requestAnimationFrame(gameLoop); });
     renderActionBars();
-    buildNpcSocialHud();
     </script>
     <script src="pvp-system.js"></script>
     <script src="fusion-system.js"></script>
+    <script src="systems-patch.js"></script>
   </body>
 </html>
