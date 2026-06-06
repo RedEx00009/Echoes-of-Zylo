@@ -138,7 +138,7 @@
 
   /* ─── 9. woPanel y npcPanel al abrirse desde el menú ────── */
   #woPanel, #npcPanel {
-    /* cuando se abren se muestran como overlay desde el margen izquierdo */
+    position: fixed !important;
     top: 50% !important;
     left: 8px !important;
     right: 8px !important;
@@ -147,6 +147,18 @@
     max-width: none !important;
     max-height: 70vh !important;
     overflow-y: auto !important;
+    z-index: 999 !important;
+  }
+  #rpgChatPanel {
+    position: fixed !important;
+    left: 8px !important;
+    right: 8px !important;
+    transform: none !important;
+    width: auto !important;
+    max-width: none !important;
+    max-height: 70vh !important;
+    overflow-y: auto !important;
+    z-index: 999 !important;
   }
 
 } /* end @media mobile */

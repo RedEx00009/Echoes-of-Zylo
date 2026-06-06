@@ -202,7 +202,7 @@ const RpgChatSystem = (() => {
 
       #rpgChatBody {
         display:flex; flex-direction:column; gap:6px;
-        padding:8px 10px 6px; flex:1; min-height:0; overflow:hidden;
+        padding:8px 10px 6px; flex:1; min-height:0; overflow:visible;
       }
       #rpgChatMessages {
         flex:1; min-height:0;
@@ -243,6 +243,11 @@ const RpgChatSystem = (() => {
         outline:none; -webkit-appearance:none;
       }
       #rpgChatInput:focus { border-color:rgba(245,196,0,.5); }
+      #rpgInputRow {
+        position: relative;
+        overflow: visible;
+        z-index: 1;
+      }
       #rpgEmotionBtn {
         background:rgba(245,196,0,.1); border:1px solid #2a3560; border-radius:5px;
         width:36px; height:36px; cursor:pointer; font-size:17px; display:flex;
@@ -3385,15 +3390,32 @@ function _applyMobileLayout() {
   /* ── 1. Chat RPG: anclarlo debajo del #mpHudPanel ── */
   _positionRpgChatBelowMainChat();
 
+  /* ── 2. Reparentear paneles móviles fuera de #leftPanelStack para que no queden ocultos */
+  _reparentMobilePanels();
+
   /* Recalcular posición cuando se abre/cierra el chat principal */
   var mpPanel = document.getElementById("mpHudPanel");
   if (mpPanel) {
-    var obs = new MutationObserver(_positionRpgChatBelowMainChat);
+    var obs = new MutationObserver(function() {
+      _positionRpgChatBelowMainChat();
+      _reparentMobilePanels();
+    });
     obs.observe(mpPanel, { attributes: true, attributeFilter: ["class"] });
   }
 
-  /* ── 2. Inyectar botones Mundo y NPCs en el menú hamburguesa ── */
+  /* ── 3. Inyectar botones Mundo y NPCs en el menú hamburguesa ── */
   _injectMenuButtons();
+}
+
+function _reparentMobilePanels() {
+  var stack = document.getElementById("leftPanelStack");
+  if (!stack) return;
+  ["woPanel", "npcPanel", "rpgChatPanel"].forEach(function(id) {
+    var panel = document.getElementById(id);
+    if (panel && panel.parentElement === stack) {
+      document.body.appendChild(panel);
+    }
+  });
 }
 
 function _positionRpgChatBelowMainChat() {
