@@ -283,7 +283,7 @@ const RpgChatSystem = (() => {
       #leftActionMenu .left-action-rows { display:flex; flex-direction:column; gap:6px; flex:1; }
       .left-action-btn { background:rgba(255,255,255,.03); border:1px solid #2a3560; padding:8px; border-radius:6px; color:#c8cfe8; text-align:center; cursor:pointer; font-family:"Orbitron",monospace; font-size:11px; }
       .left-action-btn:active { background:rgba(170,0,255,.06); }
-      /* ── PC: paneles en columna abajo-izquierda ── */
+      /* ── PC: paneles apilados abajo-izquierda ── */
       #leftPanelStack {
         position:fixed !important;
         left:12px !important;
@@ -299,112 +299,60 @@ const RpgChatSystem = (() => {
       #leftPanelStack > div {
         position:relative !important;
         width:100% !important;
-        left:auto !important;
-        right:auto !important;
-        top:auto !important;
-        bottom:auto !important;
+        left:auto !important; right:auto !important;
+        top:auto !important; bottom:auto !important;
         margin:0 !important;
       }
       #woPanel { order:1 !important; }
       #npcPanel { order:2 !important; }
       #rpgChatPanel { order:3 !important; }
-      #woPanel,
-      #npcPanel,
-      #rpgChatPanel { border-radius:12px !important; }
+      #woPanel, #npcPanel, #rpgChatPanel { border-radius:12px !important; }
       #mobileActionCorner { display:none !important; }
 
-      /* ── MOBILE: paneles en la parte SUPERIOR, compactos y colapsados ── */
+      /* ── MOBILE: sacar paneles del stack, reposicionarlos ── */
       @media (pointer:coarse), (max-width:768px) {
-        /* Ocultar el stack del lado izquierdo — los paneles van arriba */
-        #leftPanelStack {
-          display:none !important;
-        }
 
-        /* Barra superior de paneles: debajo del HUD */
-        #mobilePanelBar {
-          display:flex !important;
-        }
-
-        /* Botones de acción esquina derecha — OCULTAR,
-           están integrados en mobile-controls abajo */
-        #mobileActionCorner {
-          display:none !important;
-        }
+        /* Ocultar mobileActionCorner — los botones van en controles inferiores */
+        #mobileActionCorner { display:none !important; }
         .mobile-controls .action-grid { display:none !important; }
+
+        /* Stack invisible en mobile — cada panel se posiciona solo */
+        #leftPanelStack { display:none !important; }
+
+        /* ── CHAT RPG: debajo del #mpHudPanel (chat principal),
+              z-index menor para que el chat quede encima ── */
+        #rpgChatPanel {
+          position:fixed !important;
+          /* top se calcula en JS según la altura real del chat */
+          left:50% !important;
+          transform:translateX(-50%) !important;
+          width:min(340px, calc(100vw - 16px)) !important;
+          max-width:none !important;
+          z-index:9 !important; /* MENOR que mpHudPanel (z-index:11) */
+          border-radius:0 0 10px 10px !important;
+          border-top:none !important;
+          pointer-events:auto !important;
+          border-left:1px solid #2a3560 !important;
+          max-height:52px !important; /* colapsado por defecto */
+          overflow:hidden !important;
+          transition:max-height .28s cubic-bezier(.4,0,.2,1) !important;
+          top:var(--rpgchat-top, 46px) !important;
+        }
+        #rpgChatPanel.open {
+          max-height:clamp(200px, 40vh, 360px) !important;
+        }
+
+        /* woPanel y npcPanel: gestionados desde el menú hamburguesa,
+           se muestran como overlay cuando están abiertos */
+        #woPanel, #npcPanel {
+          position:fixed !important;
+          z-index:265 !important;
+          pointer-events:auto !important;
+          border-radius:10px !important;
+        }
       }
       @media (pointer:fine) {
         #mobileActionCorner { display:none !important; }
-        #mobilePanelBar     { display:none !important; }
-      }
-
-      /* ── Barra de paneles mobile (inyectada por JS) ── */
-      #mobilePanelBar {
-        display:none;
-        position:fixed;
-        top:88px;
-        left:8px;
-        right:8px;
-        z-index:215;
-        flex-direction:row;
-        gap:6px;
-        pointer-events:auto;
-        align-items:flex-start;
-      }
-      .mpb-btn {
-        flex:1;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        gap:5px;
-        padding:7px 4px;
-        background:rgba(8,9,15,0.88);
-        border:1px solid #2a3560;
-        border-radius:8px;
-        font-family:"Orbitron",monospace;
-        font-size:8px;
-        letter-spacing:1px;
-        color:#e8eaf6;
-        cursor:pointer;
-        touch-action:manipulation;
-        backdrop-filter:blur(8px);
-        -webkit-tap-highlight-color:transparent;
-        transition:border-color .15s, background .15s;
-        min-height:40px;
-      }
-      .mpb-btn:active { background:rgba(245,196,0,0.12); border-color:rgba(245,196,0,0.5); }
-      .mpb-btn.mpb-active { border-color:rgba(245,196,0,0.6); background:rgba(245,196,0,0.1); color:#f5c400; }
-      .mpb-icon { font-size:14px; }
-
-      /* Paneles flotantes cuando se abren desde mobile — centrados arriba */
-      @media (pointer:coarse), (max-width:768px) {
-        #woPanel.open,
-        #npcPanel.open,
-        #rpgChatPanel.open {
-          position:fixed !important;
-          top:136px !important;
-          left:8px !important;
-          right:8px !important;
-          width:auto !important;
-          max-width:none !important;
-          max-height:calc(100vh - 210px) !important;
-          overflow-y:auto !important;
-          z-index:216 !important;
-          border-radius:10px !important;
-          pointer-events:auto !important;
-        }
-        /* rpgChatPanel usa max-height para abrir/cerrar — respetar eso */
-        #rpgChatPanel {
-          position:fixed !important;
-          top:136px !important;
-          left:8px !important;
-          right:8px !important;
-          width:auto !important;
-          max-width:none !important;
-          z-index:216 !important;
-          border-radius:10px !important;
-          pointer-events:auto !important;
-          border-left:1px solid #2a3560 !important;
-        }
       }
     `;
     document.head.appendChild(style);
@@ -3423,40 +3371,103 @@ function _initSystems() {
   NpcSystem.init();
   VehicleOverlay.preload();
   console.info("[Systems Patch] RpgChat, VehicleOverlay, WorldObjects y NpcSystem inicializados ✓");
-  _injectMobilePanelBar();
+  // Aplicar layout mobile tras un tick para que el DOM esté completo
+  setTimeout(_applyMobileLayout, 400);
 }
 
-/* ── Barra de acceso rapido a paneles (solo mobile) ── */
-function _injectMobilePanelBar() {
+/* ═══════════════════════════════════════════════════════════════════════════
+   LAYOUT MOBILE — reposiciona paneles y agrega botones al menú hamburguesa
+   ═══════════════════════════════════════════════════════════════════════════ */
+function _applyMobileLayout() {
   var isTouch = window.matchMedia("(pointer:coarse)").matches || window.innerWidth <= 768;
   if (!isTouch) return;
-  if (document.getElementById("mobilePanelBar")) return;
-  var bar = document.createElement("div");
-  bar.id = "mobilePanelBar";
-  var defs = [
-    { id:"mpb-wo",   icon:"🗺️", label:"MUNDO",    fn: function(){ if(window.WorldObjectsSystem) WorldObjectsSystem.toggleUI(); _updateMpbActive("mpb-wo"); } },
-    { id:"mpb-npc",  icon:"🧬", label:"NPCs",      fn: function(){ if(window.NpcSystem){ var p=document.getElementById("npcPanel"); if(!p||!p.classList.contains("open")) NpcSystem.togglePanel(); } _updateMpbActive("mpb-npc"); } },
-    { id:"mpb-chat", icon:"💬", label:"CHAT RPG",  fn: function(){ if(window.RpgChatSystem) RpgChatSystem.toggle(); _updateMpbActive("mpb-chat"); } },
-  ];
-  defs.forEach(function(d) {
-    var btn = document.createElement("button");
-    btn.id = d.id;
-    btn.className = "mpb-btn";
-    btn.innerHTML = "<span class='mpb-icon'>" + d.icon + "</span>" + d.label;
-    btn.addEventListener("click", d.fn);
-    bar.appendChild(btn);
-  });
-  document.body.appendChild(bar);
+
+  /* ── 1. Chat RPG: anclarlo debajo del #mpHudPanel ── */
+  _positionRpgChatBelowMainChat();
+
+  /* Recalcular posición cuando se abre/cierra el chat principal */
+  var mpPanel = document.getElementById("mpHudPanel");
+  if (mpPanel) {
+    var obs = new MutationObserver(_positionRpgChatBelowMainChat);
+    obs.observe(mpPanel, { attributes: true, attributeFilter: ["class"] });
+  }
+
+  /* ── 2. Inyectar botones Mundo y NPCs en el menú hamburguesa ── */
+  _injectMenuButtons();
 }
 
-function _updateMpbActive(activeId) {
-  ["mpb-wo","mpb-npc","mpb-chat"].forEach(function(id) {
-    var el = document.getElementById(id);
-    if (el) el.classList.remove("mpb-active");
-  });
-  var active = document.getElementById(activeId);
-  if (active) active.classList.toggle("mpb-active");
+function _positionRpgChatBelowMainChat() {
+  var rpg = document.getElementById("rpgChatPanel");
+  if (!rpg) return;
+  var mp  = document.getElementById("mpHudPanel");
+  var top = 46; // fallback si el chat aún no existe
+  if (mp) {
+    var rect = mp.getBoundingClientRect();
+    top = Math.round(rect.bottom); // pegar justo debajo
+  }
+  // Usar CSS variable para que el @media la lea
+  document.documentElement.style.setProperty("--rpgchat-top", top + "px");
+  rpg.style.top = top + "px";
 }
+
+function _injectMenuButtons() {
+  /* Buscar el section de slots (último del menú) y agregar botones después */
+  var slotSection = null;
+  document.querySelectorAll("#leftMenu .menu-section").forEach(function(sec) {
+    var lbl = sec.querySelector(".menu-section-label");
+    if (lbl && lbl.textContent.trim() === "Cargar personaje") slotSection = sec;
+  });
+  if (!slotSection) {
+    /* fallback: último section del menú */
+    var secs = document.querySelectorAll("#leftMenu .menu-section");
+    slotSection = secs[secs.length - 1];
+  }
+  if (!slotSection) return;
+  if (document.getElementById("mobileMenuWoNpcSection")) return; // ya inyectado
+
+  var section = document.createElement("div");
+  section.id = "mobileMenuWoNpcSection";
+  section.className = "menu-section";
+  section.style.cssText = "border-bottom:none;";
+  section.innerHTML = [
+    '<div class="menu-section-label">Herramientas</div>',
+
+    /* Botón OBJETOS MUNDO con subpanel deslizable */
+    '<button class="menu-btn" id="mbtnWo" onclick="_toggleMenuSubpanel(\'subWo\',this)" style="justify-content:space-between">',
+      '<span><span class="btn-ic">🏗️</span> OBJETOS MUNDO</span>',
+      '<span id="mbtnWoArrow" style="font-size:9px;color:#3d4a6b">▸</span>',
+    '</button>',
+    '<div id="subWo" style="display:none;padding:6px 4px 2px;overflow:hidden;">',
+      '<div style="display:flex;flex-wrap:wrap;gap:6px;padding:2px 0">',
+        '<button class="menu-btn" style="flex:1;min-width:100px" onclick="if(window.WorldObjectsSystem)WorldObjectsSystem.toggleUI();closeMenu()"><span class="btn-ic">🔨</span> ABRIR EDITOR</button>',
+      '</div>',
+    '</div>',
+
+    /* Botón NPCs & RAIDS con subpanel */
+    '<button class="menu-btn" id="mbtnNpc" onclick="_toggleMenuSubpanel(\'subNpc\',this)" style="justify-content:space-between;margin-top:4px">',
+      '<span><span class="btn-ic">🤖</span> NPCs & RAIDS</span>',
+      '<span id="mbtnNpcArrow" style="font-size:9px;color:#3d4a6b">▸</span>',
+    '</button>',
+    '<div id="subNpc" style="display:none;padding:6px 4px 2px;overflow:hidden;">',
+      '<div style="display:flex;flex-wrap:wrap;gap:6px;padding:2px 0">',
+        '<button class="menu-btn" style="flex:1;min-width:100px" onclick="if(window.NpcSystem){var p=document.getElementById(\'npcPanel\');if(!p||!p.classList.contains(\'open\'))NpcSystem.togglePanel();var b=document.querySelector(\'#npcPanel .npc-tab:nth-child(2)\');if(b)NpcSystem.switchTab(\'active\',b);}closeMenu()"><span class="btn-ic">🤖</span> GESTIONAR</button>',
+        '<button class="menu-btn" style="flex:1;min-width:100px" onclick="if(window.NpcSystem){var p=document.getElementById(\'npcPanel\');if(!p||!p.classList.contains(\'open\'))NpcSystem.togglePanel();}closeMenu()"><span class="btn-ic">⚔️</span> RAIDS</button>',
+      '</div>',
+    '</div>',
+  ].join("");
+
+  slotSection.insertAdjacentElement("afterend", section);
+}
+
+/* Abre/cierra el subpanel inline del menú y rota la flecha */
+window._toggleMenuSubpanel = function(subId, btn) {
+  var sub   = document.getElementById(subId);
+  var arrow = btn ? btn.querySelector("[id$='Arrow']") : null;
+  if (!sub) return;
+  var open = sub.style.display === "none";
+  sub.style.display = open ? "block" : "none";
+  if (arrow) arrow.textContent = open ? "▾" : "▸";
+};
 
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", _initSystems);
