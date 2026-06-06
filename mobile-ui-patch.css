@@ -1,54 +1,39 @@
 /*
  * ══════════════════════════════════════════════════════════════
- *  DRAGON WORLD Z — MOBILE UI PATCH
- *  Agrega este archivo en game.html ANTES de </head>:
+ *  DRAGON WORLD Z — MOBILE UI PATCH  v3
+ *  En game.html, dentro de <head> tras el link de Google Fonts:
  *    <link rel="stylesheet" href="mobile-ui-patch.css">
- *  Y al FINAL de <body> agrega:
+ *  Al final de <body>, después de systems-patch.js:
  *    <script src="mobile-ui-patch.js"></script>
  * ══════════════════════════════════════════════════════════════
  */
 
-/* ── Solo se aplica en táctil / pantallas chicas ── */
+/* ── Solo táctil / pantallas chicas ── */
 @media (pointer: coarse), (max-width: 768px) {
 
-  /* ─────────────────────────────────────────────────────────
-   *  1. HUD SUPERIOR — más compacto y sin coordenadas
-   * ───────────────────────────────────────────────────────── */
+  /* ─── 1. HUD SUPERIOR compacto ─────────────────────────── */
   .hud-top {
     top: 8px !important;
     left: 56px !important;
-    right: 96px !important;   /* espacio para el minimapa */
+    right: 96px !important;
+    z-index: 50 !important;
   }
-
   .player-hud {
     padding: 5px 9px !important;
     min-width: 0 !important;
     max-width: min(190px, calc(100vw - 160px)) !important;
   }
+  .player-name   { font-size: 9px !important; margin-bottom: 4px !important; }
+  .bar-row       { margin-bottom: 3px !important; }
+  .bar-track     { height: 6px !important; }
+  .bar-val       { font-size: 8px !important; min-width: 26px !important; }
+  .bar-icon      { font-size: 9px !important; }
+  .level-badge   { margin-top: 3px !important; }
+  .level-num     { font-size: 8px !important; }
+  .xp-track      { height: 3px !important; }
+  .coord-display { display: none !important; }  /* coordenadas ocultas */
 
-  /* Nombre del jugador: más pequeño */
-  .player-name {
-    font-size: 9px !important;
-    margin-bottom: 4px !important;
-  }
-
-  /* Barras HP/KI: más delgadas */
-  .bar-row { margin-bottom: 3px !important; }
-  .bar-track { height: 6px !important; }
-  .bar-val { font-size: 8px !important; min-width: 26px !important; }
-  .bar-icon { font-size: 9px !important; }
-
-  /* Level badge reducido */
-  .level-badge { margin-top: 3px !important; }
-  .level-num { font-size: 8px !important; }
-  .xp-track { height: 3px !important; }
-
-  /* Ocultar coordenadas — toman espacio sin ser útiles en mobile */
-  .coord-display { display: none !important; }
-
-  /* ─────────────────────────────────────────────────────────
-   *  2. MINIMAPA — más pequeño, pegado arriba-derecha
-   * ───────────────────────────────────────────────────────── */
+  /* ─── 2. Minimapa ───────────────────────────────────────── */
   .minimap-wrap {
     width: 70px !important;
     height: 70px !important;
@@ -56,15 +41,10 @@
     right: 8px !important;
   }
 
-  /* ─────────────────────────────────────────────────────────
-   *  3. WORLD STATUS (bando / integridad) — ocultar en mobile
-   *     Accesible desde el menú hamburguesa
-   * ───────────────────────────────────────────────────────── */
+  /* ─── 3. World status — oculto (está en el menú ☰) ──────── */
   .world-status { display: none !important; }
 
-  /* ─────────────────────────────────────────────────────────
-   *  4. BOTÓN HAMBURGUESA — posición correcta
-   * ───────────────────────────────────────────────────────── */
+  /* ─── 4. Hamburguesa ────────────────────────────────────── */
   #menuToggleBtn {
     top: 8px !important;
     left: 8px !important;
@@ -72,25 +52,17 @@
     height: 40px !important;
   }
 
-  /* ─────────────────────────────────────────────────────────
-   *  5. SIDE ACTION TOGGLE (⚡) — OCULTAR
-   *     Los atajos van en la barra inferior de acciones
-   * ───────────────────────────────────────────────────────── */
-  #sideActionToggle { display: none !important; }
-  #sideActionMenu   { display: none !important; }
+  /* ─── 5. Botones flotantes derecha — OCULTOS ────────────── */
+  #sideActionToggle   { display: none !important; }
+  #sideActionMenu     { display: none !important; }
   #sideActionBackdrop { display: none !important; }
   #sideActionScrollBtns { display: none !important; }
-
-  /* ─────────────────────────────────────────────────────────
-   *  6. BOTONES FLOTANTES DERECHA (COMB / HABLAR / VOLAR)
-   *     — también ocultar, van en la barra inferior
-   * ───────────────────────────────────────────────────────── */
   #mobileActionCorner { display: none !important; }
 
-  /* ─────────────────────────────────────────────────────────
-   *  7. CONTROLES INFERIORES — nuevo layout limpio
-   *     Joystick izquierda | zona libre | 3 botones derecha
-   * ───────────────────────────────────────────────────────── */
+  /* ─── 6. Stack izquierdo — oculto (panels reposicionados) ── */
+  #leftPanelStack { display: none !important; }
+
+  /* ─── 7. Controles inferiores ───────────────────────────── */
   .mobile-controls {
     position: fixed !important;
     bottom: 0 !important;
@@ -106,28 +78,19 @@
     pointer-events: none !important;
     z-index: 25 !important;
   }
-
-  /* Columna joystick — sin botón TRANS arriba */
   .joystick-col {
     pointer-events: auto !important;
     gap: 0 !important;
     justify-content: flex-end !important;
     align-items: center !important;
   }
-
-  /* Mover el botón TRANS al lado del joystick en vez de encima */
   #mobileTransBtn {
     width: 44px !important;
     height: 44px !important;
     border-radius: 50% !important;
-    font-size: 10px !important;
     margin-bottom: 6px !important;
-    position: relative !important;
-    z-index: 26 !important;
   }
   #mobileTransBtn .btn-label { display: none !important; }
-
-  /* Joystick */
   .joystick-wrap {
     width: 110px !important;
     height: 110px !important;
@@ -139,8 +102,6 @@
     top: 33px !important;
     left: 33px !important;
   }
-
-  /* Action grid — ahora una columna vertical a la derecha */
   .action-grid {
     display: flex !important;
     flex-direction: column !important;
@@ -149,84 +110,58 @@
     pointer-events: auto !important;
     padding-bottom: 4px !important;
   }
-
-  /* Botones individuales — sin el botón CORRER grande */
   .action-btn {
     width: 56px !important;
     height: 56px !important;
     border-radius: 50% !important;
   }
   .action-btn .btn-label { font-size: 6px !important; }
-
-  /* Botón "CORRER" — va debajo del joystick en vez de ocupar 2 columnas */
   #mobileRunBtn {
     width: 110px !important;
     height: 36px !important;
     border-radius: 10px !important;
     grid-column: unset !important;
     margin-top: 6px !important;
-    display: flex !important;
   }
-  #mobileRunBtn .btn-label { font-size: 7px !important; }
 
-  /* ─────────────────────────────────────────────────────────
-   *  8. LABEL REGIÓN — encima de los controles
-   * ───────────────────────────────────────────────────────── */
+  /* ─── 8. Región y diálogo ───────────────────────────────── */
   .region-label {
     bottom: 188px !important;
     font-size: 8px !important;
-    letter-spacing: 2px !important;
     opacity: 0.5 !important;
   }
-
-  /* ─────────────────────────────────────────────────────────
-   *  9. DIALOG BOX — no quede tapado por controles
-   * ───────────────────────────────────────────────────────── */
   .dialog-box {
     bottom: 200px !important;
     max-width: min(320px, 88vw) !important;
   }
+  #portalPanel, #trailerPanel { bottom: 195px !important; }
 
-  /* ─────────────────────────────────────────────────────────
-   * 10. PORTAL / TRAILER PANELS — que no tapen el joystick
-   * ───────────────────────────────────────────────────────── */
-  #portalPanel, #trailerPanel {
-    bottom: 195px !important;
+  /* ─── 9. woPanel y npcPanel al abrirse desde el menú ────── */
+  #woPanel, #npcPanel {
+    /* cuando se abren se muestran como overlay desde el margen izquierdo */
+    top: 50% !important;
+    left: 8px !important;
+    right: 8px !important;
+    transform: translateY(-50%) !important;
+    width: auto !important;
+    max-width: none !important;
+    max-height: 70vh !important;
+    overflow-y: auto !important;
   }
 
-  /* ─────────────────────────────────────────────────────────
-   * 11. LEFT PANEL STACK (woPanel, npcPanel, rpgChatPanel)
-   *     — oculto en mobile, accesibles por menú
-   * ───────────────────────────────────────────────────────── */
-  #leftPanelStack { display: none !important; } /* paneles ahora en #mobilePanelBar via systems-patch */
-
-} /* end @media */
+} /* end @media mobile */
 
 
-/* ── Landscape compacto (teléfono girado) ── */
+/* ── Landscape compacto ── */
 @media (pointer: coarse) and (max-height: 450px) and (orientation: landscape) {
-  .mobile-controls {
-    height: 140px !important;
-    padding: 0 10px 10px !important;
-  }
-  .joystick-wrap {
-    width: 90px !important;
-    height: 90px !important;
-  }
-  #joystickKnob {
-    width: 36px !important;
-    height: 36px !important;
-    top: 27px !important;
-    left: 27px !important;
-  }
-  .action-btn {
-    width: 46px !important;
-    height: 46px !important;
-  }
-  .action-grid { gap: 7px !important; }
-  .hud-top { top: 6px !important; }
-  .minimap-wrap { width: 58px !important; height: 58px !important; top: 6px !important; }
-  .region-label { bottom: 150px !important; }
-  .dialog-box { bottom: 155px !important; }
+  .mobile-controls { height: 140px !important; padding: 0 10px 10px !important; }
+  .joystick-wrap   { width: 90px !important; height: 90px !important; }
+  #joystickKnob    { width: 36px !important; height: 36px !important; top: 27px !important; left: 27px !important; }
+  .action-btn      { width: 46px !important; height: 46px !important; }
+  .action-grid     { gap: 7px !important; }
+  .hud-top         { top: 6px !important; }
+  .minimap-wrap    { width: 58px !important; height: 58px !important; top: 6px !important; }
+  .region-label    { bottom: 150px !important; }
+  .dialog-box      { bottom: 155px !important; }
   #portalPanel, #trailerPanel { bottom: 150px !important; }
 }
