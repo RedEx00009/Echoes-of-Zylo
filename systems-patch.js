@@ -277,6 +277,12 @@ const RpgChatSystem = (() => {
       }
       .rpg-em-opt:hover,.rpg-em-opt.active { border-color:var(--accent,#f5c400); background:rgba(245,196,0,.08); }
       .rpg-em-opt span { font-family:"Orbitron",monospace; font-size:7px; color:#8892b0; }
+      /* Left side action menu (combat + actions) */
+      #leftActionMenu { display:flex; align-items:center; gap:8px; padding:8px; border-top:1px solid rgba(42,53,96,.6); margin-top:8px; }
+      #leftActionMenu .left-action-combat { width:44px; height:44px; border-radius:6px; background:rgba(170,0,255,.12); border:1px solid #2a3560; color:var(--accent); display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:18px; }
+      #leftActionMenu .left-action-rows { display:flex; flex-direction:column; gap:6px; flex:1; }
+      .left-action-btn { background:rgba(255,255,255,.03); border:1px solid #2a3560; padding:8px; border-radius:6px; color:#c8cfe8; text-align:center; cursor:pointer; font-family:"Orbitron",monospace; font-size:11px; }
+      .left-action-btn:active { background:rgba(170,0,255,.06); }
     `;
     document.head.appendChild(style);
 
@@ -301,7 +307,22 @@ const RpgChatSystem = (() => {
           <button id="rpgSendBtn" onclick="RpgChatSystem.send()">➤</button>
         </div>
       </div>`;
-    document.body.appendChild(panel);
+    const _leftMenu = document.getElementById("leftMenu");
+    if (_leftMenu) {
+      // Insert RPG chat at the top of the left menu for easy access
+      _leftMenu.insertBefore(panel, _leftMenu.firstElementChild);
+      // Build a compact action panel below the chat: combat + HABLAR/VOLAR
+      const actionPanel = document.createElement("div");
+      actionPanel.id = "leftActionMenu";
+      actionPanel.innerHTML = `
+        <div class="left-action-combat" onclick="setControlMode('combat')" title="Modo combate [X]">⚔️</div>
+        <div class="left-action-rows">
+          <button class="left-action-btn" onclick="interactNearby()">💬 HABLAR</button>
+          <button class="left-action-btn" onclick="toggleFly()">🦅 VOLAR</button>
+        </div>`;
+      // Place action panel just below the chat panel
+      _leftMenu.insertBefore(actionPanel, _leftMenu.children[1] || null);
+    } else document.body.appendChild(panel);
 
     // Render emotion picker
     const picker = document.getElementById("rpgEmPicker");
@@ -847,7 +868,8 @@ const WorldObjectsSystem = (() => {
           <button id="woRemoveBtn" onclick="WorldObjectsSystem.removeOwned()">🗑️ Borrar</button>
         </div>
       </div>`;
-    document.body.appendChild(panel);
+    const _leftMenu = document.getElementById("leftMenu");
+    if (_leftMenu) _leftMenu.appendChild(panel); else document.body.appendChild(panel);
 
     // Categorías
     const catRow = document.getElementById("woCatRow");
