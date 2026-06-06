@@ -198,7 +198,7 @@
    * 11. LEFT PANEL STACK (woPanel, npcPanel, rpgChatPanel)
    *     — oculto en mobile, accesibles por menú
    * ───────────────────────────────────────────────────────── */
-  #leftPanelStack { display: none !important; }
+  #leftPanelStack { display: none !important; } /* paneles ahora en #mobilePanelBar via systems-patch */
 
 } /* end @media */
 
