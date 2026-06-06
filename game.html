@@ -678,6 +678,7 @@
       <button id="menuToggleBtn" onclick="toggleMenu()">
         <span></span><span></span><span></span>
       </button>
+      <button id="uiToggleBtn" title="Mostrar / Ocultar interfaz">UI</button>
 
       <div id="leftMenu" onclick="event.stopPropagation()" ontouchstart="event.stopPropagation()" onpointerdown="event.stopPropagation()">
         <div style="height:64px;flex-shrink:0;"></div>
@@ -2060,6 +2061,21 @@
       csAnimator.play(isFlying ? "fly" : (csAnimator.battleMode ? getCombatIdleAnim() : getIdleAnim()));
     }
     window.setControlMode = setControlMode;
+
+    /* ── UI TOGGLE (ocultar/mostrar toda la interfaz) ── */
+    (function () {
+      var btn = document.getElementById("uiToggleBtn");
+      if (!btn) return;
+      var hidden = false;
+      function toggle(e) {
+        e && e.stopPropagation();
+        hidden = !hidden;
+        document.body.classList.toggle("ui-hidden", hidden);
+        btn.textContent = hidden ? "👁" : "UI";
+      }
+      btn.addEventListener("click", toggle);
+      btn.addEventListener("touchend", function (e) { e.preventDefault(); toggle(); }, { passive: false });
+    })();
 
     // -- FIREBASE --
     const firebaseConfig = {
