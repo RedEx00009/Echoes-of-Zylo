@@ -1,6 +1,6 @@
 /*
  * ══════════════════════════════════════════════════════════════
- *  DRAGON WORLD Z — MOBILE UI PATCH  v3
+ *  DRAGON WORLD Z — MOBILE UI PATCH  v4
  *  En game.html, dentro de <head> tras el link de Google Fonts:
  *    <link rel="stylesheet" href="mobile-ui-patch.css">
  *  Al final de <body>, después de systems-patch.js:
@@ -31,7 +31,7 @@
   .level-badge   { margin-top: 3px !important; }
   .level-num     { font-size: 8px !important; }
   .xp-track      { height: 3px !important; }
-  .coord-display { display: none !important; }  /* coordenadas ocultas */
+  .coord-display { display: none !important; }
 
   /* ─── 2. Minimapa ───────────────────────────────────────── */
   .minimap-wrap {
@@ -57,7 +57,6 @@
   #sideActionMenu     { display: none !important; }
   #sideActionBackdrop { display: none !important; }
   #sideActionScrollBtns { display: none !important; }
-  #mobileActionCorner { display: none !important; }
 
   /* ─── 6. Stack izquierdo — oculto (panels reposicionados) ── */
   #leftPanelStack { display: none !important; }
@@ -68,7 +67,7 @@
     bottom: 0 !important;
     left: 0 !important;
     right: 0 !important;
-    height: 180px !important;
+    height: 190px !important;
     padding: 0 12px 16px !important;
     display: flex !important;
     align-items: flex-end !important;
@@ -102,18 +101,21 @@
     top: 33px !important;
     left: 33px !important;
   }
-  .action-grid {
+
+  /* ─── 8. Action grid — siempre visible con 3 botones en columna ── */
+  .mobile-controls .action-grid {
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
-    gap: 10px !important;
+    gap: 8px !important;
     pointer-events: auto !important;
     padding-bottom: 4px !important;
   }
   .action-btn {
-    width: 56px !important;
-    height: 56px !important;
+    width: 58px !important;
+    height: 58px !important;
     border-radius: 50% !important;
+    pointer-events: auto !important;
   }
   .action-btn .btn-label { font-size: 6px !important; }
   #mobileRunBtn {
@@ -121,22 +123,25 @@
     height: 36px !important;
     border-radius: 10px !important;
     grid-column: unset !important;
-    margin-top: 6px !important;
+    margin-top: 4px !important;
   }
 
-  /* ─── 8. Región y diálogo ───────────────────────────────── */
+  /* ─── 9. mobileActionCorner — OCULTO (usamos el action-grid) ── */
+  #mobileActionCorner { display: none !important; }
+
+  /* ─── 10. Región y diálogo ──────────────────────────────── */
   .region-label {
-    bottom: 188px !important;
+    bottom: 198px !important;
     font-size: 8px !important;
     opacity: 0.5 !important;
   }
   .dialog-box {
-    bottom: 200px !important;
+    bottom: 210px !important;
     max-width: min(320px, 88vw) !important;
   }
-  #portalPanel, #trailerPanel { bottom: 195px !important; }
+  #portalPanel, #trailerPanel { bottom: 205px !important; }
 
-  /* ─── 9. woPanel y npcPanel al abrirse desde el menú ────── */
+  /* ─── 11. woPanel y npcPanel: overlay centrado desde menú ── */
   #woPanel, #npcPanel {
     position: fixed !important;
     top: 50% !important;
@@ -145,20 +150,127 @@
     transform: translateY(-50%) !important;
     width: auto !important;
     max-width: none !important;
-    max-height: 70vh !important;
+    max-height: 72vh !important;
     overflow-y: auto !important;
     z-index: 999 !important;
+    display: none;
   }
+  #woPanel.open, #npcPanel.open {
+    display: flex !important;
+  }
+  /* Scroll buttons para woPanel y npcPanel */
+  #woPanelScrollBtns, #npcPanelScrollBtns {
+    position: fixed !important;
+    right: 10px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    display: none !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+    z-index: 1000 !important;
+    pointer-events: auto !important;
+  }
+  #woPanel.open ~ #woPanelScrollBtns,
+  #npcPanel.open ~ #npcPanelScrollBtns {
+    display: flex !important;
+  }
+  .panel-scroll-btn {
+    width: 32px !important;
+    height: 52px !important;
+    background: var(--ui-bg) !important;
+    border: 1px solid #2a3560 !important;
+    border-radius: 8px !important;
+    color: var(--accent) !important;
+    font-size: 16px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    touch-action: manipulation !important;
+    backdrop-filter: blur(8px) !important;
+  }
+  .panel-scroll-btn:active { background: rgba(245,196,0,.18) !important; }
+
+  /* ─── 12. RPG Chat Panel — expandible, mayor tamaño ──────── */
   #rpgChatPanel {
     position: fixed !important;
+    bottom: 198px !important;
     left: 8px !important;
     right: 8px !important;
+    top: auto !important;
     transform: none !important;
     width: auto !important;
     max-width: none !important;
-    max-height: 70vh !important;
+    max-height: 48px !important;
+    overflow: hidden !important;
+    z-index: 30 !important;
+    border-radius: 10px !important;
+    border: 1px solid #2a3560 !important;
+    border-left: 1px solid #2a3560 !important;
+    transition: max-height .3s cubic-bezier(.4,0,.2,1) !important;
+    pointer-events: auto !important;
+  }
+  #rpgChatPanel.open {
+    max-height: min(75vh, 520px) !important;
+  }
+
+  /* Scroll buttons para el chat */
+  #rpgChatScrollBtns {
+    position: fixed !important;
+    right: 10px !important;
+    bottom: 260px !important;
+    display: none !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+    z-index: 31 !important;
+    pointer-events: auto !important;
+  }
+  #rpgChatPanel.open ~ #rpgChatScrollBtns {
+    display: flex !important;
+  }
+
+  /* Emotion picker más grande en mobile */
+  #rpgEmPicker {
+    position: fixed !important;
+    bottom: auto !important;
+    left: 8px !important;
+    right: 8px !important;
+    width: auto !important;
+    max-height: 200px !important;
+    display: none !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    padding: 10px !important;
+    z-index: 1001 !important;
+    border-radius: 10px !important;
+    justify-content: space-around !important;
+  }
+  #rpgEmPicker.open {
+    display: flex !important;
+  }
+  .rpg-em-opt {
+    min-width: 52px !important;
+    min-height: 52px !important;
+    font-size: 22px !important;
+    flex: 1 1 calc(25% - 12px) !important;
+    max-width: 80px !important;
+  }
+  .rpg-em-opt span {
+    font-size: 8px !important;
+  }
+
+  /* Body del chat más alto cuando abierto */
+  #rpgChatBody {
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 0 !important;
+    padding: 8px 10px 6px !important;
+  }
+  #rpgChatMessages {
+    flex: 1 !important;
+    min-height: 60px !important;
+    max-height: calc(min(75vh, 520px) - 140px) !important;
     overflow-y: auto !important;
-    z-index: 999 !important;
   }
 
 } /* end @media mobile */
@@ -166,14 +278,16 @@
 
 /* ── Landscape compacto ── */
 @media (pointer: coarse) and (max-height: 450px) and (orientation: landscape) {
-  .mobile-controls { height: 140px !important; padding: 0 10px 10px !important; }
+  .mobile-controls { height: 145px !important; padding: 0 10px 10px !important; }
   .joystick-wrap   { width: 90px !important; height: 90px !important; }
   #joystickKnob    { width: 36px !important; height: 36px !important; top: 27px !important; left: 27px !important; }
-  .action-btn      { width: 46px !important; height: 46px !important; }
-  .action-grid     { gap: 7px !important; }
+  .action-btn      { width: 48px !important; height: 48px !important; }
+  .mobile-controls .action-grid { gap: 7px !important; }
   .hud-top         { top: 6px !important; }
   .minimap-wrap    { width: 58px !important; height: 58px !important; top: 6px !important; }
-  .region-label    { bottom: 150px !important; }
-  .dialog-box      { bottom: 155px !important; }
-  #portalPanel, #trailerPanel { bottom: 150px !important; }
+  .region-label    { bottom: 155px !important; }
+  .dialog-box      { bottom: 160px !important; }
+  #portalPanel, #trailerPanel { bottom: 155px !important; }
+  #rpgChatPanel    { bottom: 155px !important; }
+  #rpgChatPanel.open { max-height: calc(100vh - 170px) !important; }
 }
