@@ -1,0 +1,232 @@
+/*
+ * ══════════════════════════════════════════════════════════════
+ *  DRAGON WORLD Z — MOBILE UI PATCH
+ *  Agrega este archivo en game.html ANTES de </head>:
+ *    <link rel="stylesheet" href="mobile-ui-patch.css">
+ *  Y al FINAL de <body> agrega:
+ *    <script src="mobile-ui-patch.js"></script>
+ * ══════════════════════════════════════════════════════════════
+ */
+
+/* ── Solo se aplica en táctil / pantallas chicas ── */
+@media (pointer: coarse), (max-width: 768px) {
+
+  /* ─────────────────────────────────────────────────────────
+   *  1. HUD SUPERIOR — más compacto y sin coordenadas
+   * ───────────────────────────────────────────────────────── */
+  .hud-top {
+    top: 8px !important;
+    left: 56px !important;
+    right: 96px !important;   /* espacio para el minimapa */
+  }
+
+  .player-hud {
+    padding: 5px 9px !important;
+    min-width: 0 !important;
+    max-width: min(190px, calc(100vw - 160px)) !important;
+  }
+
+  /* Nombre del jugador: más pequeño */
+  .player-name {
+    font-size: 9px !important;
+    margin-bottom: 4px !important;
+  }
+
+  /* Barras HP/KI: más delgadas */
+  .bar-row { margin-bottom: 3px !important; }
+  .bar-track { height: 6px !important; }
+  .bar-val { font-size: 8px !important; min-width: 26px !important; }
+  .bar-icon { font-size: 9px !important; }
+
+  /* Level badge reducido */
+  .level-badge { margin-top: 3px !important; }
+  .level-num { font-size: 8px !important; }
+  .xp-track { height: 3px !important; }
+
+  /* Ocultar coordenadas — toman espacio sin ser útiles en mobile */
+  .coord-display { display: none !important; }
+
+  /* ─────────────────────────────────────────────────────────
+   *  2. MINIMAPA — más pequeño, pegado arriba-derecha
+   * ───────────────────────────────────────────────────────── */
+  .minimap-wrap {
+    width: 70px !important;
+    height: 70px !important;
+    top: 8px !important;
+    right: 8px !important;
+  }
+
+  /* ─────────────────────────────────────────────────────────
+   *  3. WORLD STATUS (bando / integridad) — ocultar en mobile
+   *     Accesible desde el menú hamburguesa
+   * ───────────────────────────────────────────────────────── */
+  .world-status { display: none !important; }
+
+  /* ─────────────────────────────────────────────────────────
+   *  4. BOTÓN HAMBURGUESA — posición correcta
+   * ───────────────────────────────────────────────────────── */
+  #menuToggleBtn {
+    top: 8px !important;
+    left: 8px !important;
+    width: 40px !important;
+    height: 40px !important;
+  }
+
+  /* ─────────────────────────────────────────────────────────
+   *  5. SIDE ACTION TOGGLE (⚡) — OCULTAR
+   *     Los atajos van en la barra inferior de acciones
+   * ───────────────────────────────────────────────────────── */
+  #sideActionToggle { display: none !important; }
+  #sideActionMenu   { display: none !important; }
+  #sideActionBackdrop { display: none !important; }
+  #sideActionScrollBtns { display: none !important; }
+
+  /* ─────────────────────────────────────────────────────────
+   *  6. BOTONES FLOTANTES DERECHA (COMB / HABLAR / VOLAR)
+   *     — también ocultar, van en la barra inferior
+   * ───────────────────────────────────────────────────────── */
+  #mobileActionCorner { display: none !important; }
+
+  /* ─────────────────────────────────────────────────────────
+   *  7. CONTROLES INFERIORES — nuevo layout limpio
+   *     Joystick izquierda | zona libre | 3 botones derecha
+   * ───────────────────────────────────────────────────────── */
+  .mobile-controls {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: 180px !important;
+    padding: 0 12px 16px !important;
+    display: flex !important;
+    align-items: flex-end !important;
+    justify-content: space-between !important;
+    gap: 0 !important;
+    background: linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 100%) !important;
+    pointer-events: none !important;
+    z-index: 25 !important;
+  }
+
+  /* Columna joystick — sin botón TRANS arriba */
+  .joystick-col {
+    pointer-events: auto !important;
+    gap: 0 !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+  }
+
+  /* Mover el botón TRANS al lado del joystick en vez de encima */
+  #mobileTransBtn {
+    width: 44px !important;
+    height: 44px !important;
+    border-radius: 50% !important;
+    font-size: 10px !important;
+    margin-bottom: 6px !important;
+    position: relative !important;
+    z-index: 26 !important;
+  }
+  #mobileTransBtn .btn-label { display: none !important; }
+
+  /* Joystick */
+  .joystick-wrap {
+    width: 110px !important;
+    height: 110px !important;
+    pointer-events: auto !important;
+  }
+  #joystickKnob {
+    width: 44px !important;
+    height: 44px !important;
+    top: 33px !important;
+    left: 33px !important;
+  }
+
+  /* Action grid — ahora una columna vertical a la derecha */
+  .action-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 10px !important;
+    pointer-events: auto !important;
+    padding-bottom: 4px !important;
+  }
+
+  /* Botones individuales — sin el botón CORRER grande */
+  .action-btn {
+    width: 56px !important;
+    height: 56px !important;
+    border-radius: 50% !important;
+  }
+  .action-btn .btn-label { font-size: 6px !important; }
+
+  /* Botón "CORRER" — va debajo del joystick en vez de ocupar 2 columnas */
+  #mobileRunBtn {
+    width: 110px !important;
+    height: 36px !important;
+    border-radius: 10px !important;
+    grid-column: unset !important;
+    margin-top: 6px !important;
+    display: flex !important;
+  }
+  #mobileRunBtn .btn-label { font-size: 7px !important; }
+
+  /* ─────────────────────────────────────────────────────────
+   *  8. LABEL REGIÓN — encima de los controles
+   * ───────────────────────────────────────────────────────── */
+  .region-label {
+    bottom: 188px !important;
+    font-size: 8px !important;
+    letter-spacing: 2px !important;
+    opacity: 0.5 !important;
+  }
+
+  /* ─────────────────────────────────────────────────────────
+   *  9. DIALOG BOX — no quede tapado por controles
+   * ───────────────────────────────────────────────────────── */
+  .dialog-box {
+    bottom: 200px !important;
+    max-width: min(320px, 88vw) !important;
+  }
+
+  /* ─────────────────────────────────────────────────────────
+   * 10. PORTAL / TRAILER PANELS — que no tapen el joystick
+   * ───────────────────────────────────────────────────────── */
+  #portalPanel, #trailerPanel {
+    bottom: 195px !important;
+  }
+
+  /* ─────────────────────────────────────────────────────────
+   * 11. LEFT PANEL STACK (woPanel, npcPanel, rpgChatPanel)
+   *     — oculto en mobile, accesibles por menú
+   * ───────────────────────────────────────────────────────── */
+  #leftPanelStack { display: none !important; }
+
+} /* end @media */
+
+
+/* ── Landscape compacto (teléfono girado) ── */
+@media (pointer: coarse) and (max-height: 450px) and (orientation: landscape) {
+  .mobile-controls {
+    height: 140px !important;
+    padding: 0 10px 10px !important;
+  }
+  .joystick-wrap {
+    width: 90px !important;
+    height: 90px !important;
+  }
+  #joystickKnob {
+    width: 36px !important;
+    height: 36px !important;
+    top: 27px !important;
+    left: 27px !important;
+  }
+  .action-btn {
+    width: 46px !important;
+    height: 46px !important;
+  }
+  .action-grid { gap: 7px !important; }
+  .hud-top { top: 6px !important; }
+  .minimap-wrap { width: 58px !important; height: 58px !important; top: 6px !important; }
+  .region-label { bottom: 150px !important; }
+  .dialog-box { bottom: 155px !important; }
+  #portalPanel, #trailerPanel { bottom: 150px !important; }
+}
