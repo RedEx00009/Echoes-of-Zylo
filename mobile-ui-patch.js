@@ -1,14 +1,12 @@
 /**
- * DRAGON WORLD Z — mobile-ui-patch.js  v4
- * Agregar al final de <body> tras systems-patch.js
+ * DRAGON WORLD Z — mobile-ui-patch.js  v6
+ * Solo mobile (pointer:coarse / ancho ≤768px).
  *
- * Fixes móvil:
- *  - Muestra botones Combate / Hablar / Volar en el action-grid
- *  - Mueve CORRER debajo del joystick
- *  - NPCs y Raids: botón en menú hamburguesa abre panel con scroll ▲▼
- *  - Objetos Mundo: igual
- *  - Chat RPG: expandible, emociones en grilla grande, scroll ▲▼
- *  - NO toca lógica del juego
+ * - #mobileRightBtns: columna Combate / Hablar / Volar / Correr a la DERECHA
+ * - Joystick queda a la IZQUIERDA (layout natural del HTML)
+ * - #uiToggleBtn: botón central inferior para ocultar/mostrar toda la UI
+ * - NPCs / Objetos Mundo: overlay centrado con ▲▼ y botón X
+ * - Chat RPG: expandible, emotion picker en grilla, scroll ▲▼
  */
 (function () {
   "use strict";
@@ -16,244 +14,229 @@
   var isTouch = window.matchMedia("(pointer: coarse)").matches || window.innerWidth <= 768;
   if (!isTouch) return;
 
-  /* ══════════════════════════════════════════════════
-     1. REORGANIZAR CONTROLES INFERIORES
-     ═════════════════════════════════════════════════ */
-  function reorganizeControls() {
-    var grid    = document.getElementById("actionGrid");
-    var runBtn  = document.getElementById("mobileRunBtn");
-    var joyWrap = document.getElementById("joystickWrap");
-    var joyCol  = document.querySelector(".joystick-col");
+  /* ═══════════════════════════════════════════════════════
+     1. BOTONES DERECHA (#mobileRightBtns)
+     ═══════════════════════════════════════════════════════ */
+  function buildRightButtons() {
+    if (document.getElementById("mobileRightBtns")) return;
 
-    // Mover CORRER debajo del joystick
-    if (runBtn && joyWrap && joyCol) {
-      joyWrap.insertAdjacentElement("afterend", runBtn);
-    }
+    var wrap = document.createElement("div");
+    wrap.id = "mobileRightBtns";
 
-    // Asegurarse de que el grid tenga los 3 botones de acción visibles
-    if (grid) {
-      var order = ["mobileCombatBtn", "mobileTalkBtn", "mobileFlyBtn"];
-      var frag  = document.createDocumentFragment();
-      order.forEach(function(id) {
-        var el = document.getElementById(id);
-        if (el) {
-          el.style.display = "";
-          frag.appendChild(el);
-        }
-      });
-      grid.innerHTML = "";
-      grid.appendChild(frag);
-      grid.style.display = "flex";
-      grid.style.flexDirection = "column";
-      grid.style.gap = "8px";
-      grid.style.pointerEvents = "auto";
-    }
+    /* ── Combate ── */
+    var combatBtn = makeBtn("⚔️", "COMBATE", "mrb-btn mrb-combat", function () {
+      if (window.setControlMode) {
+        var next = (typeof controlMode !== "undefined" && controlMode === "combat") ? "rp" : "combat";
+        setControlMode(next);
+      }
+    });
+    combatBtn.id = "mrbCombatBtn";
 
-    // Ocultar el mobileActionCorner (usamos el grid)
-    var corner = document.getElementById("mobileActionCorner");
-    if (corner) corner.style.display = "none";
+    /* ── Hablar ── */
+    var talkBtn = makeBtn("💬", "HABLAR", "mrb-btn mrb-talk", function () {
+      if (window.interactNearby) interactNearby();
+    });
+
+    /* ── Volar ── */
+    var flyBtn = makeBtn("🦅", "VOLAR", "mrb-btn mrb-fly", function () {
+      if (window.toggleFly) toggleFly();
+    });
+    flyBtn.id = "mrbFlyBtn";
+
+    /* ── Correr ── */
+    var runBtn = document.createElement("button");
+    runBtn.id = "mrbRunBtn";
+    runBtn.className = "mrb-btn mrb-run";
+    runBtn.innerHTML = '<span style="font-size:14px">💨</span><span class="mrb-label" id="mrbRunLabel">CORRER: OFF</span>';
+    runBtn.addEventListener("click", doRun);
+    runBtn.addEventListener("touchend", function (e) { e.preventDefault(); doRun(); }, { passive: false });
+
+    wrap.appendChild(combatBtn);
+    wrap.appendChild(talkBtn);
+    wrap.appendChild(flyBtn);
+    wrap.appendChild(runBtn);
+    document.body.appendChild(wrap);
+
+    /* Sincronizar estados cada 400 ms */
+    setInterval(syncStates, 400);
   }
 
-  /* ══════════════════════════════════════════════════
-     2. HELPER: crear botones de scroll para un panel
-     ═════════════════════════════════════════════════ */
-  function createScrollButtons(containerId, wrapperId) {
-    var wrapper = document.createElement("div");
-    wrapper.id = wrapperId;
-    wrapper.className = "panel-scroll-btns-wrap";
-    wrapper.style.cssText = [
+  function makeBtn(icon, label, cls, handler) {
+    var btn = document.createElement("button");
+    btn.className = cls;
+    btn.innerHTML = icon + '<span class="mrb-label">' + label + "</span>";
+    btn.addEventListener("click", handler);
+    btn.addEventListener("touchend", function (e) { e.preventDefault(); handler(); }, { passive: false });
+    return btn;
+  }
+
+  function doRun() {
+    if (window.toggleRunMobile) toggleRunMobile();
+    setTimeout(syncStates, 80);
+  }
+
+  function syncStates() {
+    /* Correr */
+    var origLbl = document.getElementById("runBtnLabel");
+    var mrbLbl  = document.getElementById("mrbRunLabel");
+    if (mrbLbl && origLbl) {
+      var txt = origLbl.textContent || "";
+      mrbLbl.textContent = txt || "CORRER";
+      var runBtn = document.getElementById("mrbRunBtn");
+      if (runBtn) runBtn.classList.toggle("run-active", txt.indexOf("ON") !== -1);
+    }
+    /* Modo combate */
+    var combatBtn = document.getElementById("mrbCombatBtn");
+    if (combatBtn) {
+      var inCombat = typeof controlMode !== "undefined" && controlMode === "combat";
+      combatBtn.classList.toggle("active-mode", inCombat);
+    }
+    /* Volar */
+    var flyBtn = document.getElementById("mrbFlyBtn");
+    if (flyBtn) {
+      var flying = typeof isFlying !== "undefined" && isFlying;
+      flyBtn.classList.toggle("fly-active", !!flying);
+    }
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     2. BOTÓN OCULTAR / MOSTRAR UI (#uiToggleBtn)
+     ═══════════════════════════════════════════════════════ */
+  function buildUiToggle() {
+    if (document.getElementById("uiToggleBtn")) return;
+
+    var btn = document.createElement("button");
+    btn.id = "uiToggleBtn";
+    btn.title = "Mostrar / Ocultar interfaz";
+    btn.textContent = "UI";
+
+    var hidden = false;
+    function toggle(e) {
+      e && e.stopPropagation();
+      hidden = !hidden;
+      document.body.classList.toggle("ui-hidden", hidden);
+      btn.textContent = hidden ? "👁" : "UI";
+    }
+    btn.addEventListener("click", toggle);
+    btn.addEventListener("touchend", function (e) { e.preventDefault(); toggle(); }, { passive: false });
+    document.body.appendChild(btn);
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     3. HELPER: scroll ▲▼ para paneles
+     ═══════════════════════════════════════════════════════ */
+  function createScrollButtons(scrollTargetId, opts) {
+    opts = opts || {};
+    var wrap = document.createElement("div");
+    wrap.style.cssText = [
       "position:fixed",
-      "right:10px",
-      "top:50%",
-      "transform:translateY(-50%)",
+      "right:" + (opts.right || "10px"),
+      opts.bottom ? "bottom:" + opts.bottom : "top:50%",
+      opts.bottom ? "" : "transform:translateY(-50%)",
       "display:none",
       "flex-direction:column",
       "gap:6px",
-      "z-index:1000",
+      "z-index:" + (opts.z || "1000"),
       "pointer-events:auto"
     ].join(";");
 
-    var btnUp = document.createElement("button");
-    btnUp.className = "panel-scroll-btn";
-    btnUp.textContent = "▲";
-    btnUp.style.cssText = "width:32px;height:52px;background:var(--ui-bg,rgba(8,9,15,.92));border:1px solid #2a3560;border-radius:8px;color:#f5c400;font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;touch-action:manipulation;backdrop-filter:blur(8px);";
+    var s = "width:32px;height:52px;background:rgba(8,9,15,.92);border:1px solid #2a3560;border-radius:8px;color:#f5c400;font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;touch-action:manipulation;backdrop-filter:blur(8px);";
+    var up = document.createElement("button"); up.textContent = "▲"; up.style.cssText = s;
+    var dn = document.createElement("button"); dn.textContent = "▼"; dn.style.cssText = s;
+    wrap.appendChild(up); wrap.appendChild(dn);
+    document.body.appendChild(wrap);
 
-    var btnDn = document.createElement("button");
-    btnDn.className = "panel-scroll-btn";
-    btnDn.textContent = "▼";
-    btnDn.style.cssText = btnUp.style.cssText;
-
-    wrapper.appendChild(btnUp);
-    wrapper.appendChild(btnDn);
-    document.body.appendChild(wrapper);
-
-    // Scroll logic
     var STEP = 120, _iv = null;
-    function startScroll(dir) {
-      var container = document.getElementById(containerId);
-      if (container) container.scrollTop += dir * STEP;
-      _iv = setInterval(function() {
-        var c = document.getElementById(containerId);
-        if (c) c.scrollTop += dir * STEP;
-      }, 80);
+    function scroll(dir) {
+      var el = document.getElementById(scrollTargetId);
+      if (el) el.scrollTop += dir * STEP;
+      _iv = setInterval(function () { var e2 = document.getElementById(scrollTargetId); if (e2) e2.scrollTop += dir * STEP; }, 80);
     }
-    function stopScroll() { clearInterval(_iv); _iv = null; }
-
-    btnUp.addEventListener("mousedown",  function(e){ e.stopPropagation(); startScroll(-1); });
-    btnDn.addEventListener("mousedown",  function(e){ e.stopPropagation(); startScroll(1);  });
-    document.addEventListener("mouseup", stopScroll);
-    [btnUp, btnDn].forEach(function(btn) {
-      btn.addEventListener("touchstart",  function(e){ e.stopPropagation(); e.preventDefault(); startScroll(btn===btnUp?-1:1); }, {passive:false});
-      btn.addEventListener("touchend",    function(e){ e.stopPropagation(); stopScroll(); }, {passive:false});
-      btn.addEventListener("touchcancel", function(e){ e.stopPropagation(); stopScroll(); }, {passive:false});
+    function stop() { clearInterval(_iv); _iv = null; }
+    up.addEventListener("mousedown",  function (e) { e.stopPropagation(); scroll(-1); });
+    dn.addEventListener("mousedown",  function (e) { e.stopPropagation(); scroll(1);  });
+    document.addEventListener("mouseup", stop);
+    [up, dn].forEach(function (btn) {
+      btn.addEventListener("touchstart",  function (e) { e.stopPropagation(); e.preventDefault(); scroll(btn === up ? -1 : 1); }, { passive: false });
+      btn.addEventListener("touchend",    function (e) { e.stopPropagation(); stop(); }, { passive: false });
+      btn.addEventListener("touchcancel", function (e) { e.stopPropagation(); stop(); }, { passive: false });
     });
-
-    return wrapper;
+    return wrap;
   }
 
-  /* ══════════════════════════════════════════════════
-     3. PANELES woPanel y npcPanel con scroll ▲▼
-        y cierre con botón X al abrir desde menú
-     ═════════════════════════════════════════════════ */
-  function setupOverlayPanel(panelId, scrollWrapperId) {
+  /* ═══════════════════════════════════════════════════════
+     4. OVERLAY PANELS: woPanel / npcPanel
+     ═══════════════════════════════════════════════════════ */
+  function setupOverlayPanel(panelId) {
     var panel = document.getElementById(panelId);
     if (!panel) return;
 
-    // Botones scroll
-    var scrollWrap = createScrollButtons(panelId, scrollWrapperId);
+    var scrollWrap = createScrollButtons(panelId, { z: "1000" });
 
-    // Botón cerrar (X) en mobile, si no existe
-    if (!panel.querySelector(".mobile-panel-close")) {
-      var closeBtn = document.createElement("button");
-      closeBtn.className = "mobile-panel-close";
-      closeBtn.innerHTML = "✕";
-      closeBtn.style.cssText = [
-        "position:absolute",
-        "top:10px",
-        "right:10px",
-        "z-index:10",
-        "background:rgba(255,255,255,.08)",
-        "border:1px solid rgba(255,255,255,.18)",
-        "border-radius:6px",
-        "color:#8892b0",
-        "width:32px",
-        "height:32px",
-        "font-size:14px",
-        "cursor:pointer",
-        "display:flex",
-        "align-items:center",
-        "justify-content:center",
-        "touch-action:manipulation"
-      ].join(";");
-      closeBtn.onclick = function() { closeMobilePanel(panelId, scrollWrap); };
-      // Asegurar que el panel tenga position relative para el botón absoluto
-      if (getComputedStyle(panel).position === "static") {
-        panel.style.position = "fixed";
-      }
-      panel.appendChild(closeBtn);
+    /* Botón X cerrar */
+    if (!panel.querySelector(".mob-close")) {
+      var x = document.createElement("button");
+      x.className = "mob-close";
+      x.textContent = "✕";
+      x.style.cssText = "position:absolute;top:10px;right:10px;z-index:10;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:6px;color:#8892b0;width:32px;height:32px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;touch-action:manipulation;";
+      x.onclick = function (e) {
+        e.stopPropagation();
+        panel.classList.remove("open");
+        panel.style.display = "none";
+        scrollWrap.style.display = "none";
+      };
+      panel.style.position = "fixed";
+      panel.appendChild(x);
     }
 
-    // Forzar estilos para overlay centrado
-    panel.style.cssText += [
-      ";position:fixed",
-      "top:50%",
-      "left:8px",
-      "right:8px",
-      "transform:translateY(-50%)",
-      "width:auto",
-      "max-height:72vh",
-      "overflow-y:auto",
-      "z-index:999",
-      "display:none"
-    ].join(";");
-
-    // Observar cuando el panel se abre/cierra para mostrar/ocultar scroll btns
-    var observer = new MutationObserver(function() {
-      var isOpen = panel.classList.contains("open") || panel.style.display !== "none";
-      scrollWrap.style.display = isOpen ? "flex" : "none";
+    var obs = new MutationObserver(function () {
+      var vis = panel.classList.contains("open") || (panel.style.display !== "" && panel.style.display !== "none");
+      scrollWrap.style.display = vis ? "flex" : "none";
     });
-    observer.observe(panel, { attributes: true, attributeFilter: ["class","style"] });
+    obs.observe(panel, { attributes: true, attributeFilter: ["class", "style"] });
   }
 
-  function closeMobilePanel(panelId, scrollWrap) {
-    var panel = document.getElementById(panelId);
-    if (panel) {
-      panel.classList.remove("open");
-      panel.style.display = "none";
-    }
-    if (scrollWrap) scrollWrap.style.display = "none";
-  }
-
-  /* ══════════════════════════════════════════════════
-     4. PATCH DEL MENÚ: abrir woPanel y npcPanel
-        correctamente en mobile
-     ═════════════════════════════════════════════════ */
+  /* ═══════════════════════════════════════════════════════
+     5. MENÚ HAMBURGUESA: patching
+     ═══════════════════════════════════════════════════════ */
   function patchMenuButtons() {
-    // Patch botón Objetos Mundo
-    var menuBtns = document.querySelectorAll(".menu-btn");
-    menuBtns.forEach(function(btn) {
-      var txt = btn.textContent || "";
+    document.querySelectorAll(".menu-btn").forEach(function (btn) {
+      var txt = (btn.textContent || "").trim();
 
-      if (txt.indexOf("OBJETOS MUNDO") !== -1 || txt.indexOf("OBJETOS") !== -1 && txt.indexOf("MUNDO") !== -1) {
-        btn.onclick = function(e) {
+      if (txt.indexOf("OBJETOS MUNDO") !== -1 || (txt.indexOf("OBJETOS") !== -1 && txt.indexOf("MUNDO") !== -1)) {
+        btn.onclick = function (e) {
           e.stopPropagation();
-          if (window.WorldObjectsSystem) {
-            // Abrir el panel
-            var woPanel = document.getElementById("woPanel");
-            if (woPanel) {
-              var isOpen = woPanel.classList.contains("open") || woPanel.style.display === "flex";
-              if (!isOpen) {
-                WorldObjectsSystem.toggleUI();
-                // Forzar visibilidad mobile
-                setTimeout(function() {
-                  woPanel.style.display = "flex";
-                  woPanel.classList.add("open");
-                }, 50);
-              } else {
-                WorldObjectsSystem.toggleUI();
-                woPanel.style.display = "none";
-                woPanel.classList.remove("open");
-              }
-            } else {
-              WorldObjectsSystem.toggleUI();
-            }
-          }
+          var panel = document.getElementById("woPanel");
+          if (window.WorldObjectsSystem && panel) {
+            var open = panel.classList.contains("open") || panel.style.display === "flex";
+            if (!open) { WorldObjectsSystem.toggleUI(); setTimeout(function () { panel.style.display = "flex"; panel.classList.add("open"); }, 40); }
+            else        { WorldObjectsSystem.toggleUI(); panel.style.display = "none"; panel.classList.remove("open"); }
+          } else if (window.WorldObjectsSystem) WorldObjectsSystem.toggleUI();
           if (window.closeMenu) closeMenu();
         };
       }
 
       if (txt.indexOf("GESTIONAR") !== -1 && txt.indexOf("NPC") !== -1) {
-        btn.onclick = function(e) {
+        btn.onclick = function (e) {
           e.stopPropagation();
-          if (window.NpcSystem) {
-            var npcPanel = document.getElementById("npcPanel");
-            if (npcPanel) {
-              var isOpen = npcPanel.classList.contains("open") || npcPanel.style.display === "flex";
-              if (!isOpen) {
-                NpcSystem.togglePanel();
-                setTimeout(function() {
-                  npcPanel.style.display = "flex";
-                  npcPanel.classList.add("open");
-                  // Activar tab activos
-                  var btn2 = npcPanel.querySelector(".npc-tab:nth-child(2)");
-                  if (btn2 && NpcSystem.switchTab) NpcSystem.switchTab("active", btn2);
-                }, 50);
-              } else {
-                NpcSystem.togglePanel();
-                npcPanel.style.display = "none";
-                npcPanel.classList.remove("open");
-              }
-            } else {
+          var panel = document.getElementById("npcPanel");
+          if (window.NpcSystem && panel) {
+            var open = panel.classList.contains("open") || panel.style.display === "flex";
+            if (!open) {
               NpcSystem.togglePanel();
-            }
-          }
+              setTimeout(function () {
+                panel.style.display = "flex"; panel.classList.add("open");
+                var tab2 = panel.querySelector(".npc-tab:nth-child(2)");
+                if (tab2 && NpcSystem.switchTab) NpcSystem.switchTab("active", tab2);
+              }, 40);
+            } else { NpcSystem.togglePanel(); panel.style.display = "none"; panel.classList.remove("open"); }
+          } else if (window.NpcSystem) NpcSystem.togglePanel();
           if (window.closeMenu) closeMenu();
         };
       }
 
-      // Botón Chat RPG en el menú (si existe)
-      if (txt.indexOf("CHAT RPG") !== -1 || txt.indexOf("RPG") !== -1 && txt.indexOf("CHAT") !== -1) {
-        btn.onclick = function(e) {
+      if (txt.indexOf("CHAT RPG") !== -1) {
+        btn.onclick = function (e) {
           e.stopPropagation();
           if (window.RpgChatSystem) RpgChatSystem.toggle();
           if (window.closeMenu) closeMenu();
@@ -262,163 +245,81 @@
     });
   }
 
-  /* ══════════════════════════════════════════════════
-     5. CHAT RPG: scroll ▲▼ y emotion picker mejorado
-     ═════════════════════════════════════════════════ */
-  function setupRpgChat() {
-    // Esperar a que el panel exista
-    var panel = document.getElementById("rpgChatPanel");
-    if (!panel) return;
-
-    // Crear scroll buttons para el chat
-    var scrollWrap = document.createElement("div");
-    scrollWrap.id = "rpgChatScrollBtns";
-    scrollWrap.style.cssText = [
-      "position:fixed",
-      "right:10px",
-      "bottom:260px",
-      "display:none",
-      "flex-direction:column",
-      "gap:6px",
-      "z-index:31",
-      "pointer-events:auto"
-    ].join(";");
-
-    var btnUp = document.createElement("button");
-    btnUp.textContent = "▲";
-    btnUp.style.cssText = "width:32px;height:52px;background:var(--ui-bg,rgba(8,9,15,.92));border:1px solid #2a3560;border-radius:8px;color:#f5c400;font-size:16px;cursor:pointer;touch-action:manipulation;backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;";
-    var btnDn = document.createElement("button");
-    btnDn.textContent = "▼";
-    btnDn.style.cssText = btnUp.style.cssText;
-
-    scrollWrap.appendChild(btnUp);
-    scrollWrap.appendChild(btnDn);
-    document.body.appendChild(scrollWrap);
-
-    var STEP = 100, _iv = null;
-    function startScroll(dir) {
-      var msgs = document.getElementById("rpgChatMessages");
-      if (msgs) msgs.scrollTop += dir * STEP;
-      _iv = setInterval(function() {
-        var m = document.getElementById("rpgChatMessages");
-        if (m) m.scrollTop += dir * STEP;
-      }, 80);
-    }
-    function stopScroll() { clearInterval(_iv); _iv = null; }
-    btnUp.addEventListener("mousedown",  function(e){ e.stopPropagation(); startScroll(-1); });
-    btnDn.addEventListener("mousedown",  function(e){ e.stopPropagation(); startScroll(1);  });
-    document.addEventListener("mouseup", stopScroll);
-    [btnUp, btnDn].forEach(function(btn) {
-      btn.addEventListener("touchstart",  function(e){ e.stopPropagation(); e.preventDefault(); startScroll(btn===btnUp?-1:1); }, {passive:false});
-      btn.addEventListener("touchend",    function(e){ e.stopPropagation(); stopScroll(); }, {passive:false});
-      btn.addEventListener("touchcancel", function(e){ e.stopPropagation(); stopScroll(); }, {passive:false});
-    });
-
-    // Mostrar/ocultar scroll según estado open
-    var observer = new MutationObserver(function() {
-      var isOpen = panel.classList.contains("open");
-      scrollWrap.style.display = isOpen ? "flex" : "none";
-    });
-    observer.observe(panel, { attributes: true, attributeFilter: ["class"] });
-
-    // Posicionar el emotion picker arriba del chat en mobile
-    var emPicker = document.getElementById("rpgEmPicker");
-    var emBtn    = document.getElementById("rpgEmotionBtn");
-    if (emPicker && emBtn) {
-      emBtn.onclick = function(e) {
-        e.stopPropagation();
-        // Reposicionar el picker encima del panel
-        var rect = panel.getBoundingClientRect();
-        emPicker.style.bottom = (window.innerHeight - rect.top + 6) + "px";
-        if (window.RpgChatSystem) {
-          RpgChatSystem.toggleEmPicker();
-        }
-      };
-    }
-
-    // Cerrar emotion picker al tocar fuera
-    document.addEventListener("touchstart", function(e) {
-      var ep = document.getElementById("rpgEmPicker");
-      if (ep && ep.classList.contains("open")) {
-        if (!ep.contains(e.target) && e.target !== emBtn) {
-          if (window.RpgChatSystem) RpgChatSystem.toggleEmPicker(false);
-        }
-      }
-    }, { passive: true });
-
-    // Agregar botón "CHAT RPG" al menú hamburguesa si no existe
-    addRpgChatToMenu();
-  }
-
   function addRpgChatToMenu() {
     var menu = document.getElementById("leftMenu");
     if (!menu) return;
-    // Verificar si ya hay botón de chat RPG
-    var existingBtns = menu.querySelectorAll(".menu-btn");
-    var hasRpg = false;
-    existingBtns.forEach(function(b) {
-      if ((b.textContent||"").indexOf("CHAT RPG") !== -1) hasRpg = true;
-    });
-    if (hasRpg) return;
-
-    var section = document.createElement("div");
-    section.className = "menu-section";
-    section.innerHTML = [
-      '<div class="menu-section-label">Chat</div>',
-      '<button class="menu-btn" onclick="if(window.RpgChatSystem)RpgChatSystem.toggle();closeMenu()">',
-      '<span class="btn-ic">💬</span> CHAT RPG',
-      '</button>'
-    ].join("");
-    // Insertar antes de la sección de cámara
-    var camSection = null;
-    menu.querySelectorAll(".menu-section-label").forEach(function(lbl) {
-      if ((lbl.textContent||"").toLowerCase().indexOf("cámara") !== -1 || (lbl.textContent||"").toLowerCase().indexOf("camara") !== -1) {
-        camSection = lbl.parentElement;
-      }
-    });
-    if (camSection) {
-      menu.insertBefore(section, camSection);
-    } else {
-      menu.appendChild(section);
-    }
+    var already = false;
+    menu.querySelectorAll(".menu-btn").forEach(function (b) { if ((b.textContent || "").indexOf("CHAT RPG") !== -1) already = true; });
+    if (already) return;
+    var sec = document.createElement("div");
+    sec.className = "menu-section";
+    sec.innerHTML = '<div class="menu-section-label">Chat</div>' +
+      '<button class="menu-btn" onclick="if(window.RpgChatSystem)RpgChatSystem.toggle();closeMenu()">' +
+      '<span class="btn-ic">💬</span> CHAT RPG</button>';
+    var cam = null;
+    menu.querySelectorAll(".menu-section-label").forEach(function (l) { if (/c[aá]mara/i.test(l.textContent)) cam = l.parentElement; });
+    if (cam) menu.insertBefore(sec, cam); else menu.appendChild(sec);
   }
 
-  /* ══════════════════════════════════════════════════
-     6. INICIALIZAR TODO
-     ═════════════════════════════════════════════════ */
-  function init() {
-    reorganizeControls();
-    setupOverlayPanel("woPanel",  "woPanelScrollBtns");
-    setupOverlayPanel("npcPanel", "npcPanelScrollBtns");
+  /* ═══════════════════════════════════════════════════════
+     6. CHAT RPG: scroll ▲▼ + emotion picker
+     ═══════════════════════════════════════════════════════ */
+  function setupRpgChat() {
+    var panel = document.getElementById("rpgChatPanel");
+    if (!panel) return;
 
-    // El Chat RPG se inyecta con delay (systems-patch.js lo crea dinámicamente)
-    var tries = 0;
-    var tryRpg = setInterval(function() {
-      tries++;
-      var panel = document.getElementById("rpgChatPanel");
-      if (panel) {
-        clearInterval(tryRpg);
-        setupRpgChat();
+    var scrollWrap = createScrollButtons("rpgChatMessages", { bottom: "260px", z: "31" });
+    var obs = new MutationObserver(function () {
+      scrollWrap.style.display = panel.classList.contains("open") ? "flex" : "none";
+    });
+    obs.observe(panel, { attributes: true, attributeFilter: ["class"] });
+
+    var emBtn = document.getElementById("rpgEmotionBtn");
+    if (emBtn) {
+      /* Reemplazar el handler original para reposicionar el picker */
+      emBtn.onclick = function (e) {
+        e.stopPropagation();
+        var ep = document.getElementById("rpgEmPicker");
+        if (!ep) return;
+        var rect = panel.getBoundingClientRect();
+        ep.style.bottom = (window.innerHeight - rect.top + 6) + "px";
+        if (window.RpgChatSystem) RpgChatSystem.toggleEmPicker();
+      };
+    }
+
+    document.addEventListener("touchstart", function (e) {
+      var ep = document.getElementById("rpgEmPicker");
+      if (ep && ep.classList.contains("open") && !ep.contains(e.target) && e.target !== emBtn) {
+        if (window.RpgChatSystem) RpgChatSystem.toggleEmPicker(false);
       }
-      if (tries > 40) clearInterval(tryRpg); // Máximo 4 segundos
+    }, { passive: true });
+
+    addRpgChatToMenu();
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     7. INIT
+     ═══════════════════════════════════════════════════════ */
+  function init() {
+    buildRightButtons();
+    buildUiToggle();
+    setupOverlayPanel("woPanel");
+    setupOverlayPanel("npcPanel");
+
+    /* RPG Chat se crea dinámicamente — esperar hasta 4 s */
+    var t1 = 0;
+    var ti = setInterval(function () {
+      if (document.getElementById("rpgChatPanel") || ++t1 > 40) { clearInterval(ti); if (document.getElementById("rpgChatPanel")) setupRpgChat(); }
     }, 100);
 
-    // Parchear botones del menú
-    var tries2 = 0;
-    var tryMenu = setInterval(function() {
-      tries2++;
-      var menu = document.getElementById("leftMenu");
-      if (menu && menu.querySelectorAll(".menu-btn").length > 2) {
-        clearInterval(tryMenu);
-        patchMenuButtons();
-      }
-      if (tries2 > 30) { clearInterval(tryMenu); patchMenuButtons(); }
+    /* Menú hamburguesa — esperar a que tenga botones */
+    var t2 = 0;
+    var tm = setInterval(function () {
+      if (document.querySelectorAll(".menu-btn").length > 2 || ++t2 > 30) { clearInterval(tm); patchMenuButtons(); addRpgChatToMenu(); }
     }, 150);
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
-  } else {
-    init();
-  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+  else init();
+
 })();

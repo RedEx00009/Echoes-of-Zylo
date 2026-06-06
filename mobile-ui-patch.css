@@ -1,14 +1,9 @@
 /*
  * ══════════════════════════════════════════════════════════════
- *  DRAGON WORLD Z — MOBILE UI PATCH  v4
- *  En game.html, dentro de <head> tras el link de Google Fonts:
- *    <link rel="stylesheet" href="mobile-ui-patch.css">
- *  Al final de <body>, después de systems-patch.js:
- *    <script src="mobile-ui-patch.js"></script>
+ *  DRAGON WORLD Z — MOBILE UI PATCH  v6
  * ══════════════════════════════════════════════════════════════
  */
 
-/* ── Solo táctil / pantallas chicas ── */
 @media (pointer: coarse), (max-width: 768px) {
 
   /* ─── 1. HUD SUPERIOR compacto ─────────────────────────── */
@@ -41,7 +36,7 @@
     right: 8px !important;
   }
 
-  /* ─── 3. World status — oculto (está en el menú ☰) ──────── */
+  /* ─── 3. World status — oculto ──────────────────────────── */
   .world-status { display: none !important; }
 
   /* ─── 4. Hamburguesa ────────────────────────────────────── */
@@ -52,16 +47,16 @@
     height: 40px !important;
   }
 
-  /* ─── 5. Botones flotantes derecha — OCULTOS ────────────── */
-  #sideActionToggle   { display: none !important; }
-  #sideActionMenu     { display: none !important; }
-  #sideActionBackdrop { display: none !important; }
-  #sideActionScrollBtns { display: none !important; }
+  /* ─── 5. Botones flotantes derecha nativos — OCULTOS ─────── */
+  #sideActionToggle    { display: none !important; }
+  #sideActionMenu      { display: none !important; }
+  #sideActionBackdrop  { display: none !important; }
+  #sideActionScrollBtns{ display: none !important; }
 
-  /* ─── 6. Stack izquierdo — oculto (panels reposicionados) ── */
+  /* ─── 6. Stack izquierdo — oculto ──────────────────────── */
   #leftPanelStack { display: none !important; }
 
-  /* ─── 7. Controles inferiores ───────────────────────────── */
+  /* ─── 7. Mobile-controls: joystick a la IZQUIERDA ─────── */
   .mobile-controls {
     position: fixed !important;
     bottom: 0 !important;
@@ -70,24 +65,29 @@
     height: 190px !important;
     padding: 0 12px 16px !important;
     display: flex !important;
+    flex-direction: row !important;
     align-items: flex-end !important;
     justify-content: space-between !important;
-    gap: 0 !important;
     background: linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 100%) !important;
     pointer-events: none !important;
     z-index: 25 !important;
   }
+
+  /* ─── 8. Columna del joystick (izquierda) ──────────────── */
   .joystick-col {
     pointer-events: auto !important;
-    gap: 0 !important;
-    justify-content: flex-end !important;
+    display: flex !important;
+    flex-direction: column !important;
     align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 0 !important;
   }
   #mobileTransBtn {
     width: 44px !important;
     height: 44px !important;
     border-radius: 50% !important;
     margin-bottom: 6px !important;
+    pointer-events: auto !important;
   }
   #mobileTransBtn .btn-label { display: none !important; }
   .joystick-wrap {
@@ -102,34 +102,108 @@
     left: 33px !important;
   }
 
-  /* ─── 8. Action grid — siempre visible con 3 botones en columna ── */
-  .mobile-controls .action-grid {
+  /* ─── 9. Action grid original — OCULTO ─────────────────── */
+  .mobile-controls .action-grid { display: none !important; }
+  #mobileActionCorner            { display: none !important; }
+
+  /* ─── 10. Panel de botones DERECHO (#mobileRightBtns) ───── */
+  #mobileRightBtns {
+    position: fixed !important;
+    bottom: 16px !important;
+    right: 12px !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
     gap: 8px !important;
     pointer-events: auto !important;
-    padding-bottom: 4px !important;
+    z-index: 26 !important;
+    transition: opacity .25s ease, transform .25s ease !important;
   }
-  .action-btn {
+  /* Ocultar toda la UI de juego cuando está en modo oculto */
+  body.ui-hidden #mobileRightBtns { opacity: 0 !important; pointer-events: none !important; }
+  body.ui-hidden .mobile-controls  { opacity: 0 !important; pointer-events: none !important; }
+  body.ui-hidden .hud-top          { opacity: 0 !important; }
+  body.ui-hidden .minimap-wrap     { opacity: 0 !important; }
+  body.ui-hidden #menuToggleBtn    { opacity: 0 !important; pointer-events: none !important; }
+  body.ui-hidden #rpgChatPanel     { opacity: 0 !important; pointer-events: none !important; }
+  /* El botón de mostrar/ocultar siempre visible */
+  #uiToggleBtn {
+    position: fixed !important;
+    bottom: 16px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    z-index: 300 !important;
+    width: 44px !important;
+    height: 22px !important;
+    background: rgba(8,9,15,.75) !important;
+    border: 1px solid rgba(245,196,0,.3) !important;
+    border-radius: 11px !important;
+    color: rgba(245,196,0,.6) !important;
+    font-size: 10px !important;
+    font-family: "Orbitron", monospace !important;
+    letter-spacing: 1px !important;
+    cursor: pointer !important;
+    touch-action: manipulation !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    backdrop-filter: blur(6px) !important;
+    transition: border-color .2s, color .2s !important;
+    pointer-events: auto !important;
+  }
+  body.ui-hidden #uiToggleBtn {
+    border-color: rgba(245,196,0,.7) !important;
+    color: var(--accent, #f5c400) !important;
+    background: rgba(8,9,15,.9) !important;
+  }
+
+  .mrb-btn {
     width: 58px !important;
     height: 58px !important;
     border-radius: 50% !important;
+    border: 2px solid !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 2px !important;
+    cursor: pointer !important;
+    backdrop-filter: blur(8px) !important;
+    touch-action: manipulation !important;
     pointer-events: auto !important;
+    font-size: 22px !important;
+    transition: transform .12s, box-shadow .12s !important;
+    -webkit-tap-highlight-color: transparent !important;
+    background: none !important;
   }
-  .action-btn .btn-label { font-size: 6px !important; }
-  #mobileRunBtn {
+  .mrb-btn:active { transform: scale(.86) !important; }
+  .mrb-label {
+    font-family: "Orbitron", monospace !important;
+    font-size: 6px !important;
+    letter-spacing: .4px !important;
+    color: rgba(255,255,255,.7) !important;
+    line-height: 1 !important;
+  }
+  .mrb-combat { background: rgba(170,0,255,.22) !important; border-color: rgba(170,0,255,.85) !important; }
+  .mrb-talk   { background: rgba(0,229,255,.18)  !important; border-color: rgba(0,229,255,.7)   !important; }
+  .mrb-fly    { background: rgba(0,230,118,.15)  !important; border-color: rgba(0,230,118,.6)   !important; }
+  .mrb-combat.active-mode { background: rgba(170,0,255,.55) !important; box-shadow: 0 0 16px rgba(170,0,255,.6) !important; }
+  .mrb-fly.fly-active     { background: rgba(0,230,118,.45) !important; box-shadow: 0 0 14px rgba(0,230,118,.5) !important; }
+  .mrb-run {
     width: 110px !important;
     height: 36px !important;
     border-radius: 10px !important;
-    grid-column: unset !important;
-    margin-top: 4px !important;
+    background: rgba(0,230,118,.15) !important;
+    border-color: rgba(0,230,118,.6) !important;
+    font-size: 14px !important;
+  }
+  .mrb-run.run-active {
+    background: rgba(0,230,118,.4) !important;
+    border-color: #00e676 !important;
+    box-shadow: 0 0 14px rgba(0,230,118,.5) !important;
   }
 
-  /* ─── 9. mobileActionCorner — OCULTO (usamos el action-grid) ── */
-  #mobileActionCorner { display: none !important; }
-
-  /* ─── 10. Región y diálogo ──────────────────────────────── */
+  /* ─── 11. Región y diálogo ──────────────────────────────── */
   .region-label {
     bottom: 198px !important;
     font-size: 8px !important;
@@ -141,7 +215,7 @@
   }
   #portalPanel, #trailerPanel { bottom: 205px !important; }
 
-  /* ─── 11. woPanel y npcPanel: overlay centrado desde menú ── */
+  /* ─── 12. woPanel y npcPanel: overlay centrado ──────────── */
   #woPanel, #npcPanel {
     position: fixed !important;
     top: 50% !important;
@@ -153,45 +227,9 @@
     max-height: 72vh !important;
     overflow-y: auto !important;
     z-index: 999 !important;
-    display: none;
   }
-  #woPanel.open, #npcPanel.open {
-    display: flex !important;
-  }
-  /* Scroll buttons para woPanel y npcPanel */
-  #woPanelScrollBtns, #npcPanelScrollBtns {
-    position: fixed !important;
-    right: 10px !important;
-    top: 50% !important;
-    transform: translateY(-50%) !important;
-    display: none !important;
-    flex-direction: column !important;
-    gap: 6px !important;
-    z-index: 1000 !important;
-    pointer-events: auto !important;
-  }
-  #woPanel.open ~ #woPanelScrollBtns,
-  #npcPanel.open ~ #npcPanelScrollBtns {
-    display: flex !important;
-  }
-  .panel-scroll-btn {
-    width: 32px !important;
-    height: 52px !important;
-    background: var(--ui-bg) !important;
-    border: 1px solid #2a3560 !important;
-    border-radius: 8px !important;
-    color: var(--accent) !important;
-    font-size: 16px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    cursor: pointer !important;
-    touch-action: manipulation !important;
-    backdrop-filter: blur(8px) !important;
-  }
-  .panel-scroll-btn:active { background: rgba(245,196,0,.18) !important; }
 
-  /* ─── 12. RPG Chat Panel — expandible, mayor tamaño ──────── */
+  /* ─── 13. Chat RPG ──────────────────────────────────────── */
   #rpgChatPanel {
     position: fixed !important;
     bottom: 198px !important;
@@ -207,32 +245,12 @@
     border-radius: 10px !important;
     border: 1px solid #2a3560 !important;
     border-left: 1px solid #2a3560 !important;
-    transition: max-height .3s cubic-bezier(.4,0,.2,1) !important;
+    transition: max-height .3s cubic-bezier(.4,0,.2,1), opacity .25s !important;
     pointer-events: auto !important;
   }
-  #rpgChatPanel.open {
-    max-height: min(75vh, 520px) !important;
-  }
-
-  /* Scroll buttons para el chat */
-  #rpgChatScrollBtns {
-    position: fixed !important;
-    right: 10px !important;
-    bottom: 260px !important;
-    display: none !important;
-    flex-direction: column !important;
-    gap: 6px !important;
-    z-index: 31 !important;
-    pointer-events: auto !important;
-  }
-  #rpgChatPanel.open ~ #rpgChatScrollBtns {
-    display: flex !important;
-  }
-
-  /* Emotion picker más grande en mobile */
+  #rpgChatPanel.open { max-height: min(75vh, 520px) !important; }
   #rpgEmPicker {
     position: fixed !important;
-    bottom: auto !important;
     left: 8px !important;
     right: 8px !important;
     width: auto !important;
@@ -244,45 +262,26 @@
     z-index: 1001 !important;
     border-radius: 10px !important;
     justify-content: space-around !important;
+    background: rgba(8,9,15,.97) !important;
+    border: 1px solid #2a3560 !important;
   }
-  #rpgEmPicker.open {
-    display: flex !important;
-  }
+  #rpgEmPicker.open { display: flex !important; }
   .rpg-em-opt {
-    min-width: 52px !important;
-    min-height: 52px !important;
+    min-width: 52px !important; min-height: 52px !important;
     font-size: 22px !important;
     flex: 1 1 calc(25% - 12px) !important;
     max-width: 80px !important;
   }
-  .rpg-em-opt span {
-    font-size: 8px !important;
-  }
-
-  /* Body del chat más alto cuando abierto */
-  #rpgChatBody {
-    display: flex !important;
-    flex-direction: column !important;
-    min-height: 0 !important;
-    padding: 8px 10px 6px !important;
-  }
-  #rpgChatMessages {
-    flex: 1 !important;
-    min-height: 60px !important;
-    max-height: calc(min(75vh, 520px) - 140px) !important;
-    overflow-y: auto !important;
-  }
+  .rpg-em-opt span { font-size: 8px !important; }
+  #rpgChatMessages { max-height: calc(min(75vh, 520px) - 140px) !important; overflow-y: auto !important; }
 
 } /* end @media mobile */
 
-
-/* ── Landscape compacto ── */
+/* ── Landscape ── */
 @media (pointer: coarse) and (max-height: 450px) and (orientation: landscape) {
   .mobile-controls { height: 145px !important; padding: 0 10px 10px !important; }
   .joystick-wrap   { width: 90px !important; height: 90px !important; }
   #joystickKnob    { width: 36px !important; height: 36px !important; top: 27px !important; left: 27px !important; }
-  .action-btn      { width: 48px !important; height: 48px !important; }
-  .mobile-controls .action-grid { gap: 7px !important; }
   .hud-top         { top: 6px !important; }
   .minimap-wrap    { width: 58px !important; height: 58px !important; top: 6px !important; }
   .region-label    { bottom: 155px !important; }
@@ -290,4 +289,8 @@
   #portalPanel, #trailerPanel { bottom: 155px !important; }
   #rpgChatPanel    { bottom: 155px !important; }
   #rpgChatPanel.open { max-height: calc(100vh - 170px) !important; }
+  #mobileRightBtns { bottom: 10px !important; gap: 6px !important; }
+  .mrb-btn         { width: 48px !important; height: 48px !important; font-size: 18px !important; }
+  .mrb-run         { width: 90px !important; height: 30px !important; font-size: 11px !important; }
+  #uiToggleBtn     { bottom: 6px !important; }
 }
