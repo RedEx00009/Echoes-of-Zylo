@@ -10,9 +10,9 @@
  *   Columna DERECHA: ⚡Acciones (desplegable del sideActionList) / ⚔️Combate / 💬Hablar / 🦅Volar / Correr
  *
  * MODO COMBATE:
- *   Columna IZQUIERDA (left:140px, al lado del joystick): botones clonados de #skillsBar
- *   + botón "VOLVER A RP" encima
- *   Columna DERECHA oculta
+ *   Panel IZQUIERDA del botón VOLAR (right:82px, bottom:60px — arriba del botón CORRER):
+ *   botones clonados de #skillsBar + botón "VOLVER A RP" encima.
+ *   Columna DERECHA oculta.
  *
  * #uiToggleBtn: todos los dispositivos
  */
@@ -60,7 +60,8 @@
   }
 
   /* ═══════════════════════════════════════════════════
-     PANEL COMBATE — izquierda, junto al joystick
+     PANEL COMBATE — al costado izquierdo del botón VOLAR,
+     por arriba del botón CORRER (posición via CSS: right:82px, bottom:60px)
      Se rellena clonando #skillsBar cuando está en modo combate
      ═══════════════════════════════════════════════════ */
   var combatPanelVisible = false;
@@ -70,8 +71,8 @@
 
     var panel = document.createElement("div");
     panel.id = "mrbCombatPanel";
-    /* Posición fija derecha — inline para que no haya conflicto con otros CSS */
-    panel.style.cssText = "position:fixed;bottom:16px;right:12px;display:none;flex-direction:column;align-items:center;gap:7px;pointer-events:auto;z-index:26;transition:opacity .2s;";
+    /* Oculto por defecto con clase, NO con style.display inline */
+    panel.className = "mrb-combat-hidden";
 
     /* Botón volver a RP (arriba) */
     var backBtn = document.createElement("button");
@@ -97,8 +98,9 @@
 
     var srcBtns = skillsBar.querySelectorAll(".skill-btn");
 
-    /* Modo combate = skillsBar visible (sin clase hidden) Y tiene skill-btns */
-    var inCombat = !skillsBar.classList.contains("hidden") && srcBtns.length > 0;
+    /* Detectar si estamos en modo combate:
+       en modo combate skillsBar tiene clase "hidden" eliminada y tiene skill-btns con iconos de combate */
+    var inCombat = srcBtns.length > 0 && !skillsBar.classList.contains("hidden");
 
     if (inCombat) {
       /* Clonar botones al grid de combate móvil */
@@ -136,12 +138,8 @@
     var normal = document.getElementById("mobileRightBtns");
     var rpPanel = document.getElementById("mrbRpPanel");
 
-    if (panel) {
-      panel.style.display = show ? "flex" : "none";
-    }
-    if (normal) {
-      normal.style.display = show ? "none" : "flex";
-    }
+    if (panel)  panel.classList.toggle("mrb-combat-hidden", !show);
+    if (normal) normal.classList.toggle("mrb-mode-hidden",   show);
 
     if (rpPanel && show) {
       rpPanel.classList.remove("open");
@@ -439,7 +437,7 @@
   function setupRpgChat() {
     var panel = document.getElementById("rpgChatPanel");
     if (!panel) return;
-    var scrollWrap = createScrollButtons("rpgChatMessages", { right: "10px", z: "31" });
+    var scrollWrap = createScrollButtons("rpgChatMessages", { bottom: "260px", z: "31" });
     new MutationObserver(function () {
       scrollWrap.style.display = panel.classList.contains("open") ? "flex" : "none";
     }).observe(panel, { attributes: true, attributeFilter: ["class"] });

@@ -306,8 +306,14 @@ body.ui-hidden #uiToggleBtn {
      ══════════════════════════════════════════════════ */
   #mrbCombatPanel {
     position: fixed !important;
-    bottom: 16px !important;
-    right: 82px !important;   /* a la izquierda de la columna RP (58px + 12 + 12) */
+    /*
+     * Alineado al costado izquierdo del botón VOLAR, por arriba del botón CORRER.
+     * - right: 82px  = 12px (margen) + 58px (ancho botón) + 12px (gap) → pegado al lado izq del botón VOLAR
+     * - bottom: 60px = 16px (padding) + 36px (altura CORRER) + 8px (gap) → base del panel al nivel del VOLAR
+     *   El panel crece hacia arriba desde ahí, así nunca tapa el botón CORRER.
+     */
+    bottom: 60px !important;
+    right: 82px !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
@@ -397,7 +403,8 @@ body.ui-hidden #uiToggleBtn {
   #rpgChatPanel    { top: 45px !important; bottom: auto !important; right: 8px !important; }
   #rpgChatPanel.open { max-height: calc(100vh - 60px) !important; width: min(280px, calc(100vw - 16px)) !important; }
   /* Combate: panel más compacto, mismo lado izquierdo */
-  #mrbCombatPanel  { bottom: 10px !important; right: 70px !important; gap: 4px !important; }
+  /* En landscape: CORRER mide 30px + gap 5px + padding 10px → base del panel al nivel del botón VOLAR */
+  #mrbCombatPanel  { bottom: 45px !important; right: 70px !important; gap: 4px !important; }
   #mrbCombatGrid   { grid-template-columns: repeat(4, 46px) !important; }
   .mrb-cb-btn      { width: 46px !important; height: 46px !important; border-radius: 8px !important; }
   .mrb-cb-icon     { font-size: 18px !important; }
