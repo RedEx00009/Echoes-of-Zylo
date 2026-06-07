@@ -97,9 +97,8 @@
 
     var srcBtns = skillsBar.querySelectorAll(".skill-btn");
 
-    /* Detectar si estamos en modo combate:
-       en modo combate skillsBar tiene clase "hidden" eliminada y tiene skill-btns con iconos de combate */
-    var inCombat = srcBtns.length > 0 && !skillsBar.classList.contains("hidden");
+    /* Modo combate = skillsBar visible (sin clase hidden) Y tiene skill-btns */
+    var inCombat = !skillsBar.classList.contains("hidden") && srcBtns.length > 0;
 
     if (inCombat) {
       /* Clonar botones al grid de combate móvil */
