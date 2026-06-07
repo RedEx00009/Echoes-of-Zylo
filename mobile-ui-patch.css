@@ -137,19 +137,32 @@ body.ui-hidden #uiToggleBtn {
     max-height: 72vh !important; overflow-y: auto !important; z-index: 999 !important;
   }
 
-  /* ── Chat RPG ─────────────────────────────────────── */
+  /* ── Chat RPG — compacto, junto al chat principal ────── */
   #rpgChatPanel {
-    position: fixed !important; bottom: 198px !important;
-    left: 8px !important; right: 8px !important;
-    top: auto !important; transform: none !important;
-    width: auto !important; max-width: none !important;
-    max-height: 48px !important; overflow: hidden !important;
-    z-index: 30 !important; border-radius: 10px !important;
+    position: fixed !important;
+    /* Pegado al chat principal (mpHudPanel está top ~55px en mobile) */
+    top: 55px !important;
+    left: auto !important;
+    right: 8px !important;
+    bottom: auto !important;
+    transform: none !important;
+    width: auto !important;
+    max-width: none !important;
+    /* Colapsado: solo muestra el header del panel */
+    max-height: 42px !important;
+    overflow: hidden !important;
+    z-index: 30 !important;
+    border-radius: 10px !important;
     border: 1px solid #2a3560 !important;
     transition: max-height .3s cubic-bezier(.4,0,.2,1), opacity .25s !important;
     pointer-events: auto !important;
   }
-  #rpgChatPanel.open { max-height: min(75vh, 520px) !important; }
+  #rpgChatPanel.open {
+    max-height: min(65vh, 460px) !important;
+    /* Expandido: ocupa ancho razonable sin tapar todo */
+    width: min(320px, calc(100vw - 16px)) !important;
+    right: 8px !important;
+  }
   #rpgEmPicker {
     position: fixed !important; left: 8px !important; right: 8px !important;
     width: auto !important; max-height: 200px !important;
@@ -161,7 +174,7 @@ body.ui-hidden #uiToggleBtn {
   #rpgEmPicker.open { display: flex !important; }
   .rpg-em-opt { min-width: 52px !important; min-height: 52px !important; font-size: 22px !important; flex: 1 1 calc(25% - 12px) !important; max-width: 80px !important; }
   .rpg-em-opt span { font-size: 8px !important; }
-  #rpgChatMessages { max-height: calc(min(75vh,520px) - 140px) !important; overflow-y: auto !important; }
+  #rpgChatMessages { max-height: calc(min(65vh, 460px) - 140px) !important; overflow-y: auto !important; }
 
   /* ══════════════════════════════════════════════════
      COLUMNA DERECHA — MODO RP
@@ -381,8 +394,8 @@ body.ui-hidden #uiToggleBtn {
   .region-label    { bottom: 155px !important; }
   .dialog-box      { bottom: 160px !important; }
   #portalPanel, #trailerPanel { bottom: 155px !important; }
-  #rpgChatPanel    { bottom: 155px !important; }
-  #rpgChatPanel.open { max-height: calc(100vh - 170px) !important; }
+  #rpgChatPanel    { top: 45px !important; bottom: auto !important; right: 8px !important; }
+  #rpgChatPanel.open { max-height: calc(100vh - 60px) !important; width: min(280px, calc(100vw - 16px)) !important; }
   /* Combate: panel más compacto, mismo lado izquierdo */
   #mrbCombatPanel  { bottom: 10px !important; right: 12px !important; gap: 4px !important; }
   #mrbCombatGrid   { grid-template-columns: repeat(4, 46px) !important; }
