@@ -420,8 +420,11 @@
         <div style="font-size:9px;color:var(--td);font-family:var(--fb);line-height:1.4;margin-bottom:6px;background:rgba(0,229,255,.05);border:1px solid rgba(0,229,255,.12);border-radius:4px;padding:5px 7px">
           <strong style="color:var(--cyan)">Cabello 1</strong> y <strong style="color:var(--cyan)">Cabello 3</strong>: se dibujan <em>encima</em> del cuerpo. <strong style="color:var(--accent)">Cabello 2</strong>: se dibuja <em>detrás</em> del cuerpo.
         </div>
-        <div class="sec-label" style="margin-top:0">CABELLO</div>
+        <div class="sec-label" style="margin-top:0">CABELLO 1 (frontal)</div>
         <div class="item-grid" id="hairGrid"></div>
+        <div class="sec-label" style="margin-top:8px">CABELLO 2 (trasero)</div>
+        <div style="font-size:8px;color:var(--td);font-family:var(--fb);margin-bottom:4px;opacity:0.7">Largo, Cola, Erizado, Corto, SSJ3 — se dibuja detrás del cuerpo</div>
+        <div class="item-grid" id="hairBehindGrid"></div>
         <div class="sec-label" style="margin-top:10px">COLOR CABELLO</div>
         <div class="color-chips" id="hairColorChips"></div>
         <div class="color-picker-row">
@@ -892,8 +895,11 @@
         <!-- ─── PANEL: PELO ─── -->
         <div class="tm-panel" id="tm-pelo">
           <div class="tm-inherit-note">Elegí el cabello y color para esta transformación.</div>
-          <div class="tm-sec">CABELLO</div>
+          <div class="tm-sec">💇 CABELLO 1 (frontal)</div>
           <div class="tm-grid" id="tmHairGrid"></div>
+          <div class="tm-sec" style="margin-top:8px">💈 CABELLO 2 (trasero)</div>
+          <div style="font-size:8px;color:var(--td);font-family:var(--fb);margin-bottom:4px;opacity:0.7">Largo, Cola, Erizado, Corto, SSJ3 — se dibuja detrás del cuerpo</div>
+          <div class="tm-grid" id="tmHairBehindGrid"></div>
           <div class="tm-sec">COLOR DE CABELLO</div>
           <div class="tm-color-chips" id="tmHairColorChips"></div>
           <div class="tm-picker-row">
@@ -904,7 +910,7 @@
 
         <!-- ─── PANEL: ROPA ─── -->
         <div class="tm-panel" id="tm-ropa">
-          <div class="tm-inherit-note">Configurá la ropa específica de esta transformación.</div>
+          <div class="tm-inherit-note">Configurá la ropa y accesorios específicos de esta transformación.</div>
           <div class="tm-sec">👕 ROPA SUPERIOR</div>
           <div class="tm-grid" id="tmTopGrid"></div>
           <div class="tm-sec">👖 ROPA INFERIOR</div>
@@ -913,6 +919,8 @@
           <div class="tm-grid" id="tmShoesGrid"></div>
           <div class="tm-sec">🥊 GUANTES</div>
           <div class="tm-grid" id="tmGlovesGrid"></div>
+          <div class="tm-sec" style="margin-top:10px">🎽 ACCESORIOS</div>
+          <div class="tm-grid" id="tmAccessoryGrid"></div>
         </div>
 
         <!-- ─── PANEL: COLORES ─── -->
@@ -1665,6 +1673,13 @@ function buildAllGrids() {
     item => { player.appearance.hairId = item.id; invalidateHairCache(); }
   );
 
+  // CABELLO 2 (trasero)
+  const hairBehindCat = getCatalogFor("hairBehind", race, gender);
+  buildGrid("hairBehindGrid", hairBehindCat, "hair",
+    item => player.appearance.hairBehindId === item.id,
+    item => { player.appearance.hairBehindId = item.id; invalidateHairCache(); }
+  );
+
   // ── ROPA INTERIOR (multi-select) — solo items style:"inner" ──
   const fullTopCat = getCatalogFor("shirt", race, gender);
   const innerCat   = fullTopCat.filter(i => i.style === "inner");
@@ -1753,6 +1768,8 @@ function buildColorPicker(chipsId, pickerId, hexId, palette, getProp, setProp, i
       if (getProp === "hairColor") {
         const hairCat = getCatalogFor("hair", _currentRace(), _currentGender());
         refreshGrid("hairGrid", hairCat, "hair", item => player.appearance.hairId === item.id);
+        const hairBehindCat2 = getCatalogFor("hairBehind", _currentRace(), _currentGender());
+        refreshGrid("hairBehindGrid", hairBehindCat2, "hair", item => player.appearance.hairBehindId === item.id);
       }
     });
     chipsEl.appendChild(ch);
@@ -1796,6 +1813,7 @@ function initGender() {
     document.getElementById("btnFemale").classList.remove("active");
     const defs = getDefaultIds(_currentRace(), "male");
     player.appearance.hairId = defs.hairId;
+    player.appearance.hairBehindId = defs.hairBehindId || "hb0";
     player.appearance.faceId = defs.faceId;
     invalidateHairCache();
     buildAllGrids();
@@ -1807,6 +1825,7 @@ function initGender() {
     document.getElementById("btnMale").classList.remove("active");
     const defs = getDefaultIds(_currentRace(), "female");
     player.appearance.hairId = defs.hairId;
+    player.appearance.hairBehindId = defs.hairBehindId || "hbf0";
     player.appearance.faceId = defs.faceId;
     invalidateHairCache();
     buildAllGrids();
@@ -2280,6 +2299,7 @@ function saveToSlot(i) {
       combatCustomization:   (()=>{const c=Object.assign({},player.appearance.combatCustomization||{});delete c.spriteImage;return c;})(),
       faceId:player.appearance.faceId, faceColor:player.appearance.faceColor||null,
       hairId:player.appearance.hairId,
+      hairBehindId:player.appearance.hairBehindId||"hb0",
       topId:player.appearance.topId, bottomId:player.appearance.bottomId,
       shoesId:player.appearance.shoesId, glovesId:charState.glovesId||"gm0",
       auraId:charState.auraId||"a0", auraColor:charState.auraColor||"#fdd835",
@@ -2317,7 +2337,8 @@ async function loadFromSlot(i) {
     player.appearance.clothColorA = d.clothColorA || null;
     player.appearance.clothColorB = d.clothColorB || null;
     player.appearance.faceId   =d.faceId||"fm0";
-    player.appearance.hairId   =d.hairId||"hm1";
+    player.appearance.hairId        =d.hairId||"hm1";
+    player.appearance.hairBehindId  =d.hairBehindId||"hb0";
     player.appearance.topId    =d.topId||"top_gi_tortuga_m";
     player.appearance.bottomId =d.bottomId||"pm1";
     player.appearance.shoesId  =d.shoesId||"shm1";
@@ -3008,6 +3029,8 @@ function _tmStartPreview() {
     if (app.faceId)      tp.appearance.faceId      = app.faceId;
     if (app.faceColor)   tp.appearance.faceColor   = app.faceColor;
     if (app.hairId)      tp.appearance.hairId      = app.hairId;
+    if (app.hairBehindId) tp.appearance.hairBehindId = app.hairBehindId;
+    if (app.accessoryId) tp.appearance.accessoryId = app.accessoryId;
     if (app.topId)       tp.appearance.topId       = app.topId;
     if (app.bottomId)    tp.appearance.bottomId    = app.bottomId;
     if (app.shoesId)     tp.appearance.shoesId     = app.shoesId;
@@ -3162,6 +3185,9 @@ function _tmPopulateGrids() {
   _tmBuildGrid("tmHairGrid", getCatalogFor("hair", effectiveRace, effectiveGender), "hair",
     item => app.hairId === item.id,
     item => { app.hairId = item.id; invalidateHairCache(); });
+  _tmBuildGrid("tmHairBehindGrid", getCatalogFor("hairBehind", effectiveRace, effectiveGender), "hair",
+    item => app.hairBehindId === item.id,
+    item => { app.hairBehindId = item.id; invalidateHairCache(); });
   _tmBuildGrid("tmTopGrid",    getCatalogFor("shirt",  effectiveRace, effectiveGender), "shirt",
     item => app.topId    === item.id, item => { app.topId    = item.id; invalidateHairCache(); });
   _tmBuildGrid("tmBottomGrid", getCatalogFor("pants",  effectiveRace, effectiveGender), "pants",
@@ -3170,9 +3196,13 @@ function _tmPopulateGrids() {
     item => app.shoesId  === item.id, item => { app.shoesId  = item.id; invalidateHairCache(); });
   _tmBuildGrid("tmGlovesGrid", getCatalogFor("gloves", effectiveRace, effectiveGender), "gloves",
     item => app.glovesId === item.id, item => { app.glovesId = item.id; invalidateHairCache(); });
+  _tmBuildGrid("tmAccessoryGrid", window.CharacterSystem.ACCESSORIES_CATALOG, "accessory",
+    item => app.accessoryId === item.id,
+    item => { app.accessoryId = item.id; invalidateHairCache(); });
 
   _tmBuildColorChips("tmHairColorChips",  "tmHairColorPicker",  "tmHairColorHex",  HAIR_PALETTE,    "hairColor");
   _tmBuildColorChips("tmSkinColorChips",  "tmSkinColorPicker",  "tmSkinColorHex",  SKIN_PALETTE,    "skinColor");
+
   _tmBuildColorChips("tmEyeColorChips",   "tmEyeColorPicker",   "tmEyeColorHex",   EYE_PALETTE,     "eyeColor");
   _tmBuildColorChips("tmBrowColorChips",  "tmBrowColorPicker",  "tmBrowColorHex",  BROW_PALETTE,    "browColor");
   _tmBuildColorChips("tmPupilColorChips", "tmPupilColorPicker", "tmPupilColorHex", PUPIL_PALETTE,   "pupilColor");

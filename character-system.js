@@ -583,6 +583,25 @@
     { id: "hm8", name: "Goku",   spriteKey: "hair_hm8", tintable: true },
   ];
 
+  // ── CABELLO TRASERO (slot "Cabello 2" — se dibuja DETRÁS del cuerpo) ──────
+  const HAIR_BEHIND_CATALOG_MALE = [
+    { id: "hb0",  name: "Ninguno",      spriteKey: null,        tintable: false, behind: true },
+    { id: "hb1",  name: "Largo",        spriteKey: "hair_hb1",  tintable: true,  behind: true },
+    { id: "hb2",  name: "Cola",         spriteKey: "hair_hb2",  tintable: true,  behind: true },
+    { id: "hb3",  name: "Erizado",      spriteKey: "hair_hb3",  tintable: true,  behind: true },
+    { id: "hb4",  name: "Corto Tras",   spriteKey: "hair_hb4",  tintable: true,  behind: true },
+    { id: "hb5",  name: "SSJ3",         spriteKey: "hair_hb5",  tintable: true,  behind: true },
+  ];
+
+  const HAIR_BEHIND_CATALOG_FEMALE = [
+    { id: "hbf0", name: "Ninguno",      spriteKey: null,         tintable: false, behind: true },
+    { id: "hbf1", name: "Largo F",      spriteKey: "hair_hbf1",  tintable: true,  behind: true },
+    { id: "hbf2", name: "Cola F",       spriteKey: "hair_hbf2",  tintable: true,  behind: true },
+    { id: "hbf3", name: "Erizado F",    spriteKey: "hair_hbf3",  tintable: true,  behind: true },
+    { id: "hbf4", name: "Corto Tras F", spriteKey: "hair_hbf4",  tintable: true,  behind: true },
+    { id: "hbf5", name: "SSJ3 F",       spriteKey: "hair_hbf5",  tintable: true,  behind: true },
+  ];
+
   const HAIR_CATALOG_FEMALE = [
     { id: "hf1", name: "Largo 1", spriteKey: "hair_hf1", tintable: true },
     { id: "hf2", name: "Coleta",  spriteKey: "hair_hf2", tintable: true },
@@ -889,6 +908,10 @@
   function getCatalogFor(cat, raceId, gender) {
     if (cat === "aura")      return AURAS_CATALOG;
     if (cat === "accessory") return ACCESSORIES_CATALOG;
+    if (cat === "hairBehind") {
+      if (raceId === "namekian" || raceId === "frieza") return HAIR_BEHIND_CATALOG_MALE;
+      return gender === "female" ? HAIR_BEHIND_CATALOG_FEMALE : HAIR_BEHIND_CATALOG_MALE;
+    }
     if (raceId === "namekian") {
       switch (cat) {
         case "face":   return FACE_CATALOG_NAMEKIAN;
@@ -928,9 +951,11 @@
     const pants  = getCatalogFor("pants",  raceId, gender);
     const shoes  = getCatalogFor("shoes",  raceId, gender);
     const gloves = getCatalogFor("gloves", raceId, gender);
+    const hairBehind = getCatalogFor("hairBehind", raceId, gender);
     return {
-      faceId:      face[0]   ? face[0].id   : "fm0",
-      hairId:      hair[0]   ? hair[0].id   : "hm1",
+      faceId:        face[0]       ? face[0].id       : "fm0",
+      hairId:        hair[0]       ? hair[0].id       : "hm1",
+      hairBehindId:  hairBehind[0] ? hairBehind[0].id : "hb0",
       topId:       shirt[0]  ? shirt[0].id  : "top_gi_tortuga_m",
       bottomId:    pants[0]  ? pants[0].id  : "pm1",
       shoesId:     shoes[0]  ? shoes[0].id  : "shm1",
@@ -1032,6 +1057,18 @@
     hair_hn3: "hair/namekian/hn3_cresta.png",    hair_hn4: "hair/namekian/hn4_cuernos.png",
     hair_hn5: "hair/namekian/hn5_sin.png",       hair_hn6: "hair/namekian/hn6_picos.png",
     hair_hn7: "hair/namekian/hn7_aletas.png",    hair_hn8: "hair/namekian/hn8_dientes.png",
+
+    // ── Cabello trasero (Cabello 2 — behind layer) ────────────────
+    hair_hb1: "hair/male/behind/hb1_largo.png",
+    hair_hb2: "hair/male/behind/hb2_cola.png",
+    hair_hb3: "hair/male/behind/hb3_erizado.png",
+    hair_hb4: "hair/male/behind/hb4_corto.png",
+    hair_hb5: "hair/male/behind/hb5_ssj3.png",
+    hair_hbf1: "hair/female/behind/hbf1_largo.png",
+    hair_hbf2: "hair/female/behind/hbf2_cola.png",
+    hair_hbf3: "hair/female/behind/hbf3_erizado.png",
+    hair_hbf4: "hair/female/behind/hbf4_corto.png",
+    hair_hbf5: "hair/female/behind/hbf5_ssj3.png",
 
     hair_hr1: "hair/frieza/hr1_cuernos1.png", hair_hr2: "hair/frieza/hr2_cuernos2.png",
     hair_hr3: "hair/frieza/hr3_cresta.png",    hair_hr4: "hair/frieza/hr4_picos.png",
@@ -1828,6 +1865,10 @@
 
     const faceDef  = faceCat.find((f) => f.id === app.faceId)   || faceCat[0];
     const hairDef  = hairCat.find((h) => h.id === app.hairId)   || hairCat[0];
+
+    // Cabello trasero (Slot 2)
+    const hairBehindCat = getCatalogFor("hairBehind", raceId, gender);
+    const hairBehindDef = hairBehindCat.find((h) => h.id === app.hairBehindId) || hairBehindCat[0];
     // Nota: si el ID es de un layer importado ("layer_import_*") o no existe en el catálogo base,
     // NO hacer fallback al primer item (que siempre tiene sprite). Usar null spriteKey para no dibujar nada.
     const _BARE = { spriteKey: null };
@@ -1901,6 +1942,24 @@
       const fb = resolveFreeCustomizationBundle(accDef, inCombat, inSpecial);
       if (fb) _drawVariantSheet(ctx, fb.img, screenX, screenY, dw, dh, animator, fb.custom);
       // no return — continuar para renderizar capas encima
+    }
+
+    // ── 2b. CABELLO TRASERO (se dibuja antes del cuerpo) ─────────────────────
+    if (hairBehindDef && hairBehindDef.spriteKey) {
+      const hairBehindImg = getImg(hairBehindDef.spriteKey);
+      if (hairBehindImg && hairBehindImg.complete && hairBehindImg.naturalWidth) {
+        const sheet = isCompatibleSheet(hairBehindImg) && animator;
+        let coords = null;
+        if (sheet) {
+          const r = animator.battleMode || animator.specialMode
+            ? animator.getLayerFrameCoords(hairBehindImg)
+            : animator.getFrameCoords(hairBehindImg);
+          if (r.srcX+r.fw <= hairBehindImg.naturalWidth && r.srcY+r.fh <= hairBehindImg.naturalHeight)
+            coords = r;
+        }
+        const tinted = tintHair(hairBehindImg, app.hairColor||"#1a1a1a", hairBehindDef, dw, dh, coords);
+        if (tinted) { ctx.imageSmoothingEnabled=false; ctx.drawImage(tinted, destX, destY, dw, dh); }
+      }
     }
 
     // ── 2. Accesorio under_shirt ───────────────────────────────
@@ -2098,6 +2157,7 @@
     FACE_CATALOG_MALE, FACE_CATALOG_FEMALE, FACE_CATALOG_NAMEKIAN, FACE_CATALOG_FRIEZA,
     FACE_CATALOG,
 
+    HAIR_BEHIND_CATALOG_MALE, HAIR_BEHIND_CATALOG_FEMALE,
     HAIR_CATALOG_MALE,   HAIR_CATALOG_FEMALE,   HAIR_CATALOG_NAMEKIAN,   HAIR_CATALOG_FRIEZA,
     TOP_CATALOG_MALE,    TOP_CATALOG_FEMALE,    TOP_CATALOG_NAMEKIAN,    TOP_CATALOG_FRIEZA,
     BOTTOM_CATALOG_MALE, BOTTOM_CATALOG_FEMALE, BOTTOM_CATALOG_NAMEKIAN, BOTTOM_CATALOG_FRIEZA,
