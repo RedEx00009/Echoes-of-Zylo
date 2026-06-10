@@ -60,86 +60,31 @@
   }
 
   /* ═══════════════════════════════════════════════════
-     PANEL COMBATE — al costado izquierdo del botón VOLAR,
-     por arriba del botón CORRER (posición via CSS: right:82px, bottom:60px)
-     Se rellena clonando #skillsBar cuando está en modo combate
+     PANEL COMBATE — usa directamente #actionGrid (ya tiene
+     todos los botones con ontouchstart/ontouchend para cargar).
+     En modo combate lo sacamos del .mobile-controls y lo
+     posicionamos fijo sobre el joystick via CSS (#mrb-action-grid-combat).
      ═══════════════════════════════════════════════════ */
   var combatPanelVisible = false;
 
   function buildCombatPanel() {
-    if (document.getElementById("mrbCombatPanel")) return;
-
-    var panel = document.createElement("div");
-    panel.id = "mrbCombatPanel";
-    /* Oculto por defecto con clase, NO con style.display inline */
-    panel.className = "mrb-combat-hidden";
-
-    /* Botón volver a RP (arriba) */
-    var backBtn = document.createElement("button");
-    backBtn.id = "mrbBackRpBtn";
-    backBtn.className = "mrb-back-rp-btn";
-    backBtn.innerHTML = '🔄 <span class="mrb-label">VOLVER A RP</span>';
-    backBtn.addEventListener("click", function () { if (window.setControlMode) setControlMode("rp"); });
-    backBtn.addEventListener("touchend", function (e) { e.preventDefault(); if (window.setControlMode) setControlMode("rp"); }, { passive: false });
-    panel.appendChild(backBtn);
-
-    /* Contenedor de botones clonados de #skillsBar */
-    var grid = document.createElement("div");
-    grid.id = "mrbCombatGrid";
-    panel.appendChild(grid);
-
-    document.body.appendChild(panel);
-  }
-
-  function syncCombatButtons() {
-    var skillsBar = document.getElementById("skillsBar");
-    var grid = document.getElementById("mrbCombatGrid");
-    if (!skillsBar || !grid) return;
-
-    var srcBtns = skillsBar.querySelectorAll(".skill-btn");
-
-    /* Detectar si estamos en modo combate:
-       en modo combate skillsBar tiene clase "hidden" eliminada y tiene skill-btns con iconos de combate */
-    var inCombat = srcBtns.length > 0 && !skillsBar.classList.contains("hidden");
-
-    if (inCombat) {
-      /* Clonar botones al grid de combate móvil */
-      grid.innerHTML = "";
-      srcBtns.forEach(function (sb) {
-        var b = document.createElement("button");
-        b.className = "mrb-cb-btn";
-        var icon = sb.querySelector(".skill-icon");
-        var key  = sb.querySelector(".skill-key");
-        b.innerHTML =
-          '<span class="mrb-cb-icon">' + (icon ? icon.textContent : "") + "</span>" +
-          '<span class="mrb-label">' + (key ? key.textContent : "") + "</span>";
-        b.title = sb.title || "";
-        /* Ejecutar la misma acción que el botón original */
-        var oc = sb.getAttribute("onclick");
-        if (oc) {
-          b.addEventListener("click", function () { try { (new Function(oc))(); } catch(e){} });
-          b.addEventListener("touchend", function (e) { e.preventDefault(); try { (new Function(oc))(); } catch(err){} }, { passive: false });
-        } else {
-          b.addEventListener("click", function () { sb.click(); });
-          b.addEventListener("touchend", function (e) { e.preventDefault(); sb.click(); }, { passive: false });
-        }
-        grid.appendChild(b);
-      });
-
-      showCombatPanel(true);
-    } else {
-      showCombatPanel(false);
-    }
+    /* No creamos panel propio — usamos #actionGrid directamente */
   }
 
   function showCombatPanel(show) {
     combatPanelVisible = show;
-    var panel  = document.getElementById("mrbCombatPanel");
+    var grid   = document.getElementById("actionGrid");
     var normal = document.getElementById("mobileRightBtns");
     var rpPanel = document.getElementById("mrbRpPanel");
 
-    if (panel)  panel.classList.toggle("mrb-combat-hidden", !show);
-    if (normal) normal.classList.toggle("mrb-mode-hidden",   show);
+    if (grid) {
+      if (show) {
+        grid.classList.add("mrb-combat-mode");
+      } else {
+        grid.classList.remove("mrb-combat-mode");
+      }
+    }
+    if (normal) normal.classList.toggle("mrb-mode-hidden", show);
 
     if (rpPanel && show) {
       rpPanel.classList.remove("open");
@@ -148,25 +93,30 @@
     }
   }
 
-  /* Observar #skillsBar para detectar cambios de modo */
+  /* Observar #actionGrid para detectar cuando renderActionBars() lo cambia a modo combate */
   function watchSkillsBar() {
     var tried = 0;
     var ti = setInterval(function () {
-      var skillsBar = document.getElementById("skillsBar");
-      if (skillsBar || ++tried > 100) {
+      var grid = document.getElementById("actionGrid");
+      if (grid || ++tried > 100) {
         clearInterval(ti);
-        if (!skillsBar) return;
-        /* Observar cambios de contenido y clase */
-        new MutationObserver(syncCombatButtons).observe(skillsBar, {
+        if (!grid) return;
+        new MutationObserver(syncCombatMode).observe(grid, {
           childList: true,
-          subtree: true,
-          attributes: true,
-          attributeFilter: ["class"]
+          subtree: false,
         });
-        /* Sincronizar estado actual por si ya estaba en combate */
-        syncCombatButtons();
+        syncCombatMode();
       }
     }, 80);
+  }
+
+  function syncCombatMode() {
+    var grid = document.getElementById("actionGrid");
+    if (!grid) return;
+    /* En modo combate, renderActionBars() pone los botones con class "btn-emote/interact/trailer"
+       y un botón "VOLVER A RP". En modo RP tiene mobileCombatBtn, mobileTalkBtn, etc. */
+    var inCombat = !!grid.querySelector(".chargeable, .ult-btn");
+    showCombatPanel(inCombat);
   }
 
   /* ═══════════════════════════════════════════════════

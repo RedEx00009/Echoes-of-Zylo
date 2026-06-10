@@ -14,7 +14,7 @@
  *   Row  1 → idle             (6 frames: 2 frames: idle 1, 2 frames: idle 2, 2 frames: idle 3)
  *   Row  2 → walk             (4 frames)
  *   Row  3 → run              (4 frames)
- *   Row  4 → Combo_Arma1      (3 frames funcionan como el light combo)
+ *   Row  4 → Combo_Arma1      (4 frames funcionan como el light combo)
  *   Row  5 → Combo_Arma2      (3 frames)
  *   Row  6 → Ultimate         (2 frames: Ultimate 1, 3 frames: ultimate 2)
  *   Row  7 → fly              (4 frames: frame 1: vuelo costados, frame 2: vuelo arriba, frame 3: vuelo abajo, frame 4: hover)
@@ -31,7 +31,7 @@
  *   Row 18 → light_combo      (4 frames)
  *   Row 19 → heavy_combo      (3 frames)
  *   Row 20 → special          (3 frames: special 1, 3 frames: special 2)
- *   Row 21 → block            (2 frames)
+ *   Row 21 → block            (1 frame: bloqueo 1, frame: Desviar, 2 frames: Parry, 2 frames: Dodge)
  *   Row 22 → hit              (3 frames)
  *   Row 23 → recovery         (3 frames)
  *   Row 24 → charge           (3 frames)
@@ -106,7 +106,7 @@
     run:              { row:  3, frames: 4, frameStart: 0, fps: 12, loop: true,  label: "Run"              },
 
     // ── Row 4: Combo_Arma1 — 3 frames ──────────────────────────────────────────
-    Combo_Arma1:      { row:  4, frames: 3, frameStart: 0, fps: 8,  loop: false, label: "Combo Arma 1"     },
+    Combo_Arma1:      { row:  4, frames: 4, frameStart: 0, fps: 8,  loop: false, label: "Combo Arma 1"     },
 
     // ── Row 5: Combo_Arma2 — 3 frames ──────────────────────────────────────────
     Combo_Arma2:      { row:  5, frames: 3, frameStart: 0, fps: 8,  loop: false, label: "Combo Arma 2"     },
@@ -191,8 +191,13 @@
     special:       { row: 20, frames: 3, frameStart: 0, fps: 8,  loop: false, label: "Special 1"      },
     special_2:     { row: 20, frames: 3, frameStart: 3, fps: 8,  loop: false, label: "Special 2"      },
 
-    // ── Row 21: block — 2 frames ───────────────────────────────────────────────
+    // ── Row 6: ultimate — 2 frames ultimate 1 + 3 frames ultimate 2 ───────────
+    ultimate:      { row:  6, frames: 2, frameStart: 0, fps: 6,  loop: false, label: "Ultimate 1"     },
+    ultimate_2:    { row:  6, frames: 3, frameStart: 2, fps: 6,  loop: false, label: "Ultimate 2"     },
+
+    // ── Row 21: block — bloqueo(0-1), parry(2-3), dodge(4-5) ─────────────────
     block:         { row: 21, frames: 2, frameStart: 0, fps: 6,  loop: false, label: "Block"          },
+    dodge:         { row: 21, frames: 2, frameStart: 4, fps: 5,  loop: true,  label: "Dodge"          },
 
     // ── Row 22: hit — 3 frames ─────────────────────────────────────────────────
     hit:           { row: 22, frames: 3, frameStart: 0, fps: 8,  loop: false, label: "Hit"            },
@@ -278,7 +283,10 @@
     heavy_combo:   "idle",
     special:       "idle",
     special_2:     "idle",
+    ultimate:      "idle",
+    ultimate_2:    "idle",
     block:         "idle",
+    dodge:         "idle",
     hit:           "idle",
     recovery:      "idle",
     charge:        "meditate",
@@ -318,8 +326,8 @@
     pose_2:           "combat_idle",
     Combo_Arma1:      "light_combo",
     Combo_Arma2:      "heavy_combo",
-    ultimate:         "special",
-    ultimate_2:       "special_2",
+    ultimate:         "ultimate",
+    ultimate_2:       "ultimate_2",
     Transformacion:   "combat_idle",
     destransformacion:"combat_idle",
     lagartijas:       "combat_idle",
@@ -613,26 +621,40 @@
   // ═══════════════════════════════════════════════════════════════
 
   const TOP_CATALOG_MALE = [
-    { id: "top_gi_tortuga_m", name: "Gi Tortuga",      spriteKey: "top_sm1", color1: "#ff6a00", color2: "#1565c0", style: "gi"    },
-    { id: "sm2", name: "Arm. Saiyan",     spriteKey: "top_sm2", color1: "#1a1a1a", color2: "#ffffff", style: "armor" },
-    { id: "sm3", name: "Arm. Soldado",    spriteKey: "top_sm3", color1: "#c0c0c0", color2: "#7c4dff", style: "armor" },
-    { id: "sm4", name: "Arm. Patrullero", spriteKey: "top_sm4", color1: "#1565c0", color2: "#f5f5f5", style: "armor" },
-    { id: "sm5", name: "Ropa Casual 1",   spriteKey: "top_sm5", color1: "#37474f", color2: "#ffffff", style: "plain" },
-    { id: "sm6", name: "Ropa Casual 2",   spriteKey: "top_sm6", color1: "#4a148c", color2: "#ffffff", style: "plain" },
-    { id: "sm7", name: "Gi Liviano",      spriteKey: "top_sm7", color1: "#e0e0e0", color2: "#9e9e9e", style: "gi"    },
-    { id: "sm8", name: "R. Androide",     spriteKey: "top_sm8", color1: "#212121", color2: "#00e5ff", style: "plain" },
+    // ── ROPA INTERIOR (style: "inner") ──────────────────────────
+    { id: "sm_inner_none",      name: "Nada",           spriteKey: null,           color1: null,      color2: null,      style: "inner", innerType: "none"      },
+    { id: "sm_inner_short",     name: "Manga Corta",    spriteKey: "top_sm_ishort",color1: "#e0e0e0", color2: "#9e9e9e", style: "inner", innerType: "short"     },
+    { id: "sm_inner_long",      name: "Manga Larga",    spriteKey: "top_sm_ilong", color1: "#e0e0e0", color2: "#9e9e9e", style: "inner", innerType: "long"      },
+    { id: "sm_inner_top",       name: "Top",            spriteKey: "top_sm_itop",  color1: "#e0e0e0", color2: "#9e9e9e", style: "inner", innerType: "top"       },
+    { id: "sm_inner_sleeveless",name: "Sin Mangas",     spriteKey: "top_sm_isl",   color1: "#e0e0e0", color2: "#9e9e9e", style: "inner", innerType: "sleeveless"},
+    // ── ROPA EXTERIOR (style: "outer" / legacy gi/armor/plain) ──
+    { id: "top_gi_tortuga_m", name: "Gi Tortuga",      spriteKey: "top_sm1", color1: "#ff6a00", color2: "#1565c0", style: "outer" },
+    { id: "sm2", name: "Arm. Saiyan",     spriteKey: "top_sm2", color1: "#1a1a1a", color2: "#ffffff", style: "outer" },
+    { id: "sm3", name: "Arm. Soldado",    spriteKey: "top_sm3", color1: "#c0c0c0", color2: "#7c4dff", style: "outer" },
+    { id: "sm4", name: "Arm. Patrullero", spriteKey: "top_sm4", color1: "#1565c0", color2: "#f5f5f5", style: "outer" },
+    { id: "sm5", name: "Ropa Casual 1",   spriteKey: "top_sm5", color1: "#37474f", color2: "#ffffff", style: "outer" },
+    { id: "sm6", name: "Ropa Casual 2",   spriteKey: "top_sm6", color1: "#4a148c", color2: "#ffffff", style: "outer" },
+    { id: "sm7", name: "Gi Liviano",      spriteKey: "top_sm7", color1: "#e0e0e0", color2: "#9e9e9e", style: "outer" },
+    { id: "sm8", name: "R. Androide",     spriteKey: "top_sm8", color1: "#212121", color2: "#00e5ff", style: "outer" },
     { id: "sm9", name: "Sin ropa",        spriteKey: null,       color1: null,      color2: null,      style: "bare"  },
   ];
 
   const TOP_CATALOG_FEMALE = [
-    { id: "sf1", name: "Gi Tortuga F",    spriteKey: "top_sf1", color1: "#ff6a00", color2: "#1565c0", style: "gi"    },
-    { id: "sf2", name: "Arm. Saiyan F",   spriteKey: "top_sf2", color1: "#1a1a1a", color2: "#ffffff", style: "armor" },
-    { id: "sf3", name: "Arm. Soldado F",  spriteKey: "top_sf3", color1: "#c0c0c0", color2: "#7c4dff", style: "armor" },
-    { id: "sf4", name: "Arm. Patrol. F",  spriteKey: "top_sf4", color1: "#1565c0", color2: "#f5f5f5", style: "armor" },
-    { id: "sf5", name: "Casual 1 F",      spriteKey: "top_sf5", color1: "#37474f", color2: "#ffffff", style: "plain" },
-    { id: "sf6", name: "Casual 2 F",      spriteKey: "top_sf6", color1: "#4a148c", color2: "#ffffff", style: "plain" },
-    { id: "sf7", name: "Gi Liviano F",    spriteKey: "top_sf7", color1: "#e0e0e0", color2: "#9e9e9e", style: "gi"    },
-    { id: "sf8", name: "R. Androide F",   spriteKey: "top_sf8", color1: "#212121", color2: "#00e5ff", style: "plain" },
+    // ── ROPA INTERIOR ──────────────────────────────────────────
+    { id: "sf_inner_none",       name: "Nada",           spriteKey: null,           color1: null,      color2: null,      style: "inner", innerType: "none"      },
+    { id: "sf_inner_short",      name: "Manga Corta F",  spriteKey: "top_sf_ishort",color1: "#e0e0e0", color2: "#9e9e9e", style: "inner", innerType: "short"     },
+    { id: "sf_inner_long",       name: "Manga Larga F",  spriteKey: "top_sf_ilong", color1: "#e0e0e0", color2: "#9e9e9e", style: "inner", innerType: "long"      },
+    { id: "sf_inner_top",        name: "Top F",          spriteKey: "top_sf_itop",  color1: "#e0e0e0", color2: "#9e9e9e", style: "inner", innerType: "top"       },
+    { id: "sf_inner_sleeveless", name: "Sin Mangas F",   spriteKey: "top_sf_isl",   color1: "#e0e0e0", color2: "#9e9e9e", style: "inner", innerType: "sleeveless"},
+    // ── ROPA EXTERIOR ──────────────────────────────────────────
+    { id: "sf1", name: "Gi Tortuga F",    spriteKey: "top_sf1", color1: "#ff6a00", color2: "#1565c0", style: "outer" },
+    { id: "sf2", name: "Arm. Saiyan F",   spriteKey: "top_sf2", color1: "#1a1a1a", color2: "#ffffff", style: "outer" },
+    { id: "sf3", name: "Arm. Soldado F",  spriteKey: "top_sf3", color1: "#c0c0c0", color2: "#7c4dff", style: "outer" },
+    { id: "sf4", name: "Arm. Patrol. F",  spriteKey: "top_sf4", color1: "#1565c0", color2: "#f5f5f5", style: "outer" },
+    { id: "sf5", name: "Casual 1 F",      spriteKey: "top_sf5", color1: "#37474f", color2: "#ffffff", style: "outer" },
+    { id: "sf6", name: "Casual 2 F",      spriteKey: "top_sf6", color1: "#4a148c", color2: "#ffffff", style: "outer" },
+    { id: "sf7", name: "Gi Liviano F",    spriteKey: "top_sf7", color1: "#e0e0e0", color2: "#9e9e9e", style: "outer" },
+    { id: "sf8", name: "R. Androide F",   spriteKey: "top_sf8", color1: "#212121", color2: "#00e5ff", style: "outer" },
     { id: "sf9", name: "Sin ropa F",      spriteKey: null,       color1: null,      color2: null,      style: "bare"  },
   ];
 
@@ -1020,11 +1042,21 @@
     top_sm3: "tops/male/sm3_armor_soldado.png",    top_sm4: "tops/male/sm4_armor_patrullero.png",
     top_sm5: "tops/male/sm5_casual1.png",          top_sm6: "tops/male/sm6_casual2.png",
     top_sm7: "tops/male/sm7_gi_liviano.png",       top_sm8: "tops/male/sm8_androide.png",
+    // Inner tops male
+    top_sm_ishort: "tops/male/inner/sm_ishort.png",
+    top_sm_ilong:  "tops/male/inner/sm_ilong.png",
+    top_sm_itop:   "tops/male/inner/sm_itop.png",
+    top_sm_isl:    "tops/male/inner/sm_isl.png",
 
     top_sf1: "tops/female/sf1_gi_tortuga.png",    top_sf2: "tops/female/sf2_armor_saiyan.png",
     top_sf3: "tops/female/sf3_armor_soldado.png",  top_sf4: "tops/female/sf4_armor_patrullero.png",
     top_sf5: "tops/female/sf5_casual1.png",        top_sf6: "tops/female/sf6_casual2.png",
     top_sf7: "tops/female/sf7_gi_liviano.png",     top_sf8: "tops/female/sf8_androide.png",
+    // Inner tops female
+    top_sf_ishort: "tops/female/inner/sf_ishort.png",
+    top_sf_ilong:  "tops/female/inner/sf_ilong.png",
+    top_sf_itop:   "tops/female/inner/sf_itop.png",
+    top_sf_isl:    "tops/female/inner/sf_isl.png",
 
     top_sn1: "tops/namekian/sn1_manto.png",    top_sn2: "tops/namekian/sn2_gi1.png",
     top_sn3: "tops/namekian/sn3_armor.png",     top_sn4: "tops/namekian/sn4_gi2.png",

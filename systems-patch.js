@@ -1771,6 +1771,50 @@ const NpcSystem = (() => {
 
     const modal = document.createElement("div");
     modal.id = "npcCustomModal";
+    modal.innerHTML = `
+      <div id="npcCustomBox">
+        <div id="npcCustomHeader">
+          <span class="ch-icon">${cfg.emoji}</span>
+          <span class="ch-title">CONFIGURAR NPC — ${cfg.name}</span>
+          <button class="ch-close" onclick="NpcSystem._modalCancel()">✕</button>
+        </div>
+        <div id="npcCustomBody">
+          <div>
+            <div class="ncm-section-label">Nombre del NPC</div>
+            <input id="ncmNameInput" class="npcCustomName" type="text" maxlength="28" placeholder="${cfg.name}" value="" style="width:100%;background:#12172e;border:1px solid #2a3560;border-radius:6px;padding:9px 10px;color:#e8eaf6;font-family:Rajdhani,sans-serif;font-size:15px;outline:none;box-sizing:border-box;">
+          </div>
+          <div>
+            <div class="ncm-section-label">Género</div>
+            <div class="ncm-faction-grid">
+              <button class="ncm-faction-btn selected" style="border-color:#00e5ff;color:#00e5ff" onclick="NpcSystem._modalSelectGender('male')">♂ Masculino</button>
+              <button class="ncm-faction-btn" style="border-color:#2a3560;color:#8892b0" onclick="NpcSystem._modalSelectGender('female')">♀ Femenino</button>
+            </div>
+          </div>
+          <div>
+            <div class="ncm-section-label">Skin</div>
+            <div class="ncm-skin-tabs">
+              <button class="ncm-skin-tab active" onclick="NpcSystem._modalSkinTab('skins')">🗂 Skins</button>
+              <button class="ncm-skin-tab" onclick="NpcSystem._modalSkinTab('slots')">👤 Mis Personajes</button>
+            </div>
+            <div class="ncm-skin-grid" id="ncmSkinGrid">
+              <div class="ncm-skin-empty">Cargando opciones…</div>
+            </div>
+          </div>
+          <div>
+            <div class="ncm-section-label">Estadísticas base</div>
+            <div class="ncm-stats-row">
+              <div class="ncm-stat-field"><span class="ncm-stat-label">❤️ HP</span><input id="ncmHpInput" class="ncm-stat-input" type="number" min="1" max="99999" value="${cfg.stats.hp}"></div>
+              <div class="ncm-stat-field"><span class="ncm-stat-label">⚔️ ATK</span><input id="ncmAtkInput" class="ncm-stat-input" type="number" min="1" max="9999" value="${cfg.stats.atk}"></div>
+              <div class="ncm-stat-field"><span class="ncm-stat-label">🛡 DEF</span><input id="ncmDefInput" class="ncm-stat-input" type="number" min="0" max="9999" value="${cfg.stats.def}"></div>
+            </div>
+          </div>
+        </div>
+        <div id="npcCustomFooter">
+          <button id="npcCustomCancel" onclick="NpcSystem._modalCancel()">Cancelar</button>
+          <button id="npcCustomConfirm" onclick="NpcSystem._modalConfirm()">📍 Colocar NPC</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
 
     function _buildSkinGrid(tab) {
       if (tab === "skins") {
@@ -1778,11 +1822,10 @@ const NpcSystem = (() => {
           <div class="ncm-skin-option${_selectedSkinSrc === s.src ? " selected" : ""}"
                data-src="${s.src}"
                onclick="NpcSystem._modalSelectSkin('${s.src}')">
-            <img src="${s.src}" alt="${s.label}" onerror="this.style.opacity='.3'">
+            <img class="ncm-skin-img" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" data-src="${s.src}" alt="${s.label}" loading="lazy" decoding="async" onerror="this.style.opacity='.3'">
             <span class="ncm-skin-label">${s.label}</span>
           </div>`).join("");
       } else {
-        // Slots de personaje del jugador
         const slots = _getCharSlots();
         if (!slots.length) return `<div class="ncm-skin-empty">No hay personajes guardados.</div>`;
         return slots.map(s => {
@@ -1792,7 +1835,7 @@ const NpcSystem = (() => {
                data-src="slot:${s.slot}"
                onclick="NpcSystem._modalSelectSkin('slot:${s.slot}')">
             ${preview
-              ? `<img src="${preview}" alt="${s.name}">`
+              ? `<img class="ncm-skin-img" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" data-src="${preview}" alt="${s.name}" loading="lazy" decoding="async">`
               : `<div style="width:40px;height:52px;display:flex;align-items:center;justify-content:center;background:#12172e;border-radius:3px;font-size:14px">👤</div>`}
             <span class="ncm-skin-label">${(s.name||"Slot "+s.slot).slice(0,8)}</span>
           </div>`;
@@ -1800,87 +1843,61 @@ const NpcSystem = (() => {
       }
     }
 
+    function _hydrateSkinGrid() {
+      requestAnimationFrame(() => {
+        modal.querySelectorAll(".ncm-skin-img[data-src]").forEach(img => {
+          img.src = img.getAttribute("data-src");
+          img.removeAttribute("data-src");
+        });
+      });
+    }
+
     function _rebuildModal() {
-      const nameInput = document.getElementById("ncmNameInput");
-      const curName   = nameInput?.value || "";
-      const hpVal     = document.getElementById("ncmHpInput")?.value  || cfg.stats.hp;
-      const atkVal    = document.getElementById("ncmAtkInput")?.value || cfg.stats.atk;
-      const defVal    = document.getElementById("ncmDefInput")?.value || cfg.stats.def;
+      if (_modalRebuildRaf) cancelAnimationFrame(_modalRebuildRaf);
+      _modalRebuildRaf = requestAnimationFrame(() => {
+        _modalRebuildRaf = 0;
+        const titleEl = modal.querySelector(".ch-title");
+        if (titleEl) titleEl.textContent = `CONFIGURAR NPC — ${cfg.name}`;
 
-      modal.innerHTML = `
-        <div id="npcCustomBox">
-          <div id="npcCustomHeader">
-            <span class="ch-icon">${cfg.emoji}</span>
-            <span class="ch-title">CONFIGURAR NPC — ${cfg.name}</span>
-            <button class="ch-close" onclick="NpcSystem._modalCancel()">✕</button>
-          </div>
-          <div id="npcCustomBody">
+        const nameInput = modal.querySelector("#ncmNameInput");
+        const curName   = nameInput?.value || "";
+        const hpVal     = modal.querySelector("#ncmHpInput")?.value || cfg.stats.hp;
+        const atkVal    = modal.querySelector("#ncmAtkInput")?.value || cfg.stats.atk;
+        const defVal    = modal.querySelector("#ncmDefInput")?.value || cfg.stats.def;
 
-            <!-- NOMBRE -->
-            <div>
-              <div class="ncm-section-label">Nombre del NPC</div>
-              <input id="ncmNameInput" class="npcCustomName" type="text"
-                maxlength="28" placeholder="${cfg.name}"
-                value="${curName}"
-                style="width:100%;background:#12172e;border:1px solid #2a3560;border-radius:6px;padding:9px 10px;color:#e8eaf6;font-family:Rajdhani,sans-serif;font-size:15px;outline:none;box-sizing:border-box;">
-            </div>
+        if (nameInput) nameInput.value = curName;
+        const hpInput = modal.querySelector("#ncmHpInput");
+        if (hpInput) hpInput.value = hpVal;
+        const atkInput = modal.querySelector("#ncmAtkInput");
+        if (atkInput) atkInput.value = atkVal;
+        const defInput = modal.querySelector("#ncmDefInput");
+        if (defInput) defInput.value = defVal;
 
-            <!-- GÉNERO -->
-            <div>
-              <div class="ncm-section-label">Género</div>
-              <div class="ncm-faction-grid">
-                <button class="ncm-faction-btn${_selectedGender==="male"?" selected":""}"
-                  style="border-color:${_selectedGender==="male"?"#00e5ff":"#2a3560"};color:${_selectedGender==="male"?"#00e5ff":"#8892b0"}"
-                  onclick="NpcSystem._modalSelectGender('male')">♂ Masculino</button>
-                <button class="ncm-faction-btn${_selectedGender==="female"?" selected":""}"
-                  style="border-color:${_selectedGender==="female"?"#ff80ab":"#2a3560"};color:${_selectedGender==="female"?"#ff80ab":"#8892b0"}"
-                  onclick="NpcSystem._modalSelectGender('female')">♀ Femenino</button>
-              </div>
-            </div>
+        const genderBtns = modal.querySelectorAll(".ncm-faction-btn");
+        genderBtns.forEach(btn => {
+          const isMale = btn.textContent.includes("Masculino");
+          const selected = isMale ? _selectedGender === "male" : _selectedGender === "female";
+          btn.classList.toggle("selected", selected);
+          btn.style.borderColor = selected ? (isMale ? "#00e5ff" : "#ff80ab") : "#2a3560";
+          btn.style.color = selected ? (isMale ? "#00e5ff" : "#ff80ab") : "#8892b0";
+        });
 
-            <!-- SKIN -->
-            <div>
-              <div class="ncm-section-label">Skin</div>
-              <div class="ncm-skin-tabs">
-                <button class="ncm-skin-tab${_skinTab==="skins"?" active":""}"
-                  onclick="NpcSystem._modalSkinTab('skins')">🗂 Skins</button>
-                <button class="ncm-skin-tab${_skinTab==="slots"?" active":""}"
-                  onclick="NpcSystem._modalSkinTab('slots')">👤 Mis Personajes</button>
-              </div>
-              <div class="ncm-skin-grid" id="ncmSkinGrid">
-                ${_buildSkinGrid(_skinTab)}
-              </div>
-            </div>
+        const tabBtns = modal.querySelectorAll(".ncm-skin-tab");
+        tabBtns.forEach(btn => {
+          const isSkinsTab = btn.textContent.includes("Skins");
+          const active = isSkinsTab ? _skinTab === "skins" : _skinTab === "slots";
+          btn.classList.toggle("active", active);
+        });
 
-            <!-- ESTADÍSTICAS -->
-            <div>
-              <div class="ncm-section-label">Estadísticas base</div>
-              <div class="ncm-stats-row">
-                <div class="ncm-stat-field">
-                  <span class="ncm-stat-label">❤️ HP</span>
-                  <input id="ncmHpInput"  class="ncm-stat-input" type="number" min="1" max="99999" value="${hpVal}">
-                </div>
-                <div class="ncm-stat-field">
-                  <span class="ncm-stat-label">⚔️ ATK</span>
-                  <input id="ncmAtkInput" class="ncm-stat-input" type="number" min="1" max="9999"  value="${atkVal}">
-                </div>
-                <div class="ncm-stat-field">
-                  <span class="ncm-stat-label">🛡 DEF</span>
-                  <input id="ncmDefInput" class="ncm-stat-input" type="number" min="0" max="9999"  value="${defVal}">
-                </div>
-              </div>
-            </div>
-
-          </div>
-          <div id="npcCustomFooter">
-            <button id="npcCustomCancel"  onclick="NpcSystem._modalCancel()">Cancelar</button>
-            <button id="npcCustomConfirm" onclick="NpcSystem._modalConfirm()">📍 Colocar NPC</button>
-          </div>
-        </div>`;
+        const skinGrid = modal.querySelector("#ncmSkinGrid");
+        if (skinGrid) {
+          skinGrid.innerHTML = _buildSkinGrid(_skinTab);
+          _hydrateSkinGrid();
+        }
+      });
     }
 
     _rebuildModal();
-    document.body.appendChild(modal);
 
     // Guardar referencias para uso externo
     NpcSystem._modalRebuild        = _rebuildModal;
@@ -2398,10 +2415,13 @@ const NpcSystem = (() => {
   let _catalogRendered = false;
   let _catalogFactionKey = "";
   let _npcListHtmlCache = "";
+  let _npcListRenderKey = "";
   let _raidStatusHtmlCache = "";
+  let _raidStatusRenderKey = "";
   let _raidBannerHtmlCache = "";
   let _raidStateSig = "";
   let _npcPanelRaf = 0;
+  let _modalRebuildRaf = 0;
 
   let _npcPanelEl = null;
   let _npcTabNodes = null;
@@ -2415,12 +2435,18 @@ const NpcSystem = (() => {
   function _getCatalog(id) { return _catalogMap.get(id) || NPC_CATALOG.find(n=>n.id===id); }
   function _getCS()  { if (!_CS && typeof CharacterSystem!=="undefined") _CS=CharacterSystem; return _CS; }
   function _isNpcPanelVisible(tab) { return _uiOpen && (!tab || _activeNpcTab === tab); }
+  function _renderVisiblePanel() {
+    if (!_uiOpen) return;
+    if (_activeNpcTab === "summon") _ensureSummonCatalogRendered();
+    else if (_activeNpcTab === "active") _renderNpcList();
+    else if (_activeNpcTab === "raids") _updateRaidStatus();
+  }
+
   function _scheduleNpcPanelRefresh() {
     if (!_uiOpen || _npcPanelRaf) return;
     _npcPanelRaf = requestAnimationFrame(() => {
       _npcPanelRaf = 0;
-      if (_activeNpcTab === "active") _renderNpcList();
-      else if (_activeNpcTab === "raids") _updateRaidStatus();
+      _renderVisiblePanel();
     });
   }
   function _getNpcList() {
@@ -2810,6 +2836,15 @@ const NpcSystem = (() => {
     const pid = _getPid();
     const myNpcs = _getNpcList();
     const archived = Object.values(_archivedNpcs).filter(n => n.ownerId === pid);
+    const renderKey = [
+      myNpcs.length,
+      archived.length,
+      myNpcs.map(n => `${n.id}:${n.hp||0}/${n.maxHp||1}:${!!_partyNpcs[n.id]}`).join("|"),
+      archived.map(n => `${n.id}:${n.archivedReason||""}`).join("|"),
+      _getMap(),
+    ].join("::");
+    if (renderKey === _npcListRenderKey && _npcListHtmlCache) return;
+    _npcListRenderKey = renderKey;
     let nextHtml = "";
 
     if (!myNpcs.length && !archived.length) {
@@ -3213,25 +3248,24 @@ const NpcSystem = (() => {
     const el = _raidStatusInfoEl;
     if (!el) return;
     let nextHtml = "";
+    let nextKey = "empty";
     if (!_raidState) {
       nextHtml = "Sin raid activa en este mapa.";
-      if (nextHtml !== _raidStatusHtmlCache) {
-        el.textContent = nextHtml;
-        _raidStatusHtmlCache = nextHtml;
-      }
-      return;
+      nextKey = nextHtml;
+    } else {
+      const r = _raidState;
+      const participants = Object.values(r.participants || {});
+      const heroCount    = participants.filter(p => p.side === "hero").length;
+      const villainCount = participants.filter(p => p.side === "villain").length;
+      nextHtml = `Tipo: <b>${r.type === "defend" ? "Defensa" : "Invasion"}</b><br>
+        Defensores: ${heroCount} | Atacantes: ${villainCount}<br>
+        Fase: <b>${r.phase}</b>`;
+      nextKey = `${r.id}:${r.phase}:${heroCount}:${villainCount}:${r.type}`;
     }
-    const r = _raidState;
-    const participants = Object.values(r.participants || {});
-    const heroCount    = participants.filter(p => p.side === "hero").length;
-    const villainCount = participants.filter(p => p.side === "villain").length;
-    nextHtml = `Tipo: <b>${r.type === "defend" ? "Defensa" : "Invasion"}</b><br>
-      Defensores: ${heroCount} | Atacantes: ${villainCount}<br>
-      Fase: <b>${r.phase}</b>`;
-    if (nextHtml !== _raidStatusHtmlCache) {
-      el.innerHTML = nextHtml;
-      _raidStatusHtmlCache = nextHtml;
-    }
+    if (nextKey === _raidStatusRenderKey && _raidStatusHtmlCache) return;
+    _raidStatusRenderKey = nextKey;
+    _raidStatusHtmlCache = nextHtml;
+    el.innerHTML = nextHtml;
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -3245,11 +3279,9 @@ const NpcSystem = (() => {
       const panel = document.getElementById("npcPanel");
       if (panel) panel.classList.toggle("open", _uiOpen);
       if (_uiOpen) {
-        requestAnimationFrame(() => requestAnimationFrame(() => {
-          if (_activeNpcTab === "summon") _ensureSummonCatalogRendered();
-          else if (_activeNpcTab === "active") _renderNpcList();
-          else if (_activeNpcTab === "raids") _updateRaidStatus();
-        }));
+        requestAnimationFrame(() => {
+          _renderVisiblePanel();
+        });
       }
     },
     switchTab(tab, btnEl) {
@@ -3261,9 +3293,9 @@ const NpcSystem = (() => {
       if (btnEl) btnEl.classList.add("active");
       const page = document.getElementById("npcTab" + tab.charAt(0).toUpperCase() + tab.slice(1));
       if (page) page.classList.add("active");
-      if (tab === "summon") requestAnimationFrame(_ensureSummonCatalogRendered);
-      if (tab === "active") requestAnimationFrame(_renderNpcList);
-      if (tab === "raids")  requestAnimationFrame(_updateRaidStatus);
+      requestAnimationFrame(() => {
+        _renderVisiblePanel();
+      });
     },
     selectNpc(npcId) {
       _selectedNpcId = npcId;

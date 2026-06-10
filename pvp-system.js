@@ -15,7 +15,8 @@
   const ATTACKS = {
     light:   { anim: "light_combo",  ki: 0,  dmgBase: 0.06, dmgVar: 0.02, label: "GOLPE LIGERO", color: "#f5c400", knockback: 0.0 },
     heavy:   { anim: "heavy_combo",  ki: 8,  dmgBase: 0.11, dmgVar: 0.03, label: "GOLPE PESADO", color: "#ff7043", knockback: 1.0 },
-    special: { anim: "special",      ki: 18, dmgBase: 0.15, dmgVar: 0.04, label: "ESPECIAL",     color: "#00e5ff", knockback: 1.35 },
+    special: { anim: "special",      ki: 18, dmgBase: 0.15, dmgVar: 0.04, label: "ESPECIAL",     color: "#00e5ff", knockback: 1.35, chargeable: true },
+    ultimate:{ anim: "ultimate",     ki: 40, dmgBase: 0.30, dmgVar: 0.07, label: "💥 ULTIMATE",  color: "#ff6a00", knockback: 2.5,  chargeable: true },
     dash:    { anim: "dash_rush",    ki: 4,  dmgBase: 0,    dmgVar: 0,    label: "DASH",         color: "#b0bec5", move: 72 },
     jump:    { anim: "dash_rush",    ki: 3,  dmgBase: 0,    dmgVar: 0,    label: "SALTO",        color: "#c8cfe8", move: 0, jump: 38 },
   };
@@ -23,6 +24,7 @@
   const ANIM_DUR = {
     light_combo: 750, heavy_combo: 550, special: 800, block: 400,
     hit: 850, knockback: 900, dash_rush: 500, recovery: 600, fly_combat: 300, combat_idle: 200,
+    ultimate: 333, ultimate_2: 500,
   };
 
   const COMBAT_ANIMS = new Set(Object.values(ATTACKS).map((a) => a.anim).concat(["block", "hit", "knockback", "recovery"]));
@@ -42,6 +44,11 @@
   let animProtect = {};
   let selectedMemberId = null;
   let knockbackState = {};  // Track knockback velocity for remote players: { playerId: { vx, vy, active } }
+
+  // ── Charge state (special & ultimate) ────────────────────────────────
+  let _pvpChargeAction = null;
+  let _pvpChargeStart  = 0;
+  let _pvpChargeRaf    = null;
 
   const G = {
     get db() { return window.db; },
@@ -911,6 +918,101 @@
 
   // ── Real-time attacks ────────────────────────────────────────────────
 
+  // ── Hold-to-charge: special & ultimate ───────────────────────────────
+  function beginPvpCharge(actionId) {
+    if (!isFighter() || !activeChallenge || koInProgress) return;
+    const atk = ATTACKS[actionId];
+    if (!atk?.chargeable) { performPvpAction(actionId); return; }
+    if (Date.now() < atkCooldownUntil) return;
+    if (atk.ki && G.player.ki < atk.ki) { toast("Ki insuficiente", "dmg"); return; }
+    _pvpChargeAction = actionId;
+    _pvpChargeStart  = Date.now();
+    // Congelar animator en primer frame
+    const anim = G.myAnim;
+    if (anim) {
+      if (anim.setBattleMode) anim.setBattleMode(true);
+      anim.action  = atk.anim;
+      anim.frame   = 0;
+      anim.elapsed = 0;
+      anim._freezeFrame = true;
+      writeCombatAnim(atk.anim);
+    }
+  }
+
+  function releasePvpCharge(actionId) {
+    if (_pvpChargeAction !== actionId) return;
+    _pvpChargeAction = null;
+    cancelAnimationFrame(_pvpChargeRaf);
+    _pvpChargeRaf = null;
+    const anim = G.myAnim;
+    if (anim) anim._freezeFrame = false;
+    // Disparar el ataque
+    _firePvpChargeable(actionId);
+  }
+
+  function _firePvpChargeable(actionId) {
+    if (!isFighter() || !activeChallenge || koInProgress) return;
+    const now = Date.now();
+    if (now < atkCooldownUntil) return;
+    const p   = G.player;
+    const atk = ATTACKS[actionId];
+    if (!atk) return;
+    if (atk.ki && p.ki < atk.ki) { toast("Ki insuficiente", "dmg"); return; }
+    if (atk.ki) p.ki -= atk.ki;
+    isBlocking = false;
+
+    const oid = opponentId();
+    const op  = G.others[oid];
+    if (!op) { toast("Rival no visible", "dmg"); return; }
+
+    const facingTarget = (p.facing > 0 && op.x > p.x) || (p.facing < 0 && op.x < p.x);
+    if (!facingTarget) { toast("Girá hacia el rival", "dmg"); return; }
+
+    const d = dist(p.x, p.y, op.x, op.y);
+    const range = HIT_RANGE * (actionId === "ultimate" ? 1.6 : 1.2);
+    if (d > range) {
+      push(p.x + p.facing * 20, p.y - 44, "FALLÓ", "#8892b0", 0.7);
+      atkCooldownUntil = now + ATK_COOLDOWN_MS;
+      return;
+    }
+
+    const defMax = op.maxHp || activeChallenge.maxHealth?.[oid] || 100;
+    const defDef = op.defense || 80;
+    const damage = calcDamage(actionId === "ultimate" ? "special" : actionId, p.strength || 80, defDef, defMax);
+
+    // Reproducir anim completa → freeze en último frame → idle
+    const lockMs = ANIM_DUR[atk.anim] || 800;
+    const holdMs = actionId === "ultimate" ? 900 : 600;
+    atkCooldownUntil = now + ATK_COOLDOWN_MS + holdMs;
+    myLockUntil = now + lockMs + holdMs;
+    myLockAnim  = atk.anim;
+    const animRef = G.myAnim;
+    if (animRef) {
+      if (animRef.setBattleMode) animRef.setBattleMode(true);
+      animRef._freezeFrame = false;
+      animRef.play(atk.anim, () => {
+        animRef._freezeFrame = true;
+        setTimeout(() => {
+          animRef._freezeFrame = false;
+          animRef.play(G.flying ? "fly" : "combat_idle");
+        }, holdMs);
+      });
+    }
+    writeCombatAnim(atk.anim);
+
+    push(p.x + p.facing * 24, p.y - 48, atk.label, atk.color, 1.0);
+    if (typeof window.triggerAttackWorldDamage === "function") {
+      window.triggerAttackWorldDamage(actionId === "ultimate" ? "special2" : "special1", p.x + p.facing * 90, p.y - 24);
+    }
+
+    const seq = (activeChallenge.lastHitSeq || 0) + 1;
+    G.db.ref("pvpChallenge/" + activeChallenge.id).update({ lastHitSeq: seq, t: Date.now() });
+    G.db.ref("pvpChallenge/" + activeChallenge.id + "/hits").push({
+      seq, fromId: G.myId, toId: oid, action: actionId, damage,
+      blocked: false, knockbackPower: atk.knockback || 0, fromName: p.name, t: Date.now(),
+    });
+  }
+
   function performPvpAction(actionId) {
     if (!isFighter() || !activeChallenge || koInProgress) return;
     const now = Date.now();
@@ -1073,20 +1175,17 @@
   function processIncomingHit(hit, challengeId) {
     if (!isFighter() || koInProgress) return;
 
-    // ── Ataque especial: dar ventana de bloqueo reactivo ─────────────
-    if (hit.action === "special") {
+    // ── Ataque especial / ultimate: dar ventana de bloqueo reactivo ─────
+    if (hit.action === "special" || hit.action === "ultimate") {
+      const kiCost = hit.action === "ultimate" ? SPECIAL_BLOCK_KI_COST * 2 : SPECIAL_BLOCK_KI_COST;
       showSpecialBlockPrompt(
-        // Opción bloquear
         () => {
           const p = G.player;
-          const kiCost = SPECIAL_BLOCK_KI_COST;
           p.ki = Math.max(0, p.ki - kiCost);
-          // El daño se reduce a 22% del daño original (como BLOCK_REDUCE)
           const reducedDmg = Math.max(1, Math.round((hit.damage || 0) * BLOCK_REDUCE));
-          _applyHit({ ...hit, damage: reducedDmg, knockbackPower: 0 }, challengeId, true);  // Sin knockback si bloqueamos
+          _applyHit({ ...hit, damage: reducedDmg, knockbackPower: 0 }, challengeId, true);
           if (typeof window.updatePlayerHud === "function") window.updatePlayerHud();
         },
-        // Opción recibir (o timeout)
         () => { _applyHit(hit, challengeId, false); }
       );
       return;
@@ -1098,6 +1197,19 @@
 
   function _applyHit(hit, challengeId, forceBlocked) {
     const p = G.player;
+
+    // ── Dodge activo en PvP: reemplazar animación hit por dash, sin daño ni knockback ──
+    if (window._dodgeActive) {
+      playLocalAnim("dash");
+      return;
+    }
+
+    // ── Invulnerabilidad activa: sin daño ni efectos ──
+    if (window._invulActive) {
+      if (typeof window.showHudToast === "function") window.showHudToast("✨ Daño bloqueado (INVUL)", "info");
+      return;
+    }
+
     let damage = hit.damage || 0;
     let blocked = forceBlocked;
 
@@ -1192,6 +1304,8 @@
       isAnimLocked: () => Date.now() < myLockUntil,
       getLockedAnim: () => (Date.now() < myLockUntil ? myLockAnim : null),
       performPvpAction,
+      beginCharge: beginPvpCharge,
+      releaseCharge: releasePvpCharge,
       releaseBlock,
       togglePartyPanel,
       getPcSkillsHtml,
@@ -1202,15 +1316,28 @@
     window.isPartyMember = isPartyMember;
     window.performPvpAction = performPvpAction;
     window.releasePvpBlock = releaseBlock;
-    // Helper para lock-on en game.html
     window._pvpOpponentId = opponentId;
+
+    // Teclas hold para special [E] y ultimate [T] en modo PvP
+    const _pvpHeld = {};
+    document.addEventListener("keydown", e => {
+      if (!isFighter()) return;
+      if (e.code === "KeyE" && !_pvpHeld.special)  { e.preventDefault(); _pvpHeld.special  = true; beginPvpCharge("special");  }
+      if (e.code === "KeyT" && !_pvpHeld.ultimate) { e.preventDefault(); _pvpHeld.ultimate = true; beginPvpCharge("ultimate"); }
+    });
+    document.addEventListener("keyup", e => {
+      if (e.code === "KeyE" && _pvpHeld.special)  { _pvpHeld.special  = false; releasePvpCharge("special");  }
+      if (e.code === "KeyT" && _pvpHeld.ultimate) { _pvpHeld.ultimate = false; releasePvpCharge("ultimate"); }
+    });
   }
 
   function getPcSkillsHtml() {
+    const hld = (id) => `onmousedown="window.PvpSystem.beginCharge('${id}')" onmouseup="window.PvpSystem.releaseCharge('${id}')" onmouseleave="window.PvpSystem.releaseCharge('${id}')"`;
     return [
       `<div class="skill-btn" onclick="performPvpAction('light')" title="Ligero [Z]"><span class="skill-icon">🥊</span><span class="skill-key">Z</span></div>`,
       `<div class="skill-btn" onclick="performPvpAction('heavy')" title="Pesado [Q]"><span class="skill-icon">💥</span><span class="skill-key">Q</span></div>`,
-      `<div class="skill-btn" onclick="performPvpAction('special')" title="Especial [E]"><span class="skill-icon">🔵</span><span class="skill-key">E</span></div>`,
+      `<div class="skill-btn chargeable" ${hld("special")} title="Especial — mantener para cargar [E]"><span class="skill-icon">🔵</span><span class="skill-key">E</span></div>`,
+      `<div class="skill-btn chargeable ult-btn" ${hld("ultimate")} title="ULTIMATE — mantener para cargar [T]"><span class="skill-icon">🌋</span><span class="skill-key">T</span></div>`,
       `<div class="skill-btn" onmousedown="performPvpAction('block')" onmouseup="releasePvpBlock()" title="Bloqueo [R]"><span class="skill-icon">🛡️</span><span class="skill-key">R</span></div>`,
       `<div class="skill-btn" onclick="performPvpAction('dash')" title="Dash [F]"><span class="skill-icon">💨</span><span class="skill-key">F</span></div>`,
       `<div class="skill-btn" onclick="performPvpAction('jump')" title="Salto [C]"><span class="skill-icon">⬆️</span><span class="skill-key">C</span></div>`,
@@ -1219,13 +1346,15 @@
   }
 
   function getMobileActionsHtml() {
+    const hld = (id) => `ontouchstart="event.preventDefault();window.PvpSystem.beginCharge('${id}')" ontouchend="event.preventDefault();window.PvpSystem.releaseCharge('${id}')" ontouchcancel="event.preventDefault();window.PvpSystem.releaseCharge('${id}')" onmousedown="window.PvpSystem.beginCharge('${id}')" onmouseup="window.PvpSystem.releaseCharge('${id}')" onmouseleave="window.PvpSystem.releaseCharge('${id}')"`;
     return [
-      makeMob("🥊", "LIGERO", "performPvpAction('light')"),
-      makeMob("💥", "PESADO", "performPvpAction('heavy')"),
-      makeMob("🔵", "ESPECIAL", "performPvpAction('special')"),
-      makeMob("🛡️", "BLOQUEO", "performPvpAction('block')"),
-      makeMob("💨", "DASH", "performPvpAction('dash')"),
-      makeMob("⬆️", "SALTO", "performPvpAction('jump')"),
+      makeMob("🥊", "LIGERO",   "performPvpAction('light')"),
+      makeMob("💥", "PESADO",   "performPvpAction('heavy')"),
+      `<div class="action-btn btn-interact chargeable" ${hld("special")}><span class="btn-icon">🔵</span><span class="btn-label">ESPECIAL</span></div>`,
+      `<div class="action-btn btn-interact chargeable ult-btn" ${hld("ultimate")}><span class="btn-icon">🌋</span><span class="btn-label">ULTIMATE</span></div>`,
+      makeMob("🛡️", "BLOQUEO",  "performPvpAction('block')"),
+      makeMob("💨", "DASH",     "performPvpAction('dash')"),
+      makeMob("⬆️", "SALTO",    "performPvpAction('jump')"),
       `<div class="action-btn btn-run" onclick="requestMutualEnd()" style="grid-column:span 2"><span class="btn-icon">🤝</span><span class="btn-label">TERMINAR</span></div>`,
     ].join("");
   }

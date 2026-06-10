@@ -1,0 +1,34 @@
+{
+  "rules": {
+    ".read": "auth != null",
+    ".write": "auth != null",
+
+    "trailers": {
+      ".indexOn": ["t", "map"],
+      "$uid": {
+        ".read": true,
+        ".write": "auth != null && (auth.uid === $uid || !data.exists())"
+      }
+    },
+
+    "mapNpcs": {
+      "$map": {
+        ".indexOn": ["ownerId", "t"],
+        "$npcId": {
+          ".read": true,
+          ".write": "auth != null"
+        }
+      }
+    },
+
+    "raids": {
+      "$map": {
+        ".indexOn": ["phase", "t"],
+        "$raidId": {
+          ".read": true,
+          ".write": "auth != null"
+        }
+      }
+    }
+  }
+}

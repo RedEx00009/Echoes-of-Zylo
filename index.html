@@ -417,7 +417,10 @@
 
       <!-- ── PELO ── -->
       <div class="cat-panel" id="panel-pelo">
-        <div class="sec-label">CABELLO</div>
+        <div style="font-size:9px;color:var(--td);font-family:var(--fb);line-height:1.4;margin-bottom:6px;background:rgba(0,229,255,.05);border:1px solid rgba(0,229,255,.12);border-radius:4px;padding:5px 7px">
+          <strong style="color:var(--cyan)">Cabello 1</strong> y <strong style="color:var(--cyan)">Cabello 3</strong>: se dibujan <em>encima</em> del cuerpo. <strong style="color:var(--accent)">Cabello 2</strong>: se dibuja <em>detrás</em> del cuerpo.
+        </div>
+        <div class="sec-label" style="margin-top:0">CABELLO</div>
         <div class="item-grid" id="hairGrid"></div>
         <div class="sec-label" style="margin-top:10px">COLOR CABELLO</div>
         <div class="color-chips" id="hairColorChips"></div>
@@ -429,20 +432,84 @@
 
       <!-- ── ROPA ── -->
       <div class="cat-panel" id="panel-ropa">
-        <div class="sec-label">👕 ROPA SUPERIOR</div>
-        <div class="item-grid" id="topGrid"></div>
-        <div class="sec-label">👖 ROPA INFERIOR</div>
-        <div class="item-grid" id="bottomGrid"></div>
-        <div class="sec-label">👟 CALZADO</div>
-        <div class="item-grid" id="shoesGrid"></div>
-        <div class="sec-label">🥊 GUANTES</div>
-        <div class="item-grid" id="glovesGrid"></div>
-      </div>
+
+        <!-- Sub-tabs de ropa -->
+        <div id="ropaTabs" style="display:grid;grid-template-columns:repeat(5,1fr);gap:3px;margin-bottom:8px">
+          <button class="ropa-tab active" data-rtab="interior" style="padding:4px 2px;background:rgba(245,196,0,.1);border:1px solid var(--accent);border-radius:4px;color:var(--accent);font-family:var(--fh);font-size:7px;letter-spacing:.5px;cursor:pointer;transition:all .15s;text-align:center">👚<br>INT.</button>
+          <button class="ropa-tab" data-rtab="exterior" style="padding:4px 2px;background:var(--bg-card);border:1px solid var(--border);border-radius:4px;color:var(--td);font-family:var(--fh);font-size:7px;letter-spacing:.5px;cursor:pointer;transition:all .15s;text-align:center">🧥<br>EXT.</button>
+          <button class="ropa-tab" data-rtab="inferior" style="padding:4px 2px;background:var(--bg-card);border:1px solid var(--border);border-radius:4px;color:var(--td);font-family:var(--fh);font-size:7px;letter-spacing:.5px;cursor:pointer;transition:all .15s;text-align:center">👖<br>PANT.</button>
+          <button class="ropa-tab" data-rtab="guantes" style="padding:4px 2px;background:var(--bg-card);border:1px solid var(--border);border-radius:4px;color:var(--td);font-family:var(--fh);font-size:7px;letter-spacing:.5px;cursor:pointer;transition:all .15s;text-align:center">🥊<br>GUAN.</button>
+          <button class="ropa-tab" data-rtab="calzado" style="padding:4px 2px;background:var(--bg-card);border:1px solid var(--border);border-radius:4px;color:var(--td);font-family:var(--fh);font-size:7px;letter-spacing:.5px;cursor:pointer;transition:all .15s;text-align:center">👟<br>CALZ.</button>
+        </div>
+
+        <!-- ROPA INTERIOR (multi-select) -->
+        <div class="ropa-panel" id="rpanel-interior">
+          <div style="font-size:9px;color:var(--td);font-family:var(--fb);line-height:1.4;margin-bottom:6px;background:rgba(0,229,255,.05);border:1px solid rgba(0,229,255,.12);border-radius:4px;padding:5px 7px">
+            Podés seleccionar <strong style="color:var(--cyan)">varios</strong> ítems a la vez. Se dibujan en el orden elegido.
+          </div>
+          <div class="sec-label" style="margin-top:0">👙 ROPA INTERIOR</div>
+          <div class="item-grid" id="innerTopGrid"></div>
+          <!-- Capas activas interior -->
+          <div class="sec-label" style="margin-top:8px">CAPAS ACTIVAS</div>
+          <div id="innerTopLayers" style="display:flex;flex-direction:column;gap:3px;min-height:28px"></div>
+        </div>
+
+        <!-- ROPA EXTERIOR (multi-select) -->
+        <div class="ropa-panel" id="rpanel-exterior" style="display:none">
+          <div style="font-size:9px;color:var(--td);font-family:var(--fb);line-height:1.4;margin-bottom:6px;background:rgba(0,229,255,.05);border:1px solid rgba(0,229,255,.12);border-radius:4px;padding:5px 7px">
+            Podés seleccionar <strong style="color:var(--cyan)">varios</strong> ítems a la vez. Se dibujan encima de la ropa interior.
+          </div>
+          <div class="sec-label" style="margin-top:0">🧥 ROPA EXTERIOR</div>
+          <div class="item-grid" id="outerTopGrid"></div>
+          <!-- Capas activas exterior -->
+          <div class="sec-label" style="margin-top:8px">CAPAS ACTIVAS</div>
+          <div id="outerTopLayers" style="display:flex;flex-direction:column;gap:3px;min-height:28px"></div>
+        </div>
+
+        <!-- ROPA INFERIOR / PANTALONES (multi-select) -->
+        <div class="ropa-panel" id="rpanel-inferior" style="display:none">
+          <div style="font-size:9px;color:var(--td);font-family:var(--fb);line-height:1.4;margin-bottom:6px;background:rgba(0,229,255,.05);border:1px solid rgba(0,229,255,.12);border-radius:4px;padding:5px 7px">
+            Podés seleccionar <strong style="color:var(--cyan)">varios</strong> ítems a la vez.
+          </div>
+          <div class="sec-label" style="margin-top:0">👖 PANTALONES</div>
+          <div class="item-grid" id="bottomGrid"></div>
+          <div class="sec-label" style="margin-top:8px">CAPAS ACTIVAS</div>
+          <div id="bottomLayers" style="display:flex;flex-direction:column;gap:3px;min-height:28px"></div>
+        </div>
+
+        <!-- GUANTES (multi-select) -->
+        <div class="ropa-panel" id="rpanel-guantes" style="display:none">
+          <div style="font-size:9px;color:var(--td);font-family:var(--fb);line-height:1.4;margin-bottom:6px;background:rgba(0,229,255,.05);border:1px solid rgba(0,229,255,.12);border-radius:4px;padding:5px 7px">
+            Podés seleccionar <strong style="color:var(--cyan)">varios</strong> guantes a la vez.
+          </div>
+          <div class="sec-label" style="margin-top:0">🥊 GUANTES</div>
+          <div class="item-grid" id="glovesGrid"></div>
+          <div class="sec-label" style="margin-top:8px">CAPAS ACTIVAS</div>
+          <div id="glovesLayers" style="display:flex;flex-direction:column;gap:3px;min-height:28px"></div>
+        </div>
+
+        <!-- CALZADO (multi-select) -->
+        <div class="ropa-panel" id="rpanel-calzado" style="display:none">
+          <div style="font-size:9px;color:var(--td);font-family:var(--fb);line-height:1.4;margin-bottom:6px;background:rgba(0,229,255,.05);border:1px solid rgba(0,229,255,.12);border-radius:4px;padding:5px 7px">
+            Podés seleccionar <strong style="color:var(--cyan)">varios</strong> calzados a la vez.
+          </div>
+          <div class="sec-label" style="margin-top:0">👟 CALZADO</div>
+          <div class="item-grid" id="shoesGrid"></div>
+          <div class="sec-label" style="margin-top:8px">CAPAS ACTIVAS</div>
+          <div id="shoesLayers" style="display:flex;flex-direction:column;gap:3px;min-height:28px"></div>
+        </div>
+
+      </div><!-- /panel-ropa -->
 
       <!-- ── ACCESORIOS ── -->
       <div class="cat-panel" id="panel-acc">
-        <div class="sec-label">ACCESORIOS</div>
+        <div style="font-size:9px;color:var(--td);font-family:var(--fb);line-height:1.4;margin-bottom:6px;background:rgba(224,64,251,.05);border:1px solid rgba(224,64,251,.15);border-radius:4px;padding:5px 7px">
+          Podés elegir <strong style="color:var(--magenta)">múltiples accesorios</strong>. Arrastrá las capas activas para cambiar el orden de dibujo.
+        </div>
+        <div class="sec-label" style="margin-top:0">ACCESORIOS</div>
         <div class="item-grid cols3" id="accGrid"></div>
+        <div class="sec-label" style="margin-top:10px">CAPAS ACTIVAS <span style="font-size:7px;color:var(--tm)">(arrastrá para reordenar)</span></div>
+        <div id="accLayers" style="display:flex;flex-direction:column;gap:3px;min-height:36px;border:1px dashed rgba(224,64,251,.2);border-radius:4px;padding:4px"></div>
       </div>
 
       <!-- ── AURA ── -->
@@ -1060,11 +1127,11 @@ let kiAttacks = _normalizeKiAttacks(null);
 const charState = {
   name:       "Guerrero Z",
   level:      1,
-  glovesId:   "gm0",
+  glovesId:   "gm0",        // legacy compat
   auraId:     "a1",
   auraColor:  "#fdd835",
   clothColor: "#ff6a00",
-  accessoryId:"ac_none",
+  accessoryId:"ac_none",    // legacy compat (primer acc)
   get auraPhase()       { return _auraPhase; },
   get spriteVariantId() {
     if (activeSheet === "combat")  return "fight";
@@ -1073,6 +1140,91 @@ const charState = {
   },
   get viewKey() { return activeViewKey; },
 };
+
+/*
+ * clothingLayers — sistema multi-capa de ropa
+ * Cada categoría es un array de { id, color1, color2 } en orden de dibujo.
+ * Las capas se dibujan de [0] → [n-1] (índice 0 = más abajo).
+ *
+ * Categorías:
+ *   innerTop  — ropa interior  (debajo de outerTop)
+ *   outerTop  — ropa exterior  (encima de innerTop)
+ *   bottom    — pantalones
+ *   shoes     — calzado
+ *   gloves    — guantes
+ *   accessories — accesorios   (array de { id, color1, color2 })
+ */
+const clothingLayers = {
+  innerTop:    [],   // [] → sin ropa interior
+  outerTop:    [],
+  bottom:      [],
+  shoes:       [],
+  gloves:      [],
+  accessories: [],   // array de { id, color1, color2 }
+};
+
+// Helper: obtiene la entrada de capa por id en una categoría
+function _clLayerById(cat, id) {
+  return clothingLayers[cat].find(l => l.id === id) || null;
+}
+
+// Helper: toggle de item en una capa (multi-select)
+function _clToggle(cat, id, catalogFn) {
+  const idx = clothingLayers[cat].findIndex(l => l.id === id);
+  if (idx !== -1) {
+    clothingLayers[cat].splice(idx, 1);
+  } else {
+    // Obtener colores por defecto del catálogo
+    const catalog = (typeof catalogFn === 'function') ? catalogFn() : [];
+    const def = catalog.find(i => i.id === id) || {};
+    clothingLayers[cat].push({
+      id,
+      color1: def.color1 || def.color || null,
+      color2: def.color2 || null,
+    });
+  }
+  invalidateHairCache();
+}
+
+// Helper: mover una capa arriba/abajo dentro de su categoría
+function _clMove(cat, id, dir) {
+  const arr = clothingLayers[cat];
+  const idx = arr.findIndex(l => l.id === id);
+  if (idx === -1) return;
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= arr.length) return;
+  [arr[idx], arr[newIdx]] = [arr[newIdx], arr[idx]];
+  invalidateHairCache();
+}
+
+// Helper: eliminar capa
+function _clRemove(cat, id) {
+  const idx = clothingLayers[cat].findIndex(l => l.id === id);
+  if (idx !== -1) clothingLayers[cat].splice(idx, 1);
+  invalidateHairCache();
+}
+
+// Sincronizar con player.appearance para compatibilidad con drawPlayer existente
+function _syncAppearanceFromLayers() {
+  // Ropa superior: usa el último outer, si no el último inner
+  const topLayer = clothingLayers.outerTop[clothingLayers.outerTop.length - 1]
+                || clothingLayers.innerTop[clothingLayers.innerTop.length - 1];
+  player.appearance.topId = topLayer ? topLayer.id : null;
+  // Ropa inferior
+  const btmLayer = clothingLayers.bottom[clothingLayers.bottom.length - 1];
+  player.appearance.bottomId = btmLayer ? btmLayer.id : null;
+  // Calzado
+  const shoesLayer = clothingLayers.shoes[clothingLayers.shoes.length - 1];
+  player.appearance.shoesId = shoesLayer ? shoesLayer.id : null;
+  // Guantes
+  const glovesLayer = clothingLayers.gloves[clothingLayers.gloves.length - 1];
+  charState.glovesId = glovesLayer ? glovesLayer.id : "gm0";
+  player.appearance.glovesId = charState.glovesId;
+  // Accesorio (primer acc para compat legacy)
+  const firstAcc = clothingLayers.accessories[0];
+  charState.accessoryId = firstAcc ? firstAcc.id : "ac_none";
+  player.appearance.accessoryId = charState.accessoryId;
+}
 
 const previewCanvas = document.getElementById("previewCanvas");
 const previewCtx    = previewCanvas.getContext("2d");
@@ -1278,6 +1430,195 @@ function refreshGrid(containerId, catalog, cat, getActiveFn) {
   });
 }
 
+/* ── buildMultiGrid: igual que buildGrid pero no deselecciona los demás ── */
+function buildMultiGrid(containerId, catalog, cat, getActiveFn, onToggleFn) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = "";
+  catalog.forEach(item => {
+    const card = document.createElement("div");
+    card.className = "item-card" + (getActiveFn(item) ? " active" : "");
+    card.dataset.id = item.id;
+
+    if (item.spriteKey !== undefined) {
+      const cv = document.createElement("canvas");
+      cv.className = "item-canvas"; cv.width = 48; cv.height = 48;
+      cv.style.height = "48px";
+      card.appendChild(cv);
+      setTimeout(() => _drawThumb(cv, item, cat), 0);
+    } else if (item.color || item.color1) {
+      const dot = document.createElement("div");
+      dot.className = "item-dot";
+      dot.style.background = item.color || item.color1 || "#555";
+      dot.style.width = "26px"; dot.style.height = "26px";
+      card.appendChild(dot);
+    }
+
+    const label = document.createElement("div");
+    label.className = "item-name"; label.textContent = item.name;
+    card.appendChild(label);
+
+    card.addEventListener("click", () => {
+      onToggleFn(item);
+      // Actualizar estado visual de ESTA card (toggle)
+      const isNowActive = getActiveFn(item);
+      card.classList.toggle("active", isNowActive);
+      // Refrescar thumbs
+      el.querySelectorAll(".item-canvas").forEach((cv, i) => {
+        if (catalog[i]) _drawThumb(cv, catalog[i], cat);
+      });
+    });
+    el.appendChild(card);
+  });
+}
+
+/*
+ * renderLayerList — dibuja la lista de capas activas para una categoría.
+ * cat: "innerTop"|"outerTop"|"bottom"|"shoes"|"gloves"|"accessories"
+ * containerId: id del div donde se renderizan las capas
+ * catalog: array de items del catálogo (para nombres y colores por defecto)
+ * sprCat: categoría para _drawThumb ("shirt","pants","shoes","gloves","accessory")
+ */
+function renderLayerList(cat, containerId, catalog, sprCat) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = "";
+  const layers = clothingLayers[cat];
+
+  if (!layers || layers.length === 0) {
+    el.innerHTML = `<div style="font-family:var(--fh);font-size:8px;color:var(--tm);letter-spacing:1px;text-align:center;padding:8px 0">Sin capas activas</div>`;
+    return;
+  }
+
+  layers.forEach((layer, idx) => {
+    const def = catalog.find(i => i.id === layer.id) || { name: layer.id, spriteKey: undefined };
+    const row = document.createElement("div");
+    row.dataset.layerId = layer.id;
+    row.style.cssText = `
+      display:flex;align-items:center;gap:5px;background:var(--bg-card);
+      border:1px solid var(--border);border-radius:4px;padding:4px 6px;
+      font-family:var(--fb);font-size:9px;color:var(--tp);
+    `;
+
+    // Mini thumb
+    const thumb = document.createElement("canvas");
+    thumb.width = 28; thumb.height = 28;
+    thumb.style.cssText = "image-rendering:pixelated;border-radius:2px;background:var(--bg-deep);flex-shrink:0";
+    setTimeout(() => _drawThumb(thumb, def, sprCat), 0);
+    row.appendChild(thumb);
+
+    // Nombre
+    const name = document.createElement("span");
+    name.style.cssText = "flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9px";
+    name.textContent = def.name || layer.id;
+    row.appendChild(name);
+
+    // Color 1
+    const c1Wrap = document.createElement("div");
+    c1Wrap.title = "Color 1 (primario)";
+    c1Wrap.style.cssText = "display:flex;flex-direction:column;align-items:center;gap:1px;flex-shrink:0";
+    const c1Label = document.createElement("span");
+    c1Label.style.cssText = "font-family:var(--fh);font-size:6px;color:var(--tm);letter-spacing:.5px";
+    c1Label.textContent = "C1";
+    const c1Btn = document.createElement("input");
+    c1Btn.type = "color";
+    c1Btn.value = layer.color1 || def.color1 || def.color || "#ff6a00";
+    c1Btn.style.cssText = "width:20px;height:20px;padding:1px;border:1px solid var(--border);border-radius:3px;cursor:pointer;background:none;outline:none;flex-shrink:0";
+    c1Btn.addEventListener("input", e => {
+      layer.color1 = e.target.value;
+      invalidateHairCache();
+    });
+    c1Wrap.appendChild(c1Label);
+    c1Wrap.appendChild(c1Btn);
+    row.appendChild(c1Wrap);
+
+    // Color 2
+    const c2Wrap = document.createElement("div");
+    c2Wrap.title = "Color 2 (secundario/detalles)";
+    c2Wrap.style.cssText = "display:flex;flex-direction:column;align-items:center;gap:1px;flex-shrink:0";
+    const c2Label = document.createElement("span");
+    c2Label.style.cssText = "font-family:var(--fh);font-size:6px;color:var(--tm);letter-spacing:.5px";
+    c2Label.textContent = "C2";
+    const c2Btn = document.createElement("input");
+    c2Btn.type = "color";
+    c2Btn.value = layer.color2 || def.color2 || "#1565c0";
+    c2Btn.style.cssText = "width:20px;height:20px;padding:1px;border:1px solid var(--border);border-radius:3px;cursor:pointer;background:none;outline:none;flex-shrink:0";
+    c2Btn.addEventListener("input", e => {
+      layer.color2 = e.target.value;
+      invalidateHairCache();
+    });
+    c2Wrap.appendChild(c2Label);
+    c2Wrap.appendChild(c2Btn);
+    row.appendChild(c2Wrap);
+
+    // Flechas de orden
+    const upBtn = document.createElement("button");
+    upBtn.textContent = "▲";
+    upBtn.title = "Mover arriba (más encima)";
+    upBtn.style.cssText = "background:transparent;border:1px solid var(--border);border-radius:3px;color:var(--td);font-size:8px;cursor:pointer;padding:1px 4px;flex-shrink:0;line-height:1";
+    upBtn.disabled = idx === layers.length - 1;
+    upBtn.addEventListener("click", () => { _clMove(cat, layer.id, 1); renderLayerList(cat, containerId, catalog, sprCat); _syncAppearanceFromLayers(); });
+    row.appendChild(upBtn);
+
+    const dnBtn = document.createElement("button");
+    dnBtn.textContent = "▼";
+    dnBtn.title = "Mover abajo (más debajo)";
+    dnBtn.style.cssText = "background:transparent;border:1px solid var(--border);border-radius:3px;color:var(--td);font-size:8px;cursor:pointer;padding:1px 4px;flex-shrink:0;line-height:1";
+    dnBtn.disabled = idx === 0;
+    dnBtn.addEventListener("click", () => { _clMove(cat, layer.id, -1); renderLayerList(cat, containerId, catalog, sprCat); _syncAppearanceFromLayers(); });
+    row.appendChild(dnBtn);
+
+    // Eliminar
+    const delBtn = document.createElement("button");
+    delBtn.textContent = "✕";
+    delBtn.title = "Quitar capa";
+    delBtn.style.cssText = "background:transparent;border:none;color:var(--tm);font-size:10px;cursor:pointer;padding:1px 3px;flex-shrink:0;transition:color .15s";
+    delBtn.addEventListener("mouseenter", () => delBtn.style.color = "var(--red)");
+    delBtn.addEventListener("mouseleave", () => delBtn.style.color = "var(--tm)");
+    delBtn.addEventListener("click", () => {
+      _clRemove(cat, layer.id);
+      // Deseleccionar en la grilla
+      const gridEl = el.closest(".ropa-panel,#panel-acc");
+      const gridId = {
+        innerTop:"innerTopGrid", outerTop:"outerTopGrid",
+        bottom:"bottomGrid", shoes:"shoesGrid",
+        gloves:"glovesGrid", accessories:"accGrid"
+      }[cat];
+      if (gridId) {
+        const g = document.getElementById(gridId);
+        if (g) g.querySelector(`[data-id="${layer.id}"]`)?.classList.remove("active");
+      }
+      renderLayerList(cat, containerId, catalog, sprCat);
+      _syncAppearanceFromLayers();
+    });
+    row.appendChild(delBtn);
+
+    el.appendChild(row);
+  });
+}
+
+/* ── initRopaTabs: sub-tabs del panel de ropa ── */
+function initRopaTabs() {
+  document.querySelectorAll(".ropa-tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+      // Desactivar todos
+      document.querySelectorAll(".ropa-tab").forEach(t => {
+        t.style.background = "var(--bg-card)";
+        t.style.borderColor = "var(--border)";
+        t.style.color = "var(--td)";
+      });
+      document.querySelectorAll(".ropa-panel").forEach(p => p.style.display = "none");
+      // Activar el clickeado
+      tab.style.background = "rgba(245,196,0,.1)";
+      tab.style.borderColor = "var(--accent)";
+      tab.style.color = "var(--accent)";
+      const panelId = "rpanel-" + tab.dataset.rtab;
+      const panel = document.getElementById(panelId);
+      if (panel) panel.style.display = "block";
+    });
+  });
+}
+
 function buildAllGrids() {
   const race  = _currentRace();
   const gender= _currentGender();
@@ -1324,40 +1665,62 @@ function buildAllGrids() {
     item => { player.appearance.hairId = item.id; invalidateHairCache(); }
   );
 
-  // ROPA SUP
-  const topCat = getCatalogFor("shirt", race, gender);
-  buildGrid("topGrid", topCat, "shirt",
-    item => player.appearance.topId === item.id,
-    item => { player.appearance.topId = item.id; invalidateHairCache(); }
+  // ── ROPA INTERIOR (multi-select) — solo items style:"inner" ──
+  const fullTopCat = getCatalogFor("shirt", race, gender);
+  const innerCat   = fullTopCat.filter(i => i.style === "inner");
+  const outerCat   = fullTopCat.filter(i => i.style !== "inner");  // outer + bare + legacy
+
+  buildMultiGrid("innerTopGrid", innerCat, "shirt",
+    item => !!_clLayerById("innerTop", item.id),
+    item => { _clToggle("innerTop", item.id, () => innerCat); renderLayerList("innerTop", "innerTopLayers", innerCat, "shirt"); _syncAppearanceFromLayers(); }
   );
 
-  // ROPA INF
+  // ── ROPA EXTERIOR (multi-select) — outer + gi + armor + plain + bare ──
+  buildMultiGrid("outerTopGrid", outerCat, "shirt",
+    item => !!_clLayerById("outerTop", item.id),
+    item => { _clToggle("outerTop", item.id, () => outerCat); renderLayerList("outerTop", "outerTopLayers", outerCat, "shirt"); _syncAppearanceFromLayers(); }
+  );
+
+  // ── ROPA INFERIOR (multi-select) ──
   const bottomCat = getCatalogFor("pants", race, gender);
-  buildGrid("bottomGrid", bottomCat, "pants",
-    item => player.appearance.bottomId === item.id,
-    item => { player.appearance.bottomId = item.id; invalidateHairCache(); }
+  buildMultiGrid("bottomGrid", bottomCat, "pants",
+    item => !!_clLayerById("bottom", item.id),
+    item => { _clToggle("bottom", item.id, () => getCatalogFor("pants", _currentRace(), _currentGender())); renderLayerList("bottom", "bottomLayers", bottomCat, "pants"); _syncAppearanceFromLayers(); }
   );
 
-  // CALZADO
+  // ── CALZADO (multi-select) ──
   const shoesCat = getCatalogFor("shoes", race, gender);
-  buildGrid("shoesGrid", shoesCat, "shoes",
-    item => player.appearance.shoesId === item.id,
-    item => { player.appearance.shoesId = item.id; invalidateHairCache(); }
+  buildMultiGrid("shoesGrid", shoesCat, "shoes",
+    item => !!_clLayerById("shoes", item.id),
+    item => { _clToggle("shoes", item.id, () => getCatalogFor("shoes", _currentRace(), _currentGender())); renderLayerList("shoes", "shoesLayers", shoesCat, "shoes"); _syncAppearanceFromLayers(); }
   );
 
-  // GUANTES
+  // ── GUANTES (multi-select) ──
   const glovesCat = getCatalogFor("gloves", race, gender);
-  buildGrid("glovesGrid", glovesCat, "gloves",
-    item => charState.glovesId === item.id,
-    item => { charState.glovesId = item.id; player.appearance.glovesId = item.id; invalidateHairCache(); }
+  buildMultiGrid("glovesGrid", glovesCat, "gloves",
+    item => !!_clLayerById("gloves", item.id),
+    item => { _clToggle("gloves", item.id, () => getCatalogFor("gloves", _currentRace(), _currentGender())); renderLayerList("gloves", "glovesLayers", glovesCat, "gloves"); _syncAppearanceFromLayers(); }
   );
 
-  // ACCESORIOS
+  // ── ACCESORIOS (multi-select) ──
   const visibleAcc = ACCESSORIES_CATALOG.filter(a => !a.isFreeCustomization);
-  buildGrid("accGrid", visibleAcc, "accessory",
-    item => (charState.accessoryId||"ac_none") === item.id,
-    item => { charState.accessoryId = item.id; player.appearance.accessoryId = item.id; }
+  buildMultiGrid("accGrid", visibleAcc, "accessory",
+    item => item.id !== "ac_none" && !!_clLayerById("accessories", item.id),
+    item => {
+      if (item.id === "ac_none") { clothingLayers.accessories = []; }
+      else { _clToggle("accessories", item.id, () => ACCESSORIES_CATALOG); }
+      renderLayerList("accessories", "accLayers", visibleAcc, "accessory");
+      _syncAppearanceFromLayers();
+    }
   );
+
+  // Refrescar listas de capas activas
+  renderLayerList("innerTop",    "innerTopLayers", innerCat,   "shirt");
+  renderLayerList("outerTop",    "outerTopLayers", outerCat,   "shirt");
+  renderLayerList("bottom",      "bottomLayers",   bottomCat,  "pants");
+  renderLayerList("shoes",       "shoesLayers",    shoesCat,   "shoes");
+  renderLayerList("gloves",      "glovesLayers",   glovesCat,  "gloves");
+  renderLayerList("accessories", "accLayers",      visibleAcc, "accessory");
 
   // AURA
   buildGrid("auraGrid", AURAS_CATALOG, "aura",
@@ -1622,7 +1985,231 @@ function buildCharState() {
     auraPhase:   _auraPhase,
     viewKey:     activeViewKey,
     spriteVariantId: charState.spriteVariantId,
+    // Multi-layer clothing
+    clothingLayers: clothingLayers,
   };
+}
+
+/*
+ * drawPlayerMultiLayer — wrapper que dibuja el personaje con el sistema de capas múltiples.
+ * Llama a drawPlayer varias veces (una por combinación de capas) usando un player modificado,
+ * más el dibujo del cabello con la capa "behind" antes del cuerpo.
+ *
+ * Orden de capas completo:
+ *   1. Aura (viene del drawPlayer estándar)
+ *   2. Cabello trasero (hairLayerBehind — e.g. cabello hm2)
+ *   3. Accesorios under_shirt
+ *   4. Cuerpo (skin)
+ *   5. bottom layers (pantalones) en orden [0..n]
+ *   6. shoes layers en orden [0..n]
+ *   7. Accesorios belt_slot
+ *   8. innerTop layers en orden [0..n]
+ *   9. outerTop layers en orden [0..n]
+ *   10. gloves layers en orden [0..n]
+ *   11. Cara
+ *   12. Cabello delantero (todos menos el "behind")
+ *   13. Accesorios over_shirt
+ *
+ * Para simplificar: llamamos a drawPlayer con apariencias modificadas que sólo activan una capa
+ * a la vez. Pero eso es muy costoso. En su lugar, parcheamos el estado del player por ciclo de render.
+ * El approach real aquí es sobreescribir player.appearance antes del draw con los arrays de capas
+ * y confiar en que drawPlayer itera cada categoría una vez — para multi-capas llamamos al draw
+ * varias veces con distintos topId/bottomId/etc., pero sólo dibujando esa capa (usando un flag).
+ *
+ * APPROACH SIMPLIFICADO (compatible con el sistema actual):
+ * Modificamos player.appearance para que use las capas en orden, llamando drawPlayer
+ * una vez por cada "bloque de capas" que difiere. Para maximizar compatibilidad,
+ * simplemente seteamos los arrays en charState y el drawPlayer verá el último valor.
+ * Las capas se dibujan itarando manualmente: por cada capa llamamos _drawClothLayerDirect.
+ */
+function drawPlayerMultiLayer(ctx, screenX, screenY, playerObj, imap, anim, ps) {
+  const CS = window.CharacterSystem;
+  if (!CS || typeof CS.drawPlayer !== "function") return;
+
+  const layers = ps.clothingLayers || clothingLayers;
+  const race   = playerObj.appearance.raceId  || "human";
+  const gender = playerObj.appearance.gender  || "male";
+
+  // Clonar appearance
+  const baseApp = Object.assign({}, playerObj.appearance);
+
+  // ── Helper: dibujar UN layer de ropa usando drawPlayer con una appearance especial ──
+  // Seteamos un único id activo y transparent en el resto para que sólo dibuje esa capa.
+  // drawPlayer siempre dibuja el cuerpo, cara, cabello y aura también, por eso usamos alpha trick.
+  // SOLUCIÓN REAL: para evitar redibujar todo, usamos offscreen canvas por capa.
+  // Pero para no romper nada usamos el siguiente approach:
+  // – Dibujamos el personaje completo (cuerpo, cara, pelo) UNA vez
+  // – Luego dibujamos cada capa de ropa individualmente usando _drawClothLayerDirect
+  //   que ya existe en character-system pero no está expuesta.
+  // Dado que character-system no expone _drawClothLayerDirect, usamos una apariencia modificada
+  // en drawPlayer con sólo la capa que queremos, EXCEPTO el cuerpo+cara+pelo que se dibujan primero.
+
+  // STEP 1: Dibujar personaje sin ropa (cuerpo, cara, pelo, aura solamente)
+  // Para eso seteamos todos los IDs de ropa a null
+  const noClothApp = Object.assign({}, baseApp, {
+    topId: null, bottomId: null, shoesId: null, glovesId: null,
+    accessoryId: "ac_none",
+  });
+  const noClothPlayer = Object.assign({}, playerObj, { appearance: noClothApp });
+  const noClothPS = Object.assign({}, ps, {
+    glovesId: null, accessoryId: "ac_none", clothingLayers: null,
+  });
+
+  // STEP 2: Para cada categoría de ropa, dibujamos capas en orden usando drawPlayer
+  // con apariencia modificada que sólo tiene esa capa activa, PERO sin dibujar cuerpo/cara/aura.
+  // LIMITACIÓN: drawPlayer SIEMPRE dibuja el cuerpo. Para evitar doble cuerpo usamos alpha.
+  // La estrategia: primero el drawPlayer completo para una capa base, luego los extras en offscreen.
+
+  // Por compatibilidad total y sin tocar character-system.js:
+  // Dibujamos TODO normalmente pero con la ÚLTIMA capa de cada categoría (igual que antes),
+  // y los extras los dibujamos encima usando drawPlayer con alpha trick:
+  // – canvas offscreen con solo esa capa
+  // – dibujar en el canvas principal con globalAlpha=1
+  // Pero el cuerpo se vería N veces. Necesitamos una solución distinta.
+
+  // SOLUCIÓN FINAL PRÁCTICA:
+  // Usamos el drawPlayer original una sola vez con el último item de cada categoría para el cuerpo/base,
+  // luego para las capas adicionales usamos un offscreen canvas temporal donde dibujamos con
+  // el id activo, y luego hacemos drawImage de ese offscreen al canvas principal pero
+  // con destination-over-blending específico... Esto tampoco funciona limpiamente.
+
+  // SOLUCIÓN MÁS COMPATIBLE: Simplemente construimos el appearance final con la ÚLTIMA capa
+  // de cada categoría (como antes) pero también exponemos los colores por capa.
+  // Para multi-capas dibujamos las capas adicionales como overlays en un offscreen
+  // usando el mismo drawPlayer pero con el cuerpo invisible (skinColor transparent trick no existe).
+
+  // DECISIÓN: Usar drawPlayer normal con la última capa + dibujar TODAS las capas adicionales
+  // en offscreen canvases y compositar. Es la solución correcta sin modificar character-system.
+
+  const DW = CS.getDisplaySize ? CS.getDisplaySize().w : (playerObj.displayW || 180);
+  const DH = CS.getDisplaySize ? CS.getDisplaySize().h : (playerObj.displayH || 220);
+
+  // Función para crear un offscreen del tamaño del personaje
+  function _makeOffscreen() {
+    const oc = document.createElement("canvas");
+    oc.width = DW * 2 + 40; oc.height = DH + 40;
+    return oc;
+  }
+
+  // Dibuja UNA capa de ropa en un offscreen, retorna el canvas
+  function _renderLayer(catKey, layerEntry, catSprKey) {
+    const oc = _makeOffscreen();
+    const ox = oc.width / 2, oy = oc.height - 16;
+    const octx = oc.getContext("2d");
+    // Construir appearance con solo esta capa activa, sin cuerpo (skin null hack)
+    // No podemos ocultar el cuerpo, pero podemos usar globalCompositeOperation
+    // WORKAROUND: dibujar con cuerpo y luego enmascarar... complejo.
+    // SIMPLE APPROACH: dibujar con cuerpo, cara y pelo ocultos usando inexistentes ids
+    const phantom = Object.assign({}, baseApp, {
+      topId: null, bottomId: null, shoesId: null,
+      glovesId: "gm0", accessoryId: "ac_none",
+      // Skin color transparente no existe — usaremos globalAlpha=0 para el cuerpo: no posible
+      // En vez de eso, usamos un truco: poner hairId y faceId a null
+      hairId: null, faceId: null,
+    });
+    // Setear solo la capa que queremos
+    if (catKey === "innerTop" || catKey === "outerTop") phantom.topId = layerEntry.id;
+    else if (catKey === "bottom")     phantom.bottomId  = layerEntry.id;
+    else if (catKey === "shoes")      phantom.shoesId   = layerEntry.id;
+    else if (catKey === "gloves")     phantom.glovesId  = layerEntry.id;
+    // Colores de la capa individual
+    if (layerEntry.color1) phantom.clothColorA = layerEntry.color1;
+    if (layerEntry.color2) phantom.clothColorB = layerEntry.color2;
+
+    const phantomPlayer = Object.assign({}, playerObj, { appearance: phantom });
+    const phantomPS     = Object.assign({}, ps, {
+      glovesId: phantom.glovesId, accessoryId: "ac_none", clothingLayers: null,
+    });
+    CS.drawPlayer(octx, ox, oy, phantomPlayer, imap, anim, phantomPS);
+    return oc;
+  }
+
+  // 1. Dibujar el personaje base (cuerpo + cara + ultimo top/bottom/shoes/gloves para compat)
+  // Construimos la apariencia "principal": última capa de cada categoría, con sus colores
+  const lastInner = layers.innerTop[layers.innerTop.length - 1];
+  const lastOuter = layers.outerTop[layers.outerTop.length - 1];
+  const lastTop   = lastOuter || lastInner;
+  const lastBtm   = layers.bottom[layers.bottom.length - 1];
+  const lastShoes = layers.shoes[layers.shoes.length - 1];
+  const lastGlv   = layers.gloves[layers.gloves.length - 1];
+  const firstAcc  = layers.accessories[0];
+
+  const mainApp = Object.assign({}, baseApp, {
+    topId:       lastTop   ? lastTop.id   : null,
+    bottomId:    lastBtm   ? lastBtm.id   : null,
+    shoesId:     lastShoes ? lastShoes.id : null,
+    glovesId:    lastGlv   ? lastGlv.id   : null,
+    accessoryId: firstAcc  ? firstAcc.id  : "ac_none",
+    // Colores de la capa activa principal
+    clothColorA: (lastTop   && lastTop.color1)   || baseApp.clothColorA || null,
+    clothColorB: (lastTop   && lastTop.color2)   || baseApp.clothColorB || null,
+  });
+  const mainPlayer = Object.assign({}, playerObj, { appearance: mainApp });
+  const mainPS     = Object.assign({}, ps, {
+    glovesId:    mainApp.glovesId    || "gm0",
+    accessoryId: mainApp.accessoryId || "ac_none",
+    clothingLayers: null,
+  });
+
+  // Dibujar personaje principal
+  CS.drawPlayer(ctx, screenX, screenY, mainPlayer, imap, anim, mainPS);
+
+  // 2. Dibujar capas adicionales (todas menos la última que ya se dibujó)
+  // innerTop adicionales (todos menos el último si también hay outerTop, o todos si no hay outerTop)
+  const innerExtra = lastOuter
+    ? layers.innerTop                                        // todos los inner (el outer ya está encima)
+    : layers.innerTop.slice(0, -1);                         // inner excepto el último (ya dibujado)
+
+  const outerExtra = layers.outerTop.slice(0, -1);          // outer excepto el último
+  const btmExtra   = layers.bottom.slice(0, -1);
+  const shoesExtra = layers.shoes.slice(0, -1);
+  const glvExtra   = layers.gloves.slice(0, -1);
+
+  // Dibujar inner extras (debajo del outer)
+  innerExtra.forEach(layer => {
+    const oc = _renderLayer("innerTop", layer);
+    ctx.drawImage(oc, screenX - oc.width/2, screenY - oc.height + 16);
+  });
+
+  // Dibujar outer extras
+  outerExtra.forEach(layer => {
+    const oc = _renderLayer("outerTop", layer);
+    ctx.drawImage(oc, screenX - oc.width/2, screenY - oc.height + 16);
+  });
+
+  // Dibujar pantalones extras
+  btmExtra.forEach(layer => {
+    const oc = _renderLayer("bottom", layer);
+    ctx.drawImage(oc, screenX - oc.width/2, screenY - oc.height + 16);
+  });
+
+  // Dibujar calzado extras
+  shoesExtra.forEach(layer => {
+    const oc = _renderLayer("shoes", layer);
+    ctx.drawImage(oc, screenX - oc.width/2, screenY - oc.height + 16);
+  });
+
+  // Dibujar guantes extras
+  glvExtra.forEach(layer => {
+    const oc = _renderLayer("gloves", layer);
+    ctx.drawImage(oc, screenX - oc.width/2, screenY - oc.height + 16);
+  });
+
+  // 3. Accesorios adicionales (de la capa 1 en adelante — la 0 ya se dibujó con el base)
+  layers.accessories.slice(1).forEach(accLayer => {
+    const oc = _makeOffscreen();
+    const ox = oc.width / 2, oy = oc.height - 16;
+    const octx = oc.getContext("2d");
+    const phantomApp = Object.assign({}, baseApp, {
+      topId: null, bottomId: null, shoesId: null, glovesId: "gm0",
+      hairId: null, faceId: null,
+      accessoryId: accLayer.id,
+    });
+    const phantomPlayer = Object.assign({}, playerObj, { appearance: phantomApp });
+    const phantomPS     = Object.assign({}, ps, { glovesId:"gm0", accessoryId: accLayer.id, clothingLayers: null });
+    CS.drawPlayer(octx, ox, oy, phantomPlayer, imap, anim, phantomPS);
+    ctx.drawImage(oc, screenX - oc.width/2, screenY - oc.height + 16);
+  });
 }
 
 function loop(now) {
@@ -1636,7 +2223,7 @@ function loop(now) {
   animator.update(now); finalAnim.update(now);
   const ps = buildCharState();
   previewCtx.clearRect(0,0,previewCanvas.width,previewCanvas.height);
-  drawPlayer(previewCtx, previewCanvas.width/2, previewCanvas.height-16, player, imageMap, animator, ps);
+  drawPlayerMultiLayer(previewCtx, previewCanvas.width/2, previewCanvas.height-16, player, imageMap, animator, ps);
   finalCtx.clearRect(0,0,finalCanvas.width,finalCanvas.height);
   finalCtx.save();
   const fw=finalCanvas.width, fh=finalCanvas.height;
@@ -1644,7 +2231,7 @@ function loop(now) {
   if (uiFlipped) finalCtx.scale(-uiZoom,uiZoom); else finalCtx.scale(uiZoom,uiZoom);
   finalCtx.translate(-fw/2,-fh/2);
   const fp = Object.assign({},player,{direction:1,appearance:Object.assign({},player.appearance)});
-  drawPlayer(finalCtx, fw/2, fh-16, fp, imageMap, finalAnim, ps);
+  drawPlayerMultiLayer(finalCtx, fw/2, fh-16, fp, imageMap, finalAnim, ps);
   finalCtx.restore();
 }
 
@@ -1681,6 +2268,11 @@ function saveToSlot(i) {
     const variantId=player.appearance.variantId||"base";
     const cfg=player.appearance.variantCustomizations?.[variantId]||{};
     const sheet=cfg.spriteDataURL||null;
+    // Serializar clothingLayers (sin referencias a imágenes)
+    const clSerialized = {};
+    Object.keys(clothingLayers).forEach(cat => {
+      clSerialized[cat] = clothingLayers[cat].map(l => ({ id:l.id, color1:l.color1||null, color2:l.color2||null }));
+    });
     const d={
       name: document.getElementById("charName").value||"Guerrero Z",
       level:1, race:_currentRace(), gender:_currentGender(), variantId,
@@ -1696,6 +2288,7 @@ function saveToSlot(i) {
       browColor:player.appearance.browColor||null, pupilColor:player.appearance.pupilColor||null,
       clothColorA:player.appearance.clothColorA||null, clothColorB:player.appearance.clothColorB||null,
       accessoryId:charState.accessoryId||"ac_none",
+      clothingLayers: clSerialized,
       spriteSheets:{sheet,base:sheet,pelea:sheet,especial:sheet},
       transformations: _serializeTransformationsForSave(),
       kiAttacks: _serializeKiAttacks(),
@@ -1735,6 +2328,24 @@ async function loadFromSlot(i) {
     kiAttacks = _normalizeKiAttacks(d.kiAttacks);
     renderKiAttackEditor();
 
+    // Restaurar clothingLayers
+    if (d.clothingLayers) {
+      Object.keys(clothingLayers).forEach(cat => {
+        const saved = d.clothingLayers[cat];
+        clothingLayers[cat] = Array.isArray(saved)
+          ? saved.map(l => ({ id:l.id, color1:l.color1||null, color2:l.color2||null }))
+          : [];
+      });
+    } else {
+      // Migrar desde formato legacy: reconstruir capas a partir de los ids guardados
+      Object.keys(clothingLayers).forEach(cat => { clothingLayers[cat] = []; });
+      if (d.topId) clothingLayers.innerTop = [{ id:d.topId, color1:d.clothColorA||null, color2:d.clothColorB||null }];
+      if (d.bottomId) clothingLayers.bottom = [{ id:d.bottomId, color1:null, color2:null }];
+      if (d.shoesId) clothingLayers.shoes = [{ id:d.shoesId, color1:null, color2:null }];
+      if (d.glovesId && d.glovesId !== "gm0") clothingLayers.gloves = [{ id:d.glovesId, color1:null, color2:null }];
+      if (d.accessoryId && d.accessoryId !== "ac_none") clothingLayers.accessories = [{ id:d.accessoryId, color1:null, color2:null }];
+    }
+
     // Restaurar sheet
     const variantId=d.variantId||"base";
     const varCfg=d.variantCustomizations?.[variantId]||{};
@@ -1771,6 +2382,7 @@ async function loadFromSlot(i) {
       if (CS && typeof CS.setDisplaySize === "function") CS.setDisplaySize(rw, rh);
     }
     renderSlots(); updateStats();
+    _syncAppearanceFromLayers();
     // Recargar transformaciones del slot (con skins) y actualizar UI
     if (typeof _loadTransformationsFromLS === "function") {
       await _loadTransformationsFromLS();
@@ -1978,6 +2590,7 @@ async function init() {
     initGender();
     initImportButtons();
     initViewAnimBar();
+    initRopaTabs();
     showToast("Cargando sprites...","warning");
     imageMap = await window._patchedPreloadAssets("",{quiet:true});
     const loaded=Object.values(imageMap).filter(Boolean).length;

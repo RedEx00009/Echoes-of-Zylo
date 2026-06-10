@@ -382,6 +382,16 @@
       .skill-btn.run-active { border-color:#00e676; box-shadow:0 0 14px rgba(0,230,118,.4); }
       .skill-icon { font-size:var(--btn-icon); }
       .skill-key { font-family:var(--font-head); font-size:8px; letter-spacing:1px; color:#3d4a6b; }
+      .skill-btn.ult-btn { border-color:rgba(255,106,0,.7); background:linear-gradient(135deg,rgba(255,106,0,.18),rgba(245,196,0,.1)); box-shadow:0 0 10px rgba(255,106,0,.3); }
+      .skill-btn.ult-btn:active { border-color:#ff6a00; box-shadow:0 0 18px rgba(255,106,0,.6); }
+      .chargeable { touch-action:none; -webkit-user-select:none; user-select:none; }
+      .chargeable.charging { filter:brightness(1.4) saturate(1.3); transform:scale(.93); transition:filter .1s,transform .1s; }
+      #chargeBar { position:fixed; bottom:185px; left:50%; transform:translateX(-50%); z-index:200; pointer-events:none; display:none; flex-direction:column; align-items:center; gap:5px; }
+      #chargeBar.active { display:flex; }
+      #chargeBarLabel { font-family:Orbitron,monospace; font-size:9px; letter-spacing:2px; color:#f5c400; }
+      #chargeBarTrack { width:100px; height:5px; background:rgba(255,255,255,.12); border-radius:3px; overflow:hidden; }
+      #chargeBarFill { height:100%; width:0%; background:linear-gradient(90deg,#f5c400,#ff6a00); border-radius:3px; }
+      .action-btn.ult-btn { border-color:rgba(255,106,0,.7) !important; background:radial-gradient(ellipse,rgba(255,106,0,.22),rgba(245,196,0,.08)) !important; box-shadow:0 0 12px rgba(255,106,0,.35) !important; }
 
       /* -- MOBILE CONTROLS -- */
       .mobile-controls { position:absolute; bottom:0; left:0; right:0; height:230px; display:none; align-items:flex-end; justify-content:space-between; padding:0 16px 16px; pointer-events:auto; }
@@ -419,6 +429,10 @@
       .hud-toast.dmg { color:var(--danger); }
       .hud-toast.info { color:#00e5ff; }
       @keyframes toastPop { 0%{opacity:0;transform:translateY(10px) scale(.8);} 15%{opacity:1;transform:translateY(-10px) scale(1);} 70%{opacity:1;transform:translateY(-20px);} 100%{opacity:0;transform:translateY(-30px);} }
+      @keyframes kiClashPulse {
+        0%,100% { box-shadow:0 0 8px rgba(0,229,255,.3); border-color:rgba(0,229,255,.5); }
+        50%      { box-shadow:0 0 18px rgba(0,229,255,.8); border-color:#00e5ff; }
+      }
 
       /* -- FACTIONS / WORLD STATE -- */
       .world-status { position:absolute; top:114px; left:12px; z-index:45; display:flex; flex-direction:column; gap:6px; width:min(230px, calc(100vw - 112px)); pointer-events:none; }
@@ -1800,12 +1814,14 @@
     });
 
 
-    function makePcSkill({ icon, key, title, action, id, cls }) {
-      return `<div class="skill-btn ${cls || ""}" ${id ? `id="${id}"` : ""} onclick="${action}" title="${title}"><span class="skill-icon">${icon}</span><span class="skill-key">${key}</span></div>`;
+    function makePcSkill({ icon, key, title, action, id, cls, extra }) {
+      const oc = action ? `onclick="${action}"` : "";
+      return `<div class="skill-btn ${cls||""}" ${id?`id="${id}"`:""} ${oc} title="${title}" ${extra||""}><span class="skill-icon">${icon}</span><span class="skill-key">${key}</span></div>`;
     }
 
-    function makeMobileAction({ icon, label, action, cls }) {
-      return `<div class="action-btn ${cls || "btn-emote"}" onclick="${action}"><span class="btn-icon">${icon}</span><span class="btn-label">${label}</span></div>`;
+    function makeMobileAction({ icon, label, action, cls, extra }) {
+      const oc = action ? `onclick="${action}"` : "";
+      return `<div class="action-btn ${cls||"btn-emote"}" ${oc} ${extra||""}><span class="btn-icon">${icon}</span><span class="btn-label">${label}</span></div>`;
     }
 
     // -- RP ACTIONS — ahora incluye acciones del sheet "special" y sub-animaciones --
@@ -1951,12 +1967,16 @@
           skills.innerHTML = [
             makePcSkill({ icon:"👊", key:"Z", title:"Combo 1", action:"performCombatAction('combo1')" }),
             makePcSkill({ icon:"⚡", key:"Q", title:"Combo 2", action:"performCombatAction('combo2')" }),
-            makePcSkill({ icon:"💥", key:"E", title:"Ataque especial 1", action:"performCombatAction('special1')" }),
-            makePcSkill({ icon:"🌟", key:"R", title:"Ataque especial 2", action:"performCombatAction('special2')" }),
+            makePcSkill({ icon:"💥", key:"E", title:"Especial 1 — mantener para cargar", cls:"chargeable", extra:`onmousedown="beginCombatCharge('special1')" onmouseup="releaseCombatCharge('special1')" onmouseleave="releaseCombatCharge('special1')"` }),
+            makePcSkill({ icon:"🌟", key:"R", title:"Especial 2 — mantener para cargar", cls:"chargeable", extra:`onmousedown="beginCombatCharge('special2')" onmouseup="releaseCombatCharge('special2')" onmouseleave="releaseCombatCharge('special2')"` }),
+            makePcSkill({ icon:"🌋", key:"T", title:"ULTIMATE — mantener para cargar", cls:"chargeable ult-btn", extra:`onmousedown="beginCombatCharge('ultimate')" onmouseup="releaseCombatCharge('ultimate')" onmouseleave="releaseCombatCharge('ultimate')"` }),
             makePcSkill({ icon:"🔋", key:"G", title:"Cargar Ki", action:"performCombatAction('charge')" }),
             makePcSkill({ icon:"🛡️", key:"B", title:"Cubrirse", action:"performCombatAction('block')" }),
             makePcSkill({ icon:"🦅", key:"F", title:"Volar", action:"performCombatAction('fly')", id:"skillFlyCombat", cls:isFlying?"run-active":"" }),
             makePcSkill({ icon:"💨", key:"C", title:"Z-Vanish", action:"performCombatAction('vanish')" }),
+            makePcSkill({ icon:"🌠", key:"Y", title:"ULTIMATE 2 — mantener para cargar", cls:"chargeable ult-btn", extra:`onmousedown="beginCombatCharge('ultimate2')" onmouseup="releaseCombatCharge('ultimate2')" onmouseleave="releaseCombatCharge('ultimate2')"` }),
+            makePcSkill({ icon:"🌀", key:"V", title:"Dodge — activa/desactiva (reemplaza Hit por animación dodge, sin daño ni empuje)", id:"skillDodgeBtn", cls:window._dodgeActive?"run-active":"", action:"performCombatAction('dodge')" }),
+            makePcSkill({ icon:"✨", key:"I", title:"Invulnerabilidad — activa/desactiva (sin daño)", id:"skillInvulBtn", cls:window._invulActive?"run-active":"", action:"performCombatAction('invul')" }),
           ].join("");
           skills.classList.remove("hidden");
         } else {
@@ -1968,11 +1988,7 @@
         }
       }
       if (sideList && skills) {
-        if (controlMode === "combat" || (controlMode === "pvp" && PS && PS.isFighter())) {
-          sideList.innerHTML = '<div class="side-action-note">Controles de combate visibles fuera del menú.</div>';
-        } else {
-          sideList.innerHTML = skills.innerHTML;
-        }
+        sideList.innerHTML = skills.innerHTML;
       }
       if (grid) {
         if (window.trailerDrive?.active) {
@@ -1985,15 +2001,21 @@
         } else if (controlMode === "pvp" && PS && PS.isFighter()) {
           grid.innerHTML = PS.getMobileActionsHtml();
         } else if (controlMode === "combat") {
+          const _ce = `ontouchstart="event.preventDefault();beginCombatCharge('AKEY')" ontouchend="event.preventDefault();releaseCombatCharge('AKEY')" ontouchcancel="event.preventDefault();releaseCombatCharge('AKEY')" onmousedown="beginCombatCharge('AKEY')" onmouseup="releaseCombatCharge('AKEY')" onmouseleave="releaseCombatCharge('AKEY')"`;
           grid.innerHTML = [
-            makeMobileAction({ icon:"👊", label:"COMBO 1", action:"performCombatAction('combo1')", cls:"btn-emote" }),
-            makeMobileAction({ icon:"⚡", label:"COMBO 2", action:"performCombatAction('combo2')", cls:"btn-emote" }),
-            makeMobileAction({ icon:"💥", label:"ESP. 1", action:"performCombatAction('special1')", cls:"btn-interact" }),
-            makeMobileAction({ icon:"🌟", label:"ESP. 2", action:"performCombatAction('special2')", cls:"btn-interact" }),
+            makeMobileAction({ icon:"👊", label:"COMBO 1",  action:"performCombatAction('combo1')",  cls:"btn-emote" }),
+            makeMobileAction({ icon:"⚡", label:"COMBO 2",  action:"performCombatAction('combo2')",  cls:"btn-emote" }),
+            makeMobileAction({ icon:"💥", label:"ESP. 1",   cls:"btn-interact chargeable", extra:_ce.replaceAll("AKEY","special1") }),
+            makeMobileAction({ icon:"🌟", label:"ESP. 2",   cls:"btn-interact chargeable", extra:_ce.replaceAll("AKEY","special2") }),
+            makeMobileAction({ icon:"🌋", label:"ULTIMATE",  cls:"btn-interact chargeable ult-btn", extra:_ce.replaceAll("AKEY","ultimate") }),
             makeMobileAction({ icon:"🔋", label:"CARGAR KI", action:"performCombatAction('charge')", cls:"btn-trailer" }),
-            makeMobileAction({ icon:"🛡️", label:"CUBRIRSE", action:"performCombatAction('block')", cls:"btn-interact" }),
-            makeMobileAction({ icon:"🦅", label:isFlying?"VUELO ON":"VOLAR", action:"performCombatAction('fly')", cls:"btn-run" + (isFlying ? " run-active" : "") }),
-            makeMobileAction({ icon:"💨", label:"Z-VANISH", action:"performCombatAction('vanish')", cls:"btn-trailer" }),
+            makeMobileAction({ icon:"🛡️", label:"CUBRIRSE",  action:"performCombatAction('block')",  cls:"btn-interact" }),
+            makeMobileAction({ icon:"🦅", label:isFlying?"VUELO ON":"VOLAR", action:"performCombatAction('fly')", cls:"btn-run"+(isFlying?" run-active":"") }),
+            makeMobileAction({ icon:"💨", label:"Z-VANISH",  action:"performCombatAction('vanish')", cls:"btn-trailer" }),
+            makeMobileAction({ icon:"🌠", label:"ULT. 2",  cls:"btn-interact chargeable ult-btn", extra:_ce.replaceAll("AKEY","ultimate2") }),
+            makeMobileAction({ icon:"🌀", label:window._dodgeActive?"DODGE ON":"DODGE", action:"performCombatAction('dodge')", cls:"btn-run"+(window._dodgeActive?" run-active":"") }),
+            makeMobileAction({ icon:"✨", label:window._invulActive?"INVUL ON":"INVUL", action:"performCombatAction('invul')", cls:"btn-run"+(window._invulActive?" run-active":"") }),
+
             `<div class="action-btn btn-run" onclick="setControlMode('rp')" style="border-radius:12px;width:100%;grid-column:span 2;height:calc(var(--btn-size)*0.7);"><span class="btn-icon">🔄</span><span class="btn-label">VOLVER A RP</span></div>`,
           ].join("");
         } else {
@@ -2057,6 +2079,7 @@
 
     function combatEndAnim() {
       if (!csAnimator) return;
+      if (sparringState || ultimateClashState) return; // sparring/clash manejan su propio estado
       if (csAnimator._freezeFrame) csAnimator._freezeFrame = false;
       csAnimator.play(isFlying ? "fly" : (csAnimator.battleMode ? getCombatIdleAnim() : getIdleAnim()));
     }
@@ -2115,10 +2138,11 @@
     const otherPlayerPreviewImages = {};
     const otherPlayerAccessoryLoading = new Set();
     const otherPlayerPreviewLoading = new Set();
-    let myPlayerId = null, mpConnected = false, mpLastSend = 0, mpLastAppearance = 0;
+    let myPlayerId = null, mpConnected = false, mpLastSend = 0, mpLastAppearance = 0, lastMpStateHash = "";
     window.myPlayerId = null; // expuesto globalmente para NpcSystem (se actualiza en initMultiplayer)
     const MP_SEND_RATE = 80;
     const MP_APPEARANCE_RATE = 2500;
+    const MP_VISIBLE_PADDING = 260;
     const chatMessages = [], CHAT_MAX = 80;
 
     function canvasToBestDataURL(canvas, sourceDataURL, quality) {
@@ -2587,8 +2611,6 @@
     function sendPlayerUpdate() {
       if (!mpConnected || !myPlayerId) return;
       const now = performance.now();
-      if (now - mpLastSend < MP_SEND_RATE) return;
-      mpLastSend = now;
       // Si está conduciendo el trailer, mantener al jugador oculto y dejar que
       // updateTrailerDrive sincronice la posición del vehículo
       if (trailerDrive?.active) {
@@ -2597,34 +2619,51 @@
       }
       let animAction;
       const pvpLockedAnim = window.PvpSystem?.getLockedAnim?.();
-      if (pvpLockedAnim) {
-        db.ref("players/" + myPlayerId).update({
-          x:Math.floor(player.x), y:Math.floor(player.y), facing:player.facing,
-          animAction:pvpLockedAnim, combatMode:true, specialMode:false,
-          flying:isFlying, hp:player.hp, maxHp:player.maxHp,
-          strength:player.strength, defense:player.defense,
-          level:player.level, faction:player.faction, map:currentMap, t:Date.now(),
-        });
-        return;
-      }
-      // Determinar animación actual incluyendo special mode
-      // "transform" y "detransform" son animaciones locales de transición — nunca se publican a la red
       const _isTransAnim = ["transform", "detransform"].includes(csAnimator?.action);
-      if (!_isTransAnim && csAnimator?.specialMode) {
+      if (pvpLockedAnim) {
+        animAction = pvpLockedAnim;
+      } else if (isFlying && !_isTransAnim) {
+        animAction = "fly";
+      } else if (!_isTransAnim && csAnimator?.specialMode) {
         animAction = csAnimator.action || "sit";
       } else if (isCombatMode && csAnimator?.battleMode) {
-        animAction = isFlying ? "knockback_fly" : (player.moving ? "dash" : getCombatIdleAnim());
+        animAction = player.moving ? "dash" : getCombatIdleAnim();
       } else {
-        animAction = isFlying ? "fly" : (player.moving ? (isRunning ? "run" : "walk") : "idle");
+        animAction = player.moving ? (isRunning ? "run" : "walk") : "idle";
       }
-      if (performance.now() < rpActionUntil && csAnimator && !_isTransAnim) animAction = csAnimator.action || animAction;
-      db.ref("players/" + myPlayerId).update({
-        x:Math.floor(player.x), y:Math.floor(player.y), facing:player.facing, animAction,
-        combatMode:isCombatMode, specialMode:!!(csAnimator?.specialMode) && !_isTransAnim,
-        flying:isFlying, hp:player.hp, maxHp:player.maxHp,
-        strength:player.strength, defense:player.defense,
-        level:player.level, faction:player.faction, empireLeader:isEmpireLeader(), map:currentMap, t:Date.now(),
+      if (now < rpActionUntil && csAnimator && !_isTransAnim) animAction = csAnimator.action || animAction;
+      const nextPayload = {
+        x: Math.floor(player.x),
+        y: Math.floor(player.y),
+        facing: player.facing,
+        animAction,
+        combatMode: isCombatMode,
+        specialMode: !!(csAnimator?.specialMode) && !_isTransAnim,
+        flying: isFlying,
+        hp: player.hp,
+        maxHp: player.maxHp,
+        strength: player.strength,
+        defense: player.defense,
+        level: player.level,
+        faction: player.faction,
+        empireLeader: isEmpireLeader(),
+        map: currentMap,
+      };
+      const payloadSignature = JSON.stringify({
+        x: nextPayload.x,
+        y: nextPayload.y,
+        facing: nextPayload.facing,
+        animAction: nextPayload.animAction,
+        combatMode: nextPayload.combatMode,
+        specialMode: nextPayload.specialMode,
+        flying: nextPayload.flying,
+        hp: nextPayload.hp,
+        maxHp: nextPayload.maxHp,
       });
+      if (now - mpLastSend < MP_SEND_RATE && payloadSignature === lastMpStateHash) return;
+      mpLastSend = now;
+      lastMpStateHash = payloadSignature;
+      db.ref("players/" + myPlayerId).update({ ...nextPayload, t: Date.now() });
       if (now - mpLastAppearance >= MP_APPEARANCE_RATE) {
         mpLastAppearance = now;
         publishMyAppearance(false);
@@ -2664,6 +2703,7 @@
         if (p.fusionHidden) continue; // ocultar jugador absorbido en fusión
         if (p.inTrailerDrive) continue; // ocultar conductor dentro del trailer en movimiento
         const sx = p.x - cam.x, sy = p.y - cam.y;
+        if (sx < -MP_VISIBLE_PADDING || sx > canvas.width + MP_VISIBLE_PADDING || sy < -MP_VISIBLE_PADDING || sy > canvas.height + MP_VISIBLE_PADDING) continue;
         const anim = otherPlayerAnimators[id];
         if (anim) anim.update(now);
         const app = normalizeRemoteAppearance(p.appearance, CS, p);
@@ -2795,7 +2835,9 @@
             // Seteamos el modo y la acción aquí para que drawPlayer los encuentre
             // ya correctos y no necesite sobreescribirlos.
             if (anim) {
-              const remAction = p.animAction || "idle";
+              const remActionRaw = p.animAction || "idle";
+              const isRemoteFlying = !!(p.flying || p.isFlying);
+              const remAction = (isRemoteFlying || remActionRaw === "knockback_fly") ? "fly" : remActionRaw;
               if (p.specialMode) {
                 if (!anim.specialMode) { anim.specialMode = true; anim.battleMode = false; }
               } else if (p.combatMode) {
@@ -4453,7 +4495,7 @@
         return;
       }
       if (controlMode === "combat") {
-        const actions = ["combo1", "combo2", "special1", "special2", "charge", "fly", "vanish"];
+        const actions = ["combo1", "combo2", "special1", "special2", "charge", "fly", "vanish", "dodge", "invul"];
         performCombatAction(actions[slot] || "combo1");
         return;
       }
@@ -4478,8 +4520,8 @@
       }
       if (e.code==="KeyZ") { e.preventDefault(); if (controlMode === "combat") runActionSlot(0); else interactNearby(); }
       if (e.code==="KeyQ") { e.preventDefault(); runActionSlot(controlMode === "combat" ? 1 : 0); }
-      if (e.code==="KeyE") { e.preventDefault(); runActionSlot(controlMode === "combat" ? 2 : 1); }
-      if (e.code==="KeyR") { e.preventDefault(); runActionSlot(controlMode === "combat" ? 3 : 2); }
+      if (e.code==="KeyE") { e.preventDefault(); if (controlMode !== "combat") runActionSlot(1); } // en combate lo maneja hold-to-charge
+      if (e.code==="KeyR") { e.preventDefault(); if (controlMode !== "combat") runActionSlot(2); } // en combate lo maneja hold-to-charge
       if (e.code==="KeyG") { e.preventDefault(); if (controlMode === "combat") runActionSlot(4); }
       if (e.code==="KeyF") { e.preventDefault(); if (controlMode === "combat") runActionSlot(5); else toggleFly(); }
       if (e.code==="KeyC") { e.preventDefault(); runActionSlot(controlMode === "combat" ? 6 : 3); }
@@ -4547,14 +4589,16 @@
         registerSparringClick();
         return;
       }
+      if (ultimateClashState) {
+        e.preventDefault();
+        registerUltimateClashClick();
+        return;
+      }
       const npc = getCombatNpcAtScreen(e.clientX, e.clientY);
       if (!npc) return;
       e.preventDefault();
-      if (lockedCombatNpcId === npc.id && canStartSparring(npc)) {
-        startSparring(npc);
-      } else {
-        lockCombatNpc(npc);
-      }
+      lockCombatNpc(npc);
+      _showNpcActionPanel(npc);
     }, { passive:false });
 
     // -- NPCs --
@@ -5935,10 +5979,13 @@
     const COMBAT_LOCK_RANGE = 520;
     const SPARRING_RANGE = 92;
     const SPARRING_DURATION = 2600;
+    const ULTIMATE_CLASH_RANGE = 280;   // más lejos que sparring — distancia de ki
+    const ULTIMATE_CLASH_DURATION = 3000; // ms del button-mash
     const KNOCKBACK_GRAVITY = 900;
     let _lastNpcTick = performance.now();
     let lockedCombatNpcId = null;
     let sparringState = null;
+    let ultimateClashState = null;   // { npcId, ends, playerClicks, npcClicks, npcClickCarry, kiColor }
     let pendingFactionChallenge = null;
 
     // ── Duraciones de animaciones de combate (ms) ────────────────────────
@@ -6160,6 +6207,14 @@
 
     function _playPlayerHit2f() {
       if (!csAnimator) return;
+      // ── Dodge activo: reemplazar animación hit por dash, sin congelar ──
+      if (window._dodgeActive) {
+        csAnimator.setBattleMode && csAnimator.setBattleMode(true);
+        csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
+        if (csAnimator._freezeFrame) csAnimator._freezeFrame = false;
+        csAnimator.play("dodge");
+        return;
+      }
       _playerHitLockUntil = performance.now() + NPC_ANIM_DUR.hit_2f + 60;
       if (csAnimator.setBattleMode) csAnimator.setBattleMode(true);
       csAnimator.action = "hit"; csAnimator.frame = 0; csAnimator.elapsed = 0;
@@ -6184,6 +6239,14 @@
     function _playPlayerHitKo(recoverAfterMs = 3000, onRecover = null) {
       if (!csAnimator) return;
       if (_playerKoActive) return;
+      // ── Dodge activo: reemplazar animación KO hit por dash ──
+      if (window._dodgeActive) {
+        csAnimator.setBattleMode && csAnimator.setBattleMode(true);
+        csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
+        if (csAnimator._freezeFrame) csAnimator._freezeFrame = false;
+        csAnimator.play("dodge");
+        return;
+      }
       _playerKoActive = true;
       _playerHitLockUntil = performance.now() + NPC_ANIM_DUR.hit_ko + recoverAfterMs + 200;
       if (csAnimator.setBattleMode) csAnimator.setBattleMode(true);
@@ -6263,7 +6326,7 @@
           npcHp: t.npcMaxHp,
           x: corner.x,
           y: corner.y,
-          facing: 1,
+          facing: corner.x > player.x ? -1 : 1,
           _anim: "combat_idle",   // arranca en combat_idle, no walk
           _animLocked: false,     // true mientras ejecuta hit/ataque
           _attackTimer: Date.now() + NPC_COMBAT_INTERVAL + Math.random()*600,
@@ -6327,6 +6390,8 @@
       const side = (player.facing || 1);
       const startX = combatNpc.x || (player.x + side * 220);
       const startY = combatNpc.y || player.y;
+      // El NPC debe mirar hacia el jugador desde su posición inicial
+      const startFacing = startX > player.x ? -1 : 1;
 
       waveEnemies = [{
         ...combatNpc,
@@ -6345,6 +6410,7 @@
         _skinCacheKey: `rpcombat_${combatNpc.rpNpcId}:${combatNpc.skinPath || "default"}`,
         x: startX,
         y: startY,
+        facing: startFacing,
       }];
       npcCombatActive = true;
       currentWave = 0;
@@ -6431,7 +6497,7 @@
     }
 
     function applyPlayerAttackToCombatNpc(action) {
-      if (sparringState) return null;
+      if (sparringState || ultimateClashState) return null;
       const target = getCombatNpcTarget();
       if (!target) return null;
 
@@ -6503,15 +6569,16 @@
     function startSparring(npc) {
       if (!canStartSparring(npc)) return false;
       lockedCombatNpcId = npc.id;
+
+      // Acercar ambos al punto medio, separados 48 px (¼ tile), mirándose
       const midX = (player.x + npc.x) / 2;
       const midY = (player.y + npc.y) / 2;
-      player.x = midX - 24;
-      npc.x = midX + 24;
+      player.x = midX - 24;  npc.x = midX + 24;
       player.y = npc.y = midY;
-      player.facing = 1;
-      npc.facing = -1;
-      npc._animLocked = true;
+      player.facing = 1;      npc.facing = -1;
       npc._anim = "sparring";
+      if (typeof _hideNpcActionPanel === "function") _hideNpcActionPanel();
+
       sparringState = {
         npcId: npc.id,
         started: performance.now(),
@@ -6520,23 +6587,49 @@
         npcClicks: 0,
         npcClickCarry: 0,
       };
-      // Registrar animación de sparring (row 25, 4 frames) si aún no está en el meta
+
+      // ── Asegurar que sparring esté en COMBAT_ACTIONS_META del sistema ──────
+      // (Row 25, 4 frames, loop — viene del character-system pero lo inyectamos
+      //  también por si el animator fue creado antes de que se cargara el CS)
+      const _sparringMeta = { row: 25, frames: 4, frameStart: 0, fps: 8, loop: true, label: "Sparring" };
       const _CS = window.CharacterSystem;
-      if (_CS && _CS.SPECIAL_ACTIONS_META && !_CS.SPECIAL_ACTIONS_META.sparring) {
-        _CS.SPECIAL_ACTIONS_META.sparring = { row: 25, frames: 4, fps: 8, loop: true, label: "Sparring" };
+      if (_CS) {
+        if (_CS.getCombatActionsMeta && !_CS.getCombatActionsMeta().sparring)
+          _CS.getCombatActionsMeta().sparring = _sparringMeta;
+        if (_CS.SPECIAL_ACTIONS_META && !_CS.SPECIAL_ACTIONS_META.sparring)
+          _CS.SPECIAL_ACTIONS_META.sparring = _sparringMeta;
       }
 
+      // ── Jugador ──────────────────────────────────────────────────────────
       if (csAnimator) {
+        if (csAnimator.COMBAT_ACTIONS_META && !csAnimator.COMBAT_ACTIONS_META.sparring)
+          csAnimator.COMBAT_ACTIONS_META.sparring = _sparringMeta;
+        csAnimator._freezeFrame = false;
+        if (window._comboTimeout) { clearTimeout(window._comboTimeout); window._comboTimeout = null; }
         csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
-        csAnimator.setBattleMode && csAnimator.setBattleMode(true);
+        csAnimator.setBattleMode  && csAnimator.setBattleMode(true);
         csAnimator.play("sparring");
       }
+
+      // ── NPC ──────────────────────────────────────────────────────────────
       const anim = npcAnimators[npc.id];
       if (anim) {
+        _clearNpcAnimTimers(anim);
+        if (anim._hitTimer1) { clearTimeout(anim._hitTimer1); anim._hitTimer1 = null; }
+        if (anim._hitTimer2) { clearTimeout(anim._hitTimer2); anim._hitTimer2 = null; }
+        anim._freezeFrame = false;
+        // Inyectar meta en el animator del NPC (battleMode usa COMBAT_ACTIONS_META)
+        if (anim.COMBAT_ACTIONS_META && !anim.COMBAT_ACTIONS_META.sparring)
+          anim.COMBAT_ACTIONS_META.sparring = _sparringMeta;
+        if (anim.SPECIAL_ACTIONS_META && !anim.SPECIAL_ACTIONS_META.sparring)
+          anim.SPECIAL_ACTIONS_META.sparring = _sparringMeta;
         anim.setBattleMode && anim.setBattleMode(true);
         anim.play("sparring");
       }
-      showHudToast("SPARRING!", "warning");
+
+      // Marcar locked DESPUÉS de play() para no bloquear el inicio
+      npc._animLocked = true;
+      showHudToast("🥋 SPARRING — ¡Clicá rápido!", "warning");
       return true;
     }
 
@@ -6558,17 +6651,24 @@
       if (playerWins) {
         npc.npcHp = Math.max(0, npc.npcHp - dmg);
         showFloatingDmg(dmg, npc.x - cam.x, npc.y - cam.y, "#00e5ff");
+        // Volver a combat_idle en el jugador (el game loop retoma control tras sparringState=null)
+        if (csAnimator) { csAnimator._freezeFrame = false; csAnimator.play(getCombatIdleAnim()); }
         if (npc.npcHp <= 0) {
           _playHitKoAnim(npcAnimators[npc.id], npc, () => { npc._animLocked = false; });
         } else {
           launchKnockback(npc, npcAnimators[npc.id], player.facing, 1.25, false);
         }
       } else {
-        player.hp = Math.max(0, player.hp - dmg);
-        updatePlayerHud();
-        showFloatingDmg(dmg, player.x - cam.x, player.y - cam.y, "#ff4444");
-        if (player.hp <= 0) _playPlayerHitKo(3000);
-        else launchKnockback(player, csAnimator, npc.facing, 1.15, true);
+        // ── Dodge/Invul en sparring ──
+        if (window._dodgeActive) { _playPlayerHit2f(); }
+        else if (window._invulActive) { showHudToast("✨ Daño bloqueado (INVUL)", "info"); }
+        else {
+          player.hp = Math.max(0, player.hp - dmg);
+          updatePlayerHud();
+          showFloatingDmg(dmg, player.x - cam.x, player.y - cam.y, "#ff4444");
+          if (player.hp <= 0) _playPlayerHitKo(3000);
+          else launchKnockback(player, csAnimator, npc.facing, 1.15, true);
+        }
         npc._animLocked = false;
         _playNpcCombatIdle(npc, npcAnimators[npc.id]);
       }
@@ -6581,7 +6681,7 @@
       const npc = waveEnemies.find(e => e.id === sparringState.npcId && e.npcHp > 0 && !e._dead);
       if (!npc) { sparringState = null; return; }
       const now = performance.now();
-      const rate = (npc.isBoss ? 8.5 : 6.2) + Math.min(4, currentWave);
+      const rate = (npc.isBoss ? 4.5 : 3.0) + Math.min(1.5, currentWave * 0.3);
       sparringState.npcClickCarry += rate * dt;
       while (sparringState.npcClickCarry >= 1) {
         sparringState.npcClickCarry -= 1;
@@ -6592,7 +6692,238 @@
       player.x = midX - 24; npc.x = midX + 24;
       player.y = npc.y = midY;
       player.facing = 1; npc.facing = -1;
+      // Mantener animación sparring del NPC si se interrumpió (p.ej. por un hit anterior)
+      const _npcAnim = npcAnimators[npc.id];
+      const _sparMeta = { row: 25, frames: 4, frameStart: 0, fps: 8, loop: true, label: "Sparring" };
+      if (_npcAnim) {
+        if (_npcAnim.COMBAT_ACTIONS_META && !_npcAnim.COMBAT_ACTIONS_META.sparring)
+          _npcAnim.COMBAT_ACTIONS_META.sparring = _sparMeta;
+        if (_npcAnim.action !== "sparring" && !_npcAnim._freezeFrame) {
+          _npcAnim.setBattleMode && _npcAnim.setBattleMode(true);
+          _npcAnim.play("sparring");
+        }
+      }
+      npc._anim = "sparring";
+      // Mantener animación sparring del JUGADOR si fue interrumpida
+      if (csAnimator && csAnimator.action !== "sparring" && !csAnimator._freezeFrame) {
+        if (window._comboTimeout) { clearTimeout(window._comboTimeout); window._comboTimeout = null; }
+        csAnimator.setBattleMode && csAnimator.setBattleMode(true);
+        csAnimator.play("sparring");
+      }
       if (now >= sparringState.ends) finishSparring();
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // ULTIMATE CLASH — Duelo de Ki/Especial (button-mash a distancia)
+    // ═══════════════════════════════════════════════════════════════════
+    function canStartUltimateClash(npc) {
+      if (!npc || sparringState || ultimateClashState) return false;
+      if (npc.npcHp <= 0 || npc._dead || player.hp <= 0) return false;
+      // Ki mínimo: cualquier especial cuesta al menos 18 — se verifica por ataque en el panel
+      if (player.ki < 18) return false;
+      const dist = Math.hypot(npc.x - player.x, npc.y - player.y);
+      return dist > SPARRING_RANGE && dist <= ULTIMATE_CLASH_RANGE;
+    }
+
+    function startUltimateClash(npc, clashAtk) {
+      if (!canStartUltimateClash(npc)) return false;
+
+      // clashAtk puede ser pasado desde el panel o usar special1 por defecto
+      const atk = clashAtk || { id:"special1", animKey:"special", label:"Especial 1",
+                                 icon: getKiAttack("special1").icon,
+                                 cost: getKiAttack("special1").cost,
+                                 color: getKiAttack("special1").color };
+
+      // Verificar ki suficiente para el ataque elegido
+      if (player.ki < atk.cost) { showHudToast(`Ki insuficiente (${atk.cost})`, "dmg"); return false; }
+
+      lockedCombatNpcId = npc.id;
+
+      // Posicionar enfrentados a distancia media (~200 px)
+      const midX = (player.x + npc.x) / 2;
+      const midY = (player.y + npc.y) / 2;
+      player.x = midX - 100; npc.x = midX + 100;
+      player.y = npc.y = midY;
+      player.facing = 1; npc.facing = -1;
+
+      player.ki = Math.max(0, player.ki - atk.cost);
+      updatePlayerHud();
+
+      if (typeof _hideNpcActionPanel === "function") _hideNpcActionPanel();
+      ultimateClashState = {
+        npcId: npc.id,
+        started: performance.now(),
+        ends: performance.now() + ULTIMATE_CLASH_DURATION,
+        playerClicks: 0,
+        npcClicks: 0,
+        npcClickCarry: 0,
+        kiColor: atk.color,
+        animKey: atk.animKey,   // ← animación a reproducir en loop
+        beamProgress: 0.5,
+      };
+
+      // ── Asegurar que la animación del ataque esté en COMBAT_ACTIONS_META ──
+      // special / special_2 / ultimate / ultimate_2 ya viven ahí; solo para charge
+      // ya no se usa, pero dejamos el registro defensivo.
+      const _atkMeta = window.CharacterSystem?.getCombatActionsMeta?.()[atk.animKey]
+                    || { special:"row20s1", special_2:"row20s2", ultimate:"row6u1", ultimate_2:"row6u2" }[atk.animKey];
+
+      // ── Jugador: reproducir animación del ataque en loop ──────────────────
+      if (csAnimator) {
+        csAnimator._freezeFrame = false;
+        if (window._comboTimeout) { clearTimeout(window._comboTimeout); window._comboTimeout = null; }
+        csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
+        csAnimator.setBattleMode  && csAnimator.setBattleMode(true);
+        // Congelar en primer frame del ataque → efecto "cargando/empujando"
+        csAnimator.action  = atk.animKey;
+        csAnimator.frame   = 0;
+        csAnimator.elapsed = 0;
+        csAnimator._freezeFrame = false;
+        csAnimator.play(atk.animKey);
+      }
+
+      // ── NPC: reproducir su animación de especial (special) en loop ────────
+      const anim = npcAnimators[npc.id];
+      if (anim) {
+        _clearNpcAnimTimers(anim);
+        if (anim._hitTimer1) { clearTimeout(anim._hitTimer1); anim._hitTimer1 = null; }
+        if (anim._hitTimer2) { clearTimeout(anim._hitTimer2); anim._hitTimer2 = null; }
+        anim._freezeFrame = false;
+        // El NPC siempre usa "special" (Row 20, primeros 3 frames) como ataque ki
+        anim.setBattleMode && anim.setBattleMode(true);
+        anim.play("special");
+      }
+      npc._animLocked = true;
+      npc._anim = atk.animKey;   // para que updateUltimateClash lo mantenga
+      npc._clashKiColor = atk.color; // para finishUltimateClash
+
+      showHudToast(`⚡ ${atk.icon} ${atk.label.toUpperCase()} CLASH — ¡Clicá rápido!`, "warning");
+      combatEffects.push({ x: midX, y: midY - 80, text: `⚡ ${atk.icon} CLASH ⚡`, timer: 1.0, color: atk.color });
+      return true;
+    }
+
+    function registerUltimateClashClick() {
+      if (!ultimateClashState) return false;
+      ultimateClashState.playerClicks++;
+      ultimateClashState.beamProgress = Math.min(1, ultimateClashState.beamProgress + 0.035);
+      combatEffects.push({ x: player.x, y: player.y - 76, text: "⚡", timer: 0.18, color: ultimateClashState.kiColor });
+      return true;
+    }
+
+    function finishUltimateClash() {
+      if (!ultimateClashState) return;
+      const npc = waveEnemies.find(e => e.id === ultimateClashState.npcId);
+      const playerWins = ultimateClashState.playerClicks >= ultimateClashState.npcClicks;
+      const npcKiColor = npc?.color || "#ff4444";
+      ultimateClashState = null;
+      if (!npc) return;
+
+      npc._animLocked = false;
+
+      if (playerWins) {
+        // Golpe de ki masivo al NPC
+        const dmg = Math.max(30, Math.floor((player.strength || 20) * 2.2 + (player.ki || 0) * 0.4));
+        const _clashKiColor = npc?._clashKiColor || getKiAttack("special1")?.color || "#00e5ff";
+        npc.npcHp = Math.max(0, npc.npcHp - dmg);
+        showFloatingDmg(dmg, npc.x - cam.x, npc.y - cam.y, "#00e5ff");
+        // Volver a combat_idle en el jugador
+        if (csAnimator) { csAnimator._freezeFrame = false; csAnimator.play(getCombatIdleAnim()); }
+        // Efecto de beam del jugador llegando al NPC
+        combatEffects.push({
+          kind: "ki", style: "beam",
+          x: player.x + 60, y: player.y - 42,
+          vx: 280, vy: 0, text: "💥", label: "KI BLAST",
+          timer: 0.7, life: 0.7,
+          color: _clashKiColor,
+          radius: 16, facing: 1,
+        });
+        if (npc.npcHp <= 0) {
+          _playHitKoAnim(npcAnimators[npc.id], npc, () => { npc._animLocked = false; });
+        } else {
+          launchKnockback(npc, npcAnimators[npc.id], player.facing, 2.0, false);
+        }
+        showHudToast("⚡ ULTIMATE CLASH GANADO — ¡Ki Blast directo!", "xp");
+      } else {
+        // El NPC le da el ki blast al jugador
+        if (window._dodgeActive) { _playPlayerHit2f(); showHudToast("🌀 Dodge — Ki evadido", "info"); }
+        else if (window._invulActive) { showHudToast("✨ Daño bloqueado (INVUL)", "info"); }
+        else {
+          const dmg = Math.max(20, Math.floor((npc.npcAtk || 20) * 1.8));
+          player.hp = Math.max(0, player.hp - dmg);
+          updatePlayerHud();
+          showFloatingDmg(dmg, player.x - cam.x, player.y - cam.y, npcKiColor);
+          // Efecto beam del NPC llegando al jugador
+          combatEffects.push({
+            kind: "ki", style: "beam",
+            x: npc.x - 60, y: npc.y - 42,
+            vx: -280, vy: 0, text: "💥", label: "KI NPC",
+            timer: 0.7, life: 0.7,
+            color: npcKiColor,
+            radius: 16, facing: -1,
+          });
+          if (player.hp <= 0) _playPlayerHitKo(3000);
+          else launchKnockback(player, csAnimator, npc.facing, 2.0, true);
+        }
+        _playNpcCombatIdle(npc, npcAnimators[npc.id]);
+        showHudToast("💥 ULTIMATE CLASH PERDIDO — ¡Ki Blast recibido!", "dmg");
+      }
+      updateNpcCombatHud(npc);
+    }
+
+    function updateUltimateClash(dt) {
+      if (!ultimateClashState) return;
+      const npc = waveEnemies.find(e => e.id === ultimateClashState.npcId && e.npcHp > 0 && !e._dead);
+      if (!npc) { ultimateClashState = null; return; }
+      const now = performance.now();
+
+      // Velocidad del NPC: más lento que sparring (son ataques especiales, más pesados)
+      const rate = (npc.isBoss ? 3.5 : 2.4) + Math.min(1.2, currentWave * 0.25);
+      ultimateClashState.npcClickCarry += rate * dt;
+      while (ultimateClashState.npcClickCarry >= 1) {
+        ultimateClashState.npcClickCarry -= 1;
+        ultimateClashState.npcClicks++;
+        ultimateClashState.beamProgress = Math.max(0, ultimateClashState.beamProgress - 0.03);
+      }
+
+      // Posición fija durante el clash
+      const midX = (player.x + npc.x) / 2;
+      const midY = (player.y + npc.y) / 2;
+      player.x = midX - 100; npc.x = midX + 100;
+      player.y = npc.y = midY;
+      player.facing = 1; npc.facing = -1;
+
+      // Mantener animación del ataque elegido en el jugador
+      if (csAnimator) {
+        const _atkKey = ultimateClashState.animKey || "special";
+        if (csAnimator.action !== _atkKey && !csAnimator._freezeFrame) {
+          csAnimator.setBattleMode && csAnimator.setBattleMode(true);
+          csAnimator.play(_atkKey);
+        }
+      }
+
+      // Mantener animación "special" del NPC durante el clash
+      const _npcAnim = npcAnimators[npc.id];
+      if (_npcAnim && _npcAnim.action !== "special" && !_npcAnim._freezeFrame) {
+        _npcAnim.setBattleMode && _npcAnim.setBattleMode(true);
+        _npcAnim.play("special");
+      }
+      npc._anim = ultimateClashState.animKey || "special";
+
+      // Efectos visuales de ki chocando en el centro (partículas)
+      if (Math.random() < dt * 8) {
+        const spread = (ultimateClashState.beamProgress - 0.5) * 60;
+        combatEffects.push({
+          kind: "ki", style: "burst",
+          x: midX + spread + (Math.random()-0.5)*20,
+          y: midY - 42 + (Math.random()-0.5)*20,
+          vx: (Math.random()-0.5)*60, vy: -40,
+          text: "", timer: 0.3, life: 0.3,
+          color: Math.random() < 0.5 ? ultimateClashState.kiColor : (npc.color || "#ff4444"),
+          radius: 7 + Math.random()*5, facing: 1,
+        });
+      }
+
+      if (now >= ultimateClashState.ends) finishUltimateClash();
     }
 
     function tickNpcCombat() {
@@ -6607,6 +6938,7 @@
       _lastNpcTick = nowPerf;
       updatePlayerCombatPhysics(dt);
       updateSparring(dt);
+      updateUltimateClash(dt);
       if (_playerKoActive || player.hp <= 0) return;
 
       const now = Date.now();
@@ -6619,8 +6951,18 @@
         if (npc._dead) return;
         allDead = false;
         if (updateKnockbackEntity(npc, npcAnimators[npc.id], dt, false)) return;
-        if (sparringState) {
-          if (!npc._animLocked) _playNpcCombatIdle(npc, npcAnimators[npc.id]);
+        if (sparringState || ultimateClashState) {
+          if (!npc._animLocked) {
+            const _holdA = npcAnimators[npc.id];
+            if (_holdA) {
+              if (ultimateClashState) {
+                _holdA.setBattleMode && _holdA.setBattleMode(true);
+                if (_holdA.action !== "charge") _holdA.play("charge");
+              } else {
+                _playNpcCombatIdle(npc, _holdA);
+              }
+            }
+          }
           return;
         }
         if (player.hp <= 0) return;
@@ -6670,18 +7012,14 @@
             // Calcular daño
             const def = player.defense || 10;
             const dmg = Math.max(1, Math.floor(npc.npcAtk - def * 0.4 + (Math.random() * 8 - 4)));
-            player.hp = Math.max(0, player.hp - dmg);
-            updatePlayerHud();
-            showFloatingDmg(dmg, player.x - cam.x, player.y - cam.y, "#ff4444");
 
-            // Animación del NPC atacando
+            // Animación del NPC atacando (siempre ocurre)
             npc._animLocked = true;
             npc._anim = atkAnim;
             _playNpcAttackAnim(anim, atkAnim, () => {
               npc._animLocked = false;
               if (npc.npcHp > 0) _playNpcCombatIdle(npc, anim);
             });
-            // Fallback por si onComplete no dispara
             setTimeout(() => {
               if (npc._animLocked && npc._anim === atkAnim) {
                 npc._animLocked = false;
@@ -6689,7 +7027,21 @@
               }
             }, atkDur + 150);
 
-            // Animación del jugador recibiendo el golpe
+            // ── Dodge activo: sin daño ni empuje, animación dash ──
+            if (window._dodgeActive) {
+              _playPlayerHit2f(); // internamente reproduce dash
+              return;
+            }
+            // ── Invulnerabilidad activa: sin daño ──
+            if (window._invulActive) {
+              showHudToast("✨ Daño bloqueado (INVUL)", "info");
+              return;
+            }
+
+            // Aplicar daño
+            player.hp = Math.max(0, player.hp - dmg);
+            updatePlayerHud();
+            showFloatingDmg(dmg, player.x - cam.x, player.y - cam.y, "#ff4444");
             if (player.hp <= 0) {
               // KO: 3 frames completos
               _playPlayerHitKo(3000, () => {
@@ -6716,10 +7068,13 @@
               return;
             } else {
               // Golpe normal: 2 frames de hit
-              if (atkAnim === "heavy_combo" || atkAnim === "special") {
+              if (!window._dodgeActive && !window._invulActive && (atkAnim === "heavy_combo" || atkAnim === "special")) {
                 launchKnockback(player, csAnimator, npc.facing, atkAnim === "special" ? 1.35 : 1, true);
-              } else {
+              } else if (!window._dodgeActive && !window._invulActive) {
                 _playPlayerHit2f();
+              } else {
+                // Dodge o invul: sin empuje ni daño en animación
+                _playPlayerHit2f(); // internamente chequeará dodge y usará dash
               }
             }
           }
@@ -7087,10 +7442,75 @@
       }
     }
 
+    function updateCombatButtonStates() {
+      const dodgeBtn = document.getElementById("skillDodgeBtn");
+      if (dodgeBtn) dodgeBtn.classList.toggle("run-active", !!window._dodgeActive);
+      const invulBtn = document.getElementById("skillInvulBtn");
+      if (invulBtn) invulBtn.classList.toggle("run-active", !!window._invulActive);
+    }
+
     function performCombatAction(action) {
       if (window.PvpSystem?.isFighter()) return;
+      // Durante sparring/clash el único input válido es el click de button-mash
+      // (ya manejado por registerSparringClick / registerUltimateClashClick).
+      // Ninguna acción de combate debe interrumpir esas animaciones.
+      if (sparringState || ultimateClashState) return;
       if (controlMode !== "combat" && controlMode !== "pvp" && action !== "fly") setControlMode("combat");
-      const labels = { combo1:"COMBO 1", combo2:"COMBO 2", special1:"ESPECIAL 1", special2:"ESPECIAL 2", fly:"VOLAR", vanish:"Z-VANISH", charge:"CARGAR KI", block:"CUBRIRSE" };
+      const labels = { combo1:"COMBO 1", combo2:"COMBO 2", special1:"ESPECIAL 1", special2:"ESPECIAL 2", ultimate:"ULTIMATE", ultimate2:"ULTIMATE 2", fly:"VOLAR", vanish:"Z-VANISH", charge:"CARGAR KI", block:"CUBRIRSE", dodge:"DODGE", invul:"INVUL" };
+      // ── Dodge (esquiva activa/desactiva) ────────────────────────────────────
+      if (action === "dodge") {
+        window._dodgeActive = !window._dodgeActive;
+        const btn = document.getElementById("skillDodgeBtn");
+        if (btn) btn.classList.toggle("run-active", window._dodgeActive);
+        showHudToast(window._dodgeActive ? "🌀 DODGE ACTIVADO" : "🌀 DODGE DESACTIVADO", "info");
+        combatEffects.push({ x: player.x, y: player.y - 55, text: window._dodgeActive ? "🌀 DODGE ON" : "🌀 DODGE OFF", timer: 1.2, color: "#00e5ff" });
+        if (window._dodgeActive && csAnimator) {
+          csAnimator.setBattleMode && csAnimator.setBattleMode(true);
+          csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
+          if (csAnimator._freezeFrame) csAnimator._freezeFrame = false;
+          if (window._comboTimeout) { clearTimeout(window._comboTimeout); window._comboTimeout = null; }
+          csAnimator.play("dodge");
+        } else if (!window._dodgeActive && csAnimator) {
+          csAnimator.play(getCombatIdleAnim());
+        }
+        updateCombatButtonStates();
+        return;
+      }
+
+      // ── Invulnerabilidad (activa/desactiva sin animación especial) ────────────
+      if (action === "invul") {
+        window._invulActive = !window._invulActive;
+        const btn = document.getElementById("skillInvulBtn");
+        if (btn) btn.classList.toggle("run-active", window._invulActive);
+        showHudToast(window._invulActive ? "✨ INVULNERABILIDAD ACTIVADA" : "✨ INVULNERABILIDAD DESACTIVADA", "info");
+        combatEffects.push({ x: player.x, y: player.y - 55, text: window._invulActive ? "✨ INVUL ON" : "✨ INVUL OFF", timer: 1.2, color: "#ffea00" });
+        updateCombatButtonStates();
+        return;
+      }
+
+      if (action === "ultimate") {
+        const ultKiCost = 40;
+        if (player.ki < ultKiCost) { showHudToast(`Ki insuficiente (${ultKiCost} ki)`, "dmg"); return; }
+        player.ki = Math.max(0, player.ki - ultKiCost);
+        updatePlayerHud();
+        spawnKiAttackEffect({ id:"ultimate", name:"ULTIMATE", icon:"🌋", color:"#ff6a00", cost:ultKiCost, power:2.0, style:"beam" });
+        triggerAttackWorldDamage("special2", player.x + player.facing * 110, player.y - 24);
+        if (csAnimator) {
+          if (csAnimator._freezeFrame) csAnimator._freezeFrame = false;
+          if (window._comboTimeout) { clearTimeout(window._comboTimeout); window._comboTimeout = null; }
+          csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
+          csAnimator.play("ultimate", () => {
+            // Freeze en último frame hasta que termine la secuencia
+            csAnimator._freezeFrame = true;
+            setTimeout(() => { csAnimator._freezeFrame = false; combatEndAnim(); }, 800);
+          });
+        }
+        if (((currentMap === "simulador_combate" || currentMap === "sala_entrenamiento" || (pendingFactionChallenge === "intergalactic_empire" && currentMap === "frieza_ship")) || npcCombatActive) && waveEnemies.length > 0) {
+          applyPlayerAttackToCombatNpc("special2");
+        }
+        showHudToast("🌋 ULTIMATE", "info");
+        return;
+      }
       if (action === "fly") {
         // Mismo comportamiento que toggleFly() en modo RP
         toggleFly(); return;
@@ -7218,7 +7638,11 @@
           // Liberar freeze si venía de un combo
           if (csAnimator._freezeFrame) csAnimator._freezeFrame = false;
           if (window._comboTimeout) { clearTimeout(window._comboTimeout); window._comboTimeout = null; }
-          csAnimator.play(anim, combatEndAnim);
+          csAnimator.play(anim, () => {
+            // Freeze en último frame hasta completar la duración del efecto
+            csAnimator._freezeFrame = true;
+            setTimeout(() => { csAnimator._freezeFrame = false; combatEndAnim(); }, action === "special2" ? 700 : 500);
+          });
         }
       }
       if (((currentMap === "simulador_combate" || currentMap === "sala_entrenamiento" || (pendingFactionChallenge === "intergalactic_empire" && currentMap === "frieza_ship")) || npcCombatActive) && waveEnemies.length > 0) {
@@ -7227,6 +7651,329 @@
       showHudToast(effectLabel, action.startsWith("special") ? "info" : "xp");
     }
     window.performCombatAction = performCombatAction;
+    // Exportar funciones de sparring y ki clash para uso desde la UI
+    window.startSparring         = startSparring;
+    window.canStartSparring      = canStartSparring;
+    window.startUltimateClash    = startUltimateClash;
+    window.canStartUltimateClash = canStartUltimateClash;
+    window.getCombatNpcTarget    = getCombatNpcTarget;
+    // ═══════════════════════════════════════════════════════════════════
+    // NPC ACTION PANEL — panel flotante con botones de combate especial
+    // Aparece al hacer click/tap en un NPC durante el modo combate
+    // ═══════════════════════════════════════════════════════════════════
+    (function _initNpcActionPanel() {
+      // ── CSS ────────────────────────────────────────────────────────
+      const _s = document.createElement("style");
+      _s.textContent = `
+        #npcActionPanel {
+          display:none; position:fixed; z-index:9000;
+          bottom:80px; right:12px; left:auto; top:auto;
+          background:rgba(6,7,14,.96); border:1.5px solid #2a3560;
+          border-radius:12px; padding:10px 10px 8px;
+          pointer-events:auto; user-select:none;
+          min-width:180px; max-width:230px;
+          box-shadow:0 6px 28px rgba(0,0,0,.6);
+          backdrop-filter:blur(10px);
+          font-family:Orbitron,monospace;
+          animation:napSlideIn .2s cubic-bezier(.4,0,.2,1);
+        }
+        @keyframes napSlideIn { from{opacity:0;transform:translateX(24px)} to{opacity:1;transform:translateX(0)} }
+        #npcActionPanel.visible { display:block; }
+        #npcActionPanel .nap-title {
+          font-size:9px; letter-spacing:2px; color:#f5c400;
+          text-align:center; margin-bottom:8px;
+          text-overflow:ellipsis; overflow:hidden; white-space:nowrap;
+        }
+        #npcActionPanel .nap-info {
+          font-size:8px; letter-spacing:1px; color:#4a5880;
+          text-align:center; margin-bottom:6px;
+        }
+        #npcActionPanel .nap-btns { display:flex; flex-direction:column; gap:5px; }
+        .nap-btn {
+          width:100%; padding:8px 10px; border-radius:7px; cursor:pointer;
+          font-family:Orbitron,monospace; font-size:9px; letter-spacing:1px;
+          border:1px solid rgba(245,196,0,.25); background:rgba(245,196,0,.09);
+          color:#e8eaf6; display:flex; align-items:center; gap:7px;
+          touch-action:manipulation; transition:background .15s, border-color .15s;
+        }
+        .nap-btn:hover, .nap-btn:active { background:rgba(245,196,0,.2); border-color:rgba(245,196,0,.6); }
+        .nap-btn.sparring  { border-color:rgba(245,196,0,.4); }
+        .nap-btn.kichash   { border-color:rgba(0,229,255,.4); background:rgba(0,229,255,.08); animation:kiClashPulse 1.4s ease-in-out infinite; }
+        .nap-btn.disabled  { opacity:.35; cursor:default; pointer-events:none; }
+        .nap-btn .nap-ic   { font-size:14px; flex-shrink:0; }
+        .nap-btn .nap-lbl  { flex:1; }
+        .nap-btn .nap-key  { font-size:7px; color:#3d4a6b; }
+        #npcActionPanel .nap-close {
+          position:absolute; top:6px; right:8px;
+          background:none; border:none; color:#3d4a6b; font-size:14px;
+          cursor:pointer; padding:2px 5px; line-height:1;
+        }
+        #npcActionPanel .nap-close:hover { color:#f5c400; }
+      `;
+      document.head.appendChild(_s);
+
+      // ── DOM ────────────────────────────────────────────────────────
+      const _panel = document.createElement("div");
+      _panel.id = "npcActionPanel";
+      _panel.innerHTML = `
+        <button class="nap-close" onclick="_hideNpcActionPanel()">✕</button>
+        <div class="nap-title" id="napTitle">NPC</div>
+        <div class="nap-info"  id="napInfo"></div>
+        <div class="nap-btns"  id="napBtns"></div>
+      `;
+      document.body.appendChild(_panel);
+
+      // Cerrar al clickear fuera
+      document.addEventListener("pointerdown", (e) => {
+        const p = document.getElementById("npcActionPanel");
+        if (p && p.classList.contains("visible") && !p.contains(e.target)) {
+          _hideNpcActionPanel();
+        }
+      }, true);
+    })();
+
+    function _showNpcActionPanel(npc) {
+      const panel = document.getElementById("npcActionPanel");
+      if (!panel || !npc) return;
+
+      const dist = Math.hypot(npc.x - player.x, npc.y - player.y);
+      const canSpar  = canStartSparring(npc);
+      const canKC    = canStartUltimateClash(npc);
+      const kiOk     = player.ki >= 18;
+
+      // Título con nombre del NPC
+      document.getElementById("napTitle").textContent = npc.name || "ENEMIGO";
+
+      // Info de distancia
+      const infoEl = document.getElementById("napInfo");
+      infoEl.textContent = `Dist: ${Math.round(dist)} px  •  Ki: ${Math.round(player.ki)}`;
+
+      // Construir botones
+      const btns = document.getElementById("napBtns");
+      btns.innerHTML = "";
+
+      // ── Botón SPARRING ────────────────────────────────────────────
+      const bSpar = document.createElement("button");
+      bSpar.className = "nap-btn sparring" + (canSpar ? "" : " disabled");
+      bSpar.innerHTML = `<span class="nap-ic">🥋</span><span class="nap-lbl">SPARRING</span><span class="nap-key">&lt;92px</span>`;
+      bSpar.title = canSpar ? "Iniciar sparring (button-mash cuerpo a cuerpo)" : "Acercate más al NPC (<92 px)";
+      if (canSpar) {
+        bSpar.addEventListener("click", () => {
+          _hideNpcActionPanel();
+          startSparring(npc);
+        });
+      }
+      btns.appendChild(bSpar);
+
+      // ── Selector de ataque para KI CLASH ─────────────────────────
+      // Construir las 4 opciones con su info dinámica
+      const _clashOptions = [
+        { id:"special1",  animKey:"special",   label: getKiAttack("special1").name,  icon: getKiAttack("special1").icon,  cost: getKiAttack("special1").cost,  color: getKiAttack("special1").color },
+        { id:"special2",  animKey:"special_2", label: getKiAttack("special2").name,  icon: getKiAttack("special2").icon,  cost: getKiAttack("special2").cost,  color: getKiAttack("special2").color },
+        { id:"ultimate",  animKey:"ultimate",  label:"Ultimate",                     icon:"🌋",                            cost:40,                              color:"#ff6a00" },
+        { id:"ultimate2", animKey:"ultimate_2",label:"Ultimate 2",                   icon:"🌠",                            cost:50,                              color:"#aa00ff" },
+      ];
+
+      // Selector de ataque (mini pill-tabs)
+      const selWrap = document.createElement("div");
+      selWrap.style.cssText = "display:flex;flex-wrap:wrap;gap:4px;margin-bottom:5px;";
+      let _selectedClash = _clashOptions[0]; // default: special1
+      const _pills = [];
+      _clashOptions.forEach((opt, i) => {
+        const pill = document.createElement("button");
+        pill.style.cssText = `flex:1;min-width:40%;padding:5px 4px;border-radius:5px;border:1px solid ${opt.color}44;
+          background:${opt.color}12;color:#c8cfe8;font-family:Orbitron,monospace;font-size:7px;
+          letter-spacing:.5px;cursor:pointer;touch-action:manipulation;transition:all .12s;`;
+        pill.innerHTML = `${opt.icon}<br>${opt.label.slice(0,12)}`;
+        pill.title = `${opt.label} — ${opt.cost} Ki`;
+        if (i === 0) { pill.style.borderColor = opt.color; pill.style.background = opt.color + "28"; pill.style.color = "#fff"; }
+        pill.addEventListener("click", () => {
+          _selectedClash = opt;
+          _pills.forEach((p, j) => {
+            p.style.borderColor = _clashOptions[j].color + "44";
+            p.style.background  = _clashOptions[j].color + "12";
+            p.style.color = "#c8cfe8";
+          });
+          pill.style.borderColor = opt.color;
+          pill.style.background  = opt.color + "28";
+          pill.style.color = "#fff";
+          // Actualizar estado del botón clash
+          const enough = player.ki >= opt.cost;
+          bKC.className = "nap-btn kichash" + (canKC && enough ? "" : " disabled");
+          bKC.querySelector(".nap-key").textContent = opt.cost + " Ki";
+          if (!enough)   bKC.title = `Ki insuficiente — necesitás ${opt.cost}`;
+          else if (!canKC) bKC.title = "Alejate del NPC (92–280 px)";
+          else             bKC.title = `${opt.label} clash a distancia`;
+        });
+        _pills.push(pill);
+        selWrap.appendChild(pill);
+      });
+      btns.appendChild(selWrap);
+
+      // ── Botón KI CLASH ────────────────────────────────────────────
+      const bKC = document.createElement("button");
+      const kcEnabled = canKC && player.ki >= _selectedClash.cost;
+      bKC.className = "nap-btn kichash" + (kcEnabled ? "" : " disabled");
+      bKC.innerHTML = `<span class="nap-ic">⚡</span><span class="nap-lbl">KI CLASH</span><span class="nap-key">${_selectedClash.cost} Ki</span>`;
+      if (player.ki < _selectedClash.cost) bKC.title = `Ki insuficiente — necesitás ${_selectedClash.cost}`;
+      else if (!canKC) bKC.title = "Alejate del NPC (92–280 px)";
+      else             bKC.title = "Iniciar Ki Clash a distancia";
+      if (canKC) {
+        bKC.addEventListener("click", () => {
+          if (player.ki < _selectedClash.cost) { showHudToast(`Ki insuficiente (${_selectedClash.cost})`, "dmg"); return; }
+          _hideNpcActionPanel();
+          startUltimateClash(npc, _selectedClash);
+        });
+      }
+      btns.appendChild(bKC);
+
+      panel.classList.add("visible");
+    }
+
+    function _hideNpcActionPanel() {
+      const p = document.getElementById("npcActionPanel");
+      if (p) p.classList.remove("visible");
+    }
+    window._hideNpcActionPanel = _hideNpcActionPanel;
+
+    // ── Hold-to-charge: special1, special2, ultimate ──────────────────────────
+    (function() {
+      // Crear barra de carga en el DOM una sola vez
+      const bar = document.createElement("div");
+      bar.id = "chargeBar";
+      bar.innerHTML = '<div id="chargeBarLabel">⚡ CARGANDO</div><div id="chargeBarTrack"><div id="chargeBarFill"></div></div>';
+      document.body.appendChild(bar);
+
+      let _action  = null;   // acción en carga actual
+      let _startMs = 0;     // timestamp inicio
+      let _rafId   = null;  // requestAnimationFrame id
+      let _charged = false;  // true solo cuando la barra llegó al 100%
+
+      const ANIM_MAP = { special1:"special", special2:"special_2", ultimate:"ultimate", ultimate2:"ultimate_2" };
+      const KI_COST  = { special1:18, special2:28, ultimate:40, ultimate2:50 };
+      const HOLD_DUR = { special1:1200, special2:1200, ultimate:1600, ultimate2:1800 }; // ms para llenar la barra
+
+      function startCharge(actionId) {
+        if (controlMode !== "combat") return;
+        if (sparringState || ultimateClashState) return; // no interrumpir sparring/clash
+        if (_action) return; // ya cargando
+        const animName = ANIM_MAP[actionId];
+        if (!animName || !csAnimator) return;
+        _action  = actionId;
+        _startMs = Date.now();
+        _charged = false;
+
+        // Congelar en primer frame
+        if (csAnimator._freezeFrame) csAnimator._freezeFrame = false;
+        if (window._comboTimeout) { clearTimeout(window._comboTimeout); window._comboTimeout = null; }
+        csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
+        csAnimator.setBattleMode  && csAnimator.setBattleMode(true);
+        csAnimator.action  = animName;
+        csAnimator.frame   = 0;
+        csAnimator.elapsed = 0;
+        csAnimator._freezeFrame = true;
+
+        // Mostrar barra
+        document.getElementById("chargeBarLabel").textContent =
+          actionId === "ultimate" ? "🌋 CARGANDO ULTIMATE" : actionId === "ultimate2" ? "🌠 CARGANDO ULTIMATE 2" : "⚡ CARGANDO ESPECIAL";
+        document.getElementById("chargeBarFill").style.width = "0%";
+        document.getElementById("chargeBar").classList.add("active");
+        document.querySelector(".chargeable.charging")?.classList.remove("charging");
+
+        const dur = HOLD_DUR[actionId];
+        _rafId = requestAnimationFrame(function tick() {
+          if (!_action) return;
+          const pct = Math.min(100, ((Date.now() - _startMs) / dur) * 100);
+          document.getElementById("chargeBarFill").style.width = pct + "%";
+          if (pct < 100) {
+            _rafId = requestAnimationFrame(tick);
+          } else {
+            _charged = true; // barra completa — listo para disparar al soltar
+          }
+        });
+      }
+
+      function releaseCharge(actionId) {
+        if (_action !== actionId) return;
+        const wasCharged = _charged;
+        _action  = null;
+        _charged = false;
+        cancelAnimationFrame(_rafId);
+        document.getElementById("chargeBar").classList.remove("active");
+
+        // Descongelar el animator
+        if (csAnimator) csAnimator._freezeFrame = false;
+
+        // Si se soltó antes de que la barra llegara al 100%, cancelar sin disparar
+        if (!wasCharged) {
+          if (csAnimator) csAnimator.play(isFlying ? "fly" : getCombatIdleAnim());
+          return;
+        }
+
+        // Verificar Ki
+        const kiCost = KI_COST[actionId];
+        if (player.ki < kiCost) { showHudToast(`Ki insuficiente (${kiCost})`, "dmg"); return; }
+        player.ki = Math.max(0, player.ki - kiCost);
+        updatePlayerHud();
+
+        const animName = ANIM_MAP[actionId];
+
+        // Efectos visuales del ataque
+        if (actionId === "ultimate") {
+          spawnKiAttackEffect({ id:"ultimate", name:"ULTIMATE", icon:"🌋", color:"#ff6a00", cost:kiCost, power:2.0, style:"beam" });
+          triggerAttackWorldDamage("special2", player.x + player.facing * 110, player.y - 24);
+          showHudToast("🌋 ULTIMATE", "info");
+        } else if (actionId === "ultimate2") {
+          spawnKiAttackEffect({ id:"ultimate2", name:"ULTIMATE 2", icon:"🌠", color:"#aa00ff", cost:kiCost, power:2.5, style:"beam" });
+          triggerAttackWorldDamage("special2", player.x + player.facing * 120, player.y - 30);
+          showHudToast("🌠 ULTIMATE 2", "info");
+        } else {
+          const atk = getKiAttack(actionId);
+          spawnKiAttackEffect(atk);
+          triggerAttackWorldDamage(actionId, player.x + player.facing * 90, player.y - 24);
+          showHudToast(`${atk.icon} ${atk.name}`, "info");
+        }
+
+        // Reproducir anim completa → freeze en último frame → timeout → idle
+        csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
+        if (window._comboTimeout) { clearTimeout(window._comboTimeout); window._comboTimeout = null; }
+        csAnimator.play(animName, () => {
+          csAnimator._freezeFrame = true;
+          const holdMs = (actionId === "ultimate" || actionId === "ultimate2") ? 800 : actionId === "special2" ? 700 : 500;
+          setTimeout(() => { csAnimator._freezeFrame = false; combatEndAnim(); }, holdMs);
+        });
+
+        // Daño a NPCs
+        if (((currentMap === "simulador_combate" || currentMap === "sala_entrenamiento" ||
+             (pendingFactionChallenge === "intergalactic_empire" && currentMap === "frieza_ship")) ||
+             npcCombatActive) && waveEnemies.length > 0) {
+          applyPlayerAttackToCombatNpc((actionId === "ultimate" || actionId === "ultimate2") ? "special2" : actionId);
+        }
+      }
+
+      window.beginCombatCharge   = startCharge;
+      window.releaseCombatCharge = releaseCharge;
+
+      // Teclas T (ultimate), E (special1), R (special2) en modo combate
+      const _held = {};
+      document.addEventListener("keydown", e => {
+        if (controlMode !== "combat" || window.PvpSystem?.isFighter()) return;
+        if (e.code === "KeyT" && !_held.ultimate)  { e.preventDefault(); _held.ultimate = true;  startCharge("ultimate");  }
+        if (e.code === "KeyE" && !_held.special1)  { e.preventDefault(); _held.special1 = true;  startCharge("special1");  }
+        if (e.code === "KeyR" && !_held.special2)  { e.preventDefault(); _held.special2 = true;  startCharge("special2");  }
+        if (e.code === "KeyY" && !_held.ultimate2) { e.preventDefault(); _held.ultimate2 = true; startCharge("ultimate2"); }
+        if (e.code === "KeyV" && !_held.dodgeKey)  { e.preventDefault(); _held.dodgeKey = true;  performCombatAction("dodge"); }
+        if (e.code === "KeyI" && !_held.invulKey)  { e.preventDefault(); _held.invulKey = true;  performCombatAction("invul"); }
+      });
+      document.addEventListener("keyup", e => {
+        if (e.code === "KeyT" && _held.ultimate)  { _held.ultimate = false;  releaseCharge("ultimate");  }
+        if (e.code === "KeyE" && _held.special1)  { _held.special1 = false;  releaseCharge("special1");  }
+        if (e.code === "KeyR" && _held.special2)  { _held.special2 = false;  releaseCharge("special2");  }
+        if (e.code === "KeyY" && _held.ultimate2) { _held.ultimate2 = false; releaseCharge("ultimate2"); }
+        if (e.code === "KeyV" && _held.dodgeKey)  { _held.dodgeKey = false; }
+        if (e.code === "KeyI" && _held.invulKey)  { _held.invulKey = false; }
+      });
+    })();
 
     function applyMapFlightMode(prevMap) {
       if (MAPS[currentMap]?.alwaysFly) {
@@ -7483,7 +8230,7 @@
       if (keys["ArrowUp"]||keys["KeyW"]) my-=1;
       if (keys["ArrowDown"]||keys["KeyS"]) my+=1;
       if (joystick.active) { mx=joystick.dx; my=joystick.dy; }
-      if (sparringState || player._knockback) { mx = 0; my = 0; }
+      if (sparringState || ultimateClashState || player._knockback) { mx = 0; my = 0; }
       if (mx!==0||my!==0) { const len=Math.sqrt(mx*mx+my*my); mx/=len; my/=len; }
       player.moving = mx!==0||my!==0;
       if (mx!==0) player.facing = mx>0?1:-1;
@@ -7531,7 +8278,7 @@
           csAnimator.setBattleMode && csAnimator.setBattleMode(true);
           csAnimator.play(pvpLockedAnim);
         }
-        if (!rpLocked && !atkLocked && !pvpLockedAnim) {
+        if (!rpLocked && !atkLocked && !pvpLockedAnim && !sparringState && !ultimateClashState) {
           if (csAnimator.specialMode) {
             // En modo special: si el jugador se mueve, salir del special mode
             if (player.moving) {
@@ -8410,7 +9157,10 @@
       npcState.spriteVariantId = npc.combatNpc ? "fight" : null;
 
       _npcPlayerLike.appearance = npcApp;
-      _npcPlayerLike.direction  = npcDir;
+      // Siempre dibujamos el offscreen mirando a la derecha (direction=1).
+      // El flip real se aplica en el canvas principal con ctx.scale(-1,1)
+      // segun npc.facing. Si pasamos npcDir aqui tambien, habria doble flip.
+      _npcPlayerLike.direction  = 1;
 
       const { oc, oCtx } = _getNpcOffscreen(npc, CS);
       oCtx.clearRect(0, 0, NW, NH);
@@ -8635,10 +9385,22 @@
         // Nombre y prompt de interacción
         ctx.fillStyle="rgba(255,255,255,.9)"; ctx.font="bold 9px Orbitron,monospace"; ctx.textAlign="center";
         ctx.fillText(npc.name, sx, sy-SPRITE_DRAW_H-6);
-        if (Math.hypot(npc.x-player.x,npc.y-player.y)<80) {
+        const _distToNpc = Math.hypot(npc.x-player.x, npc.y-player.y);
+        if (_distToNpc < 80) {
           ctx.fillStyle=`rgba(245,196,0,${.5+.5*Math.sin(t*4)})`;
           ctx.font="bold 12px Orbitron,monospace";
           ctx.fillText("[Z]",sx,sy-SPRITE_DRAW_H-22+Math.sin(t*3)*3);
+        } else if (_distToNpc > SPARRING_RANGE && _distToNpc <= ULTIMATE_CLASH_RANGE
+                   && lockedCombatNpcId === npc.id && !sparringState && !ultimateClashState
+                   && npc.npcHp > 0 && player.ki >= 18) {
+          // Prompt de Ultimate Clash disponible
+          const _uc = getKiAttack ? getKiAttack("special1") : null;
+          const _ucCol = _uc?.color || "#00e5ff";
+          ctx.fillStyle=`rgba(0,229,255,${.6+.4*Math.sin(t*5)})`;
+          ctx.shadowColor=_ucCol; ctx.shadowBlur=8;
+          ctx.font="bold 11px Orbitron,monospace";
+          ctx.fillText("⚡ [Z] KI CLASH",sx,sy-SPRITE_DRAW_H-22+Math.sin(t*3)*3);
+          ctx.shadowBlur=0;
         }
         ctx.textAlign="left";
       });
@@ -8662,6 +9424,75 @@
           ctx.restore();
         }
       }
+
+      // ── Ultimate Clash HUD ──────────────────────────────────────────
+      if (ultimateClashState) {
+        const npc = waveEnemies.find(e => e.id === ultimateClashState.npcId);
+        if (npc) {
+          const cx = ((player.x + npc.x) / 2) - cam.x;
+          const cy = Math.min(player.y, npc.y) - cam.y - 170;
+          const remain = Math.max(0, (ultimateClashState.ends - performance.now()) / ULTIMATE_CLASH_DURATION);
+          const prog = ultimateClashState.beamProgress; // 0=NPC, 1=Player
+          const kiCol = ultimateClashState.kiColor || "#00e5ff";
+          const npcCol = npc.color || "#ff4444";
+          const BAR_W = 200, BAR_H = 14;
+          ctx.save();
+          ctx.textAlign = "center";
+
+          // Fondo panel
+          ctx.fillStyle = "rgba(0,0,0,.75)";
+          ctx.fillRect(cx - 110, cy - 42, 220, 76);
+          ctx.strokeStyle = kiCol;
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(cx - 110, cy - 42, 220, 76);
+
+          // Título
+          ctx.font = "bold 11px Orbitron,monospace";
+          ctx.fillStyle = kiCol;
+          ctx.shadowColor = kiCol; ctx.shadowBlur = 8;
+          ctx.fillText("⚡ ULTIMATE CLASH ⚡", cx, cy - 26);
+          ctx.shadowBlur = 0;
+
+          // Clicks
+          ctx.font = "bold 14px Orbitron,monospace";
+          ctx.fillStyle = kiCol;
+          ctx.fillText(`${ultimateClashState.playerClicks}`, cx - 60, cy - 7);
+          ctx.fillStyle = "#c8cfe8";
+          ctx.fillText("VS", cx, cy - 7);
+          ctx.fillStyle = npcCol;
+          ctx.fillText(`${ultimateClashState.npcClicks}`, cx + 60, cy - 7);
+
+          // Barra de beam clash — lado jugador (izq→centro) y lado NPC (der→centro)
+          const bx = cx - BAR_W / 2, by = cy + 4;
+          ctx.fillStyle = "#1a2040";
+          ctx.fillRect(bx, by, BAR_W, BAR_H);
+
+          // Lado jugador (azul ki)
+          ctx.fillStyle = kiCol;
+          ctx.shadowColor = kiCol; ctx.shadowBlur = 10;
+          ctx.fillRect(bx, by, BAR_W * prog, BAR_H);
+          // Lado NPC (color npc)
+          ctx.fillStyle = npcCol;
+          ctx.shadowColor = npcCol;
+          ctx.fillRect(bx + BAR_W * prog, by, BAR_W * (1 - prog), BAR_H);
+          ctx.shadowBlur = 0;
+
+          // Indicador central (chispa)
+          const sparkX = bx + BAR_W * prog;
+          ctx.fillStyle = "#ffffff";
+          ctx.beginPath();
+          ctx.arc(sparkX, by + BAR_H / 2, 5, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Barra de tiempo
+          ctx.fillStyle = "#2a3560";
+          ctx.fillRect(cx - BAR_W / 2, by + BAR_H + 4, BAR_W, 4);
+          ctx.fillStyle = "#f5c400";
+          ctx.fillRect(cx - BAR_W / 2, by + BAR_H + 4, BAR_W * remain, 4);
+
+          ctx.restore();
+        }
+      }
     }
 
     // -- drawPlayerChar  actualizado para spriteVariantId con "special" --
@@ -8673,9 +9504,10 @@
       if (useCS) {
         const accId = CS.player.appearance.accessoryId || "ac_none";
         // Determinar spriteVariantId según el modo del animador
+        // Durante sparring o ki clash el jugador siempre usa el sheet de combate ("fight")
         let spriteVariantId = null;
         if (csAnimator.specialMode) spriteVariantId = "special";
-        else if (isCombatMode) spriteVariantId = "fight";
+        else if (isCombatMode || sparringState || ultimateClashState) spriteVariantId = "fight";
 
         const csState = {
           glovesId:CS.player.appearance.glovesId||"gm0",
@@ -9214,7 +10046,7 @@
         return result;
       }
       // Soy invitado: calcular daño localmente y enviarlo al host
-      if (sparringState) return null;
+      if (sparringState || ultimateClashState) return null;
       const target = getCombatNpcTarget();
       if (!target) return null;
       const COMBO_RANGE = 92;
