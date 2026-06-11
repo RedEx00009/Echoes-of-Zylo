@@ -309,6 +309,57 @@
         overflow:hidden;
       }
       #trailerInterior.visible { display:flex; flex-direction:column; }
+
+      /* ── Modo in-trailer: actionGrid y joystick flotan SOBRE trailerInterior ── */
+      body.in-trailer #actionGrid {
+        position: fixed !important;
+        bottom: 16px !important;
+        right: 12px !important;
+        z-index: 80 !important;
+        pointer-events: auto !important;
+        display: grid !important;
+      }
+      body.in-trailer #actionGrid.mrb-combat-mode {
+        z-index: 80 !important;
+      }
+      body.in-trailer .mobile-controls {
+        z-index: 75 !important;
+        display: flex !important;
+        pointer-events: none !important;
+      }
+      body.in-trailer .mobile-controls .joystick-col { pointer-events: auto !important; }
+      body.in-trailer #trailerMobileControls { display: none !important; }
+      /* Botón de modo combate trailer — flotante sobre canvas */
+      #trailerCombatToggle {
+        display: none;
+        position: fixed;
+        top: 48px;
+        right: 12px;
+        z-index: 82;
+        padding: 7px 12px;
+        background: rgba(170,0,255,.22);
+        border: 1px solid rgba(170,0,255,.8);
+        border-radius: 8px;
+        color: #ce93d8;
+        font-family: var(--font-head);
+        font-size: 9px;
+        letter-spacing: 1px;
+        cursor: pointer;
+        touch-action: manipulation;
+        pointer-events: auto;
+        backdrop-filter: blur(8px);
+      }
+      #trailerCombatToggle.combat-active {
+        background: rgba(170,0,255,.45);
+        border-color: #ce93d8;
+        box-shadow: 0 0 12px rgba(170,0,255,.5);
+      }
+      body.in-trailer #trailerCombatToggle { display: block; }
+      /* Ocultar HUD bar del trailer en PC (queda feo si el joystick ya lo reemplaza en mobile) */
+      @media (pointer:coarse) {
+        body.in-trailer .trailer-hud-bar { display: none !important; }
+        body.in-trailer .trailer-hud-bar + * { display: none; }
+      }
       #trailerCanvas { flex:1 1 auto; display:block; width:100%; min-height:0; }
       /* Joystick móvil dentro del trailer */
       #trailerMobileControls {
@@ -638,10 +689,13 @@
 
     <canvas id="gameCanvas"></canvas>
 
+    <!-- Botón combate/RP flotante para el interior del trailer -->
+    <button id="trailerCombatToggle" onclick="setControlMode(window.isCombatMode?'rp':'combat')">⚔️ COMBATE</button>
+
     <!-- INTERIOR TRAILER -->
     <div id="trailerInterior">
       <canvas id="trailerCanvas"></canvas>
-      <!-- Joystick móvil para moverse dentro del trailer -->
+      <!-- Joystick móvil para moverse dentro del trailer (fallback si mobile-controls no se muestra) -->
       <div id="trailerMobileControls">
         <div class="joystick-wrap" id="trailerJoystickWrap">
           <div id="trailerJoystickBase"></div>
@@ -2072,6 +2126,12 @@
         }
       }
       renderActionBars();
+      // Sincronizar botón combate del trailer
+      const tcBtn = document.getElementById("trailerCombatToggle");
+      if (tcBtn) {
+        tcBtn.textContent = isCombatMode ? "🔄 MODO RP" : "⚔️ COMBATE";
+        tcBtn.classList.toggle("combat-active", isCombatMode);
+      }
       const msg = controlMode === "pvp" ? "⚔️ Duelo PvP — controles de combate" : (isCombatMode ? "Modo combate (práctica)" : "Modo rol");
       showHudToast(msg, "info");
       publishMyAppearance(true);
@@ -4514,8 +4574,20 @@
         return;
       }
       if (gameState === "trailer") {
-        if (e.code==="KeyZ") { e.preventDefault(); trailerInteract(); }
-        if (e.code==="Escape") { e.preventDefault(); exitTrailer(); }
+        if (e.code==="KeyZ") { e.preventDefault(); if (isCombatMode) runActionSlot(0); else trailerInteract(); }
+        if (e.code==="KeyQ") { e.preventDefault(); runActionSlot(isCombatMode ? 1 : 0); }
+        if (e.code==="KeyE") { e.preventDefault(); if (!isCombatMode) runActionSlot(1); }
+        if (e.code==="KeyR") { e.preventDefault(); if (!isCombatMode) runActionSlot(2); }
+        if (e.code==="KeyG") { e.preventDefault(); if (isCombatMode) runActionSlot(4); }
+        if (e.code==="KeyF") { e.preventDefault(); if (isCombatMode) runActionSlot(5); }
+        if (e.code==="KeyC") { e.preventDefault(); runActionSlot(isCombatMode ? 6 : 3); }
+        if (e.code==="KeyV") { e.preventDefault(); runActionSlot(isCombatMode ? 7 : 4); }
+        if (e.code==="KeyB") { e.preventDefault(); runActionSlot(isCombatMode ? 8 : 5); }
+        if (e.code==="KeyX") { e.preventDefault(); setControlMode(isCombatMode ? "rp" : "combat"); }
+        if (e.code==="Escape") {
+          e.preventDefault();
+          if (isCombatMode) { setControlMode("rp"); } else { exitTrailer(); }
+        }
         return;
       }
       if (e.code==="KeyZ") { e.preventDefault(); if (controlMode === "combat") runActionSlot(0); else interactNearby(); }
@@ -5229,7 +5301,9 @@
       closeTrailerTravelPanel();
       document.getElementById("trailerInterior").classList.add("visible");
       document.getElementById("trailerOwnerLabel").textContent = ownerId === myPlayerId ? "🏠 TU CASA RODANTE" : `🏠 CASA DE ${trailers[ownerId]?.ownerName||"?"}`;
+      document.body.classList.add("in-trailer");
       resizeCanvas(); gameState = "trailer";
+      renderActionBars();
       showHudToast("🚐 Dentro de la casa rodante","info");
     }
 
@@ -5238,6 +5312,8 @@
       closeTrailerTravelPanel();
       placePlayerAtMyTrailer();
       document.getElementById("trailerInterior").classList.remove("visible");
+      document.body.classList.remove("in-trailer");
+      setControlMode("rp");
       gameState = "playing";
     }
     window.exitTrailer = exitTrailer;
@@ -5334,8 +5410,14 @@
       trailerPlayer.y = Math.max(.22, Math.min(.86, trailerPlayer.y + my * speed));
       if (csAnimator) {
         csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
-        csAnimator.setBattleMode && csAnimator.setBattleMode(false);
-        csAnimator.play(trailerPlayer.moving ? "walk" : "idle");
+        if (isCombatMode) {
+          csAnimator.setBattleMode && csAnimator.setBattleMode(true);
+          if (!trailerPlayer.moving) csAnimator.play(getCombatIdleAnim());
+          else csAnimator.play("walk");
+        } else {
+          csAnimator.setBattleMode && csAnimator.setBattleMode(false);
+          csAnimator.play(trailerPlayer.moving ? "walk" : "idle");
+        }
       }
     }
 
@@ -5797,7 +5879,7 @@
           accessoryId:CS.player.appearance.accessoryId || "ac_none",
           auraPhase:player.auraPhase||0,
           viewKey:null,
-          spriteVariantId:null,
+          spriteVariantId: isCombatMode ? "fight" : null,
         };
         tCtx.fillStyle="rgba(0,0,0,0.32)";
         tCtx.beginPath(); tCtx.ellipse(px, py+4, 34, 10, 0, 0, Math.PI*2); tCtx.fill();

@@ -52,6 +52,107 @@
     document.body.appendChild(btn);
   }
 
+  /* ═══════════════════════════════════════════════════
+     UI MINIMAL TOGGLE — oculta todo excepto botones,
+     vida/nombre, mapa y acciones
+     ═══════════════════════════════════════════════════ */
+  function buildUiMinimalToggle() {
+    if (document.getElementById("uiMinimalBtn")) return;
+    var btn = document.createElement("button");
+    btn.id = "uiMinimalBtn";
+    btn.title = "Modo limpio — ocultar paneles";
+    btn.textContent = "HUD";
+    var minimal = false;
+    function toggle(e) {
+      e && e.stopPropagation();
+      minimal = !minimal;
+      document.body.classList.toggle("ui-minimal", minimal);
+      btn.textContent = minimal ? "👁‍🗨" : "HUD";
+    }
+    btn.addEventListener("click", toggle);
+    btn.addEventListener("touchend", function (e) { e.preventDefault(); toggle(); }, { passive: false });
+    document.body.appendChild(btn);
+  }
+
+  /* ═══════════════════════════════════════════════════
+     BOTONES DE TRAILER — solo visibles durante
+     trailerDrive.active. Flotan sobre el joystick.
+     ═══════════════════════════════════════════════════ */
+  function buildTrailerButtons() {
+    if (document.getElementById("mrbTrailerBtns")) return;
+    var wrap = document.createElement("div");
+    wrap.id = "mrbTrailerBtns";
+    wrap.style.display = "none"; // oculto por defecto
+
+    /* Botón: abrir/cerrar panel de destinos */
+    var mapBtn = document.createElement("button");
+    mapBtn.id = "mrbTrailerMapBtn";
+    mapBtn.className = "mrb-trailer-btn mrb-trailer-map";
+    mapBtn.innerHTML = '🗺️<span class="mrb-label">TABLA</span>';
+    mapBtn.addEventListener("click", function () {
+      if (window.toggleTrailerTravelPanel) window.toggleTrailerTravelPanel();
+    });
+    mapBtn.addEventListener("touchend", function (e) {
+      e.preventDefault();
+      if (window.toggleTrailerTravelPanel) window.toggleTrailerTravelPanel();
+    }, { passive: false });
+
+    /* Botón: vuelo del trailer */
+    var flyBtn = document.createElement("button");
+    flyBtn.id = "mrbTrailerFlyBtn";
+    flyBtn.className = "mrb-trailer-btn mrb-trailer-fly";
+    flyBtn.innerHTML = '🦅<span class="mrb-label">VUELO</span>';
+    flyBtn.addEventListener("click", function () {
+      if (window.toggleTrailerDriveFly) window.toggleTrailerDriveFly();
+      syncTrailerBtns();
+    });
+    flyBtn.addEventListener("touchend", function (e) {
+      e.preventDefault();
+      if (window.toggleTrailerDriveFly) window.toggleTrailerDriveFly();
+      syncTrailerBtns();
+    }, { passive: false });
+
+    /* Botón: salir de conducción */
+    var exitBtn = document.createElement("button");
+    exitBtn.id = "mrbTrailerExitBtn";
+    exitBtn.className = "mrb-trailer-btn mrb-trailer-exit";
+    exitBtn.innerHTML = '🚪<span class="mrb-label">SALIR</span>';
+    exitBtn.addEventListener("click", function () {
+      if (window.exitTrailerDriveMode) window.exitTrailerDriveMode();
+    });
+    exitBtn.addEventListener("touchend", function (e) {
+      e.preventDefault();
+      if (window.exitTrailerDriveMode) window.exitTrailerDriveMode();
+    }, { passive: false });
+
+    wrap.appendChild(mapBtn);
+    wrap.appendChild(flyBtn);
+    wrap.appendChild(exitBtn);
+    document.body.appendChild(wrap);
+  }
+
+  function syncTrailerBtns() {
+    var flyBtn = document.getElementById("mrbTrailerFlyBtn");
+    if (flyBtn && window.trailerDrive) {
+      flyBtn.classList.toggle("trailer-fly-active", !!window.trailerDrive.flying);
+    }
+  }
+
+  function syncTrailerMode() {
+    var wrap      = document.getElementById("mrbTrailerBtns");
+    var rightBtns = document.getElementById("mobileRightBtns");
+    var uiToggle  = document.getElementById("uiToggleBtn");
+    var uiMinimal = document.getElementById("uiMinimalBtn");
+    var active    = !!(window.trailerDrive && window.trailerDrive.active);
+    if (wrap) wrap.style.display = active ? "flex" : "none";
+    // Ocultar columna derecha normal al conducir
+    if (rightBtns) rightBtns.classList.toggle("mrb-mode-hidden", active);
+    // Ocultar toggle UI en trailer (no se necesita)
+    if (uiToggle)  uiToggle.style.display  = active ? "none" : "";
+    if (uiMinimal) uiMinimal.style.display = active ? "none" : "";
+    if (active) syncTrailerBtns();
+  }
+
   /* En PC solo necesitamos el toggle */
   if (!isTouch) {
     if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", buildUiToggle);
@@ -116,7 +217,18 @@
     /* En modo combate, renderActionBars() pone los botones con class "btn-emote/interact/trailer"
        y un botón "VOLVER A RP". En modo RP tiene mobileCombatBtn, mobileTalkBtn, etc. */
     var inCombat = !!grid.querySelector(".chargeable, .ult-btn");
-    showCombatPanel(inCombat);
+    /* Dentro del trailer, el grid flota sobre el canvas —
+       no ocultamos la columna derecha porque no se muestra */
+    var inTrailer = document.body.classList.contains("in-trailer");
+    showCombatPanel(inCombat && !inTrailer);
+    /* Dentro del trailer sí mostramos el grid en combate */
+    if (inTrailer && grid) {
+      if (inCombat) {
+        grid.classList.add("mrb-combat-mode");
+      } else {
+        grid.classList.remove("mrb-combat-mode");
+      }
+    }
   }
 
   /* ═══════════════════════════════════════════════════
@@ -429,11 +541,16 @@
      ═══════════════════════════════════════════════════ */
   function init() {
     buildUiToggle();
+    buildUiMinimalToggle();
     buildCombatPanel();
     buildRightButtons();
+    buildTrailerButtons();
     watchSkillsBar();
     setupOverlayPanel("woPanel");
     setupOverlayPanel("npcPanel");
+
+    /* Sincronizar modo trailer cada 300ms */
+    setInterval(syncTrailerMode, 300);
 
     /* RPG Chat dinámico */
     var t1 = 0;

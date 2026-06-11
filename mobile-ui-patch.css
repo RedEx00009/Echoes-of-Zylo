@@ -37,6 +37,41 @@ body.ui-hidden #uiToggleBtn {
   background: rgba(8,9,15,.9) !important;
 }
 
+/* ═══════════════════════════════════════════════════════
+   #uiMinimalBtn — junto al uiToggleBtn, un poco a su
+   derecha. Oculta paneles/chat pero deja vida, mapa,
+   botones y acciones visibles.
+   ═══════════════════════════════════════════════════════ */
+#uiMinimalBtn {
+  position: fixed !important;
+  bottom: 16px !important;
+  left: calc(50% + 52px) !important;
+  transform: none !important;
+  z-index: 300 !important;
+  width: 44px !important;
+  height: 22px !important;
+  background: rgba(8,9,15,.75) !important;
+  border: 1px solid rgba(0,229,255,.3) !important;
+  border-radius: 11px !important;
+  color: rgba(0,229,255,.6) !important;
+  font-size: 9px !important;
+  font-family: "Orbitron", monospace !important;
+  letter-spacing: .5px !important;
+  cursor: pointer !important;
+  touch-action: manipulation !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  backdrop-filter: blur(6px) !important;
+  transition: border-color .2s, color .2s !important;
+  pointer-events: auto !important;
+}
+body.ui-minimal #uiMinimalBtn {
+  border-color: rgba(0,229,255,.8) !important;
+  color: #00e5ff !important;
+  background: rgba(0,229,255,.12) !important;
+}
+
 /* ui-hidden en PC */
 @media (pointer: fine) and (min-width: 769px) {
   body.ui-hidden .hud-top,
@@ -47,6 +82,15 @@ body.ui-hidden #uiToggleBtn {
   body.ui-hidden #sideActionToggle,
   body.ui-hidden #skillsBarFixed,
   body.ui-hidden #skillsBar {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transition: opacity .25s;
+  }
+  /* ui-minimal en PC: oculta chat, menú, paneles pero deja vida+mapa+acciones */
+  body.ui-minimal #rpgChatPanel,
+  body.ui-minimal #menuToggleBtn,
+  body.ui-minimal #leftPanelStack,
+  body.ui-minimal #sideActionToggle {
     opacity: 0 !important;
     pointer-events: none !important;
     transition: opacity .25s;
@@ -354,6 +398,102 @@ body.ui-hidden #uiToggleBtn {
   body.ui-hidden #menuToggleBtn   { opacity: 0 !important; pointer-events: none !important; }
   body.ui-hidden #rpgChatPanel    { opacity: 0 !important; pointer-events: none !important; }
 
+  /* ── ui-minimal móvil — oculta paneles/chat/menú,
+     deja vida, mapa, botones y acciones visibles ─── */
+  body.ui-minimal #menuToggleBtn  { opacity: 0 !important; pointer-events: none !important; }
+  body.ui-minimal #rpgChatPanel   { opacity: 0 !important; pointer-events: none !important; }
+  body.ui-minimal #mrbRpPanel     { opacity: 0 !important; pointer-events: none !important; }
+  /* Los botones, vida y mapa permanecen visibles */
+  body.ui-minimal .mobile-controls { opacity: 1 !important; pointer-events: auto !important; }
+  body.ui-minimal #mobileRightBtns { opacity: 1 !important; pointer-events: auto !important; }
+  body.ui-minimal .hud-top         { opacity: 1 !important; }
+  body.ui-minimal .minimap-wrap    { opacity: 1 !important; }
+  body.ui-minimal #actionGrid.mrb-combat-mode { opacity: 1 !important; pointer-events: auto !important; }
+
+  /* ── IN-TRAILER: joystick y actionGrid flotan sobre el canvas ─── */
+  body.in-trailer .mobile-controls {
+    position: fixed !important;
+    z-index: 75 !important;
+    display: flex !important;
+    background: none !important;
+    pointer-events: none !important;
+  }
+  body.in-trailer .joystick-col { pointer-events: auto !important; }
+  /* Ocultar columna derecha normal — se reemplaza por los botones de trailer */
+  body.in-trailer #mobileRightBtns { display: none !important; }
+  /* El grid de acciones flota abajo a la derecha */
+  body.in-trailer #actionGrid {
+    position: fixed !important;
+    bottom: 16px !important;
+    right: 12px !important;
+    z-index: 80 !important;
+    pointer-events: auto !important;
+  }
+  body.in-trailer #actionGrid.mrb-combat-mode {
+    display: grid !important;
+    z-index: 80 !important;
+  }
+  /* En modo RP dentro del trailer, mostrar solo el botón HABLAR/ACCIÓN */
+  body.in-trailer #actionGrid:not(.mrb-combat-mode) {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 8px !important;
+  }
+  body.in-trailer #actionGrid:not(.mrb-combat-mode) .action-btn:not(#mobileTalkBtn):not(#mobileCombatBtn) {
+    display: none !important;
+  }
+
+  /* ══════════════════════════════════════════════════
+     BOTONES TRAILER — columna izquierda del joystick,
+     visible solo cuando trailerDrive.active=true
+     ══════════════════════════════════════════════════ */
+  #mrbTrailerBtns {
+    position: fixed !important;
+    left: 12px !important;
+    bottom: 200px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 8px !important;
+    pointer-events: auto !important;
+    z-index: 26 !important;
+  }
+  .mrb-trailer-btn {
+    width: 58px !important; height: 58px !important;
+    border-radius: 50% !important; border: 2px solid !important;
+    display: flex !important; flex-direction: column !important;
+    align-items: center !important; justify-content: center !important;
+    gap: 2px !important; cursor: pointer !important;
+    backdrop-filter: blur(8px) !important;
+    touch-action: manipulation !important; pointer-events: auto !important;
+    font-size: 22px !important;
+    transition: transform .12s, box-shadow .12s !important;
+    -webkit-tap-highlight-color: transparent !important;
+    background: none !important;
+  }
+  .mrb-trailer-btn:active { transform: scale(.86) !important; }
+  .mrb-trailer-map  {
+    background: rgba(245,196,0,.15) !important;
+    border-color: rgba(245,196,0,.7) !important;
+  }
+  .mrb-trailer-fly  {
+    background: rgba(0,230,118,.15) !important;
+    border-color: rgba(0,230,118,.6) !important;
+  }
+  .mrb-trailer-fly.trailer-fly-active {
+    background: rgba(0,230,118,.45) !important;
+    border-color: #00e676 !important;
+    box-shadow: 0 0 14px rgba(0,230,118,.5) !important;
+  }
+  .mrb-trailer-exit {
+    background: rgba(255,23,68,.15) !important;
+    border-color: rgba(255,82,82,.7) !important;
+  }
+  .mrb-trailer-exit:active {
+    background: rgba(255,23,68,.35) !important;
+  }
+
   /* ── Modales pvp-system: siempre encima de los controles móviles ── */
   #partyInviteToast,
   #playerListModal,
@@ -398,4 +538,7 @@ body.ui-hidden #uiToggleBtn {
   .mrb-btn         { width: 48px !important; height: 48px !important; font-size: 18px !important; }
   .mrb-run         { width: 90px !important; height: 30px !important; font-size: 11px !important; }
   #uiToggleBtn     { bottom: 6px !important; }
+  /* Trailer btns landscape */
+  #mrbTrailerBtns  { bottom: 155px !important; left: 8px !important; gap: 5px !important; }
+  .mrb-trailer-btn { width: 48px !important; height: 48px !important; font-size: 18px !important; }
 }
