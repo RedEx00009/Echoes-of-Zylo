@@ -75,82 +75,64 @@
   }
 
   /* ═══════════════════════════════════════════════════
-     BOTONES DE TRAILER — solo visibles durante
-     trailerDrive.active. Flotan sobre el joystick.
+     BOTONES DE TRAILER — se inyectan dentro de
+     #mobileRightBtns reemplazando los botones normales
+     cuando trailerDrive.active. Al salir se restauran.
      ═══════════════════════════════════════════════════ */
   function buildTrailerButtons() {
-    if (document.getElementById("mrbTrailerBtns")) return;
-    var wrap = document.createElement("div");
-    wrap.id = "mrbTrailerBtns";
-    wrap.style.display = "none"; // oculto por defecto
-
-    /* Botón: abrir/cerrar panel de destinos */
-    var mapBtn = document.createElement("button");
-    mapBtn.id = "mrbTrailerMapBtn";
-    mapBtn.className = "mrb-trailer-btn mrb-trailer-map";
-    mapBtn.innerHTML = '🗺️<span class="mrb-label">TABLA</span>';
-    mapBtn.addEventListener("click", function () {
-      if (window.toggleTrailerTravelPanel) window.toggleTrailerTravelPanel();
-    });
-    mapBtn.addEventListener("touchend", function (e) {
-      e.preventDefault();
-      if (window.toggleTrailerTravelPanel) window.toggleTrailerTravelPanel();
-    }, { passive: false });
-
-    /* Botón: vuelo del trailer */
-    var flyBtn = document.createElement("button");
-    flyBtn.id = "mrbTrailerFlyBtn";
-    flyBtn.className = "mrb-trailer-btn mrb-trailer-fly";
-    flyBtn.innerHTML = '🦅<span class="mrb-label">VUELO</span>';
-    flyBtn.addEventListener("click", function () {
-      if (window.toggleTrailerDriveFly) window.toggleTrailerDriveFly();
-      syncTrailerBtns();
-    });
-    flyBtn.addEventListener("touchend", function (e) {
-      e.preventDefault();
-      if (window.toggleTrailerDriveFly) window.toggleTrailerDriveFly();
-      syncTrailerBtns();
-    }, { passive: false });
-
-    /* Botón: salir de conducción */
-    var exitBtn = document.createElement("button");
-    exitBtn.id = "mrbTrailerExitBtn";
-    exitBtn.className = "mrb-trailer-btn mrb-trailer-exit";
-    exitBtn.innerHTML = '🚪<span class="mrb-label">SALIR</span>';
-    exitBtn.addEventListener("click", function () {
-      if (window.exitTrailerDriveMode) window.exitTrailerDriveMode();
-    });
-    exitBtn.addEventListener("touchend", function (e) {
-      e.preventDefault();
-      if (window.exitTrailerDriveMode) window.exitTrailerDriveMode();
-    }, { passive: false });
-
-    wrap.appendChild(mapBtn);
-    wrap.appendChild(flyBtn);
-    wrap.appendChild(exitBtn);
-    document.body.appendChild(wrap);
+    /* No crea nada propio — syncTrailerMode inyecta en mobileRightBtns */
   }
 
   function syncTrailerBtns() {
     var flyBtn = document.getElementById("mrbTrailerFlyBtn");
     if (flyBtn && window.trailerDrive) {
       flyBtn.classList.toggle("trailer-fly-active", !!window.trailerDrive.flying);
+      flyBtn.querySelector(".mrb-label").textContent = window.trailerDrive.flying ? "VUELO: ON" : "VUELO";
     }
   }
 
   function syncTrailerMode() {
-    var wrap      = document.getElementById("mrbTrailerBtns");
     var rightBtns = document.getElementById("mobileRightBtns");
     var uiToggle  = document.getElementById("uiToggleBtn");
     var uiMinimal = document.getElementById("uiMinimalBtn");
     var active    = !!(window.trailerDrive && window.trailerDrive.active);
-    if (wrap) wrap.style.display = active ? "flex" : "none";
-    // Ocultar columna derecha normal al conducir
-    if (rightBtns) rightBtns.classList.toggle("mrb-mode-hidden", active);
-    // Ocultar toggle UI en trailer (no se necesita)
+
+    if (!rightBtns) return;
+
+    if (active) {
+      /* Inyectar botones de trailer si todavía no están */
+      if (!document.getElementById("mrbTrailerMapBtn")) {
+        /* Guardar hijos originales */
+        rightBtns._origHTML = rightBtns.innerHTML;
+
+        rightBtns.innerHTML = "";
+
+        var mapBtn = makeBtn("🗺️", "TABLA",  "mrb-btn mrb-trailer-map",  function () { if (window.toggleTrailerTravelPanel) window.toggleTrailerTravelPanel(); });
+        mapBtn.id = "mrbTrailerMapBtn";
+
+        var flyBtn = makeBtn("🦅", "VUELO",  "mrb-btn mrb-trailer-fly",  function () { if (window.toggleTrailerDriveFly) window.toggleTrailerDriveFly(); syncTrailerBtns(); });
+        flyBtn.id = "mrbTrailerFlyBtn";
+
+        var exitBtn = makeBtn("🚪", "SALIR",  "mrb-btn mrb-trailer-exit", function () { if (window.exitTrailerDriveMode) window.exitTrailerDriveMode(); });
+        exitBtn.id = "mrbTrailerExitBtn";
+
+        rightBtns.appendChild(mapBtn);
+        rightBtns.appendChild(flyBtn);
+        rightBtns.appendChild(exitBtn);
+        rightBtns.classList.remove("mrb-mode-hidden");
+      }
+      syncTrailerBtns();
+    } else {
+      /* Restaurar botones originales si estaban reemplazados */
+      if (document.getElementById("mrbTrailerMapBtn") && rightBtns._origHTML !== undefined) {
+        rightBtns.innerHTML = rightBtns._origHTML;
+        rightBtns._origHTML = undefined;
+        rightBtns.classList.remove("mrb-mode-hidden");
+      }
+    }
+
     if (uiToggle)  uiToggle.style.display  = active ? "none" : "";
     if (uiMinimal) uiMinimal.style.display = active ? "none" : "";
-    if (active) syncTrailerBtns();
   }
 
   /* En PC solo necesitamos el toggle */

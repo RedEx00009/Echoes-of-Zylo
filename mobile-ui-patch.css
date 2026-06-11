@@ -445,34 +445,9 @@ body.ui-minimal #uiMinimalBtn {
   }
 
   /* ══════════════════════════════════════════════════
-     BOTONES TRAILER — columna izquierda del joystick,
-     visible solo cuando trailerDrive.active=true
+     BOTONES TRAILER — colores dentro de #mobileRightBtns
+     (usan la clase .mrb-btn base, solo se sobreescriben colores)
      ══════════════════════════════════════════════════ */
-  #mrbTrailerBtns {
-    position: fixed !important;
-    left: 12px !important;
-    bottom: 200px !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    gap: 8px !important;
-    pointer-events: auto !important;
-    z-index: 26 !important;
-  }
-  .mrb-trailer-btn {
-    width: 58px !important; height: 58px !important;
-    border-radius: 50% !important; border: 2px solid !important;
-    display: flex !important; flex-direction: column !important;
-    align-items: center !important; justify-content: center !important;
-    gap: 2px !important; cursor: pointer !important;
-    backdrop-filter: blur(8px) !important;
-    touch-action: manipulation !important; pointer-events: auto !important;
-    font-size: 22px !important;
-    transition: transform .12s, box-shadow .12s !important;
-    -webkit-tap-highlight-color: transparent !important;
-    background: none !important;
-  }
-  .mrb-trailer-btn:active { transform: scale(.86) !important; }
   .mrb-trailer-map  {
     background: rgba(245,196,0,.15) !important;
     border-color: rgba(245,196,0,.7) !important;
@@ -538,7 +513,4 @@ body.ui-minimal #uiMinimalBtn {
   .mrb-btn         { width: 48px !important; height: 48px !important; font-size: 18px !important; }
   .mrb-run         { width: 90px !important; height: 30px !important; font-size: 11px !important; }
   #uiToggleBtn     { bottom: 6px !important; }
-  /* Trailer btns landscape */
-  #mrbTrailerBtns  { bottom: 155px !important; left: 8px !important; gap: 5px !important; }
-  .mrb-trailer-btn { width: 48px !important; height: 48px !important; font-size: 18px !important; }
 }
