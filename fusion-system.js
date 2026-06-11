@@ -1,6 +1,6 @@
 // @ts-nocheck
 /**
- * DRAGON WORLD Z — Fusion System v1.0.0
+ * DRAGON WORLD Z — Fusion System v2.0.0
  *
  * ══════════════════════════════════════════════════════════════════
  *  SISTEMA DE FUSIÓN — Metamoru y Potara
@@ -9,16 +9,18 @@
  *    fusionRequests/{requestId}   → propuesta de fusión entre dos jugadores
  *    fusionState/{partyId}        → estado activo de fusión (quién controla, swap)
  *
- *  FLUJO:
- *    1. Jugador A propone fusión (Metamoru o Potara) al jugador B de la party
- *    2. B acepta → ambos abren modal para elegir transformación de fusión
- *    3. Si alguno no elige en 7s → cancelación automática
- *    4. Ambos eligen la misma transf. → se reproduce la animación sincronizada
- *       - A queda a la izquierda mirando → (facing = 1)
- *       - B queda a la derecha mirando ← (facing = -1)
- *    5. Animación termina → B desaparece (hidden), A recibe la skin de fusión
- *    6. A puede presionar SWAP para ceder el control a B (B reaparece, A desaparece)
- *    7. Cualquiera puede DESHACER la fusión (revert)
+ *  FLUJO CORRECTO:
+ *    1. Jugador A (iniciador) propone fusión (Metamoru o Potara) al jugador B de la party
+ *    2. B acepta → SOLO el iniciador (A) abre el picker con sus transformaciones GUARDADAS
+ *    3. Si el iniciador no elige en 7s → cancelación automática
+ *    4. El iniciador elige → se graba en Firebase (initiatorTransform)
+ *    5. Ambos se posicionan:
+ *         A (iniciador): izquierda, mirando → (facing = 1)
+ *         B (partner):   derecha,  mirando ← (facing = -1)
+ *    6. Ambos reproducen la animación de fusión (fusion_metamoru / fusion_potara)
+ *    7. Al completarse la animación → B desaparece, A recibe la skin de fusión
+ *    8. A puede presionar SWAP para ceder control a B
+ *    9. Cualquiera puede ROMPER la fusión (revert)
  *
  *  ANIMACIONES (SPECIAL_ACTIONS_META — setSpecialMode):
  *    fusion_metamoru  → row 27, 4 frames
@@ -55,7 +57,7 @@
       type:          "metamoru"|"potara",
       initiatorId:   string,
       partnerId:     string,
-      transformId:   string,          // id de la transformación elegida
+      transformId:   string,          // id de la transformación elegida por el iniciador
       controlId:     string,          // quién mueve el personaje ahora mismo
       myRole:        "initiator"|"partner",
     }
@@ -106,6 +108,40 @@
   }
 
   // ═══════════════════════════════════════════════════════════════
+  //  TRANSFORMACIONES GUARDADAS DEL JUGADOR
+  // ═══════════════════════════════════════════════════════════════
+
+  /**
+   * Obtiene las transformaciones previamente guardadas del jugador local.
+   * Usa window._loadSavedTransformations expuesto por game.html.
+   * Si no está disponible, lee directamente desde localStorage.
+   */
+  function _getMyFusionTransforms() {
+    // Intentar usar la función expuesta por game.html (más completa, resuelve skins)
+    if (typeof window._loadSavedTransformations === "function") {
+      return window._loadSavedTransformations() || [];
+    }
+    // Fallback: leer directamente desde localStorage
+    try {
+      const slotRaw  = localStorage.getItem("dragonCreatorZ_slots");
+      const activeSlot = parseInt(localStorage.getItem("dragonCreatorZ_activeSlot") || "0", 10);
+      if (slotRaw) {
+        const slots = JSON.parse(slotRaw);
+        const slot  = slots[activeSlot];
+        if (Array.isArray(slot?.transformations) && slot.transformations.length > 0) {
+          return slot.transformations;
+        }
+      }
+      const raw = localStorage.getItem("dragonCreatorZ_transformations");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch(e) {}
+    return [];
+  }
+
+  // ═══════════════════════════════════════════════════════════════
   //  ANIMACIÓN DE FUSIÓN — reproducción local + broadcast
   // ═══════════════════════════════════════════════════════════════
 
@@ -116,36 +152,33 @@
    * Ambos se pegan (x cercano) y quedan el uno frente al otro.
    */
   function _positionForFusion(initiatorId, partnerId) {
-    const p = G.player;
-    const other = G.others[partnerId] || G.others[initiatorId];
-    const isInit = G.myId === initiatorId;
+    const p     = G.player;
+    const myId  = G.myId;
+    const other = G.others[initiatorId === myId ? partnerId : initiatorId];
 
-    // Centro entre los dos jugadores
-    const midX = p.x; // nos movemos ambos al centro
+    // Usar la posición del otro jugador como referencia para el centro
+    let midX = p.x;
+    if (other) midX = (p.x + (other.x || p.x)) / 2;
 
-    if (isInit) {
-      // Iniciador: izquierda, facing →
-      p.x = midX - 28;
+    if (myId === initiatorId) {
+      p.x     = midX - 28;
       p.facing = 1;
     } else {
-      // Partner: derecha, facing ←
-      p.x = midX + 28;
+      p.x     = midX + 28;
       p.facing = -1;
     }
   }
 
   /**
    * Reproduce la animación de fusión en el animator local.
-   * Usa setSpecialMode para acceder al SPECIAL_ACTIONS_META (row 27/28).
    */
   function _playFusionAnim(type, onComplete) {
-    const anim = G.myAnim;
+    const anim    = G.myAnim;
     if (!anim) { onComplete && onComplete(); return; }
     const animKey = FUSION_ANIM_TYPES[type] || "fusion_metamoru";
-    anim.setBattleMode && anim.setBattleMode(false);
+    anim.setBattleMode  && anim.setBattleMode(false);
     anim.setSpecialMode && anim.setSpecialMode(true);
     anim.play(animKey, () => {
-      // Al terminar, volver al modo normal
       anim.setSpecialMode && anim.setSpecialMode(false);
       anim.play("idle");
       onComplete && onComplete();
@@ -156,10 +189,10 @@
    * Reproduce la animación de fusión en el animator remoto de un jugador.
    */
   function _playRemoteFusionAnim(playerId, type) {
-    const anim = G.animators[playerId];
+    const anim    = G.animators[playerId];
     if (!anim) return;
     const animKey = FUSION_ANIM_TYPES[type] || "fusion_metamoru";
-    anim.setBattleMode && anim.setBattleMode(false);
+    anim.setBattleMode  && anim.setBattleMode(false);
     anim.setSpecialMode && anim.setSpecialMode(true);
     anim.play(animKey, () => {
       anim.setSpecialMode && anim.setSpecialMode(false);
@@ -177,14 +210,26 @@
   }
 
   function _applyFusionSkin(transformId) {
+    // Buscar en transformaciones guardadas del jugador primero
+    const myTrans = _getMyFusionTransforms();
+    const saved   = myTrans.find(t => t.id === transformId);
+
     const TS = G.TS;
     if (!TS) return;
-    // Buscar skin en el catálogo
-    const catalog = TS.SPECIAL_SKIN_CATALOG || [];
-    const entry = catalog.find(e => e.skinKey === transformId) || null;
-    if (!entry) return;
 
-    // Usar transformPlayer para aplicar la transformación (maneja stats + skin)
+    if (saved) {
+      // Registrar la transformación guardada y aplicarla
+      if (typeof TS.registerTransformation === "function") {
+        TS.registerTransformation(Object.assign({}, saved));
+      }
+      if (typeof window.applyTransformationFromDrop === "function") {
+        // Usar el flujo completo de game.html (animación + skin + stats)
+        window.applyTransformationFromDrop(transformId);
+        return;
+      }
+    }
+
+    // Fallback: transformPlayer directo
     if (typeof TS.transformPlayer === "function") {
       TS.transformPlayer(transformId, { raceId: G.player?.race || "all", bypassRace: true });
     }
@@ -212,11 +257,6 @@
   //  OCULTAR / MOSTRAR JUGADOR REMOTO
   // ═══════════════════════════════════════════════════════════════
 
-  /**
-   * "Oculta" al partner marcándolo en Firebase con hidden:true.
-   * El loop de renderizado en game.html respeta `p.hidden`.
-   * Si el juego no tiene esa bandera, la agregamos como hook aquí.
-   */
   function _hideRemotePlayer(playerId) {
     if (!G.db) return;
     G.db.ref("players/" + playerId).update({ fusionHidden: true, t: Date.now() });
@@ -227,29 +267,11 @@
     G.db.ref("players/" + playerId).update({ fusionHidden: false, t: Date.now() });
   }
 
-  /**
-   * Hook en el render loop para saltear jugadores con fusionHidden = true.
-   * Se llama una sola vez desde main().
-   */
   function _patchRenderLoop() {
-    // Parchamos la función _drawRemotePlayers si existe, o bien
-    // ponemos una propiedad en otherPlayers que el loop puede leer.
-    // La solución más limpia es extender otherPlayers con fusionHidden.
-    // game.html ya itera `for (const [id, p] of Object.entries(otherPlayers))`
-    // Si p.fusionHidden está en Firebase, llega al objeto otherPlayers en el próximo tick.
-    // No necesitamos parchear nada más — el campo viene directo de Firebase.
-    // Sí necesitamos que el render loop lo respete:
-    const origDraw = window._fusionHookApplied;
-    if (origDraw) return;
+    if (window._fusionHookApplied) return;
     window._fusionHookApplied = true;
-
-    // Monkey-patch de Object.entries solo en el canvas loop es invasivo.
-    // Usamos un enfoque más limpio: exponer una función de filtro que game.html
-    // puede llamar. Y como fallback, inyectamos CSS que oculta el sprite via
-    // una marca en el DOM de la etiqueta del jugador. Para el caso de renderizado
-    // canvas puro, la mejor solución sin tocar game.html es marcar
-    // otherPlayers[id].fusionHidden y que este sistema lo respete en update().
-    // La implementación definitiva se explica en los comentarios de updateFusion().
+    // fusionHidden llega vía Firebase al objeto otherPlayers[id].fusionHidden
+    // El render loop en game.html ya puede leer ese campo para saltar el dibujo.
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -270,22 +292,27 @@
    */
   function proposeFusion(type, targetId) {
     if (!G.online || !G.myId) return toast("Conectate al servidor primero", "dmg");
-    if (!isPartyMember(targetId)) return toast("El jugador no está en tu party", "dmg");
-    if (_activeFusion) return toast("Ya estás en una fusión activa", "dmg");
-    if (!FUSION_ANIM_TYPES[type]) return toast("Tipo de fusión inválido", "dmg");
+    if (!isPartyMember(targetId))  return toast("El jugador no está en tu party", "dmg");
+    if (_activeFusion)             return toast("Ya estás en una fusión activa", "dmg");
+    if (!FUSION_ANIM_TYPES[type])  return toast("Tipo de fusión inválido", "dmg");
+
+    // Verificar que el iniciador tiene transformaciones guardadas
+    const myTransforms = _getMyFusionTransforms();
+    if (myTransforms.length === 0) {
+      return toast("Necesitás tener transformaciones guardadas para fusionarte", "dmg");
+    }
 
     const id = "fus_" + G.myId + "_" + targetId + "_" + Date.now();
     _reqRef(id).set({
       id,
       type,
-      initiatorId: G.myId,
+      initiatorId:   G.myId,
       initiatorName: G.player?.name || "?",
-      partnerId: targetId,
-      partnerName: G.others[targetId]?.name || "?",
-      status: "pending",
+      partnerId:     targetId,
+      partnerName:   G.others[targetId]?.name || "?",
+      status:        "pending",
       initiatorTransform: null,
-      partnerTransform: null,
-      t: Date.now(),
+      t:             Date.now(),
     });
     toast(`Propuesta de fusión ${type === "metamoru" ? "Metamoru" : "Potara"} enviada`, "info");
   }
@@ -324,12 +351,11 @@
 
   function _acceptFusionRequest(req) {
     _removeFusionModal("fusionInviteModal");
-    // Actualizar estado → choosing, para que ambos elijan transformación
+    // Actualizar estado → "choosing": el partner aceptó, ahora el iniciador elige
     _reqRef(req.id).update({ status: "choosing", t: Date.now() });
-    // Mostrar selector de transformación al partner
-    _showTransformPicker(req, "partner");
-    // Iniciar timeout: si no elige en 7s, cancelar
-    _startChooseTimer(req);
+    // El partner solo espera — mostramos un indicador de espera
+    _showWaitingModal(req.initiatorName);
+    _pendingRequest = req;
   }
 
   function _declineFusionRequest(req) {
@@ -339,36 +365,80 @@
   }
 
   // ═══════════════════════════════════════════════════════════════
-  //  MODAL — ELEGIR TRANSFORMACIÓN
+  //  MODAL DE ESPERA (para el partner mientras el iniciador elige)
+  // ═══════════════════════════════════════════════════════════════
+
+  function _showWaitingModal(initiatorName) {
+    _removeFusionModal("fusionWaitModal");
+    const el = document.createElement("div");
+    el.id = "fusionWaitModal";
+    el.style.cssText = `
+      position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+      z-index:210;background:rgba(8,9,15,.97);border:1px solid #ce93d8;
+      border-radius:12px;padding:20px 24px;text-align:center;
+      font-family:Orbitron,monospace;color:#fff;min-width:260px;
+      box-shadow:0 0 30px rgba(206,147,216,.4);pointer-events:auto;
+    `;
+    el.innerHTML = `
+      <div style="font-size:10px;letter-spacing:2px;color:#ce93d8;margin-bottom:8px">FUSIÓN EN PROCESO</div>
+      <div style="font-size:10px;color:#c8cfe8;margin-bottom:6px">
+        Esperando que <b style="color:#f5c400">${initiatorName || "tu compañero"}</b><br>
+        elija la forma de fusión...
+      </div>
+      <div style="margin-top:10px;display:flex;justify-content:center;gap:6px">
+        <span style="width:8px;height:8px;background:#ce93d8;border-radius:50%;display:inline-block;animation:fusWaitPulse 1s infinite 0s"></span>
+        <span style="width:8px;height:8px;background:#ce93d8;border-radius:50%;display:inline-block;animation:fusWaitPulse 1s infinite 0.3s"></span>
+        <span style="width:8px;height:8px;background:#ce93d8;border-radius:50%;display:inline-block;animation:fusWaitPulse 1s infinite 0.6s"></span>
+      </div>
+      <style>
+        @keyframes fusWaitPulse { 0%,100%{opacity:.2} 50%{opacity:1} }
+      </style>
+    `;
+    document.body.appendChild(el);
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  //  MODAL — ELEGIR TRANSFORMACIÓN (SOLO EL INICIADOR)
   // ═══════════════════════════════════════════════════════════════
 
   /**
-   * Muestra el selector de transformaciones de fusión.
-   * Filtra solo transformaciones con "fusion" en el skinKey o en el label.
+   * Muestra el selector de transformaciones GUARDADAS del iniciador.
+   * Solo se llama para el iniciador cuando el partner acepta.
    */
-  function _showTransformPicker(req, role) {
+  function _showTransformPickerForInitiator(req) {
     _removeFusionModal("fusionPickerModal");
-    const TS = G.TS;
-    const catalog = TS?.SPECIAL_SKIN_CATALOG || [];
 
-    // Todas las transformaciones disponibles para elegir como forma fusionada
-    // (no filtramos por raza aquí — la fusión puede tomar cualquier forma)
-    const options = catalog;
+    // Cargar las transformaciones guardadas del jugador
+    const myTransforms = _getMyFusionTransforms();
+    const typeName     = req.type === "metamoru" ? "⚡ METAMORU" : "💍 POTARA";
 
-    const typeName = req.type === "metamoru" ? "⚡ METAMORU" : "💍 POTARA";
     let optHtml = "";
-    options.forEach(e => {
-      optHtml += `
-        <button class="fus-tf-opt" data-id="${e.skinKey}"
-          style="display:flex;align-items:center;gap:8px;width:100%;padding:7px 10px;
-                 background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
-                 border-radius:6px;color:#e8eaf6;font-family:Rajdhani,sans-serif;
-                 font-size:11px;cursor:pointer;text-align:left;margin-bottom:4px;">
-          <span style="font-size:16px">${e.icon}</span>
-          <span style="color:${e.color};font-weight:bold">${e.label}</span>
-          <span style="margin-left:auto;font-size:9px;color:#8892b0">${e.group}</span>
-        </button>`;
-    });
+    if (myTransforms.length === 0) {
+      optHtml = `<div style="color:#8892b0;font-size:10px;text-align:center;padding:12px;">
+        Sin transformaciones guardadas.<br>
+        <span style="font-size:9px">Creálas en el editor de personaje.</span>
+      </div>`;
+    } else {
+      myTransforms.forEach(tr => {
+        const aura  = tr.auraColor  || "#fdd835";
+        const icon  = tr.icon       || "⚡";
+        const name  = tr.name       || tr.id;
+        const level = tr.level      || 1;
+        const mStr  = tr.multipliers?.str ?? (tr.multStr ?? 1);
+        const mSpd  = tr.multipliers?.spd ?? (tr.multSpd ?? 1);
+
+        optHtml += `
+          <button class="fus-tf-opt" data-id="${tr.id}"
+            style="display:flex;align-items:center;gap:8px;width:100%;padding:7px 10px;
+                   background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
+                   border-radius:6px;color:#e8eaf6;font-family:Rajdhani,sans-serif;
+                   font-size:11px;cursor:pointer;text-align:left;margin-bottom:4px;">
+            <span style="font-size:16px">${icon}</span>
+            <span style="color:${aura};font-weight:bold">${name}</span>
+            <span style="margin-left:auto;font-size:9px;color:#8892b0">Lv ${level} · ×${mStr} / ×${mSpd}</span>
+          </button>`;
+      });
+    }
 
     const el = document.createElement("div");
     el.id = "fusionPickerModal";
@@ -381,7 +451,7 @@
     `;
     el.innerHTML = `
       <div style="font-size:9px;letter-spacing:2px;color:#ce93d8;margin-bottom:4px">FUSIÓN ${typeName}</div>
-      <div style="font-size:10px;color:#c8cfe8;margin-bottom:10px">Elegí la forma fusionada</div>
+      <div style="font-size:10px;color:#c8cfe8;margin-bottom:10px">Elegí tu forma fusionada</div>
       <div id="fusPickerList" style="overflow-y:auto;flex:1;padding-right:4px">${optHtml}</div>
       <div id="fusPickerTimer" style="margin-top:10px;font-size:9px;color:#ff7043;text-align:center">
         Tiempo restante: <span id="fusTimerSec">7</span>s
@@ -396,10 +466,7 @@
 
     // Click en una opción
     el.querySelectorAll(".fus-tf-opt").forEach(btn => {
-      btn.onclick = () => {
-        const tfId = btn.dataset.id;
-        _chooseFusionTransform(req, role, tfId);
-      };
+      btn.onclick = () => _initiatorChooseTransform(req, btn.dataset.id);
     });
 
     document.getElementById("fusPickerCancelBtn").onclick = () => {
@@ -417,55 +484,25 @@
     el.__ticker = ticker;
   }
 
+  // ═══════════════════════════════════════════════════════════════
+  //  LÓGICA DE ELECCIÓN (SOLO EL INICIADOR)
+  // ═══════════════════════════════════════════════════════════════
+
   /**
-   * El iniciador también debe elegir su transformación cuando el partner acepta.
-   * Escuchamos el cambio a "choosing" y mostramos el picker al iniciador.
+   * El iniciador eligió su transformación.
+   * Grabamos en Firebase y disparamos la secuencia de animación.
    */
-  function _onPartnerAccepted(req) {
-    _showTransformPicker(req, "initiator");
-    _startChooseTimer(req);
-  }
-
-  // ═══════════════════════════════════════════════════════════════
-  //  LÓGICA DE ELECCIÓN Y VERIFICACIÓN
-  // ═══════════════════════════════════════════════════════════════
-
-  function _chooseFusionTransform(req, role, transformId) {
+  function _initiatorChooseTransform(req, transformId) {
     _removeFusionModal("fusionPickerModal");
     _clearChooseTimer();
 
-    const field = role === "initiator" ? "initiatorTransform" : "partnerTransform";
-    _reqRef(req.id).update({ [field]: transformId, t: Date.now() });
-    toast("Esperando al otro jugador...", "info");
-
-    // Re-leer para ver si el otro ya eligió
-    _reqRef(req.id).once("value", snap => {
-      const updated = snap.val();
-      if (updated) _checkBothChose(updated);
+    // Guardar la transformación elegida y marcar como "animating"
+    _reqRef(req.id).update({
+      initiatorTransform: transformId,
+      status: "animating",
+      t: Date.now(),
     });
-  }
-
-  function _checkBothChose(req) {
-    if (!req.initiatorTransform || !req.partnerTransform) return;
-
-    // Verificar que ambos eligieron la misma transformación
-    if (req.initiatorTransform !== req.partnerTransform) {
-      // Si no coinciden, cancelar con mensaje explicativo
-      // Solo el iniciador ejecuta esto para evitar doble escritura
-      if (G.myId === req.initiatorId) {
-        _reqRef(req.id).update({
-          status: "cancelled",
-          cancelReason: "transform_mismatch",
-          t: Date.now(),
-        });
-      }
-      return;
-    }
-
-    // Ambos eligieron la misma → lanzar animación
-    if (G.myId === req.initiatorId) {
-      _reqRef(req.id).update({ status: "animating", t: Date.now() });
-    }
+    toast("¡Iniciando fusión!", "info");
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -489,34 +526,43 @@
   //  SECUENCIA DE FUSIÓN
   // ═══════════════════════════════════════════════════════════════
 
+  /**
+   * Disparado cuando status === "animating".
+   * Ambos jugadores se posicionan y reproducen la animación.
+   * Al terminar → se aplica la skin de fusión.
+   */
   function _startFusionSequence(req) {
-    const myId = G.myId;
+    const myId   = G.myId;
     const isInit = myId === req.initiatorId;
-    const role = isInit ? "initiator" : "partner";
+    const role   = isInit ? "initiator" : "partner";
 
-    // Posicionar jugadores
+    // Cerrar modal de espera del partner
+    _removeFusionModal("fusionWaitModal");
+    _removeFusionModal("fusionPickerModal");
+
+    // Posicionar ambos jugadores
     _positionForFusion(req.initiatorId, req.partnerId);
 
-    // Reproducir animación local
-    _playFusionAnim(req.type, () => {
-      _onFusionAnimComplete(req, role);
-    });
-
-    // Reproducir animación en el animator remoto del otro jugador
+    // Reproducir animación local y del otro jugador
     const otherId = isInit ? req.partnerId : req.initiatorId;
     _playRemoteFusionAnim(otherId, req.type);
 
-    // Publicar posición/facing sincronizado
+    // Publicar posición/facing
     if (typeof window.publishMyAppearance === "function") {
-      setTimeout(() => window.publishMyAppearance(true), 100);
+      setTimeout(() => window.publishMyAppearance(true), 80);
     }
+
+    // Animación local → al completarse, aplicar transformación
+    _playFusionAnim(req.type, () => {
+      _onFusionAnimComplete(req, role);
+    });
   }
 
   function _onFusionAnimComplete(req, role) {
-    const transformId = req.initiatorTransform; // ambos eligieron la misma
+    const transformId = req.initiatorTransform;
 
     if (role === "initiator") {
-      // El iniciador toma el control con la skin de fusión
+      // El iniciador aplica la skin de fusión y toma el control
       _saveMySkin();
       _applyFusionSkin(transformId);
       _hideRemotePlayer(req.partnerId);
@@ -524,25 +570,25 @@
       // Crear estado de fusión en Firebase
       const stateId = "fusst_" + req.id;
       _stateRef(stateId).set({
-        id: stateId,
-        requestId: req.id,
-        type: req.type,
+        id:          stateId,
+        requestId:   req.id,
+        type:        req.type,
         initiatorId: req.initiatorId,
-        partnerId: req.partnerId,
+        partnerId:   req.partnerId,
         transformId,
-        controlId: req.initiatorId,   // iniciador controla primero
-        active: true,
-        t: Date.now(),
+        controlId:   req.initiatorId,
+        active:      true,
+        t:           Date.now(),
       });
 
       _activeFusion = {
-        id: stateId,
-        type: req.type,
+        id:          stateId,
+        type:        req.type,
         initiatorId: req.initiatorId,
-        partnerId: req.partnerId,
+        partnerId:   req.partnerId,
         transformId,
-        controlId: req.initiatorId,
-        myRole: "initiator",
+        controlId:   req.initiatorId,
+        myRole:      "initiator",
       };
 
       _listenFusionState(stateId);
@@ -550,24 +596,25 @@
       toast("¡FUSIÓN COMPLETA! Sos el piloto", "lvl");
 
     } else {
-      // El partner: espera a que Firebase confirme estado, se oculta
+      // El partner: aplica la skin como referencia visual y espera el estado
+      _saveMySkin();
       _applyFusionSkin(transformId);
       toast("Fusionado — esperá el control", "info");
 
-      // Buscar el stateId escuchando Firebase
+      // Escuchar el fusionState para saber si le toca el control
       G.db.ref("fusionState").orderByChild("requestId").equalTo(req.id).once("value", snap => {
         const states = snap.val();
         if (!states) return;
-        const stateId = Object.keys(states)[0];
+        const stateId   = Object.keys(states)[0];
         const stateData = states[stateId];
         _activeFusion = {
-          id: stateId,
-          type: stateData.type,
+          id:          stateId,
+          type:        stateData.type,
           initiatorId: stateData.initiatorId,
-          partnerId: stateData.partnerId,
+          partnerId:   stateData.partnerId,
           transformId: stateData.transformId,
-          controlId: stateData.controlId,
-          myRole: "partner",
+          controlId:   stateData.controlId,
+          myRole:      "partner",
         };
         _listenFusionState(stateId);
         _updateFusionControl(stateData.controlId);
@@ -601,25 +648,15 @@
     });
   }
 
-  /**
-   * Actualiza quién controla: si soy yo, habilito controles normales;
-   * si no, deshabilito movimiento y oculto mi sprite vía fusionHidden.
-   *
-   * No existe "locked" en setControlMode — usamos una bandera propia
-   * que el hook de sendPlayerUpdate respeta.
-   */
   function _updateFusionControl(controlId) {
-    const myId = G.myId;
+    const myId    = G.myId;
     const iControl = controlId === myId;
 
     if (iControl) {
-      // Tengo el control → habilitar movimiento normal
       window._fusionInputBlocked = false;
-      // Asegurar que mi sprite es visible para los demás
       if (G.online) _showRemotePlayer(myId);
       _showFusionHud();
     } else {
-      // No tengo el control → bloquear inputs, ocultar mi sprite
       window._fusionInputBlocked = true;
       if (G.online) _hideRemotePlayer(myId);
     }
@@ -630,8 +667,8 @@
   // ═══════════════════════════════════════════════════════════════
 
   function swapFusionControl() {
-    if (!_activeFusion) return toast("No estás en una fusión", "dmg");
-    if (_activeFusion.controlId !== G.myId) return toast("No tenés el control ahora mismo", "dmg");
+    if (!_activeFusion)                              return toast("No estás en una fusión", "dmg");
+    if (_activeFusion.controlId !== G.myId)          return toast("No tenés el control ahora mismo", "dmg");
 
     const otherId = G.myId === _activeFusion.initiatorId
       ? _activeFusion.partnerId
@@ -654,7 +691,6 @@
     _clearChooseTimer();
     if (_stateListener) { _stateListener.off(); _stateListener = null; }
 
-    // Restaurar skins y controles
     _revertFusionSkin();
     _showRemotePlayer(state.initiatorId);
     _showRemotePlayer(state.partnerId);
@@ -672,13 +708,13 @@
     _clearChooseTimer();
     _removeFusionModal("fusionPickerModal");
     _removeFusionModal("fusionInviteModal");
+    _removeFusionModal("fusionWaitModal");
     _pendingRequest = null;
 
     const reasons = {
-      declined:           "El otro jugador rechazó la fusión",
-      timeout:            "Tiempo agotado — fusión cancelada",
-      transform_mismatch: "Deben elegir la misma transformación para fusionarse",
-      user_cancel:        "Fusión cancelada",
+      declined:    "El otro jugador rechazó la fusión",
+      timeout:     "Tiempo agotado — fusión cancelada",
+      user_cancel: "Fusión cancelada",
     };
     toast(reasons[req.cancelReason] || "Fusión cancelada", "dmg");
   }
@@ -696,15 +732,14 @@
     _removeFusionModal("fusionHud");
     if (!_activeFusion) return;
 
-    const iControl = _activeFusion.controlId === G.myId;
-    const TS = G.TS;
-    const catalog = TS?.SPECIAL_SKIN_CATALOG || [];
-    const tf = catalog.find(e => e.skinKey === _activeFusion.transformId);
-    const tfLabel = tf?.label || _activeFusion.transformId;
-    const typeName = _activeFusion.type === "metamoru" ? "METAMORU" : "POTARA";
+    const iControl  = _activeFusion.controlId === G.myId;
+    const myTrans   = _getMyFusionTransforms();
+    const tf        = myTrans.find(t => t.id === _activeFusion.transformId);
+    const tfLabel   = tf?.name || _activeFusion.transformId;
+    const typeName  = _activeFusion.type === "metamoru" ? "METAMORU" : "POTARA";
 
     const el = document.createElement("div");
-    el.id = "fusionHud";
+    el.id    = "fusionHud";
     el.style.cssText = `
       position:fixed;bottom:120px;left:50%;transform:translateX(-50%);
       z-index:145;background:rgba(8,9,15,.92);border:1px solid #ce93d8;
@@ -718,7 +753,7 @@
         <span style="color:#f5c400;font-size:10px">${tfLabel}</span>
       </div>
       <div style="width:1px;height:32px;background:rgba(206,147,216,.3)"></div>
-      <div style="font-size:9px;color:${iControl ? '#69f0ae' : '#ff7043'}">
+      <div style="font-size:9px;color:${iControl ? "#69f0ae" : "#ff7043"}">
         ${iControl ? "🟢 CONTROLANDO" : "⏸ EN ESPERA"}
       </div>
       ${iControl ? `
@@ -741,7 +776,7 @@
   }
 
   // ═══════════════════════════════════════════════════════════════
-  //  LISTENERS GLOBALES — manejar cambio a "choosing" para el iniciador
+  //  LISTENERS GLOBALES
   // ═══════════════════════════════════════════════════════════════
 
   function _listenRequests() {
@@ -753,37 +788,35 @@
   }
 
   function _dispatchRequest(snap) {
-    const req = snap.val();
+    const req  = snap.val();
     if (!req) return;
     const myId = G.myId;
 
-    // Stale (más de 30s)
+    // Ignorar requests antiguos (más de 30s)
     if (Date.now() - (req.t || 0) > 30000) return;
 
     switch (req.status) {
+
       case "pending":
         // Solo el partner recibe la invitación
         if (req.partnerId === myId && !_pendingRequest) {
           _pendingRequest = { ...req, firebaseKey: snap.key };
           _showFusionInviteModal(req);
         }
-        // El iniciador también debe abrir el picker cuando el partner acepta
-        // (eso ocurre en "choosing")
         break;
 
       case "choosing":
-        // Iniciador: el partner aceptó → mostrar picker
+        // El partner aceptó → SOLO el iniciador abre el picker de SUS transformaciones
         if (req.initiatorId === myId && !document.getElementById("fusionPickerModal")) {
-          _onPartnerAccepted(req);
+          _showTransformPickerForInitiator(req);
+          _startChooseTimer(req);
         }
-        // Partner: ya está mostrando el picker (lo abrió en _acceptFusionRequest)
-        // Verificar si ambos eligieron
-        _checkBothChose(req);
+        // El partner: ya está mostrando el modal de espera
         break;
 
       case "animating":
-        if ((req.initiatorId === myId || req.partnerId === myId)
-            && !_activeFusion) {
+        // Ambos jugadores arrancan la secuencia de animación
+        if ((req.initiatorId === myId || req.partnerId === myId) && !_activeFusion) {
           _startFusionSequence(req);
         }
         break;
@@ -811,25 +844,20 @@
   //  BOTÓN EN LA PARTY PANEL — inyección de UI
   // ═══════════════════════════════════════════════════════════════
 
-  /**
-   * Inyecta botones "Fusión Metamoru" y "Fusión Potara" en el panel de party
-   * del pvp-system, visibles cuando hay un miembro seleccionado.
-   */
   function _injectFusionButtons() {
-    // Esperamos a que exista el panel de party
     const partyPanel = document.getElementById("partyPanel");
     if (!partyPanel) {
       setTimeout(_injectFusionButtons, 500);
       return;
     }
-    if (document.getElementById("fusMetamoruBtn")) return; // ya inyectado
+    if (document.getElementById("fusMetamoruBtn")) return;
 
     const container = partyPanel.querySelector(".pvp-body")
       || partyPanel.querySelector("#partyMemberList")?.parentElement
       || partyPanel;
 
     const wrap = document.createElement("div");
-    wrap.id = "fusionBtnsWrap";
+    wrap.id    = "fusionBtnsWrap";
     wrap.style.cssText = "padding:0 10px 8px;display:flex;flex-direction:column;gap:5px;";
     wrap.innerHTML = `
       <div style="font-size:8px;letter-spacing:1px;color:#ce93d8;padding:4px 0 2px;font-family:Orbitron,monospace">
@@ -844,7 +872,7 @@
         💍 FUSIÓN POTARA
       </button>
     `;
-    // Insertar antes del botón de salir de party
+
     const leaveBtn = document.getElementById("partyLeaveBtn");
     if (leaveBtn) {
       leaveBtn.parentElement.insertBefore(wrap, leaveBtn.parentElement.lastElementChild);
@@ -853,10 +881,6 @@
     }
 
     document.getElementById("fusMetamoruBtn").onclick = () => {
-      const sel = window.PvpSystem?._selectedMemberId
-        || window._fusionSelectedMember
-        || null;
-      // Intentar obtener el miembro seleccionado desde el pvp-system
       const selId = _getSelectedPartyMember();
       if (!selId) return toast("Seleccioná un miembro de la party primero", "dmg");
       proposeFusion("metamoru", selId);
@@ -869,15 +893,9 @@
     };
   }
 
-  /**
-   * Obtiene el miembro de party actualmente seleccionado en el panel pvp.
-   * pvp-system marca la fila activa con la clase "sel" y data-id.
-   */
   function _getSelectedPartyMember() {
-    // pvp-system marca el elemento seleccionado con clase "sel"
     const active = document.querySelector("#partyMemberList .pvp-member.sel[data-id]");
     if (active) return active.dataset.id || null;
-    // Fallback via exposición del pvp-system
     return window._pvpSelectedMemberId || null;
   }
 
@@ -886,8 +904,6 @@
   // ═══════════════════════════════════════════════════════════════
 
   function _hookPvpSelectedMember() {
-    // pvp-system usa `selectedMemberId` internamente pero no lo expone.
-    // Observamos los clicks en la lista de party para capturarlo.
     document.addEventListener("click", e => {
       const member = e.target.closest?.("[data-id]");
       if (member && document.getElementById("partyMemberList")?.contains(member)) {
@@ -897,42 +913,26 @@
   }
 
   // ═══════════════════════════════════════════════════════════════
-  //  UPDATE LOOP — llamado desde el game loop principal
+  //  UPDATE LOOP
   // ═══════════════════════════════════════════════════════════════
 
-  /**
-   * Debe llamarse en el game loop (requestAnimationFrame) para mantener
-   * la lógica de ocultado de jugadores sincronizada con el render.
-   *
-   * game.html verifica `p.fusionHidden` si este sistema lo escribe en Firebase
-   * y llega vía el listener de players. No necesitamos parchear el render loop
-   * directamente — el campo fusionHidden en el objeto `p` de otherPlayers
-   * hace que este sistema sea no-invasivo.
-   *
-   * Para el jugador local: si no tengo el control, bloqueamos el movimiento
-   * via window._fusionInputBlocked, que el hook de sendPlayerUpdate respeta.
-   */
   function updateFusion() {
     if (!_activeFusion) return;
-    // La lógica de control ya es reactiva vía Firebase listener
+    // Lógica reactiva vía Firebase listener
   }
 
-  /**
-   * Hook en sendPlayerUpdate para que cuando el jugador no tiene el control
-   * de la fusión, no pueda mover su personaje ni publicar posición.
-   */
+  // ═══════════════════════════════════════════════════════════════
+  //  HOOK EN sendPlayerUpdate
+  // ═══════════════════════════════════════════════════════════════
+
   function _hookSendPlayerUpdate() {
     const orig = window.sendPlayerUpdate;
     if (!orig || orig.__fusionHooked) return;
     window.sendPlayerUpdate = function () {
-      if (window._fusionInputBlocked) return; // no somos el piloto ahora
+      if (window._fusionInputBlocked) return;
       return orig.apply(this, arguments);
     };
     window.sendPlayerUpdate.__fusionHooked = true;
-
-    // También bloquear el movimiento en el keydown del game loop
-    // Exponemos la bandera para que game.html la pueda leer
-    // (game.html lee player.x/y — si no enviamos, simplemente no se mueve en red)
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -944,10 +944,10 @@
       proposeFusion,
       swapFusionControl,
       splitFusion,
-      isInFusion: () => !!_activeFusion,
-      hasControl: () => _activeFusion?.controlId === G.myId,
+      isInFusion:      () => !!_activeFusion,
+      hasControl:      () => _activeFusion?.controlId === G.myId,
       getActiveFusion: () => _activeFusion ? { ..._activeFusion } : null,
-      update: updateFusion,
+      update:          updateFusion,
     };
   }
 
@@ -961,9 +961,8 @@
     _hookSendPlayerUpdate();
     _patchRenderLoop();
     exportApi();
-    // Inyectar botones cuando el party panel esté listo
     setTimeout(_injectFusionButtons, 1000);
-    console.log("[fusion-system] Sistema de fusión listo (Metamoru + Potara)");
+    console.log("[fusion-system] v2.0.0 — Sistema de fusión listo (Metamoru + Potara)");
   }
 
   waitForGame(main);
