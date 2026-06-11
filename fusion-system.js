@@ -150,6 +150,7 @@
    *   - Iniciador a la izquierda, mirando derecha  (facing = 1)
    *   - Partner  a la derecha,  mirando izquierda  (facing = -1)
    * Ambos se pegan (x cercano) y quedan el uno frente al otro.
+   * También sincroniza la posición/facing del jugador local a Firebase.
    */
   function _positionForFusion(initiatorId, partnerId) {
     const p     = G.player;
@@ -161,16 +162,26 @@
     if (other) midX = (p.x + (other.x || p.x)) / 2;
 
     if (myId === initiatorId) {
-      p.x     = midX - 28;
-      p.facing = 1;
+      p.x      = midX - 28;
+      p.facing = 1;           // mira a la derecha → hacia el partner
     } else {
-      p.x     = midX + 28;
-      p.facing = -1;
+      p.x      = midX + 28;
+      p.facing = -1;          // mira a la izquierda → hacia el iniciador
+    }
+
+    // Publicar posición/facing inmediatamente para que el otro lo vea
+    if (typeof window.sendPlayerUpdate === "function") {
+      // Llamar al original aunque esté bloqueado temporalmente
+      const orig = window.sendPlayerUpdate.__fusionOrig || window.sendPlayerUpdate;
+      try { orig.call(window); } catch(e) {}
     }
   }
 
+  // Velocidad de la animación de fusión (más bajo = más lento)
+  const FUSION_ANIM_SPEED = 0.55;
+
   /**
-   * Reproduce la animación de fusión en el animator local.
+   * Reproduce la animación de fusión en el animator local (lenta).
    */
   function _playFusionAnim(type, onComplete) {
     const anim    = G.myAnim;
@@ -178,7 +189,13 @@
     const animKey = FUSION_ANIM_TYPES[type] || "fusion_metamoru";
     anim.setBattleMode  && anim.setBattleMode(false);
     anim.setSpecialMode && anim.setSpecialMode(true);
+    // Bajar la velocidad del animator para que la anim sea lenta y dramática
+    if (anim.setSpeed)        anim.setSpeed(FUSION_ANIM_SPEED);
+    else if (anim.animSpeed !== undefined) anim.animSpeed = FUSION_ANIM_SPEED;
     anim.play(animKey, () => {
+      // Restaurar velocidad normal
+      if (anim.setSpeed)        anim.setSpeed(1);
+      else if (anim.animSpeed !== undefined) anim.animSpeed = 1;
       anim.setSpecialMode && anim.setSpecialMode(false);
       anim.play("idle");
       onComplete && onComplete();
@@ -186,7 +203,7 @@
   }
 
   /**
-   * Reproduce la animación de fusión en el animator remoto de un jugador.
+   * Reproduce la animación de fusión en el animator remoto de un jugador (lenta).
    */
   function _playRemoteFusionAnim(playerId, type) {
     const anim    = G.animators[playerId];
@@ -194,7 +211,11 @@
     const animKey = FUSION_ANIM_TYPES[type] || "fusion_metamoru";
     anim.setBattleMode  && anim.setBattleMode(false);
     anim.setSpecialMode && anim.setSpecialMode(true);
+    if (anim.setSpeed)        anim.setSpeed(FUSION_ANIM_SPEED);
+    else if (anim.animSpeed !== undefined) anim.animSpeed = FUSION_ANIM_SPEED;
     anim.play(animKey, () => {
+      if (anim.setSpeed)        anim.setSpeed(1);
+      else if (anim.animSpeed !== undefined) anim.animSpeed = 1;
       anim.setSpecialMode && anim.setSpecialMode(false);
       anim.play("idle");
     });
@@ -540,17 +561,12 @@
     _removeFusionModal("fusionWaitModal");
     _removeFusionModal("fusionPickerModal");
 
-    // Posicionar ambos jugadores
+    // Posicionar ambos jugadores (también sincroniza facing a Firebase)
     _positionForFusion(req.initiatorId, req.partnerId);
 
     // Reproducir animación local y del otro jugador
     const otherId = isInit ? req.partnerId : req.initiatorId;
     _playRemoteFusionAnim(otherId, req.type);
-
-    // Publicar posición/facing
-    if (typeof window.publishMyAppearance === "function") {
-      setTimeout(() => window.publishMyAppearance(true), 80);
-    }
 
     // Animación local → al completarse, aplicar transformación
     _playFusionAnim(req.type, () => {
@@ -596,12 +612,11 @@
       toast("¡FUSIÓN COMPLETA! Sos el piloto", "lvl");
 
     } else {
-      // El partner: aplica la skin como referencia visual y espera el estado
-      _saveMySkin();
-      _applyFusionSkin(transformId);
-      toast("Fusionado — esperá el control", "info");
+      // El partner: NO aplica skin propia. Se oculta y entra en modo espectador
+      // siguiendo la posición del iniciador (el fusionado).
+      _enterSpectatorMode(req.initiatorId);
 
-      // Escuchar el fusionState para saber si le toca el control
+      // Escuchar el fusionState para saber cuándo recuperar el control (SWAP)
       G.db.ref("fusionState").orderByChild("requestId").equalTo(req.id).once("value", snap => {
         const states = snap.val();
         if (!states) return;
@@ -648,17 +663,104 @@
     });
   }
 
+  // ═══════════════════════════════════════════════════════════════
+  //  MODO ESPECTADOR (partner durante la fusión)
+  // ═══════════════════════════════════════════════════════════════
+
+  /** ID del jugador al que el espectador sigue */
+  let _spectatorFollowId = null;
+  /** rAF handle del loop de espectador */
+  let _spectatorRaf = null;
+
+  /**
+   * El partner entra en modo espectador: su personaje se oculta
+   * y la cámara sigue al iniciador (el fusionado).
+   */
+  function _enterSpectatorMode(followId) {
+    _spectatorFollowId = followId;
+    window._fusionInputBlocked = true;
+
+    // Ocultar el propio personaje del partner en Firebase
+    _hideRemotePlayer(G.myId);
+
+    // HUD de espectador
+    _showSpectatorHud();
+
+    // Loop: copiar posición de la cámara al jugador seguido
+    function spectatorLoop() {
+      if (!_spectatorFollowId) return;
+      const target = G.others[_spectatorFollowId];
+      if (target && G.player) {
+        // Mover el player local (invisible) a la misma posición para que la cámara lo siga
+        G.player.x = target.x;
+        G.player.y = target.y;
+      }
+      _spectatorRaf = requestAnimationFrame(spectatorLoop);
+    }
+    if (_spectatorRaf) cancelAnimationFrame(_spectatorRaf);
+    _spectatorRaf = requestAnimationFrame(spectatorLoop);
+
+    toast("Sos espectador — tu compañero tiene el control", "info");
+  }
+
+  function _exitSpectatorMode() {
+    _spectatorFollowId = null;
+    if (_spectatorRaf) { cancelAnimationFrame(_spectatorRaf); _spectatorRaf = null; }
+    _removeSpectatorHud();
+    _showRemotePlayer(G.myId);
+    window._fusionInputBlocked = false;
+  }
+
+  function _showSpectatorHud() {
+    _removeSpectatorHud();
+    const el = document.createElement("div");
+    el.id = "fusionSpectatorHud";
+    el.style.cssText = `
+      position:fixed;top:14px;left:50%;transform:translateX(-50%);
+      z-index:145;background:rgba(8,9,15,.88);border:1px solid rgba(206,147,216,.5);
+      border-radius:8px;padding:6px 14px;font-family:Orbitron,monospace;
+      color:#ce93d8;font-size:9px;letter-spacing:1px;pointer-events:none;
+      box-shadow:0 0 12px rgba(206,147,216,.2);
+    `;
+    el.textContent = "👁 MODO ESPECTADOR — FUSIÓN ACTIVA";
+    document.body.appendChild(el);
+  }
+
+  function _removeSpectatorHud() {
+    const el = document.getElementById("fusionSpectatorHud");
+    if (el) el.remove();
+  }
+
   function _updateFusionControl(controlId) {
-    const myId    = G.myId;
+    const myId     = G.myId;
     const iControl = controlId === myId;
 
     if (iControl) {
+      // Este jugador toma el control → salir del espectador, aplicar skin si es partner
       window._fusionInputBlocked = false;
-      if (G.online) _showRemotePlayer(myId);
+      _exitSpectatorMode();
+      if (_activeFusion) {
+        if (_activeFusion.myRole === "partner") {
+          // Partner tomando control por SWAP: aplicar skin fusionada y ocultar iniciador
+          _saveMySkin();
+          _applyFusionSkin(_activeFusion.transformId);
+          _hideRemotePlayer(_activeFusion.initiatorId);
+        } else {
+          // Iniciador recuperando control: asegurarse de estar visible
+          _showRemotePlayer(myId);
+        }
+      }
       _showFusionHud();
     } else {
+      // Este jugador pierde el control → revertir skin y entrar en espectador
       window._fusionInputBlocked = true;
-      if (G.online) _hideRemotePlayer(myId);
+      _revertFusionSkin();
+      if (_activeFusion) {
+        // Mostrar al que ahora controla
+        _showRemotePlayer(controlId);
+        // Entrar en espectador siguiendo al controlador
+        _enterSpectatorMode(controlId);
+      }
     }
   }
 
@@ -691,17 +793,27 @@
     _clearChooseTimer();
     if (_stateListener) { _stateListener.off(); _stateListener = null; }
 
+    // Salir del espectador si estaba en ese modo
+    _exitSpectatorMode();
+
+    // Revertir transformación
     _revertFusionSkin();
+
+    // Re-mostrar a ambos jugadores
     _showRemotePlayer(state.initiatorId);
     _showRemotePlayer(state.partnerId);
+
+    // Restaurar control de input
+    window._fusionInputBlocked = false;
 
     if (typeof window.setControlMode === "function") {
       window.setControlMode("rp");
     }
 
     _removeFusionModal("fusionHud");
+    _removeSpectatorHud();
     _activeFusion = null;
-    toast("La fusión se deshizo", "info");
+    toast("La fusión se separó", "info");
   }
 
   function _onFusionCancelled(req) {
@@ -760,12 +872,12 @@
         <button id="fusSwapBtn" style="padding:6px 10px;background:rgba(206,147,216,.2);
           border:1px solid #ce93d8;border-radius:6px;color:#ce93d8;
           font-family:Orbitron,monospace;font-size:8px;cursor:pointer">
-          🔄 SWAP
+          🔄 CEDER CONTROL
         </button>` : ""}
       <button id="fusSplitBtn" style="padding:6px 10px;background:rgba(255,23,68,.15);
         border:1px solid #ff5252;border-radius:6px;color:#ff5252;
         font-family:Orbitron,monospace;font-size:8px;cursor:pointer">
-        ✕ ROMPER
+        💥 SEPARARSE
       </button>
     `;
     document.body.appendChild(el);
@@ -928,11 +1040,14 @@
   function _hookSendPlayerUpdate() {
     const orig = window.sendPlayerUpdate;
     if (!orig || orig.__fusionHooked) return;
+    // Guardar referencia al original para uso interno (posicionamiento)
+    orig.__fusionOrig = orig;
     window.sendPlayerUpdate = function () {
       if (window._fusionInputBlocked) return;
       return orig.apply(this, arguments);
     };
     window.sendPlayerUpdate.__fusionHooked = true;
+    window.sendPlayerUpdate.__fusionOrig   = orig;
   }
 
   // ═══════════════════════════════════════════════════════════════
