@@ -212,6 +212,19 @@
       if (window.interactNearby) interactNearby();
     });
 
+    /* Party */
+    var partyBtn = makeBtn("👥", "PARTY", "mrb-btn mrb-party", function () {
+      if (window.PvpSystem && window.PvpSystem._openPlayerListModal) {
+        window.PvpSystem._openPlayerListModal();
+      } else if (typeof openPlayerListModal === "function") {
+        openPlayerListModal();
+      } else {
+        // fallback: abrir el panel de party
+        if (window.PvpSystem) window.PvpSystem.togglePartyPanel();
+      }
+    });
+    partyBtn.id = "mrbPartyBtn";
+
     /* Volar */
     var flyBtn = makeBtn("🦅", "VOLAR", "mrb-btn mrb-fly", function () {
       if (window.toggleFly) toggleFly();
@@ -228,6 +241,7 @@
 
     wrap.appendChild(rpToggle);
     wrap.appendChild(combatBtn);
+    wrap.appendChild(partyBtn);
     wrap.appendChild(talkBtn);
     wrap.appendChild(flyBtn);
     wrap.appendChild(runBtn);

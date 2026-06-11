@@ -291,6 +291,10 @@ body.ui-hidden #uiToggleBtn {
   .mrb-talk   { background: rgba(0,229,255,.18)  !important; border-color: rgba(0,229,255,.7)   !important; }
   .mrb-fly    { background: rgba(0,230,118,.15)  !important; border-color: rgba(0,230,118,.6)   !important; }
   .mrb-fly.fly-active  { background: rgba(0,230,118,.45) !important; box-shadow: 0 0 14px rgba(0,230,118,.5) !important; }
+  .mrb-party {
+    background: rgba(0,229,255,.18) !important;
+    border-color: rgba(0,229,255,.7) !important;
+  }
   .mrb-run {
     width: 110px !important; height: 36px !important;
     border-radius: 10px !important;
@@ -349,6 +353,20 @@ body.ui-hidden #uiToggleBtn {
   body.ui-hidden .minimap-wrap    { opacity: 0 !important; }
   body.ui-hidden #menuToggleBtn   { opacity: 0 !important; pointer-events: none !important; }
   body.ui-hidden #rpgChatPanel    { opacity: 0 !important; pointer-events: none !important; }
+
+  /* ── Modales pvp-system: siempre encima de los controles móviles ── */
+  #partyInviteToast,
+  #playerListModal,
+  #pvpChallengeModal,
+  #playerContextMenu {
+    z-index: 9999 !important;
+  }
+  /* Garantizar que el toast sea visible y no quede tapado */
+  #partyInviteToast.open,
+  #playerListModal.open,
+  #pvpChallengeModal.open {
+    pointer-events: auto !important;
+  }
 
 } /* end @media mobile */
 

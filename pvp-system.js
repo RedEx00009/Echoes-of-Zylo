@@ -173,7 +173,7 @@
       @keyframes pvpDmgFloat{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-40px) scale(1.2)}}
       #pvpEndBar{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);z-index:130;display:none;gap:8px;pointer-events:auto}
       #pvpEndBar.open{display:flex}
-      #partyInviteToast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:160;display:none;flex-direction:column;background:rgba(8,9,15,.97);border:1px solid #00e5ff;border-radius:12px;backdrop-filter:blur(14px);font-family:Rajdhani,sans-serif;color:#e8eaf6;width:min(300px,90vw);overflow:hidden;box-shadow:0 0 30px rgba(0,229,255,.2)}
+      #partyInviteToast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;display:none;flex-direction:column;background:rgba(8,9,15,.97);border:1px solid #00e5ff;border-radius:12px;backdrop-filter:blur(14px);font-family:Rajdhani,sans-serif;color:#e8eaf6;width:min(300px,90vw);overflow:hidden;box-shadow:0 0 30px rgba(0,229,255,.2)}
       #partyInviteToast.open{display:flex}
       .pit-header{background:linear-gradient(135deg,rgba(0,229,255,.15),rgba(41,121,255,.1));padding:14px 16px 10px;border-bottom:1px solid rgba(0,229,255,.2)}
       .pit-title{font-family:Orbitron,monospace;font-size:10px;letter-spacing:2px;color:#00e5ff;margin-bottom:4px}
@@ -191,7 +191,7 @@
       .pcm-btn:hover{background:rgba(255,255,255,.06);color:#fff}
       .pcm-btn.hi{color:#00e5ff}.pcm-btn.danger-c{color:#ff5252}
       .pvp-tp-btn{border-color:rgba(0,229,255,.4)!important;background:rgba(0,229,255,.1)!important;color:#00e5ff!important}
-      #playerListModal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:165;display:none;flex-direction:column;background:rgba(8,9,15,.97);border:1px solid #00e5ff;border-radius:12px;backdrop-filter:blur(16px);font-family:Rajdhani,sans-serif;color:#e8eaf6;width:min(320px,94vw);max-height:80vh;overflow:hidden;box-shadow:0 0 40px rgba(0,229,255,.2)}
+      #playerListModal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;display:none;flex-direction:column;background:rgba(8,9,15,.97);border:1px solid #00e5ff;border-radius:12px;backdrop-filter:blur(16px);font-family:Rajdhani,sans-serif;color:#e8eaf6;width:min(320px,94vw);max-height:80vh;overflow:hidden;box-shadow:0 0 40px rgba(0,229,255,.2)}
       #playerListModal.open{display:flex}
       #plmSearch{width:100%;box-sizing:border-box;padding:9px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(0,229,255,.25);border-radius:6px;color:#e8eaf6;font-family:Rajdhani,sans-serif;font-size:13px;outline:none;margin-bottom:8px}
       #plmSearch::placeholder{color:#3a4a70}
@@ -545,11 +545,13 @@
       cur.members[G.myId] = { name: p.name, t: Date.now() };
       return cur;
     });
-    G.db.ref("partyInvites/" + best.id).set({
-      partyId,
-      fromId: G.myId,
-      fromName: p.name,
-      t: Date.now(),
+    G.db.ref("partyInvites/" + best.id).remove().then(() => {
+      G.db.ref("partyInvites/" + best.id).set({
+        partyId,
+        fromId: G.myId,
+        fromName: p.name,
+        t: Date.now(),
+      });
     });
     toast(`Invitación enviada a ${best.name}`, "info");
   }
@@ -640,11 +642,15 @@
       cur.members[G.myId] = { name: p.name, t: Date.now() };
       return cur;
     });
-    G.db.ref("partyInvites/" + targetId).set({
-      partyId,
-      fromId: G.myId,
-      fromName: p.name,
-      t: Date.now(),
+    // Limpiar primero para forzar disparo del on("value") del receptor
+    // aunque ya hubiera un nodo previo (Firebase no dispara si el valor no cambia)
+    G.db.ref("partyInvites/" + targetId).remove().then(() => {
+      G.db.ref("partyInvites/" + targetId).set({
+        partyId,
+        fromId: G.myId,
+        fromName: p.name,
+        t: Date.now(),
+      });
     });
     toast(`Invitación enviada a ${op.name || targetId.slice(0,8)}`, "info");
   }
@@ -1425,6 +1431,7 @@
     window.PvpSystem.sendPartyInvite = invitePlayerById;
     window.PvpSystem.sendChallenge   = (id) => { selectedMemberId = id; sendChallengeToSelected(); };
     window.PvpSystem._ensurePartyId  = ensurePartyId;
+    window.PvpSystem._openPlayerListModal = openPlayerListModal;
     window.PvpSystem._inviteFromList = (id) => {
       invitePlayerById(id);
       renderPlayerList(); // refresh button state
