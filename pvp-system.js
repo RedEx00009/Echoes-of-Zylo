@@ -428,13 +428,27 @@
     });
   }
 
-  function listenInvites() {
-    if (!G.db || !G.myId) return;
+  function writePartyInvite(targetId, payload) {
+    if (!G.db || !G.myId) return Promise.reject(new Error("db_not_ready"));
+    const ref = G.db.ref("partyInvites/" + targetId);
+    return ref.remove().then(() => ref.set(payload));
+  }
+
+  function listenInvites(force) {
+    if (!G.db || !G.myId) {
+      setTimeout(() => listenInvites(true), 600);
+      return;
+    }
+    if (inviteListener && !force) return;
     if (inviteListener) inviteListener.off();
     inviteListener = G.db.ref("partyInvites/" + G.myId);
     inviteListener.on("value", (snap) => {
       const inv = snap.val();
-      if (!inv || !inv.partyId) return;
+      if (!inv || !inv.partyId || inv.fromId === G.myId) return;
+      if (inv.expiresAt && Date.now() > inv.expiresAt) {
+        snap.ref.remove();
+        return;
+      }
       showPartyInviteToast(inv, snap.ref);
     });
   }
@@ -444,7 +458,7 @@
     const msg = document.getElementById("pitMsg");
     const accept = document.getElementById("pitAccept");
     const reject = document.getElementById("pitReject");
-    if (!toast) return;
+    if (!toast || !msg || !accept || !reject) return;
     msg.textContent = `${inv.fromName || "Alguien"} te invita a su party`;
     toast.classList.add("open");
     const cleanup = () => {
@@ -545,14 +559,13 @@
       cur.members[G.myId] = { name: p.name, t: Date.now() };
       return cur;
     });
-    G.db.ref("partyInvites/" + best.id).remove().then(() => {
-      G.db.ref("partyInvites/" + best.id).set({
-        partyId,
-        fromId: G.myId,
-        fromName: p.name,
-        t: Date.now(),
-      });
-    });
+    writePartyInvite(best.id, {
+      partyId,
+      fromId: G.myId,
+      fromName: p.name,
+      t: Date.now(),
+      expiresAt: Date.now() + 30000,
+    }).catch(() => toast("No se pudo enviar la invitación", "dmg"));
     toast(`Invitación enviada a ${best.name}`, "info");
   }
 
@@ -642,16 +655,13 @@
       cur.members[G.myId] = { name: p.name, t: Date.now() };
       return cur;
     });
-    // Limpiar primero para forzar disparo del on("value") del receptor
-    // aunque ya hubiera un nodo previo (Firebase no dispara si el valor no cambia)
-    G.db.ref("partyInvites/" + targetId).remove().then(() => {
-      G.db.ref("partyInvites/" + targetId).set({
-        partyId,
-        fromId: G.myId,
-        fromName: p.name,
-        t: Date.now(),
-      });
-    });
+    writePartyInvite(targetId, {
+      partyId,
+      fromId: G.myId,
+      fromName: p.name,
+      t: Date.now(),
+      expiresAt: Date.now() + 30000,
+    }).catch(() => toast("No se pudo enviar la invitación", "dmg"));
     toast(`Invitación enviada a ${op.name || targetId.slice(0,8)}`, "info");
   }
 
@@ -720,18 +730,24 @@
     const canvas = document.getElementById("gameCanvas");
     if (!canvas || canvas._pvpClickHooked) return;
     canvas._pvpClickHooked = true;
-    canvas.addEventListener("pointerup", (e) => {
-      if (window.gameState !== "playing") return;
+
+    let pendingTap = null;
+
+    function beginTap(clientX, clientY, source) {
+      pendingTap = { clientX, clientY, time: Date.now(), source };
+    }
+
+    function resolveSelection(clientX, clientY) {
+      if (window.gameState !== "playing") return null;
       const cam = window.cam;
-      if (!cam) return;
+      if (!cam) return null;
       const rect = canvas.getBoundingClientRect();
-      const sx = (e.clientX - rect.left) * (canvas.width / rect.width);
-      const sy = (e.clientY - rect.top) * (canvas.height / rect.height);
+      const sx = (clientX - rect.left) * (canvas.width / rect.width);
+      const sy = (clientY - rect.top) * (canvas.height / rect.height);
       const z = cam.zoom || 1;
       const wx = ((sx - canvas.width / 2) / z) + canvas.width / 2 + cam.x;
       const wy = ((sy - canvas.height / 2) / z) + canvas.height / 2 + cam.y;
 
-      // Buscar jugador remoto en esa posición
       const SPRITE_W = 120, SPRITE_H = 148;
       let hit = null, bestD = Infinity;
       for (const [id, op] of Object.entries(G.others)) {
@@ -740,9 +756,52 @@
         const d = Math.hypot(wx - op.x, wy - (op.y - SPRITE_H / 2));
         if (d < SPRITE_W * 0.55 && d < bestD) { hit = id; bestD = d; }
       }
+      return hit;
+    }
+
+    function finishTap(e, source) {
+      if (!pendingTap || pendingTap.source !== source) return;
+      const down = pendingTap;
+      pendingTap = null;
+      const dx = Math.abs(e.clientX - down.clientX);
+      const dy = Math.abs(e.clientY - down.clientY);
+      const dt = Date.now() - down.time;
+      if (dx > 14 || dy > 14 || dt > 700) return;
+      const hit = resolveSelection(e.clientX, e.clientY);
       if (!hit) return;
       openPlayerContextMenu(hit, e.clientX, e.clientY);
-    });
+    }
+
+    canvas.addEventListener("pointerdown", (e) => {
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      if (e.target !== canvas) return;
+      if (window.gameState !== "playing") return;
+      beginTap(e.clientX, e.clientY, e.pointerType === "touch" ? "touch" : "pointer");
+    }, { passive: true });
+
+    canvas.addEventListener("pointerup", (e) => {
+      if (e.pointerType === "touch") return;
+      if (e.target !== canvas) return;
+      if (window.gameState !== "playing") return;
+      finishTap(e, "pointer");
+    }, { passive: false });
+
+    canvas.addEventListener("touchstart", (e) => {
+      if (e.touches.length !== 1 || e.target !== canvas) return;
+      const touch = e.touches[0];
+      beginTap(touch.clientX, touch.clientY, "touch");
+    }, { passive: true });
+
+    canvas.addEventListener("touchend", (e) => {
+      if (e.touches.length > 0 || !e.changedTouches || !e.changedTouches.length) return;
+      const touch = e.changedTouches[0];
+      const ev = { clientX: touch.clientX, clientY: touch.clientY };
+      finishTap(ev, "touch");
+    }, { passive: false });
+
+    canvas.addEventListener("touchcancel", () => {
+      pendingTap = null;
+    }, { passive: true });
   }
 
   // ── PvP Challenge ────────────────────────────────────────────────────
@@ -1429,6 +1488,8 @@
     // Exponer para que player-interact.js pueda delegar el menú contextual
     window._pvpOpenPlayerContextMenu = openPlayerContextMenu;
     window.PvpSystem.sendPartyInvite = invitePlayerById;
+    window.PvpSystem.joinParty = joinParty;
+    window.PvpSystem.leaveParty = leaveParty;
     window.PvpSystem.sendChallenge   = (id) => { selectedMemberId = id; sendChallengeToSelected(); };
     window.PvpSystem._ensurePartyId  = ensurePartyId;
     window.PvpSystem._openPlayerListModal = openPlayerListModal;
