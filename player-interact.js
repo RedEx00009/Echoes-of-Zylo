@@ -451,81 +451,43 @@
     const canvas = G.canvas;
     if (!canvas) { setTimeout(_initCanvasListeners, 300); return; }
 
-    // Si pvp-system ya registró su hookCanvasClick (canvas._pvpClickHooked),
-    // no agregamos nuestro listener de pointerup para no competir.
-    // Solo manejamos el cursor hover y cerrar el menú en click vacío.
-    if (canvas._pvpClickHooked) {
-      canvas.addEventListener("pointerdown", (e) => {
-        if (e.target !== canvas) return;
-        const w = _screenToWorld(e.clientX, e.clientY);
-        _lastPointerDown = {
-          clientX: e.clientX, clientY: e.clientY,
-          time: Date.now(),
-          hit:  _getPlayerAtWorld(w.x, w.y),
-        };
-      }, { capture: false, passive: true });
-      canvas.addEventListener("pointerup", (e) => {
-        if (!_lastPointerDown) return;
-        const down = _lastPointerDown;
-        _lastPointerDown = null;
-        if (!down.hit) closePlayerContextMenuIfExists();
-      }, { capture: false });
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") closePlayerContextMenuIfExists();
-      });
-      return;
-    }
-
-    // pvp-system aún no corrió: registramos nuestros propios listeners.
-    canvas.addEventListener("pointerdown", (e) => {
+    function handleCanvasClick(e) {
       if (window.gameState && window.gameState !== "playing") return;
       const map = window.currentMap || "";
       if (map === "simulador_combate" || map === "sala_entrenamiento") return;
       if (e.target !== canvas) return;
 
       const w = _screenToWorld(e.clientX, e.clientY);
-      _lastPointerDown = {
-        clientX: e.clientX,
-        clientY: e.clientY,
-        time:    Date.now(),
-        hit:     _getPlayerAtWorld(w.x, w.y),
-      };
-    }, { capture: false, passive: true });
-
-    canvas.addEventListener("pointerup", (e) => {
-      if (!_lastPointerDown) return;
-      if (window.gameState && window.gameState !== "playing") return;
-      const map = window.currentMap || "";
-      if (map === "simulador_combate" || map === "sala_entrenamiento") return;
-      if (e.target !== canvas) return;
-
-      const down = _lastPointerDown;
-      _lastPointerDown = null;
-
-      if (!down.hit) {
+      const hit = _getPlayerAtWorld(w.x, w.y);
+      if (!hit) {
         if (_openMenu) _closeMenu();
         closePlayerContextMenuIfExists();
         return;
       }
 
-      const dx     = Math.abs(e.clientX - down.clientX);
-      const dy     = Math.abs(e.clientY - down.clientY);
-      const dt     = Date.now() - down.time;
-      const isDrag = dx > 14 || dy > 14 || dt > 700;
-      if (isDrag) { _closeMenu(); return; }
-
       e.stopPropagation();
-      _openPlayerMenu(down.hit.id, down.hit.p, e.clientX, e.clientY);
-    }, { capture: false });
+      e.preventDefault();
+      _openPlayerMenu(hit.id, hit.p, e.clientX, e.clientY);
+    }
 
-    // Cerrar con click fuera del menú
+    canvas.addEventListener("click", handleCanvasClick, { capture: false, passive: false });
+    canvas.addEventListener("pointerup", (e) => {
+      if (e.pointerType === "touch") return;
+      if (e.target !== canvas) return;
+      handleCanvasClick(e);
+    }, { capture: false, passive: false });
+    canvas.addEventListener("touchend", (e) => {
+      if (e.touches.length > 0 || !e.changedTouches || !e.changedTouches.length) return;
+      const touch = e.changedTouches[0];
+      handleCanvasClick({ target: canvas, clientX: touch.clientX, clientY: touch.clientY, stopPropagation() {}, preventDefault() {} });
+    }, { capture: false, passive: false });
+
     document.addEventListener("pointerdown", (e) => {
       if (!_openMenu) return;
       if (_openMenu.el.contains(e.target)) return;
       _closeMenu();
     }, { capture: true, passive: true });
 
-    // Cerrar con Escape
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && _openMenu) _closeMenu();
     });

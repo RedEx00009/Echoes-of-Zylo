@@ -731,12 +731,6 @@
     if (!canvas || canvas._pvpClickHooked) return;
     canvas._pvpClickHooked = true;
 
-    let pendingTap = null;
-
-    function beginTap(clientX, clientY, source) {
-      pendingTap = { clientX, clientY, time: Date.now(), source };
-    }
-
     function resolveSelection(clientX, clientY) {
       if (window.gameState !== "playing") return null;
       const cam = window.cam;
@@ -759,48 +753,25 @@
       return hit;
     }
 
-    function finishTap(e, source) {
-      if (!pendingTap || pendingTap.source !== source) return;
-      const down = pendingTap;
-      pendingTap = null;
-      const dx = Math.abs(e.clientX - down.clientX);
-      const dy = Math.abs(e.clientY - down.clientY);
-      const dt = Date.now() - down.time;
-      if (dx > 14 || dy > 14 || dt > 700) return;
+    function handleSelection(e) {
+      if (e.target !== canvas) return;
+      if (window.gameState !== "playing") return;
       const hit = resolveSelection(e.clientX, e.clientY);
       if (!hit) return;
       openPlayerContextMenu(hit, e.clientX, e.clientY);
     }
 
-    canvas.addEventListener("pointerdown", (e) => {
-      if (e.pointerType === "mouse" && e.button !== 0) return;
-      if (e.target !== canvas) return;
-      if (window.gameState !== "playing") return;
-      beginTap(e.clientX, e.clientY, e.pointerType === "touch" ? "touch" : "pointer");
-    }, { passive: true });
-
+    canvas.addEventListener("click", handleSelection, { passive: true });
     canvas.addEventListener("pointerup", (e) => {
       if (e.pointerType === "touch") return;
       if (e.target !== canvas) return;
       if (window.gameState !== "playing") return;
-      finishTap(e, "pointer");
-    }, { passive: false });
-
-    canvas.addEventListener("touchstart", (e) => {
-      if (e.touches.length !== 1 || e.target !== canvas) return;
-      const touch = e.touches[0];
-      beginTap(touch.clientX, touch.clientY, "touch");
+      handleSelection(e);
     }, { passive: true });
-
     canvas.addEventListener("touchend", (e) => {
       if (e.touches.length > 0 || !e.changedTouches || !e.changedTouches.length) return;
       const touch = e.changedTouches[0];
-      const ev = { clientX: touch.clientX, clientY: touch.clientY };
-      finishTap(ev, "touch");
-    }, { passive: false });
-
-    canvas.addEventListener("touchcancel", () => {
-      pendingTap = null;
+      handleSelection({ target: canvas, clientX: touch.clientX, clientY: touch.clientY });
     }, { passive: true });
   }
 
