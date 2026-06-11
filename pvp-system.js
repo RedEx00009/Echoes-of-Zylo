@@ -1317,6 +1317,12 @@
     window.performPvpAction = performPvpAction;
     window.releasePvpBlock = releaseBlock;
     window._pvpOpponentId = opponentId;
+    // Exponer para que player-interact.js pueda delegar el menú contextual
+    window._pvpOpenPlayerContextMenu = openPlayerContextMenu;
+    window.PvpSystem.sendPartyInvite = invitePlayerById;
+    window.PvpSystem.sendChallenge   = (id) => { selectedMemberId = id; sendChallengeToSelected(); };
+    window.PvpSystem._ensurePartyId  = ensurePartyId;
+    window.PvpSystem._handlesPartyInvites = true;
 
     // Teclas hold para special [E] y ultimate [T] en modo PvP
     const _pvpHeld = {};

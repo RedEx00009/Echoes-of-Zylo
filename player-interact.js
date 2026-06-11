@@ -102,6 +102,13 @@
   }
 
   function _openPlayerMenu(id, p, screenX, screenY) {
+    // Si pvp-system ya tiene su propio menú en el DOM, delegarle directamente.
+    // Esto evita crear un menú duplicado y garantiza que las acciones
+    // (invitar, desafiar, TP) usen las funciones correctas del pvp-system.
+    if (typeof window._pvpOpenPlayerContextMenu === "function") {
+      window._pvpOpenPlayerContextMenu(id, screenX, screenY);
+      return;
+    }
     _closeMenu();
 
     const name        = p.name || "?";
@@ -256,10 +263,26 @@
     }
 
     // 2. Fallback: escribir directo en Firebase path partyInvites/{targetId}
+    //    IMPORTANTE: incluir partyId para que pvp-system.listenInvites() no descarte
+    //    la invitación (hace `if (!inv || !inv.partyId) return`).
     if (!G.db) return toast("Sin conexión a la base de datos", "dmg");
 
-    const myName = G.myPlayer?.name || "?";
+    const myName  = G.myPlayer?.name || "?";
+    // Intentar reutilizar el partyId que ya tiene el PvpSystem si tiene uno activo.
+    // Si no, generamos uno con la misma convención "party_<leaderId>" que usa pvp-system.
+    const partyId = window.PvpSystem?._ensurePartyId?.()
+                 || ("party_" + G.myId);
+
+    // Asegurarse de que la party exista en Firebase (igual que hace invitePlayerById)
+    G.db.ref("parties/" + partyId).transaction((cur) => {
+      if (!cur) return { leaderId: G.myId, members: { [G.myId]: { name: myName, t: Date.now() } }, createdAt: Date.now() };
+      cur.members = cur.members || {};
+      cur.members[G.myId] = { name: myName, t: Date.now() };
+      return cur;
+    });
+
     G.db.ref("partyInvites/" + targetId).set({
+      partyId,
       fromId:   G.myId,
       fromName: myName,
       t:        Date.now(),
@@ -420,10 +443,40 @@
   // Solución: guardamos en una variable compartida el último pointerdown.
   let _lastPointerDown = null;
 
+  function closePlayerContextMenuIfExists() {
+    document.getElementById("playerContextMenu")?.classList.remove("open");
+  }
+
   function _initCanvasListeners() {
     const canvas = G.canvas;
     if (!canvas) { setTimeout(_initCanvasListeners, 300); return; }
 
+    // Si pvp-system ya registró su hookCanvasClick (canvas._pvpClickHooked),
+    // no agregamos nuestro listener de pointerup para no competir.
+    // Solo manejamos el cursor hover y cerrar el menú en click vacío.
+    if (canvas._pvpClickHooked) {
+      canvas.addEventListener("pointerdown", (e) => {
+        if (e.target !== canvas) return;
+        const w = _screenToWorld(e.clientX, e.clientY);
+        _lastPointerDown = {
+          clientX: e.clientX, clientY: e.clientY,
+          time: Date.now(),
+          hit:  _getPlayerAtWorld(w.x, w.y),
+        };
+      }, { capture: false, passive: true });
+      canvas.addEventListener("pointerup", (e) => {
+        if (!_lastPointerDown) return;
+        const down = _lastPointerDown;
+        _lastPointerDown = null;
+        if (!down.hit) closePlayerContextMenuIfExists();
+      }, { capture: false });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closePlayerContextMenuIfExists();
+      });
+      return;
+    }
+
+    // pvp-system aún no corrió: registramos nuestros propios listeners.
     canvas.addEventListener("pointerdown", (e) => {
       if (window.gameState && window.gameState !== "playing") return;
       const map = window.currentMap || "";
@@ -450,8 +503,8 @@
       _lastPointerDown = null;
 
       if (!down.hit) {
-        // Click en vacío
         if (_openMenu) _closeMenu();
+        closePlayerContextMenuIfExists();
         return;
       }
 
