@@ -9498,6 +9498,7 @@
     // -- drawPlayerChar  actualizado para spriteVariantId con "special" --
     function drawPlayerChar() {
       if (trailerDrive?.active) return;
+      if (window._fusionSpectatorHideLocal) return;
       const sx=player.x-cam.x, groundSy=player.y-cam.y, sy=groundSy-(player._airY||0);
       const CS=window.CharacterSystem;
       const useCS = CS && csImageMap && csAnimator;

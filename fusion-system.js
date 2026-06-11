@@ -680,8 +680,11 @@
     _spectatorFollowId = followId;
     window._fusionInputBlocked = true;
 
-    // Ocultar el propio personaje del partner en Firebase
+    // Ocultar el propio personaje del partner en Firebase (para otros clientes)
     _hideRemotePlayer(G.myId);
+
+    // Parchear drawPlayerChar para que el jugador local NO se renderice
+    _hookDrawPlayerChar(false);
 
     // HUD de espectador
     _showSpectatorHud();
@@ -691,7 +694,6 @@
       if (!_spectatorFollowId) return;
       const target = G.others[_spectatorFollowId];
       if (target && G.player) {
-        // Mover el player local (invisible) a la misma posición para que la cámara lo siga
         G.player.x = target.x;
         G.player.y = target.y;
       }
@@ -707,9 +709,37 @@
     _spectatorFollowId = null;
     if (_spectatorRaf) { cancelAnimationFrame(_spectatorRaf); _spectatorRaf = null; }
     _removeSpectatorHud();
+    // Restaurar renderizado del jugador local
+    _hookDrawPlayerChar(true);
     _showRemotePlayer(G.myId);
     window._fusionInputBlocked = false;
   }
+
+  /**
+   * Parchea window.drawPlayerChar para suprimir (visible=false) o restaurar (visible=true)
+   * el renderizado del personaje local. Busca la función en el scope global o en G.
+   */
+  function _hookDrawPlayerChar(visible) {
+    // Intentar encontrar la función (puede estar expuesta como window.drawPlayerChar)
+    if (visible) {
+      if (window._drawPlayerCharOrig) {
+        window.drawPlayerChar = window._drawPlayerCharOrig;
+        window._drawPlayerCharOrig = null;
+      }
+      // Flag global por si la función se lee directamente desde game loop
+      window._fusionSpectatorHideLocal = false;
+    } else {
+      if (!window._drawPlayerCharOrig && typeof window.drawPlayerChar === "function") {
+        window._drawPlayerCharOrig = window.drawPlayerChar;
+        window.drawPlayerChar = function () {
+          if (window._fusionSpectatorHideLocal) return;
+          return window._drawPlayerCharOrig.apply(this, arguments);
+        };
+      }
+      window._fusionSpectatorHideLocal = true;
+    }
+  }
+
 
   function _showSpectatorHud() {
     _removeSpectatorHud();
