@@ -191,6 +191,21 @@
       .pcm-btn:hover{background:rgba(255,255,255,.06);color:#fff}
       .pcm-btn.hi{color:#00e5ff}.pcm-btn.danger-c{color:#ff5252}
       .pvp-tp-btn{border-color:rgba(0,229,255,.4)!important;background:rgba(0,229,255,.1)!important;color:#00e5ff!important}
+      #playerListModal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:165;display:none;flex-direction:column;background:rgba(8,9,15,.97);border:1px solid #00e5ff;border-radius:12px;backdrop-filter:blur(16px);font-family:Rajdhani,sans-serif;color:#e8eaf6;width:min(320px,94vw);max-height:80vh;overflow:hidden;box-shadow:0 0 40px rgba(0,229,255,.2)}
+      #playerListModal.open{display:flex}
+      #plmSearch{width:100%;box-sizing:border-box;padding:9px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(0,229,255,.25);border-radius:6px;color:#e8eaf6;font-family:Rajdhani,sans-serif;font-size:13px;outline:none;margin-bottom:8px}
+      #plmSearch::placeholder{color:#3a4a70}
+      #plmList{overflow-y:auto;flex:1;padding:0 12px 12px}
+      .plm-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border:1px solid rgba(255,255,255,.07);border-radius:7px;margin-bottom:6px;transition:border-color .12s}
+      .plm-item:hover{border-color:rgba(0,229,255,.35);background:rgba(0,229,255,.04)}
+      .plm-avatar{width:32px;height:32px;border-radius:50%;background:rgba(0,229,255,.15);border:1px solid rgba(0,229,255,.3);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+      .plm-info{flex:1;min-width:0}
+      .plm-name{font-family:Orbitron,monospace;font-size:9px;letter-spacing:1px;color:#c8cfe8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .plm-sub{font-size:10px;color:#3a5080;margin-top:1px}
+      .plm-btn{padding:6px 11px;border-radius:5px;border:1px solid rgba(0,229,255,.4);background:rgba(0,229,255,.1);color:#00e5ff;font-family:Orbitron,monospace;font-size:8px;letter-spacing:.5px;cursor:pointer;white-space:nowrap;transition:all .12s;flex-shrink:0}
+      .plm-btn:hover{background:rgba(0,229,255,.22)}
+      .plm-btn.already{border-color:rgba(255,255,255,.15);background:none;color:#3a5080;cursor:default;pointer-events:none}
+      .plm-empty{text-align:center;color:#3a5080;font-size:12px;padding:30px 0}
     `;
     document.head.appendChild(s);
   }
@@ -220,6 +235,7 @@
       <div class="pvp-body" id="partyMemberList"></div>
       <div style="padding:0 12px 12px">
         <button class="pvp-btn primary" type="button" id="partyInviteBtn">📨 INVITAR JUGADOR CERCANO</button>
+        <button class="pvp-btn primary" type="button" id="partyInviteListBtn">📋 LISTA DE JUGADORES</button>
         <button class="pvp-btn" type="button" id="partyChallengeBtn">⚔️ DESAFIAR A COMBATE</button>
         <button class="pvp-btn danger" type="button" id="partyLeaveBtn">SALIR DE PARTY</button>
       </div>`;
@@ -275,9 +291,33 @@
       }
     });
 
+    // ── Modal lista de jugadores ──
+    const plm = document.createElement("div");
+    plm.id = "playerListModal";
+    plm.innerHTML = `
+      <div class="pvp-hdr">
+        <span class="pvp-hdr-t">👥 JUGADORES EN EL SERVIDOR</span>
+        <button class="pvp-close" type="button" id="plmClose">✕</button>
+      </div>
+      <div style="padding:12px 12px 4px">
+        <input id="plmSearch" type="text" placeholder="Buscar jugador..." autocomplete="off" spellcheck="false">
+      </div>
+      <div id="plmList"></div>
+    `;
+    document.body.appendChild(plm);
+    document.getElementById("plmClose").onclick = closePlayerListModal;
+    document.addEventListener("pointerdown", (e) => {
+      const modal = document.getElementById("playerListModal");
+      if (modal && modal.classList.contains("open") && !modal.contains(e.target)) {
+        closePlayerListModal();
+      }
+    });
+    document.getElementById("plmSearch").addEventListener("input", () => renderPlayerList());
+
     document.getElementById("partyPanelClose").onclick = () => panel.classList.remove("open");
     document.getElementById("pvpModalClose").onclick = closeChallengeModal;
     document.getElementById("partyInviteBtn").onclick = inviteNearestPlayer;
+    document.getElementById("partyInviteListBtn").onclick = openPlayerListModal;
     document.getElementById("partyChallengeBtn").onclick = sendChallengeToSelected;
     document.getElementById("partyLeaveBtn").onclick = leaveParty;
     document.getElementById("pvpMutualEndBtn").onclick = requestMutualEnd;
@@ -418,6 +458,69 @@
       cleanup();
     };
     reject.onclick = cleanup;
+  }
+
+  function openPlayerListModal() {
+    renderPlayerList();
+    document.getElementById("playerListModal")?.classList.add("open");
+    setTimeout(() => document.getElementById("plmSearch")?.focus(), 80);
+  }
+
+  function closePlayerListModal() {
+    document.getElementById("playerListModal")?.classList.remove("open");
+  }
+
+  function renderPlayerList() {
+    const list = document.getElementById("plmList");
+    if (!list) return;
+    const query = (document.getElementById("plmSearch")?.value || "").toLowerCase().trim();
+    const others = G.others;
+    const myMap  = G.map;
+
+    const players = Object.entries(others)
+      .filter(([id, p]) => {
+        if (id === G.myId) return false;
+        if (p.fusionHidden) return false;
+        // same map preferably, but show all connected
+        const name = (p.name || "").toLowerCase();
+        return !query || name.includes(query);
+      })
+      .sort((a, b) => {
+        // Same map first
+        const aMap = a[1].map === myMap ? 0 : 1;
+        const bMap = b[1].map === myMap ? 0 : 1;
+        if (aMap !== bMap) return aMap - bMap;
+        return (a[1].name || "").localeCompare(b[1].name || "");
+      });
+
+    if (players.length === 0) {
+      list.innerHTML = `<div class="plm-empty">No hay jugadores conectados</div>`;
+      return;
+    }
+
+    const partyIds = new Set(getPartyMemberIds());
+    const partyFull = (getPartyMemberIds().length + 1) >= 4; // +1 = yo
+
+    list.innerHTML = players.map(([id, p]) => {
+      const name   = p.name || id.slice(0, 10);
+      const level  = p.level ? `Lv.${p.level}` : "";
+      const sameMap = p.map === myMap || !p.map;
+      const status = sameMap ? "🟢 En este mapa" : "🔵 Otro mapa";
+      const inParty = partyIds.has(id);
+      const btnClass = inParty ? "plm-btn already" : "plm-btn";
+      const btnLabel = inParty ? "✓ En tu party" : "Invitar";
+      const disabled = inParty ? "" : (partyFull ? 'disabled title="Party llena (máx 4)"' : "");
+      const aura = p.appearance?.auraColor || p.charColor || "#00e5ff";
+      return `
+        <div class="plm-item">
+          <div class="plm-avatar" style="border-color:${aura}30;color:${aura}">👤</div>
+          <div class="plm-info">
+            <div class="plm-name" style="color:${aura}">${name}${level ? " · " + level : ""}</div>
+            <div class="plm-sub">${status}</div>
+          </div>
+          <button class="${btnClass}" ${disabled} onclick="window.PvpSystem._inviteFromList('${id}')">${btnLabel}</button>
+        </div>`;
+    }).join("");
   }
 
   function inviteNearestPlayer() {
@@ -1322,6 +1425,11 @@
     window.PvpSystem.sendPartyInvite = invitePlayerById;
     window.PvpSystem.sendChallenge   = (id) => { selectedMemberId = id; sendChallengeToSelected(); };
     window.PvpSystem._ensurePartyId  = ensurePartyId;
+    window.PvpSystem._inviteFromList = (id) => {
+      invitePlayerById(id);
+      renderPlayerList(); // refresh button state
+      toast("Invitación enviada", "info");
+    };
     window.PvpSystem._handlesPartyInvites = true;
 
     // Teclas hold para special [E] y ultimate [T] en modo PvP
