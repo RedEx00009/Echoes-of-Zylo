@@ -554,7 +554,7 @@
         badge.style.display = "none";
         jrHealBtn.style.display = "none";
         controlPanel.style.display = "none";
-        firebase.auth().signOut();
+        // No hacemos signOut(): cerraría la sesión del jugador en el juego.
         document.dispatchEvent(new Event('adminLoggedOut'));
         localMsg("👋 Sesión admin cerrada", "#8892b0");
         break;
@@ -597,7 +597,19 @@
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.setCustomParameters({ prompt: "select_account" });
 
-    firebase.auth().signInWithPopup(provider)
+    const current = firebase.auth().currentUser;
+    const authPromise = (current && current.isAnonymous)
+      ? current.linkWithPopup(provider).catch(err => {
+          // Si esta cuenta de Google ya está vinculada a otro UID anónimo,
+          // logueamos directo con esa cuenta (perdemos el UID anónimo viejo).
+          if (err.code === "auth/credential-already-in-use" && err.credential) {
+            return firebase.auth().signInWithCredential(err.credential);
+          }
+          throw err;
+        })
+      : firebase.auth().signInWithPopup(provider);
+
+    authPromise
       .then(cred => {
         const email = cred.user.email;
         const role  = ADMINS[email];
@@ -614,6 +626,11 @@
         // Registrar el playerId del owner para protegerlo del jr
         if (adminRole === "owner" && typeof window.myPlayerId !== "undefined" && window.myPlayerId) {
           OWNER_PLAYER_IDS.add(window.myPlayerId);
+        }
+
+        // Actualizar ownerUid del jugador actual con el UID definitivo (post-link)
+        if (typeof window.myPlayerId !== "undefined" && window.myPlayerId && typeof db !== "undefined") {
+          db.ref("players/" + window.myPlayerId).update({ ownerUid: cred.user.uid }).catch(()=>{});
         }
 
         // Badge
