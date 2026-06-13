@@ -43,7 +43,7 @@
 
       /* -- HAMBURGER -- */
       #menuToggleBtn {
-        position:fixed; top:12px; left:12px; z-index:270;
+        position:fixed; top:12px; left:12px; z-index:10001;
         width:44px; height:44px; background:var(--ui-bg); border:1px solid #2a3560;
         border-radius:8px; display:flex; flex-direction:column;
         align-items:center; justify-content:center; gap:5px;
@@ -309,57 +309,6 @@
         overflow:hidden;
       }
       #trailerInterior.visible { display:flex; flex-direction:column; }
-
-      /* ── Modo in-trailer: actionGrid y joystick flotan SOBRE trailerInterior ── */
-      body.in-trailer #actionGrid {
-        position: fixed !important;
-        bottom: 16px !important;
-        right: 12px !important;
-        z-index: 80 !important;
-        pointer-events: auto !important;
-        display: grid !important;
-      }
-      body.in-trailer #actionGrid.mrb-combat-mode {
-        z-index: 80 !important;
-      }
-      body.in-trailer .mobile-controls {
-        z-index: 75 !important;
-        display: flex !important;
-        pointer-events: none !important;
-      }
-      body.in-trailer .mobile-controls .joystick-col { pointer-events: auto !important; }
-      body.in-trailer #trailerMobileControls { display: none !important; }
-      /* Botón de modo combate trailer — flotante sobre canvas */
-      #trailerCombatToggle {
-        display: none;
-        position: fixed;
-        top: 48px;
-        right: 12px;
-        z-index: 82;
-        padding: 7px 12px;
-        background: rgba(170,0,255,.22);
-        border: 1px solid rgba(170,0,255,.8);
-        border-radius: 8px;
-        color: #ce93d8;
-        font-family: var(--font-head);
-        font-size: 9px;
-        letter-spacing: 1px;
-        cursor: pointer;
-        touch-action: manipulation;
-        pointer-events: auto;
-        backdrop-filter: blur(8px);
-      }
-      #trailerCombatToggle.combat-active {
-        background: rgba(170,0,255,.45);
-        border-color: #ce93d8;
-        box-shadow: 0 0 12px rgba(170,0,255,.5);
-      }
-      body.in-trailer #trailerCombatToggle { display: block; }
-      /* Ocultar HUD bar del trailer en PC (queda feo si el joystick ya lo reemplaza en mobile) */
-      @media (pointer:coarse) {
-        body.in-trailer .trailer-hud-bar { display: none !important; }
-        body.in-trailer .trailer-hud-bar + * { display: none; }
-      }
       #trailerCanvas { flex:1 1 auto; display:block; width:100%; min-height:0; }
       /* Joystick móvil dentro del trailer */
       #trailerMobileControls {
@@ -689,9 +638,6 @@
 
     <canvas id="gameCanvas"></canvas>
 
-    <!-- Botón combate/RP flotante para el interior del trailer -->
-    <button id="trailerCombatToggle" onclick="setControlMode(window.isCombatMode?'rp':'combat')">⚔️ COMBATE</button>
-
     <!-- INTERIOR TRAILER -->
     <div id="trailerInterior">
       <canvas id="trailerCanvas"></canvas>
@@ -710,9 +656,9 @@
       <div class="trailer-room-panel" id="trailerRoomPanel">
         <div class="trailer-drive-title">🚪 HABITACIONES</div>
         <div class="trailer-drive-grid">
-          <button class="trailer-drive-btn" onclick="goToTrailerRoom('cockpit')">🎮 CABINA</button>
+          <button class="trailer-drive-btn" onclick="exitTrailer();setTimeout(()=>travelTo('trailer_cabina'),400)">🎮 CABINA</button>
           <button class="trailer-drive-btn" onclick="exitTrailer();setTimeout(()=>{travelTo('sala_entrenamiento');setTimeout(()=>{entrenamientoCombatStarted=true;currentWave=-1;waveEnemies=[];checkSimulatorEntry();showHudToast('⚔️ ¡Entrenamiento iniciado!','warning');},800);},400)">⚡ ENTRENAMIENTO</button>
-          <button class="trailer-drive-btn" onclick="goToTrailerRoom('bottomFloor')" style="grid-column:span 2">🛏️ HABITACIÓN</button>
+          <button class="trailer-drive-btn" onclick="exitTrailer();setTimeout(()=>travelTo('trailer_habitacion'),400)" style="grid-column:span 2">🛏️ HABITACIÓN</button>
           <button class="trailer-drive-btn close" onclick="closeTrailerRoomPanel()" style="grid-column:span 2">CERRAR</button>
         </div>
       </div>
@@ -743,7 +689,7 @@
         <button class="side-action-scroll-btn" id="sideActionScrollUp">▲</button>
         <button class="side-action-scroll-btn" id="sideActionScrollDown">▼</button>
       </div>
-      <button id="menuToggleBtn" onclick="toggleMenu()">
+      <button id="menuToggleBtn" type="button" aria-label="Abrir menú" ontouchstart="event.stopPropagation();event.preventDefault();" ontouchend="event.stopPropagation();event.preventDefault();toggleMenu();">
         <span></span><span></span><span></span>
       </button>
       <button id="uiToggleBtn" title="Mostrar / Ocultar interfaz">UI</button>
@@ -846,6 +792,13 @@
         <div class="menu-section">
           <div class="menu-section-label">Cargar personaje</div>
           <div class="slot-list" id="menuSlotList"><div class="slot-empty-label">Cargando...</div></div>
+        </div>
+
+        <div class="menu-section">
+          <div class="menu-section-label">Administración</div>
+          <button class="menu-btn" id="menuAdminBtn" onclick="(function(){closeMenu();setTimeout(function(){var e=new KeyboardEvent('keydown',{key:'F8',bubbles:true,cancelable:true});document.dispatchEvent(e);},150);})()">
+            <span class="btn-ic">⚡</span> ACCESO ADMIN
+          </button>
         </div>
       </div>
       <div id="leftPanelStack"></div>
@@ -969,6 +922,12 @@
             <span class="vc-slot-name" id="vcName_bottomFloor">—</span>
             <button class="vc-arrow" onclick="vcNextSlot('bottomFloor')" type="button">▶</button>
           </div>
+          <div class="vc-slot-row">
+            <span class="vc-slot-label">ENTRENO</span>
+            <button class="vc-arrow" onclick="vcPrevSlot('trainRoom')" type="button">◀</button>
+            <span class="vc-slot-name" id="vcName_trainRoom">—</span>
+            <button class="vc-arrow" onclick="vcNextSlot('trainRoom')" type="button">▶</button>
+          </div>
           <div class="trailer-custom-actions">
             <button class="vc-action-btn" onclick="openMyTrailer();closeTrailerCustomizer()" type="button">VER INTERIOR</button>
             <button class="vc-action-btn reset" onclick="resetAllTrailerCustomization()" type="button">RESTAURAR TODO</button>
@@ -1071,6 +1030,16 @@
       if (menuOpen) renderMenuSlots();
     }
     window.toggleMenu = toggleMenu;
+    const menuToggleBtn = document.getElementById("menuToggleBtn");
+    if (menuToggleBtn) {
+      const handleMenuToggle = (e) => {
+        if (e) e.preventDefault();
+        toggleMenu();
+      };
+      // click kept as fallback for desktop; touch is handled by inline ontouchend
+      menuToggleBtn.addEventListener("click", (e) => { e.stopPropagation(); handleMenuToggle(e); });
+      menuToggleBtn.addEventListener("touchstart", (e) => { e.stopPropagation(); e.preventDefault(); }, { passive: false });
+    }
     document.getElementById("menuBackdrop").addEventListener("click", () => closeMenu());
     let sideActionOpen = false;
     function openSideActionMenu() {
@@ -1115,7 +1084,16 @@
       document.body.classList.remove("menu-open");
     }
     window.closeMenu = closeMenu;
-    document.addEventListener("keydown", (e) => { if (e.code === "Escape") { closeMenu(); closeSideActionMenu(); } });
+    document.addEventListener("keydown", (e) => {
+      const targetTag = e.target && e.target.tagName ? e.target.tagName.toLowerCase() : "";
+      const isTyping = targetTag === "input" || targetTag === "textarea" || targetTag === "select";
+      if ((e.code === "KeyM" || e.key?.toLowerCase() === "m") && !isTyping) {
+        e.preventDefault();
+        toggleMenu();
+        return;
+      }
+      if (e.code === "Escape") { closeMenu(); closeSideActionMenu(); }
+    });
 
     // -- Botones de scroll del menú (▲ ▼ al costado) --
     (function() {
@@ -2126,12 +2104,6 @@
         }
       }
       renderActionBars();
-      // Sincronizar botón combate del trailer
-      const tcBtn = document.getElementById("trailerCombatToggle");
-      if (tcBtn) {
-        tcBtn.textContent = isCombatMode ? "🔄 MODO RP" : "⚔️ COMBATE";
-        tcBtn.classList.toggle("combat-active", isCombatMode);
-      }
       const msg = controlMode === "pvp" ? "⚔️ Duelo PvP — controles de combate" : (isCombatMode ? "Modo combate (práctica)" : "Modo rol");
       showHudToast(msg, "info");
       publishMyAppearance(true);
@@ -2755,7 +2727,14 @@
       for (const [id, p] of Object.entries(otherPlayers)) {
         // Para sala_entrenamiento, el map key en Firebase es "sala_entrenamiento_<ownerId>"
         const myPrivateKey = currentMap === "sala_entrenamiento" && myPlayerId
-          ? "sala_entrenamiento_" + myPlayerId : null;
+          ? "sala_entrenamiento_" + myPlayerId
+          : currentMap === "trailer_cabina" && myPlayerId
+          ? "trailer_cabina_" + myPlayerId
+          : currentMap === "trailer_habitacion" && myPlayerId
+          ? "trailer_habitacion_" + myPlayerId
+          : currentMap === "trailer_entrenamiento" && myPlayerId
+          ? "trailer_entrenamiento_" + myPlayerId
+          : null;
         const effectiveCurrentMap = myPrivateKey || currentMap;
         if (p.map && p.map !== effectiveCurrentMap) continue;
         // Sala de entrenamiento es privada — solo se ven party members
@@ -3145,7 +3124,7 @@
       img.src = "Mapas/Interiores/Mecanico.png";
     })();
 
-    // -- SALA ENTRENAMIENTO BACKGROUND --
+    // -- SALA DE ENTRENAMIENTO BACKGROUND --
     // Se genera síncronamente al inicio; si el PNG existe, lo reemplaza al cargar
     let salaEntrenamientoBgImage = (function() {
       const W = 1920, H = 1080;
@@ -3184,6 +3163,22 @@
       img.onload = () => { salaEntrenamientoBgImage = img; };
       img.src = "Vehiculo_interiores/Piso_arriba/GC.png";
     })();
+
+    // -- SALA DE ENTRENAMIENTO PRIVADA DEL TRAILER --
+    // Se carga desde trailerCustomization.rooms.trainRoom (personalizable en el taller).
+    // Si no hay customización, usa el mismo fondo que salaEntrenamientoBgImage.
+    let trailerTrainRoomBgImage = null;
+    function reloadTrailerTrainRoomBg() {
+      const entry = trailerCustomization?.rooms?.trainRoom;
+      if (!entry?.src) { trailerTrainRoomBgImage = null; return; }
+      const img = new Image();
+      img.onload = () => { trailerTrainRoomBgImage = img; };
+      img.onerror = () => { trailerTrainRoomBgImage = null; };
+      img.src = entry.src;
+    }
+    // Se llama una vez que trailerCustomization ya está definida (más abajo en el código)
+    // y también cada vez que el jugador cambia el fondo en el taller.
+    window._reloadTrailerTrainRoomBg = reloadTrailerTrainRoomBg;
 
     // -- DECORACIONES --
     // Para agregar una imagen nueva: añadir su nombre al objeto DECOR_IMGS.
@@ -3228,6 +3223,9 @@
       estrategia_interior:  { w:56, h:38, name:"SALA DE ESTRATEGIA",bgColor:"#0a0d18", indoor:true },
       simulador_combate:    { w:48, h:36, name:"SIMULADOR DE COMBATE", bgColor:"#0a0510", indoor:true },
       sala_entrenamiento:   { w:40, h:30, name:"SALA DE ENTRENAMIENTO", bgColor:"#0a0d16", indoor:true },
+      trailer_cabina:       { w:20, h:15, name:"CABINA DEL TRAILER",         bgColor:"#10233a", indoor:true },
+      trailer_habitacion:   { w:20, h:15, name:"HABITACIÓN DEL TRAILER",      bgColor:"#1a1420", indoor:true },
+      trailer_entrenamiento:{ w:20, h:15, name:"SALA DE ENTRENAMIENTO",        bgColor:"#0a0d16", indoor:true },
       capsule_corp: { w:96, h:72, name:"CORPORACION CAPSULA", bgColor:"#0b1424", indoor:true },
       karin_tower: { w:84, h:86, name:"TORRE DE KARIN", bgColor:"#13110d", indoor:true },
       ocean: { w:96, h:72, name:"OCEANO", bgColor:"#051220" },
@@ -3257,6 +3255,9 @@
       estrategia_interior:  { x:28, y:20 },
       simulador_combate:    { x:24, y:28 },
       sala_entrenamiento:   { x:20, y:22 },
+      trailer_cabina:       { x:10, y:7 },
+      trailer_habitacion:   { x:10, y:7 },
+      trailer_entrenamiento:{ x:10, y:7 },
       capsule_corp: { x:48, y:62 },
       karin_tower: { x:42, y:74 },
       ocean: { x:48, y:36 },
@@ -3282,6 +3283,9 @@
       estrategia_interior:  [{ map:"lobby", label:"VOLVER AL LOBBY", cls:"portal-btn-earth" }, { map:"simulador_combate", label:"SIMULADOR DE COMBATE", cls:"portal-btn-sky" }],
       simulador_combate:    [{ map:"estrategia_interior", label:"VOLVER A ESTRATEGIA", cls:"portal-btn-earth" }],
       sala_entrenamiento:   [{ map:"lobby", label:"VOLVER AL LOBBY", cls:"portal-btn-earth" }],
+      trailer_cabina:       [{ map:"__exitTrailer__", label:"SALIR DEL TRAILER", cls:"portal-btn-earth" }, { map:"trailer_habitacion", label:"🛏️ HABITACIÓN", cls:"portal-btn-space" }, { map:"trailer_entrenamiento", label:"⚔️ ENTRENAMIENTO", cls:"portal-btn-fire" }],
+      trailer_habitacion:   [{ map:"trailer_cabina", label:"🎮 VOLVER A CABINA", cls:"portal-btn-earth" }],
+      trailer_entrenamiento:[{ map:"trailer_cabina", label:"🎮 VOLVER A CABINA", cls:"portal-btn-earth" }],
       earth: [
         { map:"earth_west_north", label:"WEST CITY NORTE", cls:"portal-btn-earth" },
         { map:"earth_west_south", label:"WEST CITY SUR", cls:"portal-btn-earth" },
@@ -3986,6 +3990,47 @@
       // Portal de salida — abajo centro
       const cx = Math.floor(w/2);
       map[h-3][cx-1]=3; map[h-3][cx]=3; map[h-3][cx+1]=3;
+      return map;
+    }
+
+    // ── HABITACIONES PRIVADAS DEL TRAILER ──────────────────────────
+    // Tamaño: 20x15 tiles (640x480px a 32px/tile).
+    // El jugador mide ~180x200px ≈ 5-6 tiles — la habitación es ~4x el jugador.
+    // Para mover el portal: buscar el comentario "// PORTAL POSICIÓN" y ajustar cx/py.
+
+    function generateTrailerCabinaMap() {
+      const w = MAPS.trailer_cabina.w;       // 20
+      const h = MAPS.trailer_cabina.h;       // 15
+      const map = createMap(w, h, 17);       // todo paredes/fondo
+      fillRectMap(map, 1, 1, w-2, h-2, 16); // piso transitable interior
+      // PORTAL POSICIÓN — cabina: centrado horizontalmente, fila 2 desde abajo
+      const cx = Math.floor(w / 2); // ← mover portal: cambiar cx (columna) y py (fila)
+      const py = h - 2;
+      map[py][cx-1] = 3; map[py][cx] = 3; map[py][cx+1] = 3;
+      return map;
+    }
+
+    function generateTrailerHabitacionMap() {
+      const w = MAPS.trailer_habitacion.w;   // 20
+      const h = MAPS.trailer_habitacion.h;   // 15
+      const map = createMap(w, h, 17);
+      fillRectMap(map, 1, 1, w-2, h-2, 16);
+      // PORTAL POSICIÓN — habitación: centrado, fila 2 desde abajo
+      const cx = Math.floor(w / 2); // ← mover portal: cambiar cx y py
+      const py = h - 2;
+      map[py][cx-1] = 3; map[py][cx] = 3; map[py][cx+1] = 3;
+      return map;
+    }
+
+    function generateTrailerEntrenamientoMap() {
+      const w = MAPS.trailer_entrenamiento.w; // 20
+      const h = MAPS.trailer_entrenamiento.h; // 15
+      const map = createMap(w, h, 17);
+      fillRectMap(map, 1, 1, w-2, h-2, 16);
+      // PORTAL POSICIÓN — sala entrenamiento: centrado, fila 2 desde abajo
+      const cx = Math.floor(w / 2); // ← mover portal: cambiar cx y py
+      const py = h - 2;
+      map[py][cx-1] = 3; map[py][cx] = 3; map[py][cx+1] = 3;
       return map;
     }
     const TILE_COLORS = {
@@ -4762,6 +4807,25 @@
           }
         }
       ],
+      // ── NPC CABINA DEL TRAILER ──
+      // El volante se dibuja DEBAJO del jugador (sin splitTopBottom).
+      // Para moverlo: cambiar x e y (en tiles × TILE).
+      trailer_cabina: [
+        { id:"trailer_volante", name:"VOLANTE", x:10*TILE, y:8*TILE, // ← POSICIÓN: x=col, y=fila (en tiles)
+          skinPath:"Vehiculo_interiores/cabina_conduccion/confi.png",
+          frameCols: 1, frameRows: 1, frameCol: 0, frameRow: 0,
+          displayW: 260, displayH: 260,
+          collisionW: 180, collisionH: 130,
+          splitTopBottom: false, // sin capas — jugador siempre pasa por encima
+          dialogs:[{
+            text:"¿Querés tomar el control del trailer?",
+            opts:[
+              { label:"🚗 ¡Conducir!", action:"driveTrailer" },
+              { label:"No por ahora.", next:-1 }
+            ]
+          }]
+        }
+      ],
       estrategia_interior: [
         { id:"est_estratega",name:"ESTRATEGA JEFE",x:28*TILE,y:16*TILE,color:"#00e5ff",
           skinPath:"Skins/EstrategaJefe.png",
@@ -4914,6 +4978,10 @@
       topFloorTile: "Vehiculo_interiores/Piso_arriba/piso.png",
       cockpitTile: "Vehiculo_interiores/cabina_conduccion/piso.png",
       bottomFloorTile: "Vehiculo_interiores/Piso_abajo/piso.png",
+      cockpitFondo: "Vehiculo_interiores/cabina_conduccion/confi.png",
+      topFloorFondo: "Vehiculo_interiores/Piso_arriba/fondo.png",
+      bottomFloorFondo: "Vehiculo_interiores/Piso_abajo/Confi.png",
+      trainRoomFondo: "Vehiculo_interiores/Piso_arriba/GC.png",
       console: "Vehiculo_interiores/cabina_conduccion/consola.png",
       bed: "Vehiculo_interiores/Piso_arriba/cama.png",
       engine: "Vehiculo_interiores/Piso_abajo/motor.png",
@@ -4929,9 +4997,10 @@
     const TRAILER_CUSTOM_STORAGE_KEY = "dragonWorldZ_trailerCustomization_v1";
     const TRAILER_CUSTOM_SLOTS = {
       exterior: { label:"Exterior", fallback:"exterior" },
-      topFloor: { label:"Piso arriba", fallback:"topFloor" },
-      cockpit: { label:"Cabina", fallback:"cockpit" },
-      bottomFloor: { label:"Piso abajo", fallback:"bottomFloor" },
+      topFloor: { label:"Piso arriba", fallback:"topFloorFondo" },
+      cockpit: { label:"Cabina", fallback:"cockpitFondo" },
+      bottomFloor: { label:"Piso abajo", fallback:"bottomFloorFondo" },
+      trainRoom: { label:"Sala entrenamiento", fallback:"trainRoomFondo" },
       driveIdle: { label:"Conduccion idle", fallback:"exterior", frames:1, sheetRow:0, sheetRows:2, sheetCols:4, sheetFrameStart:0 },
       driveMove: { label:"Conduccion movimiento", fallback:"exterior", frames:3, sheetRow:0, sheetRows:2, sheetCols:4, sheetFrameStart:1 },
       driveFly: { label:"Conduccion vuelo", fallback:"exterior", frames:4, sheetRow:1, sheetRows:2, sheetCols:4, sheetFrameStart:0 },
@@ -4956,6 +5025,12 @@
         { name:"Piso abajo 1", src:"Vehiculo_interiores/Piso_abajo/fondo_1.png" },
         { name:"Piso abajo 2", src:"Vehiculo_interiores/Piso_abajo/fondo_2.png" },
       ],
+      trainRoom: [
+        { name:"Sala base (GC)", src:"Vehiculo_interiores/Piso_arriba/GC.png" },
+        { name:"Sala arriba base", src:"Vehiculo_interiores/Piso_arriba/fondo.png" },
+        { name:"Sala arriba 1", src:"Vehiculo_interiores/Piso_arriba/fondo_1.png" },
+        { name:"Sala arriba 2", src:"Vehiculo_interiores/Piso_arriba/fondo_2.png" },
+      ],
       driveIdle: [
         { name:"Idle 2F base", src:"Vehiculo_Exterior/idle_2f.png" },
         { name:"Idle 2F 1", src:"Vehiculo_Exterior/idle_2f_1.png" },
@@ -4971,6 +5046,8 @@
     };
     const trailerCustomImageCache = {};
     let trailerCustomization = loadTrailerCustomization();
+    // Cargar fondo personalizado de la sala de entrenamiento del trailer
+    setTimeout(() => { if (window._reloadTrailerTrainRoomBg) window._reloadTrailerTrainRoomBg(); }, 0);
     // Restaurar el vehicleMode guardado si el exterior no fue guardado en la customización
     (function _restoreVehicleModeOnLoad() {
       if (trailerCustomization.exterior) return;
@@ -4989,7 +5066,7 @@
     
 
     function emptyTrailerCustomization() {
-      return { exterior:null, rooms:{ topFloor:null, cockpit:null, bottomFloor:null }, drive:{ driveIdle:null, driveMove:null, driveFly:null } };
+      return { exterior:null, rooms:{ topFloor:null, cockpit:null, bottomFloor:null, trainRoom:null }, drive:{ driveIdle:null, driveMove:null, driveFly:null } };
     }
 
     function normalizeTrailerCustomEntry(entry) {
@@ -5011,6 +5088,7 @@
             topFloor: normalizeTrailerCustomEntry(saved?.rooms?.topFloor),
             cockpit: normalizeTrailerCustomEntry(saved?.rooms?.cockpit),
             bottomFloor: normalizeTrailerCustomEntry(saved?.rooms?.bottomFloor),
+            trainRoom: normalizeTrailerCustomEntry(saved?.rooms?.trainRoom),
           },
           drive: {
             driveIdle: normalizeTrailerCustomEntry(saved?.drive?.driveIdle),
@@ -5028,6 +5106,7 @@
           topFloor: normalizeTrailerCustomEntry(trailerCustomization.rooms.topFloor),
           cockpit: normalizeTrailerCustomEntry(trailerCustomization.rooms.cockpit),
           bottomFloor: normalizeTrailerCustomEntry(trailerCustomization.rooms.bottomFloor),
+          trainRoom: normalizeTrailerCustomEntry(trailerCustomization.rooms.trainRoom),
         },
         drive: {
           driveIdle: normalizeTrailerCustomEntry(trailerCustomization.drive.driveIdle),
@@ -5047,6 +5126,8 @@
       if (myPlayerId && trailers[myPlayerId]) trailers[myPlayerId].customization = getPublicTrailerCustomization();
       syncMyTrailerCustomization();
       renderTrailerCustomizer();
+      // Recargar fondo de sala de entrenamiento si cambió
+      if (window._reloadTrailerTrainRoomBg) window._reloadTrailerTrainRoomBg();
     }
 
     function getTrailerCustomizationFor(ownerId) {
@@ -5094,7 +5175,7 @@
 
     function renderTrailerCustomizer() {
       // Actualizar nombres de slots de interiores
-      ["topFloor","cockpit","bottomFloor"].forEach(slot => {
+      ["topFloor","cockpit","bottomFloor","trainRoom"].forEach(slot => {
         const el = document.getElementById("vcName_" + slot);
         if (!el) return;
         const entry = getTrailerCustomEntry(myPlayerId, slot);
@@ -5299,21 +5380,16 @@
       inTrailer = true; trailerOwner = ownerId;
       trailerDrive.active = false;
       closeTrailerTravelPanel();
-      document.getElementById("trailerInterior").classList.add("visible");
-      document.getElementById("trailerOwnerLabel").textContent = ownerId === myPlayerId ? "🏠 TU CASA RODANTE" : `🏠 CASA DE ${trailers[ownerId]?.ownerName||"?"}`;
-      document.body.classList.add("in-trailer");
-      resizeCanvas(); gameState = "trailer";
-      renderActionBars();
-      showHudToast("🚐 Dentro de la casa rodante","info");
+      // Ir directamente a la cabina como zona privada
+      travelTo("trailer_cabina");
     }
 
     function exitTrailer() {
       inTrailer = false; trailerOwner = null; trailerDrive.active = false;
       closeTrailerTravelPanel();
       placePlayerAtMyTrailer();
+      // Asegurarse que el canvas interior no quede visible
       document.getElementById("trailerInterior").classList.remove("visible");
-      document.body.classList.remove("in-trailer");
-      setControlMode("rp");
       gameState = "playing";
     }
     window.exitTrailer = exitTrailer;
@@ -5410,14 +5486,8 @@
       trailerPlayer.y = Math.max(.22, Math.min(.86, trailerPlayer.y + my * speed));
       if (csAnimator) {
         csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
-        if (isCombatMode) {
-          csAnimator.setBattleMode && csAnimator.setBattleMode(true);
-          if (!trailerPlayer.moving) csAnimator.play(getCombatIdleAnim());
-          else csAnimator.play("walk");
-        } else {
-          csAnimator.setBattleMode && csAnimator.setBattleMode(false);
-          csAnimator.play(trailerPlayer.moving ? "walk" : "idle");
-        }
+        csAnimator.setBattleMode && csAnimator.setBattleMode(false);
+        csAnimator.play(trailerPlayer.moving ? "walk" : "idle");
       }
     }
 
@@ -5879,7 +5949,7 @@
           accessoryId:CS.player.appearance.accessoryId || "ac_none",
           auraPhase:player.auraPhase||0,
           viewKey:null,
-          spriteVariantId: isCombatMode ? "fight" : null,
+          spriteVariantId:null,
         };
         tCtx.fillStyle="rgba(0,0,0,0.32)";
         tCtx.beginPath(); tCtx.ellipse(px, py+4, 34, 10, 0, 0, Math.PI*2); tCtx.fill();
@@ -7305,6 +7375,7 @@
         btn.className = "dialog-opt"; btn.textContent = o.label;
         btn.onclick = () => {
           if (o.action === "trailerCustom") { closeDialog(); openTrailerCustomizer(); }
+          else if (o.action === "driveTrailer") { closeDialog(); exitTrailer(); setTimeout(() => { if (window.enterTrailerDriveMode) enterTrailerDriveMode(); }, 500); }
           else if (o.action === "startCombat") { closeDialog(); setControlMode("combat"); simuladorCombatStarted = true; currentWave = -1; waveEnemies = []; hideNpcCombatHud(); _lastNpcTick = performance.now(); setTimeout(() => spawnWave(0), 500); }
           else if (o.action === "startEntrenamiento") { closeDialog(); setControlMode("combat"); entrenamientoCombatStarted = true; currentWave = -1; waveEnemies = []; hideNpcCombatHud(); _lastNpcTick = performance.now(); setTimeout(() => spawnWave(0), 500); }
           else if (o.action === "grantFaction") { closeDialog(); grantFaction(o.faction, o.reason || "Bando desbloqueado"); }
@@ -8074,6 +8145,8 @@
     }
 
     function travelTo(mapKey) {
+      if (mapKey === "__exitTrailer__") { exitTrailer(); return; }
+      if (mapKey === "__driveMode__")   { exitTrailer(); setTimeout(() => { if (window.enterTrailerDriveMode) enterTrailerDriveMode(); }, 500); return; }
       if (!MAPS[mapKey]) return;
       const prevMap = currentMap;
       document.getElementById("portalPanel").classList.remove("visible");
@@ -8116,6 +8189,16 @@
             // a menos que sean party members (filtrado en drawOtherPlayers)
             if (mpConnected && myPlayerId) {
               db.ref("players/" + myPlayerId).update({ map: "sala_entrenamiento_" + myPlayerId });
+            }
+          } else if (mapKey === "trailer_cabina" || mapKey === "trailer_habitacion" || mapKey === "trailer_entrenamiento") {
+            if (mapKey === "trailer_entrenamiento") {
+              currentWave = -1; waveEnemies = []; hideNpcCombatHud(); entrenamientoCombatStarted = false;
+              npcs = [...(NPC_DEFS.sala_entrenamiento || [])];
+            } else {
+              npcs = [...(NPC_DEFS[mapKey] || [])]; // carga el volante en cabina
+            }
+            if (mpConnected && myPlayerId) {
+              db.ref("players/" + myPlayerId).update({ map: mapKey + "_" + myPlayerId });
             }
           } else {
             // Al salir de mapas de combate, limpiar enemigos
@@ -8710,6 +8793,23 @@
         const totalH = mapDef.h * TILE;
         ctx.drawImage(salaEntrenamientoBgImage, -cam.x, -cam.y, totalW, totalH);
       }
+      // -- SALA DE ENTRENAMIENTO PRIVADA DEL TRAILER --
+      if (currentMap === "trailer_entrenamiento") {
+        const totalW = mapDef.w * TILE;
+        const totalH = mapDef.h * TILE;
+        const bgSrc = trailerTrainRoomBgImage || salaEntrenamientoBgImage;
+        if (bgSrc) ctx.drawImage(bgSrc, -cam.x, -cam.y, totalW, totalH);
+      }
+      // -- CABINA DEL TRAILER --
+      if (currentMap === "trailer_cabina") {
+        const bg = getTrailerSlotImage(myPlayerId, "cockpit");
+        if (bg) ctx.drawImage(bg, -cam.x, -cam.y, mapDef.w * TILE, mapDef.h * TILE);
+      }
+      // -- HABITACIÓN DEL TRAILER --
+      if (currentMap === "trailer_habitacion") {
+        const bg = getTrailerSlotImage(myPlayerId, "bottomFloor");
+        if (bg) ctx.drawImage(bg, -cam.x, -cam.y, mapDef.w * TILE, mapDef.h * TILE);
+      }
 
       const startX=Math.floor(cam.x/TILE), startY=Math.floor(cam.y/TILE);
       const endX=Math.min(mapDef.w, startX+Math.ceil(canvas.width/TILE)+2);
@@ -8721,6 +8821,10 @@
       const directorZHasBg = currentMap === "director_z_interior" && directorZInteriorBgImage;
       const estrategiaHasBg = currentMap === "estrategia_interior" && estrategiaInteriorBgImage;
       const salaEntrenamientoHasBg = currentMap === "sala_entrenamiento" && salaEntrenamientoBgImage;
+      const trailerPrivateHasBg =
+        (currentMap === "trailer_entrenamiento" && (trailerTrainRoomBgImage || salaEntrenamientoBgImage)) ||
+        (currentMap === "trailer_cabina"        && !!getTrailerSlotImage(myPlayerId, "cockpit")) ||
+        (currentMap === "trailer_habitacion"    && !!getTrailerSlotImage(myPlayerId, "bottomFloor"));
 
       for (let ty=startY;ty<endY;ty++) for (let tx=startX;tx<endX;tx++) {
         const tile = map[ty]?.[tx]??0;
@@ -8745,6 +8849,10 @@
         }
         // En sala de entrenamiento con bg: solo portales
         if (salaEntrenamientoHasBg) {
+          if (tile !== 3) continue;
+        }
+        // En salas privadas del trailer con bg: solo portales
+        if (trailerPrivateHasBg) {
           if (tile !== 3) continue;
         }
 
@@ -9782,6 +9890,9 @@
           worldMaps.estrategia_interior = generateEstrategiaMap();
           worldMaps.simulador_combate   = generateSimuladorMap();
           worldMaps.sala_entrenamiento  = generateEntrenamientoMap();
+          worldMaps.trailer_cabina      = generateTrailerCabinaMap();
+          worldMaps.trailer_habitacion  = generateTrailerHabitacionMap();
+          worldMaps.trailer_entrenamiento = generateTrailerEntrenamientoMap();
           worldMaps.capsule_corp = generateFacilityMap("capsule_corp");
           worldMaps.karin_tower = generateFacilityMap("karin_tower");
           worldMaps.ocean = generateOceanMap();
@@ -10229,5 +10340,6 @@
     <script src="player-interact.js"></script>
     <script src="systems-patch.js"></script>
     <script src="mobile-ui-patch.js"></script>
+    <script src="admin-commands.js"></script>
   </body>
 </html>

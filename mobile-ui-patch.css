@@ -76,7 +76,6 @@ body.ui-minimal #uiMinimalBtn {
 @media (pointer: fine) and (min-width: 769px) {
   body.ui-hidden .hud-top,
   body.ui-hidden .minimap-wrap,
-  body.ui-hidden #menuToggleBtn,
   body.ui-hidden #rpgChatPanel,
   body.ui-hidden #leftPanelStack,
   body.ui-hidden #sideActionToggle,
@@ -88,7 +87,6 @@ body.ui-minimal #uiMinimalBtn {
   }
   /* ui-minimal en PC: oculta chat, menú, paneles pero deja vida+mapa+acciones */
   body.ui-minimal #rpgChatPanel,
-  body.ui-minimal #menuToggleBtn,
   body.ui-minimal #leftPanelStack,
   body.ui-minimal #sideActionToggle {
     opacity: 0 !important;
@@ -395,12 +393,10 @@ body.ui-minimal #uiMinimalBtn {
   body.ui-hidden .mobile-controls { opacity: 0 !important; pointer-events: none !important; }
   body.ui-hidden .hud-top         { opacity: 0 !important; }
   body.ui-hidden .minimap-wrap    { opacity: 0 !important; }
-  body.ui-hidden #menuToggleBtn   { opacity: 0 !important; pointer-events: none !important; }
   body.ui-hidden #rpgChatPanel    { opacity: 0 !important; pointer-events: none !important; }
 
   /* ── ui-minimal móvil — oculta paneles/chat/menú,
      deja vida, mapa, botones y acciones visibles ─── */
-  body.ui-minimal #menuToggleBtn  { opacity: 0 !important; pointer-events: none !important; }
   body.ui-minimal #rpgChatPanel   { opacity: 0 !important; pointer-events: none !important; }
   body.ui-minimal #mrbRpPanel     { opacity: 0 !important; pointer-events: none !important; }
   /* Los botones, vida y mapa permanecen visibles */
