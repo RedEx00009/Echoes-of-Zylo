@@ -1500,6 +1500,23 @@ const NpcSystem = (() => {
     delete _dbListeners[key];
   }
 
+  function _upsertNpcIntoLocalState(npc, mapKey) {
+    if (!npc || !npc.id) return null;
+    const targetMap = npc.map || mapKey || _getMap();
+    const merged = {
+      ..._npcs[npc.id],
+      ...npc,
+      id: npc.id,
+      map: targetMap,
+      ...(npc.ownerId ? { ownerId: npc.ownerId } : {}),
+    };
+    _npcs[npc.id] = merged;
+    _npcListDirty = true;
+    _npcListHtmlCache = "";
+    _scheduleNpcPanelRefresh();
+    return merged;
+  }
+
   function _clearNpcRuntimeCache(npcId) {
     delete _npcAnimators[npcId];
     delete _npcAiState[npcId];
@@ -1532,7 +1549,8 @@ const NpcSystem = (() => {
       Object.entries(data).forEach(([id, n]) => {
         // FIX: si el NPC llega de Firebase sin ownerId, recuperarlo del archivo local
         const recoveredOwner = n.ownerId || (_archivedNpcs[id] && _archivedNpcs[id].ownerId) || null;
-        _npcs[id] = { ...n, id, map: n.map || mapKey, ...(recoveredOwner ? { ownerId: recoveredOwner } : {}) };
+        const normalized = { ...n, id, map: n.map || mapKey, ...(recoveredOwner ? { ownerId: recoveredOwner } : {}) };
+        _upsertNpcIntoLocalState(normalized, mapKey);
       });
       _npcListDirty = true;
       _npcListHtmlCache = "";
@@ -1601,6 +1619,7 @@ const NpcSystem = (() => {
     const database = _getDb();
     if (database) {
       database.ref("mapNpcs/" + npc.map + "/" + npc.id).set(npc);
+      _upsertNpcIntoLocalState(npc, npc.map);
     } else {
       _npcs[npc.id] = npc;
     }
@@ -1987,13 +2006,23 @@ const NpcSystem = (() => {
   function _getAnimator(npcOrId) {
     const npcId = typeof npcOrId === "string" ? npcOrId : npcOrId?.id;
     if (!npcId) return null;
-    if (_npcAnimators[npcId]) return _npcAnimators[npcId];
+    if (_npcAnimators[npcId]) {
+      // Si el NPC está en party pero el animator no tiene battleMode, corregirlo
+      if (_partyNpcs[npcId] && !_npcAnimators[npcId].battleMode) {
+        _npcAnimators[npcId].setBattleMode && _npcAnimators[npcId].setBattleMode(true);
+        if (_npcAnimators[npcId].action === "idle" || _npcAnimators[npcId].action === "walk") {
+          _npcAnimators[npcId].play("combat_idle");
+        }
+      }
+      return _npcAnimators[npcId];
+    }
     const CS = typeof CharacterSystem !== "undefined" ? CharacterSystem : null;
     const npc = typeof npcOrId === "string" ? _npcs[npcOrId] : npcOrId;
     if (CS && CS.SpriteAnimator) {
-      const isCombat = !!npc?.combatMode;
+      // Si el NPC está en party, siempre usar battleMode aunque no sea combatMode
+      const isCombat = !!npc?.combatMode || !!_partyNpcs[npcId];
       const anim = new CS.SpriteAnimator(isCombat ? "combat_idle" : "idle", isCombat ? { battleMode: true } : {});
-      if (isCombat) anim.play("combat_idle");
+      if (isCombat) { anim.setBattleMode && anim.setBattleMode(true); anim.play("combat_idle"); }
       _npcAnimators[npcId] = anim;
       return anim;
     }
@@ -2071,29 +2100,128 @@ const NpcSystem = (() => {
       return;
     }
 
-    // Si está en party: seguir al jugador
+    // Si está en party: idle normal, battleMode solo con enemigos cerca, ataca si los hay
     if (_partyNpcs[npc.id]) {
-      const p = _getPlayer();
+      const p   = _getPlayer();
+      const map = _getMap();
+      const DETECT_RANGE = 400, ATTACK_RANGE = 80;
+
+      // Exponer el animator en window.npcAnimators para que el facing-patch lo use
+      if (anim && window.npcAnimators) window.npcAnimators[npc.id] = anim;
+
+      // ── Buscar enemigo más cercano ──────────────────────────────────────
+      let closestEnemy = null, closestDist = Infinity;
+      for (const other of Object.values(_npcs)) {
+        if (other.id === npc.id) continue;
+        if (other.map !== map) continue;
+        if (other.combatSide === "enemy" || other.behavior === "hostile") {
+          const dx = other.x - npc.x, dy = other.y - npc.y;
+          const d = Math.sqrt(dx*dx + dy*dy);
+          if (d < closestDist) { closestDist = d; closestEnemy = other; }
+        }
+      }
+      if (window.waveEnemies) {
+        for (const e of window.waveEnemies) {
+          if (e.npcHp <= 0 || e._dead || e.team === "ally" || e._isPartyAlly) continue;
+          const dx = e.x - npc.x, dy = e.y - npc.y;
+          const d = Math.sqrt(dx*dx + dy*dy);
+          if (d < closestDist) { closestDist = d; closestEnemy = e; }
+        }
+      }
+
+      const enemyNearby = !!closestEnemy && closestDist <= DETECT_RANGE;
+
+      // El NPC de party SIEMPRE está en battleMode — nunca vuelve a idle normal
+      if (anim && !anim.battleMode) {
+        anim.setBattleMode && anim.setBattleMode(true);
+        if (anim.action !== "combat_idle") anim.play && anim.play("combat_idle");
+      }
+
+      // ── CON ENEMIGOS: perseguir y atacar ───────────────────────────────────
+      if (enemyNearby && closestEnemy) {
+        const dx   = closestEnemy.x - npc.x, dy = closestEnemy.y - npc.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        const dir  = dx >= 0 ? 1 : -1;
+        npc._dir   = dir;
+        if (anim) anim.direction = dir;
+        npc._partyIdleTimer = null;
+
+        if (dist > ATTACK_RANGE) {
+          const spd = 160 * dt;
+          npc.x += (dx / dist) * spd;
+          npc.y += (dy / dist) * spd * 0.5;
+          if (anim && anim.action !== "run") anim.play("run");
+        } else {
+          if (anim && !["light_combo","heavy_combo","combat_idle"].includes(anim.action)) {
+            anim.play("combat_idle");
+          }
+          const now = Date.now();
+          if (!npc._allyAtkTimer || now >= npc._allyAtkTimer) {
+            if (anim) {
+              const combo = Math.random() < 0.65 ? "light_combo" : "heavy_combo";
+              anim.play(combo);
+              const dur = combo === "light_combo" ? 420 : 370;
+              setTimeout(() => { if (anim && anim.battleMode) anim.play("combat_idle"); }, dur);
+            }
+            const atk = npc.atk || npc.npcAtk || 15;
+            const def = closestEnemy.npcDef || 0;
+            const dmg = Math.max(1, atk - Math.floor(def * 0.3));
+            const weEntry = window.waveEnemies && window.waveEnemies.find(
+              e => (e.rpNpcId === closestEnemy.id || e.id === closestEnemy.id) && !e._dead
+            );
+            if (weEntry) {
+              weEntry.npcHp = Math.max(0, weEntry.npcHp - dmg);
+            } else if (typeof closestEnemy.hp !== "undefined") {
+              closestEnemy.hp = Math.max(0, closestEnemy.hp - dmg);
+            }
+            npc._allyAtkTimer = now + 1600 + Math.random() * 400;
+          }
+        }
+        return;
+      }
+
+      // ── SIN ENEMIGOS: seguir al jugador con animaciones de combate ─────────
       if (p) {
         const dx = p.x - npc.x, dy = p.y - npc.y;
         const dist = Math.sqrt(dx*dx + dy*dy);
         const FOLLOW_DIST = 90, STOP_DIST = 55;
-        if (dist > FOLLOW_DIST) {
-          const spd = 85 * dt;
+
+        if (dist > STOP_DIST) {
+          const spd = dist > FOLLOW_DIST ? 160 * dt : 90 * dt;
           npc.x += (dx / dist) * spd;
           npc.y += (dy / dist) * spd * 0.5;
           const dir = dx > 0 ? 1 : -1;
           npc._dir = dir;
           if (anim) { anim.direction = dir; if (anim.action !== "run") anim.play("run"); }
-        } else if (dist > STOP_DIST) {
-          const spd = 45 * dt;
-          npc.x += (dx / dist) * spd;
-          npc.y += (dy / dist) * spd * 0.5;
-          const dir = dx > 0 ? 1 : -1;
-          npc._dir = dir;
-          if (anim) { anim.direction = dir; if (anim.action !== "walk") anim.play("walk"); }
+          npc._partyIdleTimer = null;
         } else {
-          if (anim && anim.action !== "idle") anim.play("idle");
+          // Quieto junto al jugador — acciones periódicas de combate (igual que en battle mode)
+          const now = Date.now();
+          const IDLE_ACTIONS = [
+            { action: "sparring",    dur: 900, weight: 30 },
+            { action: "light_combo", dur: 500, weight: 20 },
+            { action: "charge",      dur: 700, weight: 15 },
+            { action: "heavy_combo", dur: 450, weight: 10 },
+            { action: "combat_idle", dur: 0,   weight: 25 },
+          ];
+          if (!npc._partyIdleTimer || now >= npc._partyIdleTimer) {
+            if (anim) {
+              const total = IDLE_ACTIONS.reduce((s, a) => s + a.weight, 0);
+              let roll = Math.random() * total;
+              const chosen = IDLE_ACTIONS.find(a => (roll -= a.weight) < 0) || IDLE_ACTIONS[0];
+              if (chosen.dur > 0) {
+                anim.play(chosen.action);
+                setTimeout(() => { if (anim && anim.battleMode) anim.play("combat_idle"); }, chosen.dur);
+              } else {
+                if (anim.action !== "combat_idle") anim.play("combat_idle");
+              }
+            }
+            npc._partyIdleTimer = now + 2000 + Math.random() * 2000;
+          } else {
+            // Entre acciones: corregir si algo externo puso animación no-combate
+            const ok = ["sparring","light_combo","heavy_combo","charge","combat_idle","run","hit"];
+            if (anim && !ok.includes(anim.action)) anim.play("combat_idle");
+          }
         }
       }
       return;
@@ -2581,9 +2709,19 @@ const NpcSystem = (() => {
       if (!npcId) return;
       if (inParty) {
         delete _partyNpcs[npcId];
+        // Volver a idle al salir de party
+        const _exitAnim = _npcAnimators[npcId];
+        if (_exitAnim) { _exitAnim.setBattleMode && _exitAnim.setBattleMode(false); _exitAnim.play("idle"); }
         _toast((dialogueNpc?.name || "NPC") + " dejó tu party", "info");
       } else {
         _partyNpcs[npcId] = true;
+        // Activar battleMode al unirse a party
+            const _joinAnim = _npcAnimators[npcId];
+            if (_joinAnim) {
+              _joinAnim.setBattleMode && _joinAnim.setBattleMode(true);
+              // Forzar entrada a animación de combate para que se vea la transición
+              _joinAnim.play && _joinAnim.play("combat_idle");
+            }
         _toast((dialogueNpc?.name || "NPC") + " se unió a tu party", "xp");
       }
       _closeDialogue();
@@ -2623,7 +2761,16 @@ const NpcSystem = (() => {
       const nw = 80, nh = 100;
       if (worldX >= npc.x - nw/2 && worldX <= npc.x + nw/2 &&
           worldY >= npc.y - nh   && worldY <= npc.y + 10) {
-        _openDialogue(npc);
+        const isCombatNpc = npc.combatMode ||
+          npc.behavior === "training" ||
+          npc.behavior === "hostile" ||
+          npc.behavior === "defender";
+        if (isCombatNpc) {
+          delete _partyNpcs[npc.id];
+          _startNpcCombat(npc.id);
+        } else {
+          _openDialogue(npc);
+        }
         return true;
       }
     }
@@ -3324,12 +3471,25 @@ const NpcSystem = (() => {
       const npc = _npcs[npcId];
       if (!npc) return;
       _partyNpcs[npcId] = true;
+      // Activar battleMode en el animator existente al unirse a party
+      const existingAnim = _npcAnimators[npcId];
+      if (existingAnim) {
+        existingAnim.setBattleMode && existingAnim.setBattleMode(true);
+        // Forzar animación de combate inmediatamente
+        existingAnim.play && existingAnim.play("combat_idle");
+      }
       _npcListDirty = true; _npcListHtmlCache = ""; _scheduleNpcPanelRefresh();
       _toast((npc.name || "NPC") + " se unió a tu party", "xp");
     },
     removeFromParty(npcId) {
       const npc = _npcs[npcId];
       delete _partyNpcs[npcId];
+      // Volver a idle normal al salir de party
+      const existingAnim = _npcAnimators[npcId];
+      if (existingAnim) {
+        existingAnim.setBattleMode && existingAnim.setBattleMode(false);
+        existingAnim.play("idle");
+      }
       _npcListDirty = true; _npcListHtmlCache = ""; _scheduleNpcPanelRefresh();
       _toast((npc?.name || "NPC") + " dejó tu party", "info");
     },
@@ -3340,6 +3500,11 @@ const NpcSystem = (() => {
     closeDialogue: _closeDialogue,
     tryInteract: _tryInteract,
     getActiveNpcs() { return _npcs; },
+    getPartyNpcs() {
+      return Object.keys(_partyNpcs).map(id => _npcs[id]).filter(Boolean);
+    },
+    _getAnimatorPublic(npcId) { return _npcAnimators[npcId] || null; },
+    upsertNpc(npc) { return _upsertNpcIntoLocalState(npc, npc?.map || _getMap()); },
     CATALOG: NPC_CATALOG,
     SKINS:   SKIN_CATALOG,
 
@@ -3611,6 +3776,56 @@ if (document.readyState === "loading") {
         // Limpiar animator para que getNpcAnimator lo recree en battleMode
         if (window.npcAnimators) delete window.npcAnimators[ce.id];
 
+        // ── Inyectar NPCs de party como team:"ally" en waveEnemies ──────
+        // Así el facing-patch los reconoce y los enemigos los atacan.
+        const partyNpcs = window.NpcSystem ? window.NpcSystem.getPartyNpcs() : [];
+        partyNpcs.forEach(partyNpc => {
+          if (we.find(e => e.id === partyNpc.id || e.rpNpcId === partyNpc.id)) return;
+          const app = partyNpc.appearance || {};
+          const entry = {
+            id:           partyNpc.id,
+            rpNpcId:      partyNpc.id,
+            name:         partyNpc.name || "Aliado",
+            team:         "ally",
+            npcHp:        partyNpc.hp    || partyNpc.npcHp    || 500,
+            npcMaxHp:     partyNpc.maxHp || partyNpc.npcMaxHp || 500,
+            npcAtk:       partyNpc.atk   || partyNpc.npcAtk   || 20,
+            npcDef:       partyNpc.def   || partyNpc.npcDef   || 5,
+            x:            partyNpc.x,
+            y:            partyNpc.y,
+            facing:       1,
+            skinPath:     partyNpc.skinSrc || partyNpc.skinPath || null,
+            appearance:   app,
+            raceId:       app.raceId    || "human",
+            gender:       app.gender    || "male",
+            skinColor:    app.skinColor || "#e8c898",
+            hairId:       app.hairId    || null,
+            hairColor:    app.hairColor || "#1a1a1a",
+            faceId:       app.faceId    || null,
+            faceColor:    app.faceColor || null,
+            topId:        app.topId     || null,
+            bottomId:     app.bottomId  || null,
+            shoesId:      app.shoesId   || null,
+            eyeColor:     app.eyeColor  || "#3a2a1a",
+            auraColor:    app.auraColor || "#fdd835",
+            _isPartyAlly: true,
+          };
+          we.push(entry);
+          // Exponer el animator del NPC de party en window.npcAnimators
+          // para que el facing-patch pueda reproducir sus animaciones de combate
+          const partyAnim = window.NpcSystem && window.NpcSystem._getAnimatorPublic
+            ? window.NpcSystem._getAnimatorPublic(partyNpc.id)
+            : null;
+          if (partyAnim && window.npcAnimators) {
+            // Activar battleMode en el animator existente antes de exponerlo
+            partyAnim.setBattleMode && partyAnim.setBattleMode(true);
+            if (partyAnim.action === "idle" || partyAnim.action === "walk" || partyAnim.action === "run") {
+              partyAnim.play("combat_idle");
+            }
+            window.npcAnimators[partyNpc.id] = partyAnim;
+          }
+        });
+
       } catch(e) {
         console.warn("[SkinPatch] Error propagando skin/appearance:", e);
       }
@@ -3621,4 +3836,170 @@ if (document.readyState === "loading") {
 
   // Esperar a que los parches anteriores ya reemplazaron startRpNpcCombat
   setTimeout(_tryPatch, 1400);
+})();
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  PARCHE DE ANIMACIONES DE COMBATE PARA PARTY ALLIES
+//  Problema: getNpcAnimator() busca en `npcs` (mapa base), pero los aliados de
+//  party están en `waveEnemies`. Al no encontrarlos, crea el animator SIN
+//  battleMode, arrancando en "idle". Además, el loop de waveEnemies les aplica
+//  lógica de "atacar al jugador" produciendo animaciones de walk/idle.
+//  Solución:
+//  1) Parchear getNpcAnimator para que reconozca _isPartyAlly y cree el
+//     animator con battleMode:true + combat_idle.
+//  2) Parchear el game loop de waveEnemies para que los _isPartyAlly sean
+//     ignorados (su IA ya la maneja _tickNpcAi de NpcSystem).
+// ═══════════════════════════════════════════════════════════════════════════════
+(function _patchPartyAllyAnims() {
+  "use strict";
+  const MAX_TRIES = 30;
+  let tries = 0;
+
+  function _tryPatchPartyAnims() {
+    tries++;
+    // Esperar a que getNpcAnimator exista en el scope global accesible
+    // Se expone como window.getNpcAnimator si el parche anterior lo pone, o lo buscamos
+    // La estrategia: parchear window.npcAnimators con un Proxy que intercepte get()
+    // para party allies y les asegure battleMode en su primer acceso.
+
+    if (!window.waveEnemies || !window.npcAnimators) {
+      if (tries < MAX_TRIES) setTimeout(_tryPatchPartyAnims, 400);
+      return;
+    }
+
+    // ── Parche 1: Asegurar battleMode en animators de party allies ──────────
+    // Interceptamos window.npcAnimators con un Proxy para que cada vez que
+    // se acceda al animator de un _isPartyAlly sin battleMode, lo corrija.
+    if (!window._partyAllyAnimPatchApplied) {
+      window._partyAllyAnimPatchApplied = true;
+
+      const _rawAnimators = window.npcAnimators;
+
+      // Función helper que asegura battleMode en un animator de party ally
+      function _ensurePartyAllyBattleMode(npcId, anim) {
+        if (!anim) return anim;
+        const entry = window.waveEnemies && window.waveEnemies.find(
+          e => (e.id === npcId || e.rpNpcId === npcId) && e._isPartyAlly
+        );
+        if (!entry) return anim;
+        // Si el animator no está en battleMode, activarlo
+        if (!anim.battleMode) {
+          anim.setBattleMode && anim.setBattleMode(true);
+          if (anim.action === "idle" || anim.action === "walk" || anim.action === "run") {
+            anim.play("combat_idle");
+          }
+          console.info("[PartyAllyPatch] battleMode activado para aliado:", npcId, "acción anterior:", anim.action);
+        }
+        return anim;
+      }
+
+      // Proxy sobre npcAnimators: cuando se SETEA un animator para un party ally,
+      // lo corregimos de inmediato.
+      const _proxied = new Proxy(_rawAnimators, {
+        set(target, prop, value) {
+          target[prop] = value;
+          // Si el NPC seteado es un party ally, asegurar battleMode
+          const entry = window.waveEnemies && window.waveEnemies.find(
+            e => (e.id === prop || e.rpNpcId === prop) && e._isPartyAlly
+          );
+          if (entry && value) {
+            // Pequeño delay para que el animator termine su inicialización
+            setTimeout(() => {
+              if (value && !value.battleMode) {
+                value.setBattleMode && value.setBattleMode(true);
+                if (value.action === "idle" || !value.action) {
+                  value.play("combat_idle");
+                }
+                console.info("[PartyAllyPatch] Animator corregido al setear:", prop);
+              }
+            }, 0);
+          }
+          return true;
+        },
+        get(target, prop) {
+          const val = target[prop];
+          // Solo interceptar strings (npcIds), no métodos internos del Proxy
+          if (typeof prop === "string" && prop.length > 3 && val) {
+            _ensurePartyAllyBattleMode(prop, val);
+          }
+          return val;
+        }
+      });
+
+      // Reemplazar la referencia global
+      window.npcAnimators = _proxied;
+      console.info("[PartyAllyPatch] Proxy de npcAnimators aplicado ✓");
+    }
+
+    // ── Parche 2: Loop de waveEnemies — bypass para _isPartyAlly ────────────
+    // El game loop principal itera waveEnemies y aplica IA de "atacar al jugador"
+    // a TODOS, incluyendo aliados. Necesitamos que los _isPartyAlly sean saltados
+    // en esa lógica (su IA la maneja NpcSystem._tickNpcAi).
+    // Lo hacemos sobreescribiendo la propiedad en cada entry con un getter que
+    // el loop ya chequea: si el entry tiene _isPartyAlly, skip de la lógica hostil.
+    //
+    // La forma más segura sin tocar game.html: monitorear waveEnemies y para cada
+    // party ally forzar que su animator quede en combat_idle/run correcto via tick.
+
+    if (!window._partyAllyTickPatchApplied) {
+      window._partyAllyTickPatchApplied = true;
+
+      // Tick periódico: corrige animaciones de party allies en waveEnemies
+      function _tickPartyAllyAnims() {
+        if (!window.waveEnemies || !window.npcAnimators) return;
+        const CS = window.CharacterSystem;
+        if (!CS) return;
+
+        window.waveEnemies.forEach(entry => {
+          if (!entry._isPartyAlly) return;
+          if (entry.npcHp <= 0 || entry._dead) return;
+
+          const npcId = entry.rpNpcId || entry.id;
+          let anim = window.npcAnimators[npcId];
+
+          // Si no tiene animator aún, intentar obtenerlo de NpcSystem
+          if (!anim) {
+            const partyAnim = window.NpcSystem && window.NpcSystem._getAnimatorPublic
+              ? window.NpcSystem._getAnimatorPublic(npcId)
+              : null;
+            if (partyAnim) {
+              window.npcAnimators[npcId] = partyAnim;
+              anim = partyAnim;
+            } else if (CS.SpriteAnimator) {
+              // Crear uno nuevo con battleMode
+              anim = new CS.SpriteAnimator("combat_idle", { battleMode: true });
+              anim.setBattleMode && anim.setBattleMode(true);
+              anim.play("combat_idle");
+              window.npcAnimators[npcId] = anim;
+              console.info("[PartyAllyPatch] Animator creado con battleMode para:", npcId);
+            }
+          }
+
+          if (!anim) return;
+
+          // Asegurar battleMode siempre activo
+          if (!anim.battleMode) {
+            anim.setBattleMode && anim.setBattleMode(true);
+            console.info("[PartyAllyPatch] battleMode re-activado para:", npcId);
+          }
+
+          // Si el animator cayó a idle/walk por el loop hostil, corregirlo
+          // Solo si no hay una animación de ataque en curso (_animLocked)
+          if (!entry._animLocked) {
+            const badAnims = ["idle", "walk"];
+            if (badAnims.includes(anim.action)) {
+              anim.play("combat_idle");
+            }
+          }
+        });
+      }
+
+      // Correr cada 100ms para mantener las animaciones correctas
+      setInterval(_tickPartyAllyAnims, 100);
+      console.info("[PartyAllyPatch] Tick de corrección de animaciones de party allies aplicado ✓");
+    }
+  }
+
+  setTimeout(_tryPatchPartyAnims, 2000);
+  console.info("[PartyAllyPatch] Parche de animaciones de combate para party allies registrado ✓");
 })();

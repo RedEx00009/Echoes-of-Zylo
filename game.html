@@ -252,6 +252,8 @@
       }
       .trailer-btn-enter { background:rgba(245,196,0,.15); border-color:var(--accent); color:var(--accent); }
       .trailer-btn-invite { background:rgba(0,229,255,.1); border-color:#00e5ff; color:#00e5ff; }
+      .trailer-btn-store { background:rgba(255,180,0,.1); border-color:#ffb400; color:#ffb400; }
+      .trailer-btn-store:hover { background:rgba(255,180,0,.25); box-shadow:0 0 10px rgba(255,180,0,.3); }
       .trailer-btn-close { background:rgba(255,255,255,.05); border-color:rgba(255,255,255,.2); color:#8892b0; }
       .trailer-btn-enter:hover { background:rgba(245,196,0,.3); box-shadow:0 0 10px rgba(245,196,0,.3); }
       #trailerCustomizer {
@@ -886,6 +888,7 @@
         <div class="trailer-btns">
           <button class="trailer-btn trailer-btn-enter" id="trailerEnterBtn" onclick="enterTrailerFromPanel()">ENTRAR</button>
           <button class="trailer-btn trailer-btn-invite" id="trailerInviteBtn" onclick="inviteToTrailer()">✉️ INVITAR</button>
+          <button class="trailer-btn trailer-btn-store" id="trailerStoreBtn" onclick="storeMyTrailer()">📦 GUARDAR</button>
           <button class="trailer-btn trailer-btn-close" onclick="closeTrailerPanel()">✕</button>
         </div>
       </div>
@@ -3232,9 +3235,9 @@
       estrategia_interior:  { w:56, h:38, name:"SALA DE ESTRATEGIA",bgColor:"#0a0d18", indoor:true },
       simulador_combate:    { w:48, h:36, name:"SIMULADOR DE COMBATE", bgColor:"#0a0510", indoor:true },
       sala_entrenamiento:   { w:40, h:30, name:"SALA DE ENTRENAMIENTO", bgColor:"#0a0d16", indoor:true },
-      trailer_cabina:       { w:20, h:15, name:"CABINA DEL TRAILER",         bgColor:"#10233a", indoor:true },
-      trailer_habitacion:   { w:20, h:15, name:"HABITACIÓN DEL TRAILER",      bgColor:"#1a1420", indoor:true },
-      trailer_entrenamiento:{ w:20, h:15, name:"SALA DE ENTRENAMIENTO",        bgColor:"#0a0d16", indoor:true },
+      trailer_cabina:       { w:24, h:18, name:"CABINA DEL TRAILER",         bgColor:"#10233a", indoor:true },
+      trailer_habitacion:   { w:24, h:18, name:"HABITACIÓN DEL TRAILER",      bgColor:"#1a1420", indoor:true },
+      trailer_entrenamiento:{ w:24, h:18, name:"SALA DE ENTRENAMIENTO",        bgColor:"#0a0d16", indoor:true },
       capsule_corp: { w:96, h:72, name:"CORPORACION CAPSULA", bgColor:"#0b1424", indoor:true },
       karin_tower: { w:84, h:86, name:"TORRE DE KARIN", bgColor:"#13110d", indoor:true },
       ocean: { w:96, h:72, name:"OCEANO", bgColor:"#051220" },
@@ -3264,9 +3267,9 @@
       estrategia_interior:  { x:28, y:20 },
       simulador_combate:    { x:24, y:28 },
       sala_entrenamiento:   { x:20, y:22 },
-      trailer_cabina:       { x:10, y:7 },
-      trailer_habitacion:   { x:10, y:7 },
-      trailer_entrenamiento:{ x:10, y:7 },
+      trailer_cabina:       { x:12, y:13 },
+      trailer_habitacion:   { x:12, y:8 },
+      trailer_entrenamiento:{ x:12, y:8 },
       capsule_corp: { x:48, y:62 },
       karin_tower: { x:42, y:74 },
       ocean: { x:48, y:36 },
@@ -4003,13 +4006,13 @@
     }
 
     // ── HABITACIONES PRIVADAS DEL TRAILER ──────────────────────────
-    // Tamaño: 20x15 tiles (640x480px a 32px/tile).
+    // Tamaño: 24x18 tiles (un poco más grandes que antes, 20x15).
     // El jugador mide ~180x200px ≈ 5-6 tiles — la habitación es ~4x el jugador.
     // Para mover el portal: buscar el comentario "// PORTAL POSICIÓN" y ajustar cx/py.
 
     function generateTrailerCabinaMap() {
-      const w = MAPS.trailer_cabina.w;       // 20
-      const h = MAPS.trailer_cabina.h;       // 15
+      const w = MAPS.trailer_cabina.w;       // 24
+      const h = MAPS.trailer_cabina.h;       // 18
       const map = createMap(w, h, 17);       // todo paredes/fondo
       fillRectMap(map, 1, 1, w-2, h-2, 16); // piso transitable interior
       // PORTAL POSICIÓN — cabina: centrado horizontalmente, fila 2 desde abajo
@@ -4020,8 +4023,8 @@
     }
 
     function generateTrailerHabitacionMap() {
-      const w = MAPS.trailer_habitacion.w;   // 20
-      const h = MAPS.trailer_habitacion.h;   // 15
+      const w = MAPS.trailer_habitacion.w;   // 24
+      const h = MAPS.trailer_habitacion.h;   // 18
       const map = createMap(w, h, 17);
       fillRectMap(map, 1, 1, w-2, h-2, 16);
       // PORTAL POSICIÓN — habitación: centrado, fila 2 desde abajo
@@ -4032,8 +4035,8 @@
     }
 
     function generateTrailerEntrenamientoMap() {
-      const w = MAPS.trailer_entrenamiento.w; // 20
-      const h = MAPS.trailer_entrenamiento.h; // 15
+      const w = MAPS.trailer_entrenamiento.w; // 24
+      const h = MAPS.trailer_entrenamiento.h; // 18
       const map = createMap(w, h, 17);
       fillRectMap(map, 1, 1, w-2, h-2, 16);
       // PORTAL POSICIÓN — sala entrenamiento: centrado, fila 2 desde abajo
@@ -4708,7 +4711,7 @@
 
     canvas.addEventListener("pointerdown", (e) => {
       // Permitir interacción de combate también en `frieza_ship` durante el Reto del Imperio
-      if (gameState !== "playing" || !(currentMap === "simulador_combate" || currentMap === "sala_entrenamiento" || (pendingFactionChallenge === "intergalactic_empire" && currentMap === "frieza_ship"))) return;
+      if (gameState !== "playing" || !(currentMap === "simulador_combate" || currentMap === "sala_entrenamiento" || currentMap === "trailer_entrenamiento" || (pendingFactionChallenge === "intergalactic_empire" && currentMap === "frieza_ship"))) return;
       if (e.target !== canvas) return;
       if (sparringState) {
         e.preventDefault();
@@ -4784,6 +4787,45 @@
       ], // el array de oleadas se agrega dinámicamente en waveEnemies
       sala_entrenamiento: [
         { id:"entrena_maestro", name:"maquina de gravedad", x:20*TILE, y:20*TILE, color:"#ff6d00",
+          skinPath:"Vehiculo_interiores/Decoracion/Maquinas.png",
+          frameCols: 3, frameRows: 2, frameCol: 0, frameRow: 0,
+          displayW: 300, displayH: 450,
+          collisionW: 300, collisionH: 225,
+          splitTopBottom: true,
+          get dialogs() {
+            const inCombat = entrenamientoCombatStarted && currentWave >= 0;
+            return [
+              { text: inCombat
+                  ? "El entrenamiento está en marcha. ¿Querés reiniciarlo?"
+                  : "Esta es la Sala de Entrenamiento de tu trailer. Aquí podés practicar tus técnicas de combate en un entorno controlado. ¿Empezamos?",
+                opts: inCombat
+                  ? [
+                      { label:"🔄 Reiniciar entrenamiento", action:"startEntrenamiento" },
+                      { label:"Seguir entrenando.", next:-1 }
+                    ]
+                  : [
+                      { label:"¡Empezar entrenamiento!", action:"startEntrenamiento" },
+                      { label:"¿Cómo funciona?", next:1 },
+                      { label:"Necesito prepararme.", next:-1 }
+                    ]
+              },
+              { text:"Vas a enfrentar oleadas de oponentes de práctica. Son simulacros, así que podés repetirlos cuantas veces quieras para subir de nivel. ¡Usá Z, Q, E y R para atacar!",
+                opts:[
+                  { label:"¡A entrenar!", action:"startEntrenamiento" },
+                  { label:"Entendido.", next:-1 }
+                ]
+              }
+            ];
+          }
+        }
+      ],
+      // ── NPC SALA DE ENTRENAMIENTO DEL TRAILER ──
+      // Misma "maquina de gravedad" que la sala pública, reubicada para que
+      // entre dentro de la habitación del trailer (24x18 tiles = 1152x864px).
+      // Para moverla: cambiar x e y (en tiles × TILE), evitando el portal
+      // (fila h-2, columnas centrales) y el punto de aparición del jugador.
+      trailer_entrenamiento: [
+        { id:"trailer_entrena_maestro", name:"maquina de gravedad", x:16*TILE, y:10*TILE, color:"#ff6d00",
           skinPath:"Vehiculo_interiores/Decoracion/Maquinas.png",
           frameCols: 3, frameRows: 2, frameCol: 0, frameRow: 0,
           displayW: 300, displayH: 450,
@@ -5350,7 +5392,9 @@
 
     function spawnMyTrailer() {
       if (!myPlayerId) return;
-      const tx = Math.floor(player.x/TILE), ty = Math.floor(player.y/TILE)+4;
+      // Centrar el trailer respecto al jugador (9 tiles de ancho) y ubicarlo
+      // justo debajo, para que aparezca lo más cerca posible al invocarlo.
+      const tx = Math.floor(player.x/TILE) - 4, ty = Math.floor(player.y/TILE)+1;
       const snapX = Math.max(5,Math.min(tx, (MAPS[currentMap].w||80)-8));
       const snapY = Math.max(5,Math.min(ty, (MAPS[currentMap].h||60)-6));
       trailers[myPlayerId] = {
@@ -5373,10 +5417,26 @@
       document.getElementById("trailerPanelInfo").textContent = "Tu espacio privado";
       document.getElementById("trailerEnterBtn").textContent = "🚪 ENTRAR";
       document.getElementById("trailerInviteBtn").style.display = "inline-flex";
+      document.getElementById("trailerStoreBtn").style.display = "inline-flex";
       document.getElementById("trailerPanel").classList.add("visible");
       gameState = "menu";
     }
     window.openMyTrailer = openMyTrailer;
+
+    // Guarda (despawnea) tu casa rodante. La próxima vez que entres a tu
+    // trailer (o uses "ENTRAR A MI TRAILER") se volverá a invocar cerca tuyo.
+    function storeMyTrailer() {
+      if (!myPlayerId) return;
+      delete trailers[myPlayerId];
+      myTrailerSpawned = false;
+      if (mpConnected) {
+        db.ref("trailers/" + myPlayerId).remove().catch(()=>{});
+      }
+      showHudToast("📦 Casa rodante guardada","info");
+      document.getElementById("trailerPanel").classList.remove("visible");
+      gameState = "playing";
+    }
+    window.storeMyTrailer = storeMyTrailer;
 
     function enterTrailerFromPanel() {
       document.getElementById("trailerPanel").classList.remove("visible");
@@ -6027,17 +6087,22 @@
       }
       for (const [tid, tr] of Object.entries(trailers)) {
         if (tid === myPlayerId) continue;
-        if (Math.hypot((tr.x + TRAILER_W/2) - player.x, (tr.y + TRAILER_H/2) - player.y) < 120 && tr.map === currentMap) {
+        // Detectar proximidad desde la puerta (centro inferior del trailer)
+        // Proximidad desde la entrada (pie del sprite, centro)
+        const _doorX = tr.x + TRAILER_W/2, _doorY = tr.y + TRAILER_H;
+        if (Math.hypot(_doorX - player.x, _doorY - player.y) < 70 && tr.map === currentMap) {
           trailerPanelTarget.id = tid; trailerPanelTarget.owner = tr.ownerName;
           document.getElementById("trailerPanelInfo").textContent = `Casa de ${tr.ownerName}`;
           document.getElementById("trailerEnterBtn").textContent = "🚪 ENTRAR";
           document.getElementById("trailerInviteBtn").style.display = "none";
+          document.getElementById("trailerStoreBtn").style.display = "none";
           document.getElementById("trailerPanel").classList.add("visible");
           gameState = "menu"; return;
         }
       }
       if (myTrailerSpawned && trailers[myPlayerId] && trailers[myPlayerId].map === currentMap) {
-        if (Math.hypot((trailers[myPlayerId].x + TRAILER_W/2) - player.x, (trailers[myPlayerId].y + TRAILER_H/2) - player.y) < 120) {
+        const _myDoorX = trailers[myPlayerId].x + TRAILER_W/2, _myDoorY = trailers[myPlayerId].y + TRAILER_H;
+        if (Math.hypot(_myDoorX - player.x, _myDoorY - player.y) < 70) {
           openMyTrailer(); return;
         }
       }
@@ -6253,14 +6318,25 @@
 
     function getCombatNpcAtScreen(clientX, clientY) {
       // Permitir selección de NPCs de combate también durante el Reto del Imperio en la frieza_ship
-      if (!(currentMap === "simulador_combate" || currentMap === "sala_entrenamiento" || (pendingFactionChallenge === "intergalactic_empire" && currentMap === "frieza_ship"))) return null;
+      if (!(currentMap === "simulador_combate" || currentMap === "sala_entrenamiento" || currentMap === "trailer_entrenamiento" || (pendingFactionChallenge === "intergalactic_empire" && currentMap === "frieza_ship"))) return null;
       const p = screenToWorld(clientX, clientY);
       let best = null, bestDist = Infinity;
+      // Radio ampliado: 160px — cubre el sprite completo del NPC sin depender de la hitbox de colisión
       waveEnemies.forEach(npc => {
         if (npc.npcHp <= 0 || npc._dead) return;
         const d = Math.hypot(p.x - npc.x, p.y - npc.y);
-        if (d < 72 && d < bestDist) { best = npc; bestDist = d; }
+        if (d < 160 && d < bestDist) { best = npc; bestDist = d; }
       });
+      // Fallback: si el tap no cayó sobre ningún sprite, hacer lock al enemigo vivo más cercano al JUGADOR
+      if (!best && waveEnemies.length > 0) {
+        let closest = null, closestDist = Infinity;
+        waveEnemies.forEach(npc => {
+          if (npc.npcHp <= 0 || npc._dead) return;
+          const d = Math.hypot(npc.x - player.x, npc.y - player.y);
+          if (d < closestDist) { closest = npc; closestDist = d; }
+        });
+        best = closest;
+      }
       return best;
     }
 
@@ -6347,6 +6423,8 @@
         }
       }, NPC_ANIM_DUR.hit_ko);
       if (onDone) onDone();
+      // Quitar colisión inmediatamente al morir — no esperar los 3s de desvanecimiento
+      if (npc) npc.noCollision = true;
       // Desaparecer el NPC a los 3 segundos
       if (npc) {
         setTimeout(() => {
@@ -6536,10 +6614,10 @@
     let entrenamientoCombatStarted = false; // igual que simulador pero para sala_entrenamiento
 
     function checkSimulatorEntry() {
-      const inCombatMap = currentMap === "simulador_combate" || currentMap === "sala_entrenamiento";
+      const inCombatMap = currentMap === "simulador_combate" || currentMap === "sala_entrenamiento" || currentMap === "trailer_entrenamiento";
       if (!inCombatMap && !npcCombatActive) { currentWave = -1; waveEnemies = []; simuladorCombatStarted = false; entrenamientoCombatStarted = false; return; }
       if (currentMap === "simulador_combate" && simuladorCombatStarted && currentWave === -1) { _lastNpcTick = performance.now(); spawnWave(0); }
-      if (currentMap === "sala_entrenamiento" && entrenamientoCombatStarted && currentWave === -1) { _lastNpcTick = performance.now(); spawnWave(0); }
+      if ((currentMap === "sala_entrenamiento" || currentMap === "trailer_entrenamiento") && entrenamientoCombatStarted && currentWave === -1) { _lastNpcTick = performance.now(); spawnWave(0); }
     }
 
     window.startRpNpcCombat = function(combatNpc) {
@@ -6621,7 +6699,7 @@
     function getCombatNpcTarget() {
       // Permitir target de combate también durante el Reto del Imperio en `frieza_ship`
       // y durante el combate de NPCs en el mapa actual.
-      if (!(currentMap === "simulador_combate" || currentMap === "sala_entrenamiento" || (pendingFactionChallenge === "intergalactic_empire" && currentMap === "frieza_ship") || npcCombatActive)) return null;
+      if (!(currentMap === "simulador_combate" || currentMap === "sala_entrenamiento" || currentMap === "trailer_entrenamiento" || (pendingFactionChallenge === "intergalactic_empire" && currentMap === "frieza_ship") || npcCombatActive)) return null;
       if (!waveEnemies.length) return null;
       const locked = getLockedCombatNpc();
       if (locked && !sparringState) return locked;
@@ -7089,8 +7167,9 @@
 
     function tickNpcCombat() {
       // Permitir el tick de combate también cuando se está ejecutando
-      // el Reto del Imperio dentro de la `frieza_ship` o un combate RPC local.
-      if (!(currentMap === "simulador_combate" || currentMap === "sala_entrenamiento" || (pendingFactionChallenge === "intergalactic_empire" && currentMap === "frieza_ship") || npcCombatActive)) return;
+      // el Reto del Imperio dentro de la `frieza_ship`, la sala de entrenamiento pública
+      // o la sala de entrenamiento privada del trailer.
+      if (!(currentMap === "simulador_combate" || currentMap === "sala_entrenamiento" || currentMap === "trailer_entrenamiento" || (pendingFactionChallenge === "intergalactic_empire" && currentMap === "frieza_ship") || npcCombatActive)) return;
       if (waveEnemies.length === 0) return;
 
       // Delta-time real con cap (evita saltos por tab inactivo)
@@ -7317,7 +7396,7 @@
     }
 
     function checkNpcCombatProximity() {
-      if (currentMap !== "simulador_combate" && currentMap !== "sala_entrenamiento") return;
+      if (currentMap !== "simulador_combate" && currentMap !== "sala_entrenamiento" && currentMap !== "trailer_entrenamiento") return;
       checkSimulatorEntry();
       // Mostrar HUD del más cercano si hay enemigos vivos cerca
       const alive = waveEnemies.filter(e=>e.npcHp>0);
@@ -7667,7 +7746,7 @@
             setTimeout(() => { csAnimator._freezeFrame = false; combatEndAnim(); }, 800);
           });
         }
-        if (((currentMap === "simulador_combate" || currentMap === "sala_entrenamiento" || (pendingFactionChallenge === "intergalactic_empire" && currentMap === "frieza_ship")) || npcCombatActive) && waveEnemies.length > 0) {
+        if (((currentMap === "simulador_combate" || currentMap === "sala_entrenamiento" || currentMap === "trailer_entrenamiento" || (pendingFactionChallenge === "intergalactic_empire" && currentMap === "frieza_ship")) || npcCombatActive) && waveEnemies.length > 0) {
           applyPlayerAttackToCombatNpc("special2");
         }
         showHudToast("🌋 ULTIMATE", "info");
@@ -7807,7 +7886,7 @@
           });
         }
       }
-      if (((currentMap === "simulador_combate" || currentMap === "sala_entrenamiento" || (pendingFactionChallenge === "intergalactic_empire" && currentMap === "frieza_ship")) || npcCombatActive) && waveEnemies.length > 0) {
+      if (((currentMap === "simulador_combate" || currentMap === "sala_entrenamiento" || currentMap === "trailer_entrenamiento" || (pendingFactionChallenge === "intergalactic_empire" && currentMap === "frieza_ship")) || npcCombatActive) && waveEnemies.length > 0) {
         applyPlayerAttackToCombatNpc(action);
       }
       showHudToast(effectLabel, action.startsWith("special") ? "info" : "xp");
@@ -8106,7 +8185,7 @@
         });
 
         // Daño a NPCs
-        if (((currentMap === "simulador_combate" || currentMap === "sala_entrenamiento" ||
+        if (((currentMap === "simulador_combate" || currentMap === "sala_entrenamiento" || currentMap === "trailer_entrenamiento" ||
              (pendingFactionChallenge === "intergalactic_empire" && currentMap === "frieza_ship")) ||
              npcCombatActive) && waveEnemies.length > 0) {
           applyPlayerAttackToCombatNpc((actionId === "ultimate" || actionId === "ultimate2") ? "special2" : actionId);
@@ -8202,7 +8281,7 @@
           } else if (mapKey === "trailer_cabina" || mapKey === "trailer_habitacion" || mapKey === "trailer_entrenamiento") {
             if (mapKey === "trailer_entrenamiento") {
               currentWave = -1; waveEnemies = []; hideNpcCombatHud(); entrenamientoCombatStarted = false;
-              npcs = [...(NPC_DEFS.sala_entrenamiento || [])];
+              npcs = [...(NPC_DEFS.trailer_entrenamiento || NPC_DEFS.sala_entrenamiento || [])];
             } else {
               npcs = [...(NPC_DEFS[mapKey] || [])]; // carga el volante en cabina
             }
@@ -8445,7 +8524,7 @@
         // atkLocked: animaciones no-loop bloquean cambios, EXCEPTO 'sit' terminado si el jugador se mueve
         const _SIT_ANIMS = ["sit", "sit_2", "sit_3"];
         const _sitFinished = _SIT_ANIMS.includes(csAnimator.action) && csAnimator.frame >= (csAnimator.meta?.frames ?? 1) - 1;
-        const atkLocked = csAnimator.meta && !csAnimator.meta.loop && !(_sitFinished && player.moving);
+        const atkLocked = csAnimator.meta && (csAnimator.meta.loop === false || csAnimator.meta.lock === true) && !(_sitFinished && player.moving);
         const pvpLockedAnim = window.PvpSystem?.getLockedAnim?.();
         if (pvpLockedAnim && csAnimator.action !== pvpLockedAnim) {
           csAnimator.setSpecialMode && csAnimator.setSpecialMode(false);
@@ -8530,12 +8609,15 @@
         const cx1=Math.floor((nx-hw)/TILE), cx2=Math.floor((nx+hw)/TILE);
         const cy1=Math.floor((ny-hh*.3)/TILE), cy2=Math.floor((ny+hh*.5)/TILE);
         if (isWalkable(cx1,cy1)&&isWalkable(cx2,cy1)&&isWalkable(cx1,cy2)&&isWalkable(cx2,cy2)) {
-          // Además comprobar colisión contra NPCs que tengan collision box definida
+          // Comprobar colisión contra NPCs. Si el NPC no define collisionW/H,
+          // se usa una caja de colisión chica por defecto (pies del NPC) para
+          // que no se pueda caminar encima como si fuera una alfombra.
+          // Para excluir a un NPC puntual (decoración, carteles, etc.) agregale
+          // `noCollision: true` en su definición dentro de NPC_DEFS.
           const collidesNpc = (function(px, py) {
             for (const n of npcs) {
-              if (!n || n._dead) continue;
-              const cw = n.collisionW, ch = n.collisionH;
-              if (!cw || !ch) continue;
+              if (!n || n._dead || n.noCollision) continue;
+              const cw = n.collisionW || 50, ch = n.collisionH || 40;
               // Para NPCs con splitTopBottom: solo colisionar si el jugador está
               // en la mitad DELANTERA (por debajo de la línea divisoria del sprite).
               if (n.splitTopBottom && n.displayH) {
@@ -8547,6 +8629,30 @@
               const pw1 = px - hw, ph1 = py - hh;
               const pw2 = pw1 + player.w, ph2 = ph1 + player.h;
               if (pw1 < nx2 && pw2 > nx1 && ph1 < ny2 && ph2 > ny1) return true;
+            }
+            // Colisión contra casas rodantes (trailers) estacionadas en el mapa.
+            // Igual que el NPC "Guardián del Portal" (splitTopBottom): el
+            // sprite ya se dibuja en dos mitades (la inferior antes del
+            // jugador, la superior encima), así que la colisión física se
+            // reduce a una franja delgada justo en la línea divisoria —
+            // por encima de ella el jugador puede caminar y queda tapado
+            // por el techo del trailer; por debajo puede sobreponerse al
+            // frente sin que nada lo bloquee.
+            for (const tid in trailers) {
+              const tr = trailers[tid];
+              if (!tr || tr.map !== currentMap) continue;
+              // Colision: solo la mitad INFERIOR del sprite (arriba el jugador pasa por encima)
+              const tx1 = tr.x, tx2 = tr.x + TRAILER_W;
+              const ty_mid = tr.y + TRAILER_H * 0.5; // linea divisoria del sprite
+              const ty2   = tr.y + TRAILER_H;        // pie del sprite
+              const pw1 = px - hw, ph1 = py - hh;
+              const pw2 = pw1 + player.w, ph2 = ph1 + player.h;
+              // Hueco de entrada centrado en el borde inferior (pie del sprite)
+              const doorW = TILE * 2; // 96px de ancho
+              const doorX1 = tr.x + TRAILER_W/2 - doorW/2;
+              const doorX2 = tr.x + TRAILER_W/2 + doorW/2;
+              const inDoorGap = px > doorX1 && px < doorX2 && py > ty2 - TILE * 0.5;
+              if (!inDoorGap && pw1 < tx2 && pw2 > tx1 && ph1 < ty2 && ph2 > ty_mid) return true;
             }
             return false;
           })(nx, ny);
@@ -8767,6 +8873,12 @@
     function drawWorld() {
       const map = worldMaps[currentMap]; if (!map) return;
       const mapDef = MAPS[currentMap];
+
+      // Reiniciar la cola de elementos que deben tapar al jugador (NPCs detrás,
+      // mitades superiores, trailers detrás, etc.) — se llena en drawTrailers()
+      // y drawNpcs(), ambos llamados al final de esta función.
+      window._pendingNpcTops = window._pendingNpcTops || [];
+      window._pendingNpcTops.length = 0;
 
       // -- LOBBY: dibujar imagen de fondo --
       if (currentMap === "lobby" && lobbyBgImage) {
@@ -9233,40 +9345,87 @@
         if (tr.map !== currentMap) continue;
         const sx = tr.x - cam.x, sy = tr.y - cam.y;
         if (sx<-200||sx>canvas.width+200||sy<-200||sy>canvas.height+200) continue;
-        if (tid === myPlayerId && trailerDrive.active) {
-          drawTrailerVehicleSprite(ctx, tid, trailerDrive.action, sx + TRAILER_W/2, sy + TRAILER_H/2, TRAILER_W, TRAILER_H, trailerDrive.facing, { frame:trailerDrive.frame });
-        } else if (tid !== myPlayerId && tr.driving) {
-          // Trailer remoto en conducción: usar action/frame/facing sincronizados desde Firebase
-          const remoteAction = tr.action || "idle";
-          const remoteFrame = tr.frame || 0;
-          const remoteFacing = tr.facing || 1;
-          drawTrailerVehicleSprite(ctx, tid, remoteAction, sx + TRAILER_W/2, sy + TRAILER_H/2, TRAILER_W, TRAILER_H, remoteFacing, { frame: remoteFrame });
-        } else {
-          // Trailer estacionado: frame 0 fila 0 del sheet, ocupa TRAILER_W x TRAILER_H
-          const activeSheet = resolveTrailerExteriorSheet(tid);
-          if (activeSheet && activeSheet.complete && activeSheet.naturalWidth) {
-            const fw = Math.floor(activeSheet.naturalWidth / 4);
-            const fh = Math.floor(activeSheet.naturalHeight / 2);
-            ctx.drawImage(activeSheet, 0, 0, fw, fh, sx, sy, TRAILER_W, TRAILER_H);
+        const drawTrailerBody = () => {
+          if (tid === myPlayerId && trailerDrive.active) {
+            drawTrailerVehicleSprite(ctx, tid, trailerDrive.action, sx + TRAILER_W/2, sy + TRAILER_H/2, TRAILER_W, TRAILER_H, trailerDrive.facing, { frame:trailerDrive.frame });
+          } else if (tid !== myPlayerId && tr.driving) {
+            // Trailer remoto en conducción: usar action/frame/facing sincronizados desde Firebase
+            const remoteAction = tr.action || "idle";
+            const remoteFrame = tr.frame || 0;
+            const remoteFacing = tr.facing || 1;
+            drawTrailerVehicleSprite(ctx, tid, remoteAction, sx + TRAILER_W/2, sy + TRAILER_H/2, TRAILER_W, TRAILER_H, remoteFacing, { frame: remoteFrame });
           } else {
-              ctx.fillStyle = tid===myPlayerId ? "#3a2a10" : "#1a2a3a";
-              ctx.fillRect(sx,sy,TRAILER_W,TRAILER_H);
-              ctx.fillStyle = tid===myPlayerId ? "#f5c400" : "#00e5ff";
-              ctx.fillRect(sx,sy,TRAILER_W,4);
-              ctx.fillStyle="#1a1a1a";
-              ctx.beginPath(); ctx.arc(sx+TILE*.8,sy+TRAILER_H+5,10,0,Math.PI*2); ctx.fill();
-              ctx.beginPath(); ctx.arc(sx+TRAILER_W-TILE*.8,sy+TRAILER_H+5,10,0,Math.PI*2); ctx.fill();
-              ctx.fillStyle="rgba(100,180,255,.4)"; ctx.fillRect(sx+12,sy+14,24,18); ctx.fillRect(sx+TRAILER_W-36,sy+14,24,18);
-              ctx.fillStyle="rgba(255,255,255,.15)"; ctx.fillRect(sx+TRAILER_W/2-10,sy+TRAILER_H-30,20,30);
+            // Trailer estacionado: frame 0 fila 0 del sheet, ocupa TRAILER_W x TRAILER_H
+            const activeSheet = resolveTrailerExteriorSheet(tid);
+            if (activeSheet && activeSheet.complete && activeSheet.naturalWidth) {
+              const fw = Math.floor(activeSheet.naturalWidth / 4);
+              const fh = Math.floor(activeSheet.naturalHeight / 2);
+              ctx.drawImage(activeSheet, 0, 0, fw, fh, sx, sy, TRAILER_W, TRAILER_H);
+            } else {
+                ctx.fillStyle = tid===myPlayerId ? "#3a2a10" : "#1a2a3a";
+                ctx.fillRect(sx,sy,TRAILER_W,TRAILER_H);
+                ctx.fillStyle = tid===myPlayerId ? "#f5c400" : "#00e5ff";
+                ctx.fillRect(sx,sy,TRAILER_W,4);
+                ctx.fillStyle="#1a1a1a";
+                ctx.beginPath(); ctx.arc(sx+TILE*.8,sy+TRAILER_H+5,10,0,Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(sx+TRAILER_W-TILE*.8,sy+TRAILER_H+5,10,0,Math.PI*2); ctx.fill();
+                ctx.fillStyle="rgba(100,180,255,.4)"; ctx.fillRect(sx+12,sy+14,24,18); ctx.fillRect(sx+TRAILER_W-36,sy+14,24,18);
+                ctx.fillStyle="rgba(255,255,255,.15)"; ctx.fillRect(sx+TRAILER_W/2-10,sy+TRAILER_H-30,20,30);
+                // (sin bloque de puerta — la zona de entrada es invisible)
+            }
           }
-        }
+        };
+        // Sistema de capas split-top-bottom (igual que los NPCs con splitTopBottom):
+        // 1) Dibujar primero la mitad INFERIOR (ruedas/base) -> jugador pasa POR DELANTE
+        // 2) Encolar la mitad SUPERIOR (cabina/techo) -> se dibuja DESPUES del jugador, lo tapa
+        const _midY = sy + TRAILER_H * 0.5;
+
+        // Mitad inferior -- pase normal, antes del jugador
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(sx - 10, _midY, TRAILER_W + 20, TRAILER_H * 0.5 + 20);
+        ctx.clip();
+        drawTrailerBody();
+        ctx.restore();
+        // Zona de entrada invisible — solo muestra [Z] al acercarse (ver bloque de hint abajo)
+
+        // Mitad superior -- encolada para dibujarse ENCIMA del jugador
+        const _snapTid = tid, _snapTr = tr;
+        window._pendingNpcTops.push({ fn: () => {
+          // Recalcular posicion de pantalla en el momento del draw
+          const _psx = _snapTr.x - cam.x, _psy = _snapTr.y - cam.y;
+          ctx.save();
+          ctx.beginPath();
+          ctx.rect(_psx - 10, _psy - 10, TRAILER_W + 20, TRAILER_H * 0.5 + 10);
+          ctx.clip();
+          if (_snapTid === myPlayerId && trailerDrive.active) {
+            drawTrailerVehicleSprite(ctx, _snapTid, trailerDrive.action, _psx + TRAILER_W/2, _psy + TRAILER_H/2, TRAILER_W, TRAILER_H, trailerDrive.facing, { frame:trailerDrive.frame });
+          } else if (_snapTid !== myPlayerId && _snapTr.driving) {
+            drawTrailerVehicleSprite(ctx, _snapTid, _snapTr.action||"idle", _psx + TRAILER_W/2, _psy + TRAILER_H/2, TRAILER_W, TRAILER_H, _snapTr.facing||1, { frame:_snapTr.frame||0 });
+          } else {
+            const _sheet = resolveTrailerExteriorSheet(_snapTid);
+            if (_sheet && _sheet.complete && _sheet.naturalWidth) {
+              const _fw = Math.floor(_sheet.naturalWidth / 4);
+              const _fh = Math.floor(_sheet.naturalHeight / 2);
+              ctx.drawImage(_sheet, 0, 0, _fw, _fh, _psx, _psy, TRAILER_W, TRAILER_H);
+            } else {
+              ctx.fillStyle = _snapTid===myPlayerId ? "#3a2a10" : "#1a2a3a";
+              ctx.fillRect(_psx,_psy,TRAILER_W,TRAILER_H);
+              ctx.fillStyle = _snapTid===myPlayerId ? "#f5c400" : "#00e5ff";
+              ctx.fillRect(_psx,_psy,TRAILER_W,4);
+            }
+          }
+          ctx.restore();
+        }});
         ctx.fillStyle="rgba(255,255,255,.8)"; ctx.font="bold 9px Orbitron,monospace"; ctx.textAlign="center";
         ctx.fillText(`🚐 ${tr.ownerName}`, sx+TRAILER_W/2, sy-8);
-        if (Math.hypot((tr.x+TRAILER_W/2)-player.x, (tr.y+TRAILER_H/2)-player.y) < 120) {
+        const _doorScreenX = sx+TRAILER_W/2, _doorScreenY = sy+TRAILER_H;
+        const _doorWorldX = tr.x+TRAILER_W/2, _doorWorldY = tr.y+TRAILER_H;
+        if (Math.hypot(_doorWorldX-player.x, _doorWorldY-player.y) < 70) {
           const phase=Date.now()*.003;
           ctx.fillStyle=`rgba(245,196,0,${.5+.5*Math.sin(phase*4)})`;
           ctx.font="bold 14px Orbitron,monospace";
-          ctx.fillText("[Z] ENTRAR",sx+TRAILER_W/2, sy+TRAILER_H/2+Math.sin(phase*3)*4);
+          ctx.fillText("[Z] ENTRAR", _doorScreenX, _doorScreenY+20+Math.sin(phase*3)*4);
         }
         ctx.textAlign="left";
       }
@@ -9413,9 +9572,6 @@
     }
 
     function drawNpcs() {
-      // Reiniciar lista de tops pendientes cada frame
-      window._pendingNpcTops = window._pendingNpcTops || [];
-      window._pendingNpcTops.length = 0;
       const t = Date.now()*.003;
       const CS = window.CharacterSystem;
       const now = performance.now();
@@ -9457,6 +9613,15 @@
                 // Mitad inferior: sin prioridad (jugador se dibuja encima)
                 ctx.drawImage(img, srcX, srcY + (frameH - sHalfH), frameW, sHalfH,
                               destX, destY + (drawH - halfH), drawW, halfH);
+                // Si el jugador está detrás del NPC (más arriba en el mapa),
+                // redibujar también la mitad inferior por encima del jugador,
+                // para que el NPC completo (todas sus capas) lo tape.
+                if (player.y < npc.y) {
+                  window._pendingNpcTops.push({
+                    img, srcX, srcY: srcY + (frameH - sHalfH), srcW: frameW, srcH: sHalfH,
+                    destX, destY: destY + (drawH - halfH), destW: drawW, destH: halfH, npc
+                  });
+                }
                 // Mitad superior: con prioridad (se dibuja después del jugador)
                 window._pendingNpcTops.push({
                   img, srcX, srcY, srcW: frameW, srcH: frameH - sHalfH,
@@ -9561,15 +9726,25 @@
           const NW_NPC = 180, NH_NPC = 220;
           const oc = _renderNpcToOffscreen(npc, anim, CS, csImageMap, hasSkin, npcVariantCustomizations);
           if (oc) {
+            const _npcFacing = npc.facing || 1;
             ctx.save();
             ctx.imageSmoothingEnabled = false;
             // Flip horizontal si mira a la izquierda
-            if ((npc.facing || 1) === -1) {
+            if (_npcFacing === -1) {
               ctx.translate(sx * 2, 0);
               ctx.scale(-1, 1);
             }
             ctx.drawImage(oc, sx - NW_NPC / 2, sy - NH_NPC);
             ctx.restore();
+            // Si el jugador está detrás del NPC (más arriba en el mapa),
+            // redibujarlo encima del jugador para que lo tape por completo.
+            if (player.y < npc.y) {
+              window._pendingNpcTops.push({
+                img: oc, srcX:0, srcY:0, srcW: oc.width, srcH: oc.height,
+                destX: sx - NW_NPC/2, destY: sy - NH_NPC, destW: NW_NPC, destH: NH_NPC,
+                flip: _npcFacing === -1, flipX: sx, smoothing: false, npc
+              });
+            }
           }
 
         } else {
@@ -10087,13 +10262,29 @@
       sendPlayerUpdate();
       drawOtherPlayers();
       drawPlayerChar();
-      // Dibujar las partes superiores pendientes de NPCs (para que el jugador pueda superponerse a la mitad inferior)
+      // Dibujar las partes/objetos pendientes que deben tapar al jugador
+      // (NPCs detrás del jugador, mitades superiores, trailers detrás, etc.)
       if (window._pendingNpcTops && window._pendingNpcTops.length) {
         ctx.save();
         ctx.imageSmoothingEnabled = true;
         window._pendingNpcTops.forEach(t => {
           try {
-            ctx.drawImage(t.img, t.srcX, t.srcY, t.srcW, t.srcH, t.destX, t.destY, t.destW, t.destH);
+            if (t.fn) { t.fn(); return; }
+            if (t.flip) {
+              ctx.save();
+              if (t.smoothing === false) ctx.imageSmoothingEnabled = false;
+              ctx.translate(t.flipX * 2, 0);
+              ctx.scale(-1, 1);
+              ctx.drawImage(t.img, t.srcX, t.srcY, t.srcW, t.srcH, t.destX, t.destY, t.destW, t.destH);
+              ctx.restore();
+            } else if (t.smoothing === false) {
+              ctx.save();
+              ctx.imageSmoothingEnabled = false;
+              ctx.drawImage(t.img, t.srcX, t.srcY, t.srcW, t.srcH, t.destX, t.destY, t.destW, t.destH);
+              ctx.restore();
+            } else {
+              ctx.drawImage(t.img, t.srcX, t.srcY, t.srcW, t.srcH, t.destX, t.destY, t.destW, t.destH);
+            }
           } catch(e) {}
         });
         ctx.restore();
